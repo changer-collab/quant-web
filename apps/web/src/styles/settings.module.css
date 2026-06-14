@@ -1,0 +1,58 @@
+.languagePanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  margin-top: var(--space-xl);
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.languagePanel h3 {
+  margin: 0;
+}
+
+.languagePanel p {
+  margin: var(--space-sm) 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.languageToggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(86px, 1fr));
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.54);
+}
+
+.languageButton {
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--muted);
+  border: 1px solid transparent;
+  background: transparent;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.languageButton:hover,
+.languageButtonActive {
+  color: var(--ink);
+  border-color: rgba(77, 240, 160, 0.5);
+  background: var(--green);
+}
+
+.languageButton:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1080px) {
+  .languagePanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,227 @@
+.factorLabGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* Factor Definition Table */
+.factorTablePanel {
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.factorTablePanel h3 {
+  margin: 0 0 var(--space-lg);
+  color: var(--green);
+  font-weight: 800;
+}
+
+.factorTable {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+}
+
+.factorTable th,
+.factorTable td {
+  padding: 13px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.factorTable th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.factorTable td {
+  font-size: 14px;
+}
+
+.factorRow:hover {
+  background: rgba(77, 240, 160, 0.08);
+}
+
+.factorRow.selected {
+  background: rgba(77, 240, 160, 0.12);
+}
+
+.factorRow.selected td {
+  border-bottom-color: rgba(77, 240, 160, 0.42);
+}
+
+.statusActive {
+  color: var(--green);
+}
+
+.statusDraft {
+  color: var(--muted);
+}
+
+.refTag {
+  display: inline-block;
+  margin: 2px 4px 2px 0;
+  padding: 2px 8px;
+  color: var(--green);
+  font-size: 12px;
+  background: rgba(77, 240, 160, 0.1);
+}
+
+/* Eval Panel */
+.evalPanel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.evalPanel h3 {
+  margin: 0 0 var(--space-lg);
+  color: var(--green);
+  font-weight: 800;
+}
+
+.evalTabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--line);
+}
+
+.evalTab {
+  padding: 8px 16px;
+  color: var(--muted);
+  font-size: 13px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.evalTab:hover {
+  color: var(--text);
+}
+
+.evalTab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.icSeries {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  padding: 8px 0;
+}
+
+.icBar {
+  flex: 1;
+  min-width: 24px;
+  background: rgba(77, 240, 160, 0.5);
+  transition: background 0.15s;
+}
+
+.icBar:hover {
+  background: var(--green);
+}
+
+.icBar.negative {
+  background: rgba(255, 100, 100, 0.5);
+}
+
+.icBar.negative:hover {
+  background: #ff6464;
+}
+
+.groupGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.groupCard {
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.64);
+}
+
+.groupLabel {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.groupValue {
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.layerTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.layerTable th,
+.layerTable td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.layerTable th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+/* Reference Panel */
+.refPanel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.refPanel h3 {
+  margin: 0 0 var(--space-lg);
+  color: var(--green);
+  font-weight: 800;
+}
+
+.refList {
+  display: grid;
+  gap: 8px;
+}
+
+.refItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.64);
+}
+
+.refFactorName {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.refStrategyList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 680px) {
+  .factorTable {
+    min-width: 600px;
+  }
+
+  .groupGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -1,0 +1,51 @@
+.chartPanel {
+  position: relative;
+  min-height: var(--chart-height);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(230, 238, 233, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(230, 238, 233, 0.04) 1px, transparent 1px),
+    rgba(17, 25, 23, 0.9);
+  background-size: 60px 60px;
+}
+
+.axis {
+  position: absolute;
+  inset: 42px 40px 38px;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-lg);
+}
+
+.bar {
+  flex: 1;
+  min-width: 12px;
+  background: linear-gradient(180deg, rgba(77, 240, 160, 0.9), rgba(77, 240, 160, 0.08));
+}
+
+.chartLine {
+  position: absolute;
+  inset: 76px 48px 94px;
+  border-top: 3px solid var(--cyan);
+  transform: skewY(-8deg);
+  filter: drop-shadow(0 0 16px rgba(98, 216, 255, 0.45));
+}
+
+.tradeDot {
+  position: absolute;
+  width: var(--trade-dot);
+  height: var(--trade-dot);
+}
+
+.buyDot {
+  left: 34%;
+  top: 50%;
+  background: var(--green);
+}
+
+.sellDot {
+  left: 72%;
+  top: 35%;
+  background: var(--red);
+}

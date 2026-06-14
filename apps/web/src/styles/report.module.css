@@ -1,0 +1,79 @@
+.reportSummary {
+  display: grid;
+  gap: var(--space-xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.reportHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reportEyebrow {
+  margin: 0 0 var(--space-sm);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reportTitle {
+  margin: 0;
+  font-size: 24px;
+}
+
+.reportStatus {
+  padding: 3px 7px;
+  color: var(--green);
+  background: rgba(77, 240, 160, 0.1);
+}
+
+.reportMeta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin: 0;
+}
+
+.reportMetaItem {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+}
+
+.reportMetaLabel {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.reportMetaValue {
+  overflow-wrap: anywhere;
+  margin: var(--space-sm) 0 0;
+  font-weight: 800;
+}
+
+.reportDiagnostics {
+  display: grid;
+  gap: 12px;
+}
+
+.diagnosticSection {
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.34);
+}
+
+.diagnosticSection h4 {
+  margin: 0 0 var(--space-md);
+}
+
+@media (max-width: 680px) {
+  .reportMeta {
+    grid-template-columns: 1fr;
+  }
+}

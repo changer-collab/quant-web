@@ -1,0 +1,88 @@
+.modeTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.modeTab {
+  min-height: var(--mode-tab-height);
+  padding: 13px var(--space-lg);
+  color: var(--muted);
+  text-align: left;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.82);
+  cursor: pointer;
+}
+
+.modeTab:hover,
+.modeTabActive {
+  color: var(--text);
+  border-color: rgba(77, 240, 160, 0.55);
+  background: linear-gradient(135deg, rgba(77, 240, 160, 0.16), rgba(98, 216, 255, 0.05));
+}
+
+.modeTab:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.modeTabLabel,
+.modeTabDesc {
+  display: block;
+}
+
+.modeTabLabel {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.modeTabDesc {
+  margin-top: var(--space-sm);
+  color: var(--muted);
+}
+
+.modeSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.75fr);
+  gap: var(--space-xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.modeSummaryEyebrow {
+  margin: 0 0 8px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.modeSummaryTitle {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.modeSummaryDesc {
+  display: block;
+  max-width: 640px;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+@media (max-width: 1080px) {
+  .modeSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .modeTabs {
+    grid-template-columns: 1fr;
+  }
+}

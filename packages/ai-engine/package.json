@@ -1,0 +1,14 @@
+{
+  "name": "@quant/ai-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@quant/common": "workspace:*"
+  },
+  "scripts": {
+    "build": "exit 0",
+    "test": "exit 0",
+    "lint": "exit 0"
+  }
+}

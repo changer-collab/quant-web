@@ -1,0 +1,61 @@
+import { useEffect, useMemo, useState } from 'react';
+import {
+  DEFAULT_LANGUAGE,
+  LANGUAGE_STORAGE_KEY,
+  getNavItems,
+  getPage,
+  getResearchModes,
+  getStrategies,
+  getMarketTicks,
+  getFactors,
+  getFactorEvalResults,
+  getUiCopy,
+  resolveLanguageCode,
+  type LanguageCode,
+  type NavItem,
+  type PageContent,
+  type ResearchMode,
+  type StrategyRow,
+  type MarketTick,
+  type FactorDisplayRow,
+  type FactorEvalDisplayResult,
+  type UiCopy,
+} from '../appData';
+
+export function useLanguage() {
+  const [language, setLanguage] = useState<LanguageCode>(() => {
+    if (typeof window === 'undefined') {
+      return DEFAULT_LANGUAGE;
+    }
+    return resolveLanguageCode(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
+  });
+
+  useEffect(() => {
+    document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
+  }, [language]);
+
+  function handleLanguageChange(nextLanguage: LanguageCode) {
+    setLanguage(nextLanguage);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+  }
+
+  const navItems = useMemo(() => getNavItems(language), [language]);
+  const ui = useMemo(() => getUiCopy(language), [language]);
+  const strategies = useMemo(() => getStrategies(language), [language]);
+  const ticks = useMemo(() => getMarketTicks(language), [language]);
+  const researchModes = useMemo(() => getResearchModes(language), [language]);
+  const factors = useMemo(() => getFactors(language), [language]);
+  const factorEvalResults = useMemo(() => getFactorEvalResults(language), [language]);
+
+  return { language, handleLanguageChange, navItems, ui, strategies, ticks, researchModes, factors, factorEvalResults };
+}
+
+export function usePageContent(
+  activePageId: string,
+  language: LanguageCode,
+) {
+  const activePage = useMemo(() => getPage(activePageId, language), [activePageId, language]);
+  return { activePage };
+}
+
+export { type NavItem, type PageContent, type ResearchMode, type StrategyRow, type MarketTick, type FactorDisplayRow, type FactorEvalDisplayResult, type UiCopy };

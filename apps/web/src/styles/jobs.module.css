@@ -1,0 +1,39 @@
+.jobList {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.jobCard {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.jobCard span,
+.jobCard small {
+  color: var(--muted);
+}
+
+.jobCard strong {
+  display: block;
+  margin: 5px 0;
+}
+
+.jobConfigSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.progress {
+  height: var(--progress-height);
+  background: rgba(230, 238, 233, 0.08);
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}

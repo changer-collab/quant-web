@@ -1,0 +1,11 @@
+{
+  "name": "@quant/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "exit 0",
+    "test": "exit 0",
+    "lint": "exit 0"
+  }
+}

@@ -1,0 +1,70 @@
+/* ── Design Tokens ─────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+
+  /* Colors */
+  --bg: #08100f;
+  --panel: #111917;
+  --panel-2: #16211f;
+  --line: #263632;
+  --text: #e6eee9;
+  --muted: #8fa29b;
+  --green: #4df0a0;
+  --cyan: #62d8ff;
+  --amber: #e9c46a;
+  --red: #ff6b6b;
+  --ink: #050807;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-md: 10px;
+  --space-lg: 14px;
+  --space-xl: 18px;
+  --space-2xl: 22px;
+
+  /* Sizing */
+  --sidebar-width: 248px;
+  --nav-item-height: 52px;
+  --topbar-height: 48px;
+  --metric-height: 112px;
+  --metric-compact-height: 96px;
+  --chart-height: 350px;
+  --mode-tab-height: 74px;
+  --action-height: 38px;
+  --progress-height: 8px;
+  --status-dot: 8px;
+  --trade-dot: 12px;
+
+  /* Typography */
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono: "Cascadia Code", Consolas, monospace;
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    linear-gradient(90deg, rgba(77, 240, 160, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(98, 216, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 70% 20%, rgba(98, 216, 255, 0.08), transparent 28rem),
+    var(--bg);
+  background-size: 28px 28px, 28px 28px, auto, auto;
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}

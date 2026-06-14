@@ -1,0 +1,55 @@
+.tablePanel {
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.tablePanel h3 {
+  margin: 0 0 var(--space-lg);
+}
+
+.tablePanel table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.tablePanel th,
+.tablePanel td {
+  padding: 13px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.tablePanel th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.tablePanel td span {
+  display: block;
+  margin-top: var(--space-xs);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover,
+.selectedRow {
+  background: rgba(77, 240, 160, 0.08);
+}
+
+.selectedRow td {
+  border-bottom-color: rgba(77, 240, 160, 0.42);
+}
+
+.tablePanel mark {
+  padding: 3px 7px;
+  color: var(--green);
+  background: rgba(77, 240, 160, 0.1);
+}

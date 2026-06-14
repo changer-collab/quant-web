@@ -9,3 +9,13 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+
+# pnpm
+.pnpm-store/
+
+# local data (SQLite, CSV, etc.)
+data/
+
+# turbo
+.turbo
