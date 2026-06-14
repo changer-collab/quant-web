@@ -1,0 +1,27 @@
+{
+  "name": "@quant/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src/ tests/",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@quant/common": "workspace:*",
+    "@quant/data-center": "workspace:*",
+    "@quant/strategy-runtime": "workspace:*",
+    "@quant/backtest-engine": "workspace:*",
+    "@quant/factor-lab": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.6",
+    "tsx": "^4.19.0"
+  }
+}
