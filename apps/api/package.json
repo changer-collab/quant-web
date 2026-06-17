@@ -1,0 +1,21 @@
+{
+  "name": "@quant/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "exit 0"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "@quant/data-center": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.6"
+  }
+}

@@ -1,0 +1,73 @@
+.tablePanel {
+  overflow: auto;
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  animation: fadeIn 0.4s 0.1s ease-out both;
+  border-radius: var(--radius-sm);
+  position: relative;
+}
+
+.tablePanel h3 {
+  margin: 0 0 var(--space-lg);
+}
+
+.tablePanel table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.tablePanel th,
+.tablePanel td {
+  padding: 13px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.12s;
+}
+
+.tablePanel th {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-weight: 700;
+}
+
+.tablePanel td span {
+  display: block;
+  margin-top: var(--space-xs);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.clickableRow:hover {
+  background: var(--gradient-row-hover);
+}
+
+.clickableRow:active {
+  background: rgba(77, 240, 160, 0.12);
+  transform: var(--press-scale);
+}
+
+.selectedRow {
+  background: linear-gradient(90deg, rgba(77, 240, 160, 0.1), rgba(98, 216, 255, 0.03));
+}
+
+.selectedRow td {
+  border-bottom-color: rgba(77, 240, 160, 0.42);
+}
+
+.tablePanel mark {
+  padding: 3px 7px;
+  color: var(--green);
+  background: rgba(77, 240, 160, 0.1);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}

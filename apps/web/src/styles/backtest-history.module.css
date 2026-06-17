@@ -1,0 +1,139 @@
+.panel {
+  overflow: auto;
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  animation: fadeIn 0.4s 0.1s ease-out both;
+  border-radius: var(--radius-sm);
+}
+
+.panel h3 {
+  margin: 0 0 var(--space-lg);
+}
+
+.list {
+  display: grid;
+  gap: 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: rgba(8, 16, 15, 0.4);
+  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+}
+
+.item:hover {
+  border-color: var(--line);
+  background: rgba(8, 16, 15, 0.6);
+  transform: var(--hover-lift-sm);
+}
+
+.itemInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.itemName {
+  font-weight: 500;
+  font-size: var(--text-base);
+}
+
+.itemMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.modeTag {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(98, 216, 255, 0.1);
+  color: var(--cyan);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+}
+
+.itemMetrics {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.miniMetric {
+  text-align: center;
+}
+
+.miniValue {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.miniGood {
+  color: var(--green);
+}
+
+.miniWarn {
+  color: var(--amber);
+}
+
+.miniLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.viewBtn {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  background: transparent;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.viewBtn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.progress {
+  width: 80px;
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(98, 216, 255, 0.12);
+  overflow: hidden;
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--cyan);
+  transition: width 0.3s;
+}
+
+.progressDone {
+  background: var(--green);
+}
+
+.empty {
+  padding: 28px 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--text-sm);
+}

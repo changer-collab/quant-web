@@ -1,0 +1,279 @@
+/* ── Design Tokens ─────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+
+  /* Colors */
+  --bg: #08100f;
+  --panel: #111917;
+  --panel-2: #16211f;
+  --line: #263632;
+  --text: #e6eee9;
+  --muted: #8fa29b;
+  --green: #4df0a0;
+  --cyan: #62d8ff;
+  --amber: #e9c46a;
+  --red: #ff6b6b;
+  --ink: #050807;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-md: 10px;
+  --space-lg: 14px;
+  --space-xl: 18px;
+  --space-2xl: 22px;
+
+  /* Sizing */
+  --sidebar-width: 248px;
+  --nav-item-height: 52px;
+  --topbar-height: 48px;
+  --metric-height: 112px;
+  --metric-compact-height: 96px;
+  --chart-height: 350px;
+  --mode-tab-height: 74px;
+  --action-height: 38px;
+  --progress-height: 8px;
+  --status-dot: 8px;
+  --trade-dot: 12px;
+
+  /* Typography */
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono: "Cascadia Code", Consolas, monospace;
+  --font-display: "Fraunces", Georgia, serif;
+
+  /* Gradients */
+  --gradient-panel: linear-gradient(135deg, rgba(17, 25, 23, 0.96), rgba(22, 33, 31, 0.82));
+  --gradient-panel-hover: linear-gradient(135deg, rgba(17, 25, 23, 0.98), rgba(22, 33, 31, 0.9));
+  --gradient-accent: linear-gradient(135deg, var(--green), var(--cyan));
+  --gradient-accent-subtle: linear-gradient(90deg, rgba(77, 240, 160, 0.14), rgba(98, 216, 255, 0.04));
+  --gradient-green-glow: linear-gradient(180deg, rgba(77, 240, 160, 0.9), rgba(77, 240, 160, 0.08));
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow-green: 0 0 20px rgba(77, 240, 160, 0.35);
+  --shadow-glow-cyan: 0 0 20px rgba(98, 216, 255, 0.25);
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.4s;
+
+  /* Z-index */
+  --z-sidebar: 100;
+  --z-topbar: 90;
+  --z-overlay: 200;
+  --z-modal: 300;
+
+  /* Border radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* Data Visualization Colors */
+  --chart-green: #4df0a0;
+  --chart-cyan: #62d8ff;
+  --chart-amber: #e9c46a;
+  --chart-red: #ff6b6b;
+  --chart-purple: #a78bfa;
+  --chart-blue: #60a5fa;
+
+  /* Interactive States */
+  --hover-lift: translateY(-2px);
+  --hover-lift-sm: translateY(-1px);
+  --press-scale: scale(0.97);
+  --focus-ring: 0 0 0 2px rgba(98, 216, 255, 0.4);
+  --focus-ring-offset: 2px;
+
+  /* Glass Effects */
+  --glass-bg: rgba(17, 25, 23, 0.72);
+  --glass-border: rgba(230, 238, 233, 0.06);
+  --glass-blur: 20px;
+
+  /* Typography Scale */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    linear-gradient(90deg, rgba(77, 240, 160, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(98, 216, 255, 0.04) 1px, transparent 1px),
+    radial-gradient(ellipse at 20% 50%, rgba(77, 240, 160, 0.06), transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(98, 216, 255, 0.05), transparent 40%),
+    var(--bg);
+  background-size: 28px 28px, 28px 28px, auto, auto, auto;
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUpSm {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes growBar {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes progressPulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 18px var(--green); }
+  50%      { box-shadow: 0 0 28px var(--green), 0 0 48px rgba(77, 240, 160, 0.15); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes chipEnter {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlowIntense {
+  0%, 100% { box-shadow: 0 0 18px var(--green); }
+  50%      { box-shadow: 0 0 35px var(--green), 0 0 60px rgba(77, 240, 160, 0.2); }
+}
+
+@keyframes dataFlash {
+  0%   { background-color: rgba(77, 240, 160, 0.2); }
+  100% { background-color: transparent; }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: var(--line); }
+  50%      { border-color: rgba(77, 240, 160, 0.3); }
+}
+
+@keyframes chartLineReveal {
+  from { transform: skewY(-6deg) scaleX(0); }
+  to   { transform: skewY(-6deg) scaleX(1); }
+}
+
+@keyframes tradeDotPulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50%      { transform: scale(1.4); opacity: 0.5; }
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Animation Utility Classes ───────────────────────────── */
+
+.fadeIn  { animation: fadeIn 0.4s ease-out both; }
+.slideUp { animation: slideUp 0.45s ease-out both; }
+.slideRight { animation: slideRight 0.4s ease-out both; }
+.pulseGlow { animation: pulseGlow 3s ease-in-out infinite; }
+.statusPulse { animation: statusPulse 2.5s ease-in-out infinite; }
+.scaleIn   { animation: scaleIn 0.35s var(--ease-out-expo) both; }
+.slideDown { animation: slideDown 0.3s ease-out both; }
+.slideUpFade { animation: slideUpFade 0.4s var(--ease-out-expo) both; }
+
+/* ── Reduced Motion ──────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

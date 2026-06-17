@@ -1,0 +1,110 @@
+.feed {
+  overflow: auto;
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  animation: fadeIn 0.4s 0.1s ease-out both;
+  border-radius: var(--radius-sm);
+}
+
+.feed h3 {
+  margin: 0 0 var(--space-lg);
+}
+
+.timeline {
+  display: grid;
+  gap: 2px;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.item:hover {
+  background: rgba(77, 240, 160, 0.05);
+  transform: translateX(4px);
+}
+
+.dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.dotRunning {
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+.dotCompleted {
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+}
+
+.dotFailed {
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+}
+
+.dotQueued {
+  background: var(--amber);
+}
+
+.body {
+  min-width: 0;
+  flex: 1;
+}
+
+.body strong {
+  display: block;
+  font-weight: 500;
+  font-size: var(--text-base);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.badge {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(98, 216, 255, 0.1);
+  color: var(--cyan);
+  font-size: var(--text-xs);
+}
+
+.badgeGreen {
+  background: rgba(77, 240, 160, 0.1);
+  color: var(--green);
+}
+
+.badgeRed {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--red);
+}
+
+.badgeAmber {
+  background: rgba(233, 196, 106, 0.1);
+  color: var(--amber);
+}
+
+.empty {
+  padding: 28px 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--text-sm);
+}

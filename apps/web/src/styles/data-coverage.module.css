@@ -1,0 +1,140 @@
+.panel {
+  overflow: auto;
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  animation: fadeIn 0.4s 0.1s ease-out both;
+  border-radius: var(--radius-sm);
+}
+
+.panel h3 {
+  margin: 0 0 var(--space-lg);
+}
+
+.summaryRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--line);
+}
+
+.statCard {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(8, 16, 15, 0.5);
+  text-align: center;
+  transition: border-color 0.15s, transform 0.12s;
+}
+
+.statCard:hover {
+  border-color: rgba(77, 240, 160, 0.2);
+  transform: var(--hover-lift-sm);
+}
+
+.statValue {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.statGreen {
+  color: var(--green);
+}
+
+.statCyan {
+  color: var(--cyan);
+}
+
+.statWarn {
+  color: var(--amber);
+}
+
+.statLabel {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.coverageTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.coverageTable th,
+.coverageTable td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.coverageTable th {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.coverageTable td {
+  font-size: var(--text-sm);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barTrack {
+  flex: 1;
+  height: 6px;
+  max-width: 120px;
+  border-radius: var(--radius-sm);
+  background: rgba(98, 216, 255, 0.08);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+}
+
+.barFillMid {
+  background: var(--cyan);
+}
+
+.barFillLow {
+  background: var(--amber);
+}
+
+.barLabel {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+}
+
+.syncDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  vertical-align: middle;
+}
+
+.empty {
+  padding: 28px 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--text-sm);
+}

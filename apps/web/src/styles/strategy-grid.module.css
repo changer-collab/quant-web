@@ -1,0 +1,145 @@
+.panel {
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+  animation: fadeIn 0.4s 0.1s ease-out both;
+}
+
+.panel h3 {
+  margin: 0 0 var(--space-lg);
+}
+
+.section {
+  margin-bottom: var(--space-xl);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-md);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.sectionLine {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  position: relative;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(8, 16, 15, 0.6);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: rgba(77, 240, 160, 0.3);
+  background: rgba(77, 240, 160, 0.04);
+  transform: var(--hover-lift);
+  box-shadow: var(--shadow-md);
+}
+
+.cardSelected {
+  border-color: rgba(77, 240, 160, 0.5);
+  background: rgba(77, 240, 160, 0.06);
+}
+
+.cardName {
+  font-weight: 600;
+  font-size: var(--text-base);
+}
+
+.cardType {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.cardMetrics {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.metric {
+  text-align: center;
+}
+
+.metricValue {
+  display: block;
+  font-size: var(--text-base);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.metricGreen {
+  color: var(--green);
+}
+
+.metricWarn {
+  color: var(--amber);
+}
+
+.metricLabel {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  background: rgba(98, 216, 255, 0.1);
+  color: var(--cyan);
+}
+
+.statusGreen {
+  background: rgba(77, 240, 160, 0.1);
+  color: var(--green);
+}
+
+.statusAmber {
+  background: rgba(233, 196, 106, 0.1);
+  color: var(--amber);
+}
+
+.statusRed {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--red);
+}
+
+.empty {
+  padding: 28px 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--text-sm);
+}

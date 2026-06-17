@@ -1,0 +1,155 @@
+import { useMemo } from 'react';
+import type { BacktestReportFull, ReportUiCopy } from '../../appData';
+import { ReactEChartsCore, echarts, CHART_DEFAULTS, fmtPct } from '../../lib/echarts-setup';
+import type { EChartsOption } from 'echarts';
+import styles from '@/styles/report-tables.module.css';
+
+interface Props {
+  report: BacktestReportFull;
+  ui: ReportUiCopy;
+}
+
+function pct(v: number): string {
+  return `${(v * 100).toFixed(1)}%`;
+}
+
+function currency(v: number): string {
+  return v.toLocaleString('zh-CN', { style: 'currency', currency: 'CNY', minimumFractionDigits: 0 });
+}
+
+/** 盈亏分布直方图 */
+function PnlHistogram({ report, ui }: Props) {
+  const ts = report.tradeStats;
+  const labels = ui.tradeStats;
+  const pnlData = ts.pnlDistribution ?? [];
+
+  const option = useMemo<EChartsOption>(() => {
+    if (pnlData.length === 0) return {};
+
+    // 分桶：按 2% 间隔
+    const min = Math.floor(Math.min(...pnlData) / 2) * 2;
+    const max = Math.ceil(Math.max(...pnlData) / 2) * 2;
+    const bins: { range: string; count: number; isProfit: boolean }[] = [];
+
+    for (let lo = min; lo < max; lo += 2) {
+      const hi = lo + 2;
+      const count = pnlData.filter((v) => v >= lo && v < hi).length;
+      bins.push({
+        range: `${lo >= 0 ? '+' : ''}${lo}%~${hi >= 0 ? '+' : ''}${hi}%`,
+        count,
+        isProfit: lo >= 0,
+      });
+    }
+
+    return {
+      tooltip: {
+        ...CHART_DEFAULTS.tooltip,
+        trigger: 'axis',
+        formatter(params: unknown) {
+          const p = Array.isArray(params) ? params[0] : params;
+          const it = p as { name: string; value: number };
+          return `${it.name}<br/>交易笔数: <b>${it.value}</b>`;
+        },
+      },
+      grid: { top: 16, right: 16, bottom: 28, left: 40 },
+      xAxis: {
+        type: 'category',
+        data: bins.map((b) => b.range),
+        axisLabel: { fontSize: 9, color: '#8fa29b', rotate: 30 },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { fontSize: 10, color: '#8fa29b' },
+        splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
+      },
+      series: [
+        {
+          type: 'bar',
+          data: bins.map((b) => ({
+            value: b.count,
+            itemStyle: {
+              color: b.isProfit ? '#4df0a0' : '#ff6b6b',
+              borderRadius: b.isProfit ? [2, 2, 0, 0] : [0, 0, 2, 2],
+            },
+          })),
+          barWidth: '60%',
+        },
+      ],
+    };
+  }, [pnlData]);
+
+  if (pnlData.length === 0) return null;
+
+  return (
+    <div className={styles.chartSection}>
+      <h4 className={styles.sectionTitle}>{labels.pnlDistribution ?? '盈亏分布'}</h4>
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 240 }}
+        notMerge
+        lazyUpdate
+      />
+    </div>
+  );
+}
+
+export function ReportTradeStats({ report, ui }: Props) {
+  const ts = report.tradeStats;
+  const labels = ui.tradeStats;
+
+  const stats = [
+    { label: labels.totalTrades, value: ts.totalTrades.toString(), tone: 'info' },
+    { label: labels.wins, value: ts.winningTrades.toString(), tone: 'good' },
+    { label: labels.losses, value: ts.losingTrades.toString(), tone: 'warn' },
+    { label: labels.winRate, value: pct(ts.winRate), tone: ts.winRate > 0.5 ? 'good' : 'warn' },
+    { label: labels.profitLossRatio, value: ts.profitLossRatio.toFixed(2), tone: ts.profitLossRatio > 1.5 ? 'good' : 'info' },
+    { label: labels.avgHolding, value: `${ts.avgHoldingDays} 天`, tone: 'info' },
+    { label: labels.turnover, value: pct(ts.turnoverRate), tone: ts.turnoverRate > 0.5 ? 'warn' : 'info' },
+    { label: labels.maxProfit, value: currency(ts.maxSingleProfit), tone: 'good' },
+    { label: labels.maxLoss, value: currency(Math.abs(ts.maxSingleLoss)), tone: 'warn' },
+  ];
+
+  const maxVal = Math.max(ts.winningTrades, ts.losingTrades);
+
+  return (
+    <div className={styles.tradeStats}>
+      <div className={styles.statGrid}>
+        {stats.map((s) => (
+          <article key={s.label} className={`${styles.statCard} ${styles[`tone${s.tone}`]}`}>
+            <span className={styles.statLabel}>{s.label}</span>
+            <strong className={styles.statValue}>{s.value}</strong>
+          </article>
+        ))}
+      </div>
+
+      <h4 className={styles.sectionTitle}>盈亏对比</h4>
+      <div className={styles.barChart}>
+        <div className={styles.barRow}>
+          <span className={styles.barLabel}>{labels.wins}</span>
+          <div className={styles.barTrack}>
+            <div
+              className={styles.barGood}
+              style={{ width: `${(ts.winningTrades / maxVal) * 100}%` }}
+            />
+          </div>
+          <span className={styles.barValue}>{ts.winningTrades}</span>
+        </div>
+        <div className={styles.barRow}>
+          <span className={styles.barLabel}>{labels.losses}</span>
+          <div className={styles.barTrack}>
+            <div
+              className={styles.barWarn}
+              style={{ width: `${(ts.losingTrades / maxVal) * 100}%` }}
+            />
+          </div>
+          <span className={styles.barValue}>{ts.losingTrades}</span>
+        </div>
+      </div>
+
+      <PnlHistogram report={report} ui={ui} />
+    </div>
+  );
+}

@@ -1,0 +1,123 @@
+/* ── Report Overview ──────────────────────────────────────── */
+
+.panel {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.header > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.version {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.status {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background: rgba(77, 240, 160, 0.12);
+  color: var(--green);
+}
+
+/* Logic card */
+
+.logicCard {
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+}
+
+.logicLabel {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+}
+
+.logicText {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+/* Meta grid */
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metaItem {
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.34);
+  border-radius: var(--radius-sm);
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metaLabel {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+}
+
+.metaValue {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--cyan);
+  background: rgba(98, 216, 255, 0.08);
+  border: 1px solid rgba(98, 216, 255, 0.15);
+  border-radius: var(--radius-sm);
+}

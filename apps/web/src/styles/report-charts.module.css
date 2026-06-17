@@ -1,0 +1,18 @@
+/* ── Charts (ECharts) ─────────────────────────────────────── */
+
+.equityPanel {
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+.chartBlock {
+  display: grid;
+  gap: var(--space-md);
+  border-radius: var(--radius-sm);
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+}

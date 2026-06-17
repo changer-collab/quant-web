@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantforge-obsidian"
+version = "0.1.0"
+description = "QuantForge Obsidian 同步 — 将数据同步到 Obsidian vault"
+requires-python = ">=3.11"
+dependencies = [
+    "quantforge-strategy",
+    "quantforge-backtest",
+    "quantforge-factor",
+    "quantforge-data",
+    "httpx",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "respx"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["quantforge_obsidian"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

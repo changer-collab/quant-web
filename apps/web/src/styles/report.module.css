@@ -1,0 +1,217 @@
+/* ── FullReport Container ──────────────────────────────────── */
+
+.fullReport {
+  display: grid;
+  gap: var(--space-xl);
+  padding: var(--space-xl);
+  animation: fadeIn 0.35s ease-out both;
+}
+
+/* Header */
+
+.reportHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reportHeaderLeft {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.reportHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.reportSelect {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.8);
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  max-width: 240px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.reportSelect:hover {
+  border-color: rgba(77, 240, 160, 0.3);
+}
+
+.reportSelect:focus-visible {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(77, 240, 160, 0.15);
+}
+
+.reportEyebrow {
+  margin: 0;
+  color: var(--green);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.reportTitle {
+  margin: 0;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
+  font-family: var(--font-display);
+}
+
+.reportDesc {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-base);
+  max-width: 520px;
+  line-height: var(--leading-normal);
+}
+
+.reportTime {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+}
+
+.reportStatus {
+  padding: 3px 8px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: rgba(77, 240, 160, 0.12);
+  color: var(--green);
+}
+
+.reportStatus.running,
+.reportStatus.pending {
+  background: rgba(233, 196, 106, 0.12);
+  color: var(--amber);
+}
+
+.reportStatus.failed {
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--red);
+}
+
+/* Tab Navigation */
+
+.tabNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: var(--space-sm);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+}
+
+.tabBtn {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+}
+
+.tabBtn:hover {
+  color: var(--text);
+  background: rgba(77, 240, 160, 0.06);
+}
+
+.tabActive {
+  color: var(--bg);
+  background: var(--green);
+}
+
+.tabActive:hover {
+  color: var(--bg);
+  background: var(--green);
+}
+
+/* Tab Content */
+
+.tabContent {
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+  min-height: 300px;
+}
+
+.contentInner {
+  padding: var(--space-xl);
+  animation: fadeIn 0.25s ease-out both;
+}
+
+/* ── ReportSummary (backward-compat) ──────────────────────── */
+
+.reportSummary {
+  display: grid;
+  gap: var(--space-xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.9);
+}
+
+.reportMeta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin: 0;
+}
+
+.reportMetaItem {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+}
+
+.reportMetaLabel {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.reportMetaValue {
+  overflow-wrap: anywhere;
+  margin: var(--space-sm) 0 0;
+  font-weight: 800;
+}
+
+.reportDiagnostics {
+  display: grid;
+  gap: 12px;
+}
+
+.diagnosticSection {
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.34);
+}
+
+.diagnosticSection h4 {
+  margin: 0 0 var(--space-md);
+}
+
+@media (max-width: 680px) {
+  .reportMeta {
+    grid-template-columns: 1fr;
+  }
+  .reportHeader {
+    flex-direction: column;
+  }
+  .tabNav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}

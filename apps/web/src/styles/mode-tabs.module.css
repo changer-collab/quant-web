@@ -1,0 +1,146 @@
+.modeTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  animation: slideUp 0.4s ease-out both;
+}
+
+.modeTab {
+  min-height: var(--mode-tab-height);
+  padding: 13px var(--space-lg);
+  color: var(--muted);
+  text-align: left;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.82);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.25s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.modeTab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--gradient-accent);
+  opacity: 0;
+  transition: opacity 0.3s, left 0.3s, right 0.3s;
+}
+
+.modeTab:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.modeTab:hover::after {
+  opacity: 0.4;
+  left: 5%;
+  right: 5%;
+}
+
+.modeTab:hover,
+.modeTabActive {
+  color: var(--text);
+  border-color: rgba(77, 240, 160, 0.55);
+  background: linear-gradient(135deg, rgba(77, 240, 160, 0.16), rgba(98, 216, 255, 0.05));
+}
+
+.modeTabActive::after {
+  opacity: 0.7;
+  left: 5%;
+  right: 5%;
+}
+
+.modeTab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.modeTab:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.modeTabLabel,
+.modeTabDesc {
+  display: block;
+}
+
+.modeTabLabel {
+  font-size: var(--text-lg);
+  font-weight: 800;
+}
+
+.modeTabDesc {
+  margin-top: var(--space-sm);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.modeSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.75fr);
+  gap: var(--space-xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  animation: slideUp 0.4s 0.1s ease-out both;
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.modeSummary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-accent);
+  opacity: 0.08;
+}
+
+.modeSummaryEyebrow {
+  margin: 0 0 8px;
+  color: var(--green);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.modeSummaryTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  line-height: 1;
+  letter-spacing: 0;
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+}
+
+.modeSummaryDesc {
+  display: block;
+  max-width: 640px;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: var(--leading-relaxed);
+  font-size: var(--text-base);
+}
+
+@media (max-width: 1080px) {
+  .modeSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .modeTabs {
+    grid-template-columns: 1fr;
+  }
+}

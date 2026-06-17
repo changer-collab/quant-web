@@ -1,0 +1,16 @@
+"""策略上下文 Protocol"""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from .order import OrderRequest
+from .portfolio import Account, Position
+
+
+class StrategyContext(Protocol):
+    def submit_order(self, request: OrderRequest) -> None: ...
+    def get_position(self, symbol: str) -> Position | None: ...
+    def get_all_positions(self) -> list[Position]: ...
+    def get_account(self) -> Account: ...
+    def log(self, level: str, message: str, data: object = None) -> None: ...

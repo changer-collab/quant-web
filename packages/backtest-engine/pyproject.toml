@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantforge-backtest"
+version = "0.1.0"
+description = "QuantForge 回测引擎 — 事件回放、撮合模拟、持仓管理、指标计算"
+requires-python = ">=3.11"
+dependencies = [
+    "quantforge-strategy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["quantforge_backtest"]
+
+[tool.hatch.build]
+artifacts = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
