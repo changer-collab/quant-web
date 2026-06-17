@@ -8,8 +8,8 @@ import math
 from quantforge_strategy import (
     Strategy, StrategyMeta, StrategyResult, StrategyState,
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
+    StrategyKind, StrategyParamDef,
 )
-from quantforge_strategy import StrategyParamDef
 
 
 class BollingerBandStrategy(Strategy):
@@ -36,6 +36,7 @@ class BollingerBandStrategy(Strategy):
                                  min=0.5, max=4.0),
             ],
             version="0.1.0",
+            kind=StrategyKind.Combined,
         )
 
     @property

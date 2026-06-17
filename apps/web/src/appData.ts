@@ -22,6 +22,7 @@ export type {
   ResearchModeId,
   ResearchRunConfigSummary,
   StrategyRow,
+  StrategyParam,
   UiCopy,
   // 回测报告类型
   BacktestReportFull,
@@ -47,6 +48,26 @@ export type {
   IndustryExposure,
   FactorExposure,
   TimingSelection,
+  // 因子报告类型
+  FactorReportFull,
+  FactorReportBasicInfo,
+  FactorReportDescriptiveStats,
+  FactorReportGroupBacktest,
+  FactorReportICAnalysis,
+  FactorReportRegression,
+  FactorReportRisk,
+  FactorReportTurnover,
+  FactorReportNeutralization,
+  FactorReportDomain,
+  FactorReportCorrelation,
+  FactorReportMultiFactor,
+  FactorReportEconomicLogic,
+  FactorReportRobustness,
+  FactorReportMonitoring,
+  FactorReportConclusion,
+  FactorReportTabId,
+  FactorReportUiCopy,
+  FactorGrade,
 } from './data/types';
 
 export { FactorStatus } from './data/types';
@@ -68,6 +89,8 @@ export {
   getStrategies,
   getUiCopy,
   getReportUiCopy,
+  getFactorReports,
+  getFactorReportUiCopy,
   resolveLanguageCode,
   JOBS,
   MARKET_TICKS,
@@ -82,6 +105,7 @@ export {
   createResearchJob,
   createResearchReport,
   createBacktestReportFull,
+  mapBacktestResultToReport,
   localizeJobState,
   localizeResearchJob,
 } from './data/factories';

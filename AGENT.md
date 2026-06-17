@@ -4,7 +4,7 @@
 
 - 项目名：QuantForge。
 - 定位：面向个人量化研究者的量化策略研究平台。
-- 当前阶段：前端研究原型稳定阶段，数据中心生命周期管理（close 并发安全 + 错误处理 + PIT 过滤）已完成，数据采集器研发完成，因子工坊已扩展，Worker 异步任务编排已完成，API HTTP 入口已实现，类型归属模型已落地（移除 common 包，每个类型只定义在其所有者模块中）。
+- 当前阶段：前端研究原型稳定阶段，数据中心生命周期管理（close 并发安全 + 错误处理 + PIT 过滤）已完成，数据采集器研发完成，因子工坊已扩展，Worker 异步任务编排已完成，API HTTP 入口已实现，类型归属模型已落地（移除 common 包，每个类型只定义在其所有者模块中），策略运行时流式输出已完成（Python CLI NDJSON 事件流 → PythonBridge 流式读取 → API SSE 端点 → 前端 EventSource 实时更新）。
 - 当前可运行项目：`apps/web`。
 - 当前目标：继续打磨前端研究闭环（页面底部已语境化各页内容），不做真实交易。
 - 核心闭环：选择策略 -> 配置研究参数 -> 运行回测或训练 -> 查看任务和报告 -> 迭代策略。
@@ -20,13 +20,13 @@
 - pnpm 配置：`.npmrc`（shamefully-hoist、strict-peer-dependencies）。
 - workspace 依赖协议：统一 `workspace:*`。
 - `apps/web`（`@quant/web`）：React + TypeScript + Vite + CSS，当前前端原型。
-- `apps/api`（`@quant/api`）：HTTP API，Fastify 框架，已实现（策略查询、任务提交/查询、因子 CRUD + 评估触发 + 批量计算、数据摘要查询），21 个测试通过。
-- `apps/worker`（`@quant/worker`）：异步任务 Worker，已实现（TaskQueue 内存队列、TaskHandler 接口、Worker 主类、BacktestHandler/FactorComputeHandler/FactorEvalHandler 三个处理器），14 个测试通过。
+- `apps/api`（`@quant/api`）：HTTP API，Fastify 框架，已实现（策略查询、任务提交/查询、因子 CRUD + 评估触发 + 批量计算、数据摘要查询、SSE 流式推送 `/api/tasks/:id/stream`），21 个测试通过。
+- `apps/worker`（`@quant/worker`）：异步任务 Worker，已实现（TaskQueue 内存队列、TaskHandler 接口、Worker 主类、BacktestHandler/FactorComputeHandler/FactorEvalHandler 三个处理器、流式事件回调），14 个测试通过。
 - `services/data-center`（`@quant/data-center`）：独立数据中心，SQLite + Drizzle ORM，6 个数据子域类型定义、17 个 SQLite Repository、6 个 Provider，已实现（含 CloseError、并发安全 close、PIT 过滤），43 个测试通过。
 - `services/data-collector`（`@quant/data-collector`）：数据采集器，6 个数据源适配器（CSV/Tushare/AKShare/Baostock/efinance/yfinance），适配器注册中心、数据清洗、水位增量采集、预设任务工厂、多源优先级回退，已实现。
 - `packages/backtest-engine`（`@quant/backtest-engine`）：事件驱动回测引擎，已实现（EventBus、MarketReplay、Matcher、Portfolio、Metrics、BacktestRunner），31 个测试通过。
 - `packages/ai-engine`（`@quant/ai-engine`）：后续 AI 量化引擎，未实现。
-- `packages/strategy-runtime`（`@quant/strategy-runtime`）：策略运行时接口，已实现（Strategy、StrategyContext、StrategyMeta、StrategyResult、StrategyState、OrderRequest）。
+- `packages/strategy-runtime`（`@quant/strategy-runtime`）：策略运行时接口，已实现（Strategy、StrategyContext、StrategyMeta、StrategyResult、StrategyState、OrderRequest），CLI 支持 NDJSON 流式输出（progress/log/result/error 事件）。
 - `packages/factor-lab`（`@quant/factor-lab`）：因子研发工坊，已扩展（因子计算函数、因子注册中心、因子计算引擎、因子评估调度接口），11 个测试通过。
 - `packages/strategies`（`@quant/strategies`）：策略库，已实现（双均线策略 DualMAStrategy、RSI 策略 RSIStrategy），12 个测试通过。
 - `runtime/`：运行产物目录，不按独立开发项目维护。

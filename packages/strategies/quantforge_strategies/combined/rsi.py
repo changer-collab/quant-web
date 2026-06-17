@@ -7,8 +7,8 @@ from collections import deque
 from quantforge_strategy import (
     Strategy, StrategyMeta, StrategyResult, StrategyState,
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
+    StrategyKind, StrategyParamDef,
 )
-from quantforge_strategy import StrategyParamDef
 
 
 class RSIStrategy(Strategy):
@@ -41,6 +41,7 @@ class RSIStrategy(Strategy):
                                  min=50, max=90),
             ],
             version="0.1.0",
+            kind=StrategyKind.Combined,
         )
 
     @property

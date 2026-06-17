@@ -10,7 +10,8 @@
     "build": "tsc",
     "test": "vitest run",
     "lint": "eslint src/ tests/",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts"
   },
   "dependencies": {
     "@quant/data-center": "workspace:*",

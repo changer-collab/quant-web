@@ -5,7 +5,7 @@
 ## 当前阶段
 
 ```text
-前端研究原型稳定阶段
+前端研究原型稳定阶段，已对接真实后端（API 失败时降级到 mock）
 ```
 
 已完成：
@@ -16,6 +16,7 @@ React + TypeScript + Vite + CSS Modules
 策略中心 / 策略研究台 / 任务中心 / 设置页
 三种研究模式：传统量化 / 高频研究 / AI 量化
 内存态研究闭环：运行研究 -> 任务中心 -> 报告摘要
+真实回测闭环：运行研究 -> API 提交任务 -> SSE 接收进度/结果 -> mapBacktestResultToReport 映射报告
 appData.ts 拆分为 accessors / factories / localization，原文件为 re-export 入口
 CSS 模块化：全局 tokens + 各组件 CSS Modules
 CSS 动效系统：全局 keyframes、导航逐项入场、Hero 顺序入场、按钮微交互、因子 Tab 切换过渡
@@ -28,8 +29,9 @@ CSS 视觉优化（Dark Quant Command Center）：渐变边框面板、双层径
 Error Boundary
 前端 Mock 数据已按数据中心 6 个子域（reference / market / l2 / fundamental / event）组织
 策略列表和任务名称引用 MOCK_INSTRUMENTS 标的元数据
-前端测试 81 个用例（含 21 个 Mock 数据验证测试）
+前端测试 82 个用例（含 21 个 Mock 数据验证测试）
 页面底部语境化：5 个独立底部组件（ActivityFeed / StrategyGrid / BacktestHistory / ExperimentTable / DataCoveragePanel）取代统一的策略表格
+因子评估报告：13 模块专业因子报告（基本信息 / 描述性统计 / 有效性检验 / 风险分析 / 换手率与成本 / 中性化与剥离 / 分域表现 / 相关性分析 / 多因子贡献 / 经济逻辑 / 稳健性检验 / 监控指标 / 结论与建议），Tab 导航 + 可折叠 Section，KPI 卡片 / 数据表 / 横向柱状图 / 纵向分布图 / 热力图 / SVG 折线图，中英双语 Mock 数据与 UI 文案
 ```
 
 暂未引入：
@@ -37,10 +39,15 @@ Error Boundary
 ```text
 路由
 状态库
-后端 API
-真实任务调度
-真实回测引擎
 真实训练流程
+```
+
+已接入但保留 fallback：
+
+```text
+后端 API（API 失败/无数据时降级到 mock）
+真实任务调度（通过 /api/tasks + SSE /api/tasks/:id/stream）
+真实回测引擎（通过 Python CLI，结果经 mapBacktestResultToReport 映射）
 ```
 
 ## 运行
@@ -68,7 +75,8 @@ src/hooks/              自定义 hooks（useLanguage、useResearchWorkflow）
 src/appData.ts          前端数据访问 re-export 入口
 src/data/               类型、accessors、factories、localization、中英文文案
 src/data/mock/          按数据中心子域组织的 Mock 数据（reference / market / l2 / fundamental / event）
-src/components/         展示组件（DataPanel、ErrorBoundary 等）
+src/components/         展示组件（DataPanel、ErrorBoundary、factor-report 等）
+src/components/factor-report/  因子评估报告 13 模块组件
 src/styles/             tokens.css + 各组件 CSS Modules
 tests/                  组件 / Hook / 集成 / Mock 数据验证测试
 ```

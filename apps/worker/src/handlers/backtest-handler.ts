@@ -1,7 +1,7 @@
 import { TaskType } from '../types.js';
 import { TimeFrame } from '../types.js';
-import type { BacktestResult } from '../types.js';
-import type { TaskHandler, TaskRecord } from '../queue.js';
+import type { BacktestResult, StreamEvent } from '../types.js';
+import type { TaskHandler, TaskRecord, TaskEventHandler } from '../queue.js';
 import { PythonBridge } from '../python-bridge.js';
 
 /** 回测任务参数 */
@@ -25,10 +25,10 @@ export class BacktestHandler implements TaskHandler {
 
   constructor(private readonly bridge: PythonBridge) {}
 
-  async handle(task: TaskRecord): Promise<Record<string, unknown>> {
+  async handle(task: TaskRecord, onEvent?: TaskEventHandler): Promise<Record<string, unknown>> {
     const payload = task.payload as unknown as BacktestPayload;
 
-    const result = await this.bridge.call({
+    const request = {
       command: 'backtest',
       strategy: payload.strategyName,
       config: {
@@ -39,8 +39,19 @@ export class BacktestHandler implements TaskHandler {
         symbol: payload.symbol,
         timeframe: payload.timeframe,
       },
-    });
+    };
 
+    // 优先使用流式调用
+    if (onEvent) {
+      const result = await this.bridge.streamCall(request, onEvent);
+      if (!result.ok) {
+        throw new Error(result.error?.message ?? 'Python backtest failed');
+      }
+      return { taskId: task.id, backtestResult: result.data } as Record<string, unknown>;
+    }
+
+    // fallback: 无回调时用同步调用
+    const result = await this.bridge.call(request);
     if (!result.ok) {
       throw new Error(result.error?.message ?? 'Python backtest failed');
     }

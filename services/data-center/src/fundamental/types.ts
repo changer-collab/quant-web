@@ -95,16 +95,20 @@ export interface ValuationPoint {
   symbol: string;
   /** 日期（毫秒时间戳） */
   timestamp: number;
-  /** 总市值 */
-  marketCap: number;
+  /** 总市值（元） */
+  marketCap?: number;
   /** 滚动市盈率 */
-  peTTM: number;
+  peTTM?: number;
   /** 市净率 */
-  pb: number;
+  pb?: number;
   /** 滚动市销率 */
-  psTTM: number;
+  psTTM?: number;
   /** 股息率 */
-  dividendYield: number;
+  dividendYield?: number;
+  /** 换手率（%） */
+  turnoverRate?: number;
+  /** 流通股本（股） */
+  floatShares?: number;
 }
 
 /** 基本面查询参数 */

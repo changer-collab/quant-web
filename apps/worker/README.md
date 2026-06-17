@@ -5,7 +5,7 @@
 ## 当前阶段
 
 ```text
-已实现：内存任务队列 + 三个任务处理器 + Worker 主类
+已实现：独立进程入口 + HTTP 轮询 API 领取任务 + 三个任务处理器 + Worker 主类
 ```
 
 ## 已实现
@@ -17,12 +17,14 @@
 - BacktestHandler：回测任务处理器
 - FactorComputeHandler：因子计算任务处理器
 - FactorEvalHandler：因子评估任务处理器
+- main.ts 独立入口：通过 HTTP 轮询 API /api/internal/tasks/* 领取、执行、上报任务
 ```
 
 ## 文件结构
 
 ```text
 src/
+├── main.ts                         # 独立进程入口（HTTP 轮询 API 领取任务）
 ├── queue.ts                        # 内存任务队列（TaskQueue + TaskHandler 接口）
 ├── worker.ts                       # Worker 主类
 ├── index.ts                        # 统一导出
@@ -61,6 +63,14 @@ HTTP API
 ## 运行
 
 ```bash
+# 独立进程方式（推荐，前后端闭环）
+cd apps/worker
+npm run dev   # tsx watch src/main.ts
+npm start     # tsx src/main.ts
+
+# 单元测试 / 构建
 pnpm --filter @quant/worker test
 pnpm --filter @quant/worker build
 ```
+
+Worker 默认轮询 `http://127.0.0.1:3000/api/internal/tasks/pending`，需先启动 `apps/api`。

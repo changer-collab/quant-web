@@ -1,7 +1,20 @@
 import { useMemo } from 'react';
 import { useApi } from './useApi';
-import { fetchStrategies, type ApiStrategy } from '../api/strategies';
-import type { StrategyRow, ResearchModeId } from '../appData';
+import { fetchStrategies, type ApiStrategy, type ApiStrategyParam } from '../api/strategies';
+import type { StrategyRow, ResearchModeId, StrategyParam } from '../appData';
+
+/** 将 API 策略参数映射为前端 StrategyParam */
+function mapParam(api: ApiStrategyParam): StrategyParam {
+  return {
+    key: api.key,
+    label: api.label,
+    type: api.type as StrategyParam['type'],
+    default: api.default,
+    min: api.min,
+    max: api.max,
+    options: api.options,
+  };
+}
 
 /** 将 API 策略映射为前端 StrategyRow */
 function mapStrategy(api: ApiStrategy): StrategyRow {
@@ -14,6 +27,10 @@ function mapStrategy(api: ApiStrategy): StrategyRow {
     drawdown: '—',
     sharpe: '—',
     status: 'stable',
+    description: api.description,
+    version: api.version,
+    kind: api.kind,
+    params: (api.params ?? []).map(mapParam),
   };
 }
 

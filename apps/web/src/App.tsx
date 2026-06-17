@@ -146,7 +146,7 @@ export default function App() {
         <section className={layout.contentGrid}>
           <div className={layout.primaryColumn}>
             {state.activePage === 'factor-lab' ? (
-              <FactorLabContent factors={factors} factorEvalResults={factorEvalResults} ui={ui} />
+              <FactorLabContent factors={factors} factorEvalResults={factorEvalResults} ui={ui} language={language} />
             ) : isGeneratedReportPage && activeReport ? (
               activeBacktestReport ? (
                 <FullReport report={activeBacktestReport} ui={reportUiCopy} allReports={backtestReports} onSwitchReport={handleSwitchBacktestReport} />

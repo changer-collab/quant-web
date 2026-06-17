@@ -9,7 +9,7 @@ const strategies = getStrategies('en');
 describe('StrategyTable', () => {
   it('renders strategy names and types', () => {
     render(<StrategyTable strategies={strategies} ui={ui} />);
-    expect(screen.getByText('Multi-Factor Selection')).toBeInTheDocument();
+    expect(screen.getByText('Dual MA')).toBeInTheDocument();
     expect(screen.getByText('Order Flow Momentum')).toBeInTheDocument();
     expect(screen.getByText('AI Alpha Mining')).toBeInTheDocument();
   });
@@ -35,8 +35,8 @@ describe('StrategyTable', () => {
   it('calls onSelectStrategy when a row is clicked', () => {
     const onSelect = vi.fn();
     render(<StrategyTable strategies={strategies} ui={ui} onSelectStrategy={onSelect} />);
-    fireEvent.click(screen.getByText('Multi-Factor Selection'));
-    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'strategy-traditional-core' }));
+    fireEvent.click(screen.getByText('Dual MA'));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'dual_ma' }));
   });
 
   it('marks selected strategy row', () => {
@@ -45,5 +45,11 @@ describe('StrategyTable', () => {
     );
     const selectedRow = container.querySelector('[class*="selectedRow"]');
     expect(selectedRow).toBeInTheDocument();
+  });
+
+  it('renders parameter chips for strategies with params', () => {
+    render(<StrategyTable strategies={strategies} ui={ui} />);
+    // dual_ma 策略应展示短均线周期参数
+    expect(screen.getByText('Short MA Period=5')).toBeInTheDocument();
   });
 });

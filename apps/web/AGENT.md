@@ -14,10 +14,11 @@
 ## 当前阶段
 
 ```text
-前端研究原型稳定阶段
+前端研究原型稳定阶段，已对接真实后端（保留 API 失败时的 mock fallback）
 已支持模式化默认配置：传统量化 / 高频研究 / AI 量化
-已支持内存态研究闭环：运行研究 -> 任务中心查看配置摘要 -> 查看统一报告摘要和运行配置诊断
+已支持真实回测闭环：运行研究 -> API 提交任务 -> SSE 接收进度/结果 -> 查看统一报告摘要和运行配置诊断
 已提取自定义 hooks：useLanguage、useResearchWorkflow
+useResearchWorkflow 已使用 mapBacktestResultToReport 将 Python BacktestResult 映射为 BacktestReportFull
 appData.ts 已拆分为 accessors / factories / localization，原文件保留为 re-export 入口
 CSS 已模块化：全局 tokens + 各组件 CSS Modules
 CSS 动效系统已集成（全局 keyframes、导航/ Hero/按钮/因子 Tab 动画）
@@ -25,7 +26,8 @@ CSS 动效系统已集成（全局 keyframes、导航/ Hero/按钮/因子 Tab �
 页面底部已语境化：Dashboard 活动时间线、策略中心卡片矩阵、回测记录、实验对比表、数据中心覆盖面板，取代统一的策略表格
 Error Boundary 已集成
 前端 Mock 数据已按数据中心 6 个子域（reference / market / l2 / fundamental / event）组织，策略列表引用标的元数据
-前端测试 81 个用例（含 21 个 Mock 数据验证测试）
+前端测试 82 个用例（含 21 个 Mock 数据验证测试）
+因子评估报告已完成：13 模块专业因子报告（基本信息 / 描述性统计 / 有效性检验 / 风险分析 / 换手率与成本 / 中性化与剥离 / 分域表现 / 相关性分析 / 多因子贡献 / 经济逻辑 / 稳健性检验 / 监控指标 / 结论与建议），Tab 导航 + 可折叠 Section，KPI 卡片 / 数据表 / 横向柱状图 / 纵向分布图 / 热力图 / SVG 折线图，中英双语 Mock 数据与 UI 文案
 ```
 
 ## 验证命令
@@ -41,9 +43,14 @@ npm list --depth=0
 当前不做：
 
 ```text
-真实后端请求
 真实下单
 券商连接
 权限系统
 策略市场
+```
+
+已做但保留 fallback：
+
+```text
+真实后端请求（API 失败/无数据时降级到 mock）
 ```

@@ -26,6 +26,7 @@ export function StrategyTable({
           <tr>
             <th>{ui.strategyTableHeaders.strategy}</th>
             <th>{ui.strategyTableHeaders.type}</th>
+            <th>参数</th>
             <th>{ui.strategyTableHeaders.return}</th>
             <th>{ui.strategyTableHeaders.drawdown}</th>
             <th>{ui.strategyTableHeaders.sharpe}</th>
@@ -39,7 +40,7 @@ export function StrategyTable({
                 isInteractive ? table.clickableRow : ''
               }`}
               data-testid={isInteractive ? `strategy-row-${strategy.id}` : undefined}
-              key={strategy.name}
+              key={strategy.id}
               onClick={isInteractive ? () => handleStrategyClick(strategy) : undefined}
             >
               <td>
@@ -47,6 +48,19 @@ export function StrategyTable({
                 <span>{isInteractive ? ui.enterWorkspace : ui.strategySample}</span>
               </td>
               <td>{strategy.type}</td>
+              <td>
+                {strategy.params && strategy.params.length > 0 ? (
+                  <div className={table.paramCell}>
+                    {strategy.params.map((p) => (
+                      <span className={table.paramChip} key={p.key}>
+                        {p.label}={String(p.default)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className={table.paramMuted}>—</span>
+                )}
+              </td>
               <td>{strategy.return}</td>
               <td>{strategy.drawdown}</td>
               <td>{strategy.sharpe}</td>

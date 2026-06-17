@@ -66,6 +66,10 @@
 .cardName {
   font-weight: 600;
   font-size: var(--text-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 52px;
 }
 
 .cardType {
@@ -73,6 +77,39 @@
   margin-top: 2px;
   color: var(--muted);
   font-size: var(--text-xs);
+}
+
+.cardDesc {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.paramList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.paramChip {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(98, 216, 255, 0.04);
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.paramChip b {
+  color: var(--cyan);
+  font-weight: 600;
 }
 
 .cardMetrics {

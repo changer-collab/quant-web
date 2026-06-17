@@ -94,7 +94,7 @@ describe('Strategy Routes', () => {
       taskService: new InMemoryTaskService(),
     });
 
-    const res = await app.inject({ method: 'GET', url: '/api/strategies/dual-ma' });
+    const res = await app.inject({ method: 'GET', url: '/api/strategies/dual_ma' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toHaveProperty('name');
     expect(res.json()).toHaveProperty('params');

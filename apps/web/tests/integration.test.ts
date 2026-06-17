@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useResearchWorkflow } from '../src/hooks/useResearchWorkflow';
 
 describe('Research workflow integration', () => {
-  it('complete flow: select strategy → run research → view report', () => {
+  it('complete flow: select strategy → run research → view report', async () => {
     const { result } = renderHook(() => useResearchWorkflow('en'));
 
     // Start on dashboard
@@ -33,6 +33,11 @@ describe('Research workflow integration', () => {
     expect(result.current.state.activePage).toBe('jobs');
     expect(result.current.localizedJobs.length).toBeGreaterThan(0);
 
+    // Wait for async report creation (API call fails, fallback to mock)
+    await waitFor(() => {
+      expect(result.current.reportJobIds.length).toBeGreaterThan(0);
+    });
+
     // Find a job with a report
     const jobWithReport = result.current.localizedJobs.find((job) =>
       result.current.reportJobIds.includes(job.id),
@@ -47,11 +52,15 @@ describe('Research workflow integration', () => {
     expect(result.current.activeReport?.metrics.length).toBeGreaterThan(0);
   });
 
-  it('complete flow in Chinese', () => {
+  it('complete flow in Chinese', async () => {
     const { result } = renderHook(() => useResearchWorkflow('zh'));
 
     act(() => result.current.handleRunResearch());
     expect(result.current.localizedJobs[0].state).toBe('已完成');
+
+    await waitFor(() => {
+      expect(result.current.reportJobIds.length).toBeGreaterThan(0);
+    });
 
     const jobWithReport = result.current.localizedJobs.find((job) =>
       result.current.reportJobIds.includes(job.id),

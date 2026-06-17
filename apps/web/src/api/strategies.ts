@@ -6,6 +6,8 @@ export interface ApiStrategy {
   params: ApiStrategyParam[];
   version: string;
   modes?: string[];
+  /** 策略类型标识（与 Python StrategyKind 对齐） */
+  kind?: string;
 }
 
 export interface ApiStrategyParam {

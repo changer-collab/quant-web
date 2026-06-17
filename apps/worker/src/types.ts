@@ -37,3 +37,13 @@ export interface BacktestResult {
     totalTrades: number;
   };
 }
+
+/** Python CLI 流式事件 */
+export interface StreamEvent {
+  event: 'progress' | 'log' | 'result' | 'error';
+  percent?: number;
+  message?: string;
+  level?: string;
+  data?: unknown;
+  error?: { code: string; message: string };
+}

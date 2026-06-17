@@ -203,8 +203,9 @@ CREATE TABLE IF NOT EXISTS financial_ratios (
 
 CREATE TABLE IF NOT EXISTS valuations (
   symbol TEXT NOT NULL, timestamp INTEGER NOT NULL,
-  market_cap REAL NOT NULL, pe_ttm REAL NOT NULL, pb REAL NOT NULL,
-  ps_ttm REAL NOT NULL, dividend_yield REAL NOT NULL,
+  market_cap REAL, pe_ttm REAL, pb REAL,
+  ps_ttm REAL, dividend_yield REAL,
+  turnover_rate REAL, float_shares REAL,
   PRIMARY KEY (symbol, timestamp)
 );
 CREATE INDEX IF NOT EXISTS idx_val_symbol ON valuations(symbol);

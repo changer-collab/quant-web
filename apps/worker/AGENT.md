@@ -10,7 +10,7 @@
 ## 当前阶段
 
 ```text
-已实现：内存任务队列 + 三个任务处理器 + Worker 主类
+已实现：独立进程入口 + HTTP 轮询 API 领取任务 + 三个任务处理器 + Worker 主类
 ```
 
 ## 已实现
@@ -22,6 +22,7 @@
 - BacktestHandler：回测任务处理器，从 DataCenter 加载行情，调用 BacktestRunner 执行回测
 - FactorComputeHandler：因子计算任务处理器，从 DataCenter 加载行情，调用 FactorEngine 批量计算
 - FactorEvalHandler：因子评估任务处理器，调用 FactorEvalScheduler 评估因子
+- main.ts 独立入口：通过 HTTP 轮询 API /api/internal/tasks/* 领取、执行、上报任务，不依赖与 API 同进程
 - 14 个测试通过
 ```
 
@@ -59,11 +60,21 @@ apps/worker -> packages/ai-engine
 apps/worker -> packages/factor-lab
 ```
 
+## 运行方式
+
+```bash
+cd apps/worker
+npm run dev   # tsx watch src/main.ts
+npm start     # tsx src/main.ts
+```
+
+Worker 默认轮询 `http://127.0.0.1:3000/api/internal/tasks/pending`。
+
 ## 后续扩展
 
 ```text
 - 替换内存队列为 Redis/BullMQ 持久化队列
 - 添加任务优先级和并发控制
 - 添加 AI 训练任务处理器（依赖 ai-engine）
-- 添加任务进度回调（WebSocket 推送）
+- 添加任务进度回调（当前通过 SSE /api/tasks/:id/stream 推送）
 ```

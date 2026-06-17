@@ -112,18 +112,18 @@ it('strategies carry stable ids and localized labels', () => {
 
   assert.deepEqual(
     englishStrategies.map((strategy) => strategy.mode),
-    ['traditional', 'hft', 'ai', 'traditional', 'traditional', 'traditional', 'hft', 'hft', 'hft', 'ai', 'ai', 'ai'],
+    ['traditional', 'traditional', 'traditional', 'traditional', 'traditional', 'hft', 'ai', 'traditional', 'traditional', 'traditional', 'hft', 'hft', 'hft', 'ai', 'ai', 'ai'],
   );
 
   assert.ok(englishStrategies.every((strategy) => strategy.id.length > 0));
-  assert.equal(englishStrategies[0].name, 'Multi-Factor Selection');
-  assert.equal(chineseStrategies[0].name, '多因子选股');
-  assert.equal(englishStrategies[0].type, 'Multi-Factor Selection Strategy');
-  assert.equal(chineseStrategies[0].type, '多因子选股策略');
-  assert.equal(englishStrategies[1].type, 'Order Flow Momentum Strategy');
-  assert.equal(chineseStrategies[1].type, '订单流动量策略');
-  assert.equal(englishStrategies[2].type, 'AI Alpha Mining Strategy');
-  assert.equal(chineseStrategies[2].type, 'AI Alpha 挖掘策略');
+  assert.equal(englishStrategies[0].name, 'Dual MA');
+  assert.equal(chineseStrategies[0].name, '双均线策略');
+  assert.equal(englishStrategies[0].type, 'Trend Following Strategy');
+  assert.equal(chineseStrategies[0].type, '趋势跟踪策略');
+  assert.equal(englishStrategies[5].type, 'Order Flow Momentum Strategy');
+  assert.equal(chineseStrategies[5].type, '订单流动量策略');
+  assert.equal(englishStrategies[6].type, 'AI Alpha Mining Strategy');
+  assert.equal(chineseStrategies[6].type, 'AI Alpha 挖掘策略');
 });
 
 it('traditional quant is explicit and generic code strategy wording is removed', () => {
@@ -197,7 +197,7 @@ it('research jobs are localized from selected strategy or active mode', () => {
     {
       id: 'job-custom',
       sequence: 7,
-      strategy: getStrategies('en')[1],
+      strategy: getStrategies('en').find((s) => s.id === 'strategy-hft-l2'),
     },
     'en',
   );
@@ -253,7 +253,7 @@ it('research jobs keep the selected run configuration summary', () => {
 });
 
 it('research reports inherit selected strategy and mode metrics', () => {
-  const strategy = getStrategies('en')[1];
+  const strategy = getStrategies('en').find((s) => s.id === 'strategy-hft-l2');
   const report = createResearchReport(
     {
       id: 'report-custom',
@@ -319,9 +319,9 @@ it('research reports create localized draft names without selected strategy', ()
 });
 
 it('mock jobs are localized', () => {
-  assert.equal(getJobs('en')[0].name, 'Backtest: Multi-Factor Selection');
+  assert.equal(getJobs('en')[0].name, 'Backtest: Dual MA');
   assert.equal(getJobs('en')[0].state, 'Running');
-  assert.equal(getJobs('zh')[0].name, '回测：多因子选股');
+  assert.equal(getJobs('zh')[0].name, '回测：双均线策略');
   assert.equal(getJobs('zh')[0].state, '运行中');
 });
 

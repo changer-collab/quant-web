@@ -17,8 +17,16 @@
 
 任务：
   POST   /api/tasks                  提交研究/回测/因子任务
-  GET    /api/tasks                  任务列表（可传 type 过滤）
+  GET    /api/tasks                  任务列表（可传 type/status 过滤）
   GET    /api/tasks/:id              任务状态和结果
+  GET    /api/tasks/:id/stream       任务 SSE 流（progress/log/result/error）
+
+内部 Worker 路由：
+  GET    /api/internal/tasks/pending  Worker 获取 pending 任务列表
+  POST   /api/internal/tasks/:id/claim Worker 认领任务
+  POST   /api/internal/tasks/:id/event  Worker 上报进度/日志事件
+  POST   /api/internal/tasks/:id/complete Worker 上报任务完成结果
+  POST   /api/internal/tasks/:id/fail Worker 上报任务失败
 
 因子：
   GET    /api/factors                因子注册列表
@@ -46,9 +54,9 @@
 ## 后续职责
 
 ```text
-- 对接 Worker 真实任务执行
 - 前端所需查询入口增强
 - 批量导出和报告下载
+- TaskService 持久化实现（替换 InMemoryTaskService）
 ```
 
 ## 不负责

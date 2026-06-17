@@ -1,4 +1,4 @@
-import { TaskStatus, TaskType } from './types.js';
+import { TaskStatus, TaskType, type StreamEvent } from './types.js';
 import initSqlJs, { type Database } from 'sql.js';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -14,12 +14,17 @@ export interface TaskRecord {
   completedAt?: number;
   result?: Record<string, unknown>;
   error?: string;
+  progress?: number;
+  lines?: string[];
 }
+
+/** 任务事件回调 */
+export type TaskEventHandler = (event: StreamEvent) => void;
 
 /** 任务处理器接口 */
 export interface TaskHandler {
   readonly type: TaskType;
-  handle(task: TaskRecord): Promise<Record<string, unknown>>;
+  handle(task: TaskRecord, onEvent?: TaskEventHandler): Promise<Record<string, unknown>>;
 }
 
 /** 持久化任务队列 — SQLite (sql.js) 后端 */
@@ -65,7 +70,9 @@ export class TaskQueue {
         started_at INTEGER,
         completed_at INTEGER,
         result TEXT,
-        error TEXT
+        error TEXT,
+        progress INTEGER DEFAULT 0,
+        lines TEXT
       )
     `);
     this.db.run(`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`);
@@ -143,7 +150,7 @@ export class TaskQueue {
   }
 
   /** 执行下一个待处理任务 */
-  async processNext(): Promise<TaskRecord | undefined> {
+  async processNext(onEvent?: (taskId: string, event: StreamEvent) => void): Promise<TaskRecord | undefined> {
     await this.ensureInit();
     const rows = this.db.exec('SELECT * FROM tasks WHERE status = ? ORDER BY submitted_at ASC LIMIT 1', [TaskStatus.Pending]);
     if (rows.length === 0 || rows[0].values.length === 0) return undefined;
@@ -156,8 +163,24 @@ export class TaskQueue {
     this.db.run('UPDATE tasks SET status = ?, started_at = ? WHERE id = ?', [TaskStatus.Running, now, task.id]);
     this.persist();
 
+    // 构建事件回调：更新 DB 中的 progress/lines 并通知外部
+    const taskLines: string[] = [];
+    const handlerCallback: TaskEventHandler | undefined = onEvent
+      ? (event: StreamEvent) => {
+          if (event.event === 'progress') {
+            this.db.run('UPDATE tasks SET progress = ? WHERE id = ?', [event.percent ?? 0, task.id]);
+            this.persist();
+          } else if (event.event === 'log') {
+            taskLines.push(`[${event.level ?? 'info'}] ${event.message ?? ''}`);
+            this.db.run('UPDATE tasks SET lines = ? WHERE id = ?', [JSON.stringify(taskLines), task.id]);
+            this.persist();
+          }
+          onEvent(task.id, event);
+        }
+      : undefined;
+
     try {
-      const result = await handler.handle({ ...task, status: TaskStatus.Running, startedAt: now });
+      const result = await handler.handle({ ...task, status: TaskStatus.Running, startedAt: now }, handlerCallback);
       this.db.run('UPDATE tasks SET status = ?, result = ?, completed_at = ? WHERE id = ?',
         [TaskStatus.Completed, JSON.stringify(result), Date.now(), task.id]);
       this.persist();
@@ -171,10 +194,10 @@ export class TaskQueue {
   }
 
   /** 执行所有待处理任务 */
-  async processAll(): Promise<TaskRecord[]> {
+  async processAll(onEvent?: (taskId: string, event: StreamEvent) => void): Promise<TaskRecord[]> {
     const processed: TaskRecord[] = [];
     while (true) {
-      const task = await this.processNext();
+      const task = await this.processNext(onEvent);
       if (!task) break;
       processed.push(task);
     }
@@ -202,6 +225,8 @@ export class TaskQueue {
       completedAt: (values[idx('completed_at')] as number | null) ?? undefined,
       result: values[idx('result')] ? JSON.parse(values[idx('result')] as string) : undefined,
       error: (values[idx('error')] as string | null) ?? undefined,
+      progress: (values[idx('progress')] as number | null) ?? undefined,
+      lines: values[idx('lines')] ? JSON.parse(values[idx('lines')] as string) : undefined,
     };
   }
 }

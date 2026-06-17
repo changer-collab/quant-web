@@ -18,6 +18,8 @@
 
 - 策略查询（GET /api/strategies）
 - 任务提交/查询（POST/GET /api/tasks）
+- 任务 SSE 流（GET /api/tasks/:id/stream）
+- 内部任务路由（GET/POST /api/internal/tasks/*），供 Worker 轮询领取、上报任务状态/结果/失败
 - 因子 CRUD + 评估触发 + 批量计算（/api/factors）
 - 数据摘要查询（/api/data/instruments|bars|coverage|quality）
 - 任务服务通过 TaskService 接口解耦 Worker，当前使用 InMemoryTaskService

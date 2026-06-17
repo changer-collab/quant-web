@@ -4,7 +4,8 @@ import { ReportSummary } from '../src/components/report';
 import { createResearchReport, getStrategies, getUiCopy } from '../src/appData';
 
 const ui = getUiCopy('en');
-const strategy = getStrategies('en')[1];
+// 使用 Order Flow Momentum 策略（hft 模式，return +34.6%, sharpe 2.18）
+const strategy = getStrategies('en').find((s) => s.id === 'strategy-hft-l2')!;
 
 const report = createResearchReport(
   {

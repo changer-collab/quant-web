@@ -1,0 +1,59 @@
+/* ── Factor Report Section (collapsible details) ──────────── */
+
+.section {
+  margin-bottom: var(--space-xl);
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  cursor: pointer;
+  user-select: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.subtitle {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.chevron {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chevron::after {
+  content: "▾";
+  line-height: 1;
+}
+
+.section[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.content {
+  padding: 0 var(--space-xl) var(--space-xl);
+}

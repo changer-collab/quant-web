@@ -36,7 +36,7 @@ export function JobList({
             </div>
           ) : null}
           <div className={jobs.progress} aria-label={`${job.progress}%`}>
-            <i className={jobs.progressBar} style={{ width: `${job.progress}%` }} />
+            <i className={jobs.progressBar} style={{ width: `${job.progress}%`, transition: 'width 0.3s ease' }} />
           </div>
           {ui && onViewReport && reportJobIdSet.has(job.id) && (
             <button className={buttons.secondaryAction} onClick={() => onViewReport(job)} type="button">

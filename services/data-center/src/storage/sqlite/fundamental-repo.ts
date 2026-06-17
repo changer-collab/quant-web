@@ -271,6 +271,7 @@ export class SqliteValuationRepository implements ValuationRepository {
             symbol: v.symbol, timestamp: v.timestamp,
             marketCap: v.marketCap, peTTM: v.peTTM, pb: v.pb,
             psTTM: v.psTTM, dividendYield: v.dividendYield,
+            turnoverRate: v.turnoverRate, floatShares: v.floatShares,
           };
           await tx.insert(valuations)
             .values(row)
@@ -298,6 +299,7 @@ export class SqliteValuationRepository implements ValuationRepository {
         symbol: r.symbol, timestamp: r.timestamp,
         marketCap: r.marketCap, peTTM: r.peTTM, pb: r.pb,
         psTTM: r.psTTM, dividendYield: r.dividendYield,
+        turnoverRate: r.turnoverRate, floatShares: r.floatShares,
       }));
     } catch (err) {
       throw new QueryError(`查询估值失败: ${symbol}`, err);

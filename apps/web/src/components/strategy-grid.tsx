@@ -54,6 +54,18 @@ export function StrategyGrid({
                     </span>
                     <div className={s.cardName}>{strategy.name}</div>
                     <span className={s.cardType}>{strategy.type}</span>
+                    {strategy.description && (
+                      <p className={s.cardDesc}>{strategy.description}</p>
+                    )}
+                    {strategy.params && strategy.params.length > 0 && (
+                      <div className={s.paramList}>
+                        {strategy.params.map((p) => (
+                          <span className={s.paramChip} key={p.key}>
+                            {p.label}: <b>{String(p.default)}</b>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className={s.cardMetrics}>
                       <div className={s.metric}>
                         <span className={`${s.metricValue} ${s.metricGreen}`}>

@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { FactorEvalTab } from '../data/types';
 import type { FactorDisplayRow, FactorEvalDisplayResult, UiCopy } from '../appData';
+import { FactorReport } from './factor-report';
+import { getFactorReports, getFactorReportUiCopy } from '../appData';
 import s from '../styles/factor-lab.module.css';
+import fr from '../styles/factor-report.module.css';
 
 function FactorDefinitionTable({
   factors,
   ui,
   selectedId,
   onSelect,
+  onViewReport,
 }: {
   factors: FactorDisplayRow[];
   ui: UiCopy;
   selectedId?: string;
   onSelect?: (factor: FactorDisplayRow) => void;
+  onViewReport?: (factorId: string) => void;
 }) {
   return (
     <section className={s.factorTablePanel}>
@@ -28,6 +33,7 @@ function FactorDefinitionTable({
             <th>{ui.factorTableHeaders.layerReturn}</th>
             <th>{ui.factorTableHeaders.referencedBy}</th>
             <th>{ui.factorTableHeaders.status}</th>
+            <th>Report</th>
           </tr>
         </thead>
         <tbody>
@@ -58,6 +64,13 @@ function FactorDefinitionTable({
                 <span className={f.status === 'active' ? s.statusActive : s.statusDraft}>
                   {f.status}
                 </span>
+              </td>
+              <td>
+                {onViewReport && (
+                  <button className={fr.viewReportBtn} onClick={(e) => { e.stopPropagation(); onViewReport(f.id); }} type="button">
+                    View Report
+                  </button>
+                )}
               </td>
             </tr>
           ))}
@@ -199,16 +212,34 @@ export function FactorLabContent({
   factors,
   factorEvalResults,
   ui,
+  language,
 }: {
   factors: FactorDisplayRow[];
   factorEvalResults: FactorEvalDisplayResult[];
   ui: UiCopy;
+  language: 'zh' | 'en';
 }) {
   const [selectedFactorId, setSelectedFactorId] = useState<string | undefined>();
+  const [activeReportFactorId, setActiveReportFactorId] = useState<string | undefined>();
 
   const selectedEval = selectedFactorId
     ? factorEvalResults.filter((r) => r.factorId === selectedFactorId)
     : factorEvalResults;
+
+  if (activeReportFactorId) {
+    const reports = getFactorReports(language);
+    const reportUi = getFactorReportUiCopy(language);
+    const report = reports.find((r) => r.factorId === activeReportFactorId);
+    if (report) {
+      return (
+        <FactorReport
+          report={report}
+          ui={reportUi}
+          onBack={() => setActiveReportFactorId(undefined)}
+        />
+      );
+    }
+  }
 
   return (
     <div className={s.factorLabGrid}>
@@ -217,6 +248,7 @@ export function FactorLabContent({
         ui={ui}
         selectedId={selectedFactorId}
         onSelect={(f) => setSelectedFactorId(f.id === selectedFactorId ? undefined : f.id)}
+        onViewReport={(factorId) => setActiveReportFactorId(factorId)}
       />
       <FactorEvalPanel evalResults={selectedEval} ui={ui} />
       <FactorReferencePanel factors={factors} ui={ui} />

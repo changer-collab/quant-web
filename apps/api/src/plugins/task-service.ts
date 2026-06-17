@@ -12,18 +12,38 @@ export interface TaskView {
   completedAt?: number;
   result?: Record<string, unknown>;
   error?: string;
+  progress?: number;
+  lines?: string[];
 }
+
+/** 任务事件（SSE 推送） */
+export interface TaskEvent {
+  type: 'progress' | 'log' | 'status' | 'result' | 'error';
+  taskId: string;
+  percent?: number;
+  message?: string;
+  level?: string;
+  data?: Record<string, unknown>;
+  error?: { code: string; message: string };
+}
+
+export type TaskEventHandler = (event: TaskEvent) => void;
 
 /** 任务服务接口 — API 层通过此接口操作任务，不直接依赖 Worker */
 export interface TaskService {
   submit(type: TaskType, payload: Record<string, unknown>): TaskView;
   get(taskId: string): TaskView | undefined;
-  list(type?: TaskType): TaskView[];
+  list(filter?: { type?: TaskType; status?: TaskStatus }): TaskView[];
+  /** 订阅指定任务的事件 */
+  subscribe(taskId: string, handler: TaskEventHandler): () => void;
+  /** 更新任务（供 Worker 调用） */
+  updateTask(taskId: string, updates: Partial<TaskView>, event?: TaskEvent): void;
 }
 
 /** 内存实现（当前阶段） */
 export class InMemoryTaskService implements TaskService {
   private readonly tasks = new Map<string, TaskView>();
+  private readonly subscribers = new Map<string, Set<TaskEventHandler>>();
   private idCounter = 0;
 
   submit(type: TaskType, payload: Record<string, unknown>): TaskView {
@@ -31,8 +51,11 @@ export class InMemoryTaskService implements TaskService {
     const task: TaskView = {
       id, type, status: TaskStatus.Pending, payload,
       submittedAt: Date.now(),
+      progress: 0,
+      lines: [],
     };
     this.tasks.set(id, task);
+    this._emit(id, { type: 'status', taskId: id, message: task.status });
     return task;
   }
 
@@ -40,9 +63,35 @@ export class InMemoryTaskService implements TaskService {
     return this.tasks.get(taskId);
   }
 
-  list(type?: TaskType): TaskView[] {
+  list(filter?: { type?: TaskType; status?: TaskStatus }): TaskView[] {
     const all = Array.from(this.tasks.values());
-    return type ? all.filter((t) => t.type === type) : all;
+    return all.filter((t) => {
+      if (filter?.type && t.type !== filter.type) return false;
+      if (filter?.status && t.status !== filter.status) return false;
+      return true;
+    });
+  }
+
+  subscribe(taskId: string, handler: TaskEventHandler): () => void {
+    if (!this.subscribers.has(taskId)) {
+      this.subscribers.set(taskId, new Set());
+    }
+    this.subscribers.get(taskId)!.add(handler);
+    return () => this.subscribers.get(taskId)?.delete(handler);
+  }
+
+  updateTask(taskId: string, updates: Partial<TaskView>, event?: TaskEvent): void {
+    const task = this.tasks.get(taskId);
+    if (!task) return;
+    Object.assign(task, updates);
+    if (event) {
+      this._emit(taskId, event);
+    }
+  }
+
+  /** 内部：向任务订阅者推送事件 */
+  private _emit(taskId: string, event: TaskEvent): void {
+    this.subscribers.get(taskId)?.forEach((h) => h(event));
   }
 }
 

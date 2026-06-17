@@ -1,0 +1,654 @@
+/* ── Factor Report Container ──────────────────────────────── */
+
+.factorReport {
+  display: grid;
+  gap: var(--space-xl);
+  padding: var(--space-xl);
+  animation: fadeIn 0.35s ease-out both;
+}
+
+/* Header */
+
+.reportHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reportHeaderLeft {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.reportEyebrow {
+  margin: 0;
+  color: var(--green);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.reportTitle {
+  margin: 0;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
+  font-family: var(--font-display);
+}
+
+.reportMeta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+}
+
+/* Grade Badge */
+
+.gradeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.gradeA {
+  color: #4df0a0;
+  background: rgba(77, 240, 160, 0.15);
+  border: 2px solid rgba(77, 240, 160, 0.4);
+}
+
+.gradeB {
+  color: #62d8ff;
+  background: rgba(98, 216, 255, 0.15);
+  border: 2px solid rgba(98, 216, 255, 0.4);
+}
+
+.gradeC {
+  color: #e9c46a;
+  background: rgba(233, 196, 106, 0.15);
+  border: 2px solid rgba(233, 196, 106, 0.4);
+}
+
+.gradeD {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+  border: 2px solid rgba(255, 107, 107, 0.4);
+}
+
+/* Tab Navigation */
+
+.tabNav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tabButton {
+  padding: 10px 16px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tabButton:hover {
+  color: var(--text);
+}
+
+.tabButton.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+/* Sub Tab Navigation */
+
+.subTabNav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-sm);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+}
+
+.subTabButton {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+}
+
+.subTabButton:hover {
+  color: var(--text);
+  background: rgba(77, 240, 160, 0.06);
+}
+
+.subTabButton.active {
+  color: var(--bg);
+  background: var(--green);
+}
+
+/* KPI Card Grid */
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.kpiCard {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.64);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s;
+}
+
+.kpiCard:hover {
+  border-color: rgba(77, 240, 160, 0.25);
+}
+
+.kpiLabel {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.kpiValue {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.kpiValue.positive {
+  color: var(--green);
+}
+
+.kpiValue.negative {
+  color: #ff6b6b;
+}
+
+/* Data Table */
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.dataTable th {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.dataTable td {
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+}
+
+.dataTable tr:hover td {
+  background: var(--gradient-row-hover);
+}
+
+/* Horizontal Bar Chart */
+
+.barChartHorizontal {
+  display: grid;
+  gap: 8px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px;
+  align-items: center;
+  gap: 8px;
+}
+
+.barLabel {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barTrack {
+  height: 20px;
+  background: rgba(17, 25, 23, 0.64);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: rgba(77, 240, 160, 0.5);
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.barFill.negative {
+  background: rgba(255, 107, 107, 0.5);
+}
+
+.barValue {
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* Vertical Bar Chart (Distribution) */
+
+.barChartVertical {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding: 8px 0;
+}
+
+.vBar {
+  flex: 1;
+  min-width: 24px;
+  background: rgba(77, 240, 160, 0.5);
+  transition: background 0.15s, transform 0.15s;
+  transform-origin: bottom;
+  position: relative;
+}
+
+.vBar:hover {
+  background: var(--green);
+  transform: scaleY(1.05);
+}
+
+.vBarLabel {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* Heatmap Grid */
+
+.heatmapGrid {
+  display: grid;
+  gap: 2px;
+}
+
+.heatmapCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  border-radius: 2px;
+  min-height: 32px;
+}
+
+/* Chip / Tag */
+
+.chip {
+  display: inline-block;
+  margin: 2px 4px 2px 0;
+  padding: 4px 10px;
+  color: var(--green);
+  font-size: var(--text-xs);
+  background: rgba(77, 240, 160, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.chipWarn {
+  color: var(--amber);
+  background: rgba(233, 196, 106, 0.1);
+}
+
+.chipDanger {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+/* Formula Block */
+
+.formulaBlock {
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--text);
+}
+
+/* Back Button */
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.backButton:hover {
+  color: var(--text);
+  border-color: rgba(77, 240, 160, 0.3);
+}
+
+/* View Report Button */
+
+.viewReportBtn {
+  padding: 4px 10px;
+  color: var(--green);
+  font-size: var(--text-xs);
+  background: rgba(77, 240, 160, 0.08);
+  border: 1px solid rgba(77, 240, 160, 0.2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.viewReportBtn:hover {
+  background: rgba(77, 240, 160, 0.15);
+  border-color: rgba(77, 240, 160, 0.4);
+}
+
+/* Alert Status Colors */
+
+.alertNormal {
+  color: var(--green);
+}
+
+.alertWarning {
+  color: var(--amber);
+}
+
+.alertCritical {
+  color: #ff6b6b;
+}
+
+/* Text Block */
+
+.textBlock {
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(17, 25, 23, 0.64);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* Literature List */
+
+.literatureList {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.literatureItem {
+  padding: 8px 12px;
+  border-left: 2px solid var(--green);
+  background: rgba(17, 25, 23, 0.64);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+/* SVG Chart Container */
+
+.svgChart {
+  width: 100%;
+  overflow: visible;
+}
+
+@media (max-width: 680px) {
+  .reportHeader {
+    flex-direction: column;
+  }
+  .tabNav {
+    overflow-x: auto;
+  }
+  .kpiGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .barRow {
+    grid-template-columns: 70px 1fr 50px;
+  }
+}
+
+/* ── Grid-Aligned Table (replaces native <table>) ────────── */
+
+.gridTable {
+  display: grid;
+  gap: 0;
+  width: 100%;
+}
+
+.gridTableHeader {
+  display: contents;
+}
+
+.gridTableHeader > span {
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.gridTableRow {
+  display: contents;
+}
+
+.gridTableRow:hover > span {
+  background: var(--gradient-row-hover);
+}
+
+.gridTableRow > span {
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  border-bottom: 1px solid var(--line);
+  transition: background 0.15s;
+}
+
+/* 3-column layout: label 2fr, value 1fr, value 1fr */
+.gridTable3 {
+  composes: gridTable;
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+.gridTable3 .colLabel {
+  text-align: left;
+  color: var(--text);
+}
+
+.gridTable3 .colValue {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2-column layout: label 2fr, value 1fr */
+.gridTable2 {
+  composes: gridTable;
+  grid-template-columns: 2fr 1fr;
+}
+
+.gridTable2 .colLabel {
+  text-align: left;
+  color: var(--text);
+}
+
+.gridTable2 .colValue {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Domain Analysis Card Grid ───────────────────────────── */
+
+.domainGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-lg);
+}
+
+.domainCard {
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.domainCardTitle {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--green);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  border-bottom: 1px solid var(--line);
+  background: rgba(77, 240, 160, 0.04);
+}
+
+/* Domain inline value bar */
+.domainValueCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.domainInlineBar {
+  height: 4px;
+  border-radius: 2px;
+  min-width: 4px;
+  max-width: 60px;
+  transition: width 0.3s ease;
+}
+
+/* ── Cluster Horizontal Card Grid ─────────────────────────── */
+
+.clusterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-lg);
+}
+
+.clusterCard {
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.clusterCardTitle {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--green);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  border-bottom: 1px solid var(--line);
+  background: rgba(77, 240, 160, 0.04);
+}
+
+.clusterFactorList {
+  padding: var(--space-sm) 0;
+}
+
+.clusterFactorItem {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  color: var(--text);
+  border-bottom: 1px solid rgba(38, 54, 50, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clusterFactorItem:last-child {
+  border-bottom: none;
+}
+
+.clusterFactorDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Neutralization Card Grid ────────────────────────────── */
+
+.neutGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-lg);
+}
+
+.neutCard {
+  border: 1px solid var(--line);
+  background: var(--gradient-panel);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.neutCardTitle {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--green);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  border-bottom: 1px solid var(--line);
+  background: rgba(77, 240, 160, 0.04);
+}

@@ -14,7 +14,7 @@
 
 > **最后更新：** 2026-06-17
 
-### 整体进度：部分完成（约 50%）
+### 整体进度：部分完成（约 65%）
 
 | Task | 状态 | 说明 |
 |------|------|------|
@@ -22,14 +22,14 @@
 | Task 2: 前端对接 — 策略列表 | ⚠️ 部分完成 | API 层已搭建，前端有 fallback 机制 |
 | Task 3: 前端对接 — 回测运行与任务列表 | ⚠️ 部分完成 | `useResearchWorkflow.ts` 有 API 提交 + fallback |
 | Task 4: 前端对接 — 因子工坊 | ⚠️ 部分完成 | `useFactors.ts` 已实现，页面仍用模拟数据 |
-| Task 5: 真实数据接入验证 | ⚠️ 部分完成 | 适配器已写，真实数据拉取未跑通 |
-| Task 6: Python CLI 端到端回测验证 | ⚠️ 部分完成 | CLI 已实现，未用真实数据验证 |
+| Task 5: 真实数据接入验证 | ✅ 已完成 | baostock 适配器跑通，3 标的 484 bars 入库 |
+| Task 6: Python CLI 端到端回测验证 | ✅ 已完成 | 单标的 + 组合策略 CLI 回测均跑通 |
 | Task 7: Worker PythonBridge 集成 | ✅ 已完成 | `python-bridge.ts` 有 `streamCall` 流式调用 |
 | Task 8: AI 引擎核心流程 | ❌ 未完成 | 仅骨架（features/model/predictor），无真实训练 |
 | Task 9: Python 包测试覆盖 | ⚠️ 部分完成 | ai-engine 4 个测试，data-client 1 个测试 |
 | Task 10: API 层 build 脚本 | ✅ 已完成 | `build: tsc -p tsconfig.json` |
 | Task 11: 持久化任务队列 | ✅ 已完成 | `queue.ts` SQLite 后端已实现 |
-| Task 12: 更多策略实现 | ✅ 已完成 | 策略分层（选股/择时/仓位）+ 多策略组合已实现 |
+| Task 12: 更多策略实现 | ✅ 已完成 | 策略分层（选股/择时/仓位）+ 多策略组合 + CLI 调用已实现 |
 
 ### 已完成的关键优化
 
@@ -38,20 +38,23 @@
 - 持久化任务队列（SQLite 后端，重启不丢失）
 - API 层 build 脚本修复
 - 策略分层解耦（17 个 Task 全部完成，含选股/择时/仓位/组合/多策略）
+- **真实数据闭环已打通**：baostock 采集 → data-center 存储 → Python CLI 读取 → 回测出结果
+- **组合策略 CLI 已支持**：通过 `config.components` 配置 selector/timer/sizer，多标的回测验证通过
+- **BacktestRunner/MultiSymbolRunner 进度回调**：`run(on_progress=)` 支持流式进度输出
 
 ### 未完成的关键项
 
 - 前端未完全对接真实 API（仍依赖模拟数据 fallback）
-- 真实数据未接入（AKShare 适配器已写但未跑通）
 - AI 引擎仅有骨架，无真实训练流程
 - Python 包测试覆盖不足（ai-engine/data-client）
 - 策略运行时流式输出已实现但未在前端完整对接
+- TS 层 e2e 测试仍用 mock（sql.js WASM 路径问题）
 
 ### 后续优先级
 
-1. **打通真实数据闭环**（Task 5 + Task 6）— 最高优先级
-2. **前端完全对接 API**（Task 2-4）— 依赖数据闭环
-3. **AI 引擎核心流程**（Task 8）— 能力扩展
+1. **前端完全对接 API**（Task 2-4）— 数据闭环已通，可推进
+2. **AI 引擎核心流程**（Task 8）— 能力扩展
+3. **Python 包测试覆盖**（Task 9）— 质量保障
 
 ---
 

@@ -157,11 +157,14 @@ export const financialRatios = sqliteTable('financial_ratios', {
 export const valuations = sqliteTable('valuations', {
   symbol: text('symbol').notNull(),
   timestamp: integer('timestamp').notNull(),
-  marketCap: real('market_cap').notNull(),
-  peTTM: real('pe_ttm').notNull(),
-  pb: real('pb').notNull(),
-  psTTM: real('ps_ttm').notNull(),
-  dividendYield: real('dividend_yield').notNull(),
+  marketCap: real('market_cap'),
+  peTTM: real('pe_ttm'),
+  pb: real('pb'),
+  psTTM: real('ps_ttm'),
+  dividendYield: real('dividend_yield'),
+  // A 股扩展字段（Wind/xlsx 数据源常用）
+  turnoverRate: real('turnover_rate'),
+  floatShares: real('float_shares'),
 }, (table) => [
   primaryKey({ columns: [table.symbol, table.timestamp] }),
   index('idx_val_symbol').on(table.symbol),

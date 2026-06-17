@@ -107,6 +107,10 @@ packages/obsidian-sync -> packages/data-client
 services/data-collector -> services/data-center
 ```
 
+TS 层内部通信：
+- API 与 Worker 不共享进程状态，Worker 通过 HTTP 轮询 API 的 `/api/internal/tasks/*` 端点领取、上报任务。
+- 前端通过 SSE `/api/tasks/:id/stream` 接收任务事件（progress/log/result/error）。
+
 TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）调用 `quantforge_strategy.cli`，不直接 import Python 包。
 
 ## 角色专属规则
@@ -115,8 +119,8 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 项目协调 Agent：每个可独立开发子项目必须维护自己的 `README.md` 和 `AGENT.md`。
 - 前端 Agent：修改 `apps/web` 信息架构、策略模式、任务数据、文案或组件后运行 `npm test`、`npm run build`、`npm list --depth=0`。
 - 前端 Agent：不引入路由、状态库、后端请求，除非用户明确要求。
-- API Agent：保持 API 层薄，不把计算逻辑塞进 HTTP 层；因子 CRUD 只做 HTTP 入口，因子计算和评估逻辑不塞进 API。
-- Worker Agent：只编排异步任务，不承载核心算法；因子批量计算和因子评估是合法的异步任务类型，但核心算法委托给 AI 引擎和回测引擎。
+- API Agent：保持 API 层薄，不把计算逻辑塞进 HTTP 层；因子 CRUD 只做 HTTP 入口，因子计算和评估逻辑不塞进 API。提供 `/api/internal/tasks/*` 等内部端点供 Worker 领取和上报任务，内部端点不对外暴露业务语义。
+- Worker Agent：只编排异步任务，不承载核心算法；因子批量计算和因子评估是合法的异步任务类型，但核心算法委托给 AI 引擎和回测引擎。Worker 必须是独立可部署进程，通过 HTTP 轮询 API 领取任务，不得与 API 共享内存队列或进程状态。
 - 数据中心 Agent：不处理策略、回测、AI 训练和网站任务调度；不感知因子定义和因子计算逻辑；不负责数据采集，数据由 data-collector 写入。数据中心是通用数据服务，不绑定任何上层业务，可独立部署。
 - 数据采集器 Agent：不存储数据、不提供查询接口、不感知上层业务逻辑；只通过数据中心的写入接口推送标准化数据。数据采集器可独立部署，按需启停。
 - 回测引擎 Agent：不直接读取数据中心，不直接处理 HTTP；因子评估（IC 曲线、排序分组收益、分层回测）是回测引擎的合法能力，因子是回测引擎的一种输入维度。

@@ -71,3 +71,28 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+
+.paramCell {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0 !important;
+}
+
+.paramChip {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(98, 216, 255, 0.04);
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  display: inline !important;
+  margin-top: 0 !important;
+}
+
+.paramMuted {
+  color: var(--muted) !important;
+  font-size: var(--text-xs) !important;
+  margin-top: 0 !important;
+}
