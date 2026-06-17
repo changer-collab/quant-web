@@ -16,7 +16,19 @@ import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const DB_PATH = resolve(import.meta.dirname, "..", "data", "quant.db");
-const SYMBOLS = ["600519", "000001", "600036"]; // 贵州茅台、平安银行、招商银行
+// 覆盖主要行业的代表标的，便于选股/组合策略回测
+const SYMBOLS = [
+  "600519", // 贵州茅台（白酒）
+  "000858", // 五粮液（白酒）
+  "000001", // 平安银行（银行）
+  "600036", // 招商银行（银行）
+  "601318", // 中国平安（保险）
+  "600276", // 恒瑞医药（医药）
+  "000333", // 美的集团（家电）
+  "600887", // 伊利股份（食品）
+  "601012", // 隆基绿能（光伏）
+  "300750", // 宁德时代（电池）
+];
 const START_DATE = new Date("2023-01-01").getTime();
 const END_DATE = new Date("2024-12-31").getTime();
 
