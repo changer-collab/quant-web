@@ -1,0 +1,210 @@
+/* ── Report Risk Warnings & Appendix ──────────────────────── */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+}
+
+/* Limitations */
+
+.limitationsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.limitationItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  background: rgba(255, 107, 107, 0.04);
+  border-radius: var(--radius-sm);
+}
+
+.limitationCategory {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--red, #ff6b6b);
+}
+
+.limitationDesc {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text);
+}
+
+/* Red Lines Table */
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+  background: rgba(8, 16, 15, 0.5);
+  border-bottom: 1px solid var(--line);
+}
+
+.table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ruleCell {
+  font-weight: 600;
+}
+
+.thresholdCell {
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.actualCell {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.statusCell {
+  text-align: center;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+
+.statusPass {
+  background: rgba(77, 240, 160, 0.15);
+  color: var(--green);
+}
+
+.statusFail {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--red, #ff6b6b);
+}
+
+/* Code Snippets */
+
+.codeBlock {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.codeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(8, 16, 15, 0.6);
+  border-bottom: 1px solid var(--line);
+}
+
+.codeTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.codeLang {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--cyan);
+  background: rgba(98, 216, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.codePre {
+  margin: 0;
+  padding: var(--space-md);
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: #e6eee9;
+}
+
+.codePre code {
+  font-family: inherit;
+}
+
+/* Glossary */
+
+.glossaryList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .glossaryList {
+    grid-template-columns: 1fr;
+  }
+}
+
+.glossaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.34);
+  border-radius: var(--radius-sm);
+}
+
+.glossaryTerm {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.glossaryDef {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text);
+}

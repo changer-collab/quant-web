@@ -11,6 +11,14 @@ import {
   ReportRobustness,
   ReportAttribution,
   ReportIssues,
+  ReportExecutiveSummary,
+  ReportConclusion,
+  ReportPositionAnalysis,
+  ReportSubStrategyAttribution,
+  ReportStressTest,
+  ReportCostSensitivity,
+  ReportBenchmarkComparison,
+  ReportRiskWarnings,
 } from './report/index';
 import reportStyles from '../styles/report.module.css';
 
@@ -25,6 +33,7 @@ interface FullReportProps {
 }
 
 const TABS: { id: ReportTabId; label: string }[] = [
+  { id: 'executiveSummary', label: 'executiveSummary' },
   { id: 'overview', label: 'overview' },
   { id: 'dataParams', label: 'dataParams' },
   { id: 'returnMetrics', label: 'returnMetrics' },
@@ -34,14 +43,23 @@ const TABS: { id: ReportTabId; label: string }[] = [
   { id: 'equity', label: 'equity' },
   { id: 'robustness', label: 'robustness' },
   { id: 'attribution', label: 'attribution' },
+  { id: 'positionAnalysis', label: 'positionAnalysis' },
+  { id: 'subStrategyAttribution', label: 'subStrategyAttribution' },
+  { id: 'stressTest', label: 'stressTest' },
+  { id: 'costSensitivity', label: 'costSensitivity' },
+  { id: 'benchmarkComparison', label: 'benchmarkComparison' },
   { id: 'issues', label: 'issues' },
+  { id: 'conclusion', label: 'conclusion' },
+  { id: 'riskWarnings', label: 'riskWarnings' },
 ];
 
 export function FullReport({ report, ui, allReports, onSwitchReport }: FullReportProps) {
-  const [activeTab, setActiveTab] = useState<ReportTabId>('overview');
+  const [activeTab, setActiveTab] = useState<ReportTabId>('executiveSummary');
 
   function renderTabContent() {
     switch (activeTab) {
+      case 'executiveSummary':
+        return <ReportExecutiveSummary report={report} ui={ui} />;
       case 'overview':
         return <ReportOverview report={report} ui={ui} />;
       case 'dataParams':
@@ -60,8 +78,22 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
         return <ReportRobustness report={report} ui={ui} />;
       case 'attribution':
         return <ReportAttribution report={report} ui={ui} />;
+      case 'positionAnalysis':
+        return <ReportPositionAnalysis report={report} ui={ui} />;
+      case 'subStrategyAttribution':
+        return <ReportSubStrategyAttribution report={report} ui={ui} />;
+      case 'stressTest':
+        return <ReportStressTest report={report} ui={ui} />;
+      case 'costSensitivity':
+        return <ReportCostSensitivity report={report} ui={ui} />;
+      case 'benchmarkComparison':
+        return <ReportBenchmarkComparison report={report} ui={ui} />;
       case 'issues':
         return <ReportIssues report={report} ui={ui} />;
+      case 'conclusion':
+        return <ReportConclusion report={report} ui={ui} />;
+      case 'riskWarnings':
+        return <ReportRiskWarnings report={report} ui={ui} />;
       default:
         return null;
     }
