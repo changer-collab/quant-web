@@ -244,6 +244,9 @@ export function ReportRiskMetrics({ report, ui }: Props) {
     { label: labels.var, value: pct(m.var95), tone: 'warn' },
     { label: labels.cvar, value: pct(m.cvar95), tone: 'warn' },
     { label: labels.calmar, value: m.calmarRatio.toFixed(2), tone: m.calmarRatio > 1 ? 'good' : 'warn' },
+    ...(m.sortinoRatio !== undefined ? [{ label: labels.sortino, value: m.sortinoRatio.toFixed(2), tone: m.sortinoRatio > 1 ? 'good' : 'warn' as const }] : []),
+    ...(m.skewness !== undefined ? [{ label: labels.skewness, value: m.skewness.toFixed(2), tone: m.skewness < 0 ? 'warn' : 'info' as const }] : []),
+    ...(m.kurtosis !== undefined ? [{ label: labels.kurtosis, value: m.kurtosis.toFixed(2), tone: m.kurtosis > 3 ? 'warn' : 'info' as const }] : []),
   ];
 
   return (

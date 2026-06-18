@@ -279,9 +279,43 @@ function ContributionWaterfall({ report, ui }: Props) {
 export function ReportAttribution({ report, ui }: Props) {
   const attr = report.attribution;
   const labels = ui.attribution;
+  const brinson = attr.brinsonAttribution;
 
   return (
     <div className={styles.attributionPanel}>
+      {/* Brinson 归因 */}
+      {brinson && (
+        <div className={styles.chartSection}>
+          <h4 className={styles.sectionTitle}>{labels.brinsonAttribution}</h4>
+          <div className={styles.testSummary}>
+            <div className={styles.testCard}>
+              <span className={styles.testLabel}>{labels.allocationEffect}</span>
+              <strong className={brinson.allocationEffect >= 0 ? styles.toneGood : styles.toneWarn}>
+                {pct(brinson.allocationEffect)}
+              </strong>
+            </div>
+            <div className={styles.testCard}>
+              <span className={styles.testLabel}>{labels.selectionEffect}</span>
+              <strong className={brinson.selectionEffect >= 0 ? styles.toneGood : styles.toneWarn}>
+                {pct(brinson.selectionEffect)}
+              </strong>
+            </div>
+            <div className={styles.testCard}>
+              <span className={styles.testLabel}>{labels.interactionEffect}</span>
+              <strong className={brinson.interactionEffect >= 0 ? styles.toneGood : styles.toneWarn}>
+                {pct(brinson.interactionEffect)}
+              </strong>
+            </div>
+            <div className={styles.testCard}>
+              <span className={styles.testLabel}>{labels.totalActiveReturn}</span>
+              <strong className={brinson.totalActiveReturn >= 0 ? styles.toneGood : styles.toneWarn}>
+                {pct(brinson.totalActiveReturn)}
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 行业暴露环形图 */}
       <IndustryDoughnut report={report} ui={ui} />
 

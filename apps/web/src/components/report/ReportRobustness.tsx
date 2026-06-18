@@ -280,6 +280,7 @@ function MarketRegimeChart({ report, ui }: Props) {
 export function ReportRobustness({ report, ui }: Props) {
   const rb = report.robustness;
   const labels = ui.robustness;
+  const wf = rb.walkForward;
 
   return (
     <div className={styles.robustnessPanel}>
@@ -318,6 +319,41 @@ export function ReportRobustness({ report, ui }: Props) {
 
       {/* 市场环境分组柱状图 */}
       <MarketRegimeChart report={report} ui={ui} />
+
+      {/* Walk-Forward 分析 */}
+      {wf && wf.windows.length > 0 && (
+        <div className={styles.chartSection}>
+          <h4 className={styles.sectionTitle}>{labels.walkForward}</h4>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>区间</th>
+                <th>{labels.inSampleReturn}</th>
+                <th>{labels.outOfSampleReturn}</th>
+                <th>{labels.decay}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {wf.windows.map((w) => (
+                <tr key={w.period}>
+                  <td>{w.period}</td>
+                  <td className={styles.toneGood}>{pct(w.inSampleReturn)}</td>
+                  <td className={styles.toneGood}>{pct(w.outOfSampleReturn)}</td>
+                  <td className={w.decay > 0.2 ? styles.toneWarn : styles.toneGood}>{(w.decay * 100).toFixed(0)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className={styles.testSummary}>
+            <div className={styles.testCard}>
+              <span className={styles.testLabel}>{labels.avgDecay}</span>
+              <strong className={(wf.avgDecay ?? 0) > 0.2 ? styles.toneWarn : styles.toneGood}>
+                {((wf.avgDecay ?? 0) * 100).toFixed(0)}%
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Out-of-sample & Shuffled */}
       <div className={styles.testSummary}>
