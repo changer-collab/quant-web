@@ -4,7 +4,6 @@ import {
   createResearchReport,
   createBacktestReportFull,
   mapBacktestResultToReport,
-  getJobs,
   getResearchMode,
   getStrategies,
   isPageId,
@@ -17,7 +16,7 @@ import {
   type BacktestReportFull,
   type StrategyRow,
 } from '../appData';
-import { fetchReports, type ApiReportSummary } from '../api/reports';
+import { fetchReports } from '../api/reports';
 import { useTasks } from './useTasks';
 
 function formatReportTime(language: LanguageCode): string {
@@ -66,9 +65,12 @@ export function useResearchWorkflow(language: LanguageCode) {
         if (cancelled) return;
         const historicalResearchReports: ResearchReport[] = [];
         const historicalReports: BacktestReportFull[] = [];
+        const defaults = createBacktestReportFull();
+        const locale = language === 'zh' ? 'zh-CN' : 'en-US';
 
         summaries.forEach((s, index) => {
           const reportId = `report-${s.id}`;
+          const generatedAt = new Date(s.createdAt).toLocaleTimeString(locale, { hour12: false });
           // 同步创建 ResearchReport，使 handleSwitchBacktestReport 反推能匹配
           historicalResearchReports.push(
             createResearchReport(
@@ -76,10 +78,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                 id: reportId,
                 jobId: s.taskId,
                 sequence: index + 1,
-                generatedAt: new Date(s.createdAt).toLocaleTimeString(
-                  language === 'zh' ? 'zh-CN' : 'en-US',
-                  { hour12: false },
-                ),
+                generatedAt,
               },
               language,
             ),
@@ -90,12 +89,9 @@ export function useResearchWorkflow(language: LanguageCode) {
               id: `backtest-full-${reportId}`,
               taskId: s.taskId,
               status: 'completed',
-              generatedAt: new Date(s.createdAt).toLocaleTimeString(
-                language === 'zh' ? 'zh-CN' : 'en-US',
-                { hour12: false },
-              ),
+              generatedAt,
               overview: {
-                ...createBacktestReportFull().overview,
+                ...defaults.overview,
                 name: s.strategyName,
                 instruments: [s.symbol],
                 frequency: s.timeframe,
@@ -105,20 +101,20 @@ export function useResearchWorkflow(language: LanguageCode) {
                 },
               },
               returnMetrics: {
-                ...createBacktestReportFull().returnMetrics,
+                ...defaults.returnMetrics,
                 totalReturn: s.totalReturn,
                 annualizedReturn: s.annualizedReturn,
               },
               riskMetrics: {
-                ...createBacktestReportFull().riskMetrics,
+                ...defaults.riskMetrics,
                 maxDrawdown: s.maxDrawdown,
               },
               riskAdjMetrics: {
-                ...createBacktestReportFull().riskAdjMetrics,
+                ...defaults.riskAdjMetrics,
                 sharpeRatio: s.sharpeRatio,
               },
               tradeStats: {
-                ...createBacktestReportFull().tradeStats,
+                ...defaults.tradeStats,
                 winRate: s.winRate,
                 totalTrades: s.totalTrades,
               },
