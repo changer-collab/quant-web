@@ -159,6 +159,8 @@ pnpm install
 
 `sql.js` 的 WASM 文件位于 `node_modules/sql.js/dist/sql-wasm.wasm`。`connection.ts` 中的 `resolveWasmPath` 函数会从包目录、`process.cwd()` 向上逐层查找此文件，兼容 pnpm workspace 的各种链接结构。
 
+> **注意**：`pnpm-workspace.yaml` 中设置了 `autoInstallPeers: false`，阻止 pnpm 自动安装 `drizzle-orm` 的可选 peer dependency `better-sqlite3`（需 C++ 编译）。`sql.js` 作为显式依赖仍正常安装。如果添加了新的依赖包且缺少 peer dependency，需在 `package.json` 中显式声明。
+
 ### Node.js 版本不匹配
 
 **症状**：`sql.js` 初始化失败或 `Response` 构造函数未定义。

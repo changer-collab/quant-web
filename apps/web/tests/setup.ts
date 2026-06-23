@@ -12,7 +12,7 @@ import { vi, afterEach } from 'vitest';
  *
  * 个别测试可通过 mockFetch.mockImplementationOnce(...) 覆盖特定响应。
  */
-const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
   const method = (init?.method ?? 'GET').toUpperCase();
   const url =
     typeof input === 'string'

@@ -41,7 +41,7 @@ done
 test_endpoint() {
   local path="$1"
   local status
-  status=$(curl -sf -o /dev/null -w "%{http_code}" "${API_URL}${path}")
+  status=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}${path}" || true)
   if [ "$status" = "200" ]; then
     echo "  OK   ${path} → ${status}"
   else
