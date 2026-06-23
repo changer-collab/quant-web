@@ -159,7 +159,60 @@ pnpm install
 
 `sql.js` 的 WASM 文件位于 `node_modules/sql.js/dist/sql-wasm.wasm`。`connection.ts` 中的 `resolveWasmPath` 函数会从包目录、`process.cwd()` 向上逐层查找此文件，兼容 pnpm workspace 的各种链接结构。
 
-> **注意**：`pnpm-workspace.yaml` 中设置了 `autoInstallPeers: false`，阻止 pnpm 自动安装 `drizzle-orm` 的可选 peer dependency `better-sqlite3`（需 C++ 编译）。`sql.js` 作为显式依赖仍正常安装。如果添加了新的依赖包且缺少 peer dependency，需在 `package.json` 中显式声明。
+> **注意**：`pnpm-workspace.yaml` 中设置了 `ignoredOptionalDependencies: [better-sqlite3, @types/better-sqlite3]`，阻止 pnpm 安装 `drizzle-orm` 的可选依赖 `better-sqlite3`（需 C++ 编译）。`sql.js` 作为显式依赖仍正常安装。`autoInstallPeers` 保持默认值 `true`，确保 `@testing-library/dom` 等正常 peer dependency 被自动安装。
+
+### pnpm-workspace.yaml 编码损坏
+
+**症状**：`pnpm config get ignoredOptionalDependencies` 返回 `undefined`，配置不生效；`pnpm-workspace.yaml` 中的中文注释在 `type` 命令下显示为乱码（如 `绂佹 pnpm 鑷姩`）。
+
+**原因**：Windows PowerShell 默认使用 GBK 编码，中文注释在写入/读取时可能被损坏，导致 YAML 解析失败，pnpm 无法读取配置。
+
+**修复**：`pnpm-workspace.yaml` 必须使用纯 ASCII 英文注释。如果已损坏，用文本编辑器以 UTF-8 无 BOM 编码重新保存，或直接重写为英文注释：
+
+```yaml
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "services/*"
+
+# Keep comments in ASCII to avoid encoding issues on Windows.
+ignoredOptionalDependencies:
+  - "better-sqlite3"
+  - "@types/better-sqlite3"
+```
+
+验证配置生效：
+
+```powershell
+pnpm install --lockfile-only
+# 检查 lock file 不含 better-sqlite3
+Select-String -Path pnpm-lock.yaml -Pattern "better-sqlite3"  # 应无输出
+```
+
+### Junction 缓存导致 UNKNOWN 错误
+
+**症状**：`pnpm install` 报 `UNKNOWN: unknown error, open 'D:\...\node_modules\<package>\package.json'`，但文件实际存在于 pnpm store 中。
+
+**原因**：Windows Junction（pnpm 用于链接 node_modules 的机制）偶发缓存失效，Node.js 无法通过 junction 读取文件。通常由杀毒软件扫描、异常关机或文件系统延迟引起。
+
+**修复**：
+
+```powershell
+# 方法 1：重启系统后重装（最可靠）
+Restart-Computer
+# 重启后
+cd D:\quant-web
+pnpm install --frozen-lockfile
+
+# 方法 2：删除 node_modules 后重装
+Remove-Item -Recurse -Force node_modules
+pnpm install --frozen-lockfile
+
+# 方法 3：使用 copy 模式安装（避免 junction）
+pnpm install --frozen-lockfile --config.package-import-method=copy
+```
+
+> 如果 `UNKNOWN` 错误反复出现在不同包上，建议使用方法 2 彻底清理。copy 模式（方法 3）会复制文件而非创建 junction，占用更多磁盘空间但更稳定。
 
 ### Node.js 版本不匹配
 
