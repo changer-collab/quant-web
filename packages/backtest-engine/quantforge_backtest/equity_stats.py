@@ -61,7 +61,11 @@ def compute_period_returns(
     monthly_last: dict[tuple[int, int], EquityPoint] = {}
     annual_last: dict[int, EquityPoint] = {}
     for point in equity_curve:
-        d = date.fromtimestamp(point.timestamp)
+        # 时间戳可能是毫秒（13位，> 1e12）或秒（10位），统一转换为秒
+        ts = point.timestamp
+        if ts > 1e12:
+            ts = ts / 1000
+        d = date.fromtimestamp(ts)
         monthly_last[(d.year, d.month)] = point
         annual_last[d.year] = point
 
