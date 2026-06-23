@@ -3,11 +3,9 @@ packages:
   - "packages/*"
   - "services/*"
 
-# 禁止 pnpm 自动安装可选 peer dependencies。
-# drizzle-orm 声明了 better-sqlite3/sql.js 等多个可选 peer deps，
-# 但 workspace 中 sql.js 已作为显式依赖安装，无需 auto-install。
-# 此设置阻止 better-sqlite3（需 C++ 编译）被自动安装。
-autoInstallPeers: false
+# Exclude better-sqlite3 (requires C++ build tools) from being installed as
+# drizzle-orm's optional dependency. sql.js (pure WASM) is used instead.
+# NOTE: Keep comments in ASCII to avoid encoding issues on Windows.
 ignoredOptionalDependencies:
   - "better-sqlite3"
   - "@types/better-sqlite3"
