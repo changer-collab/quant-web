@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   createResearchJob,
   createResearchReport,
@@ -17,21 +17,139 @@ import {
   type BacktestReportFull,
   type StrategyRow,
 } from '../appData';
+import { fetchReports, type ApiReportSummary } from '../api/reports';
 import { useTasks } from './useTasks';
 
 function formatReportTime(language: LanguageCode): string {
   return new Date().toLocaleTimeString(language === 'zh' ? 'zh-CN' : 'en-US', { hour12: false });
 }
 
+/** 回测配置（用户在 Workspace 面板填写） */
+export interface BacktestConfig {
+  symbol: string;
+  timeframe: string;
+  initialCash: number;
+  slippage: number;
+  startTs: number;
+  endTs: number;
+  params: Record<string, unknown>;
+}
+
 export function useResearchWorkflow(language: LanguageCode) {
   const [state, setState] = useState<AppState>(() => ({ activePage: 'dashboard' }));
   const [activeMode, setActiveMode] = useState<ResearchModeId>('traditional');
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyRow | undefined>();
-  const [jobs, setJobs] = useState<ResearchJob[]>(() => getJobs(language));
+  const [jobs, setJobs] = useState<ResearchJob[]>([]);
   const [reports, setReports] = useState<ResearchReport[]>([]);
   const [backtestReports, setBacktestReports] = useState<BacktestReportFull[]>([]);
   const [activeReportId, setActiveReportId] = useState<string | undefined>();
+  const [backtestConfig, setBacktestConfig] = useState<BacktestConfig>(() => {
+    const endTs = Date.now();
+    const startTs = endTs - 365 * 24 * 60 * 60 * 1000; // 近 1 年
+    return {
+      symbol: '600519',
+      timeframe: '1d',
+      initialCash: 1_000_000,
+      slippage: 0.001,
+      startTs,
+      endTs,
+      params: {},
+    };
+  });
   const { submitBacktestTask, submitAndStream } = useTasks();
+
+  // 初始化时加载历史报告列表
+  useEffect(() => {
+    let cancelled = false;
+    fetchReports({ limit: 50 })
+      .then((summaries) => {
+        if (cancelled) return;
+        const historicalResearchReports: ResearchReport[] = [];
+        const historicalReports: BacktestReportFull[] = [];
+
+        summaries.forEach((s, index) => {
+          const reportId = `report-${s.id}`;
+          // 同步创建 ResearchReport，使 handleSwitchBacktestReport 反推能匹配
+          historicalResearchReports.push(
+            createResearchReport(
+              {
+                id: reportId,
+                jobId: s.taskId,
+                sequence: index + 1,
+                generatedAt: new Date(s.createdAt).toLocaleTimeString(
+                  language === 'zh' ? 'zh-CN' : 'en-US',
+                  { hour12: false },
+                ),
+              },
+              language,
+            ),
+          );
+          // backtestReports 项 id 必须为 backtest-full-${reportId}，与 activeBacktestReport 查找逻辑一致
+          historicalReports.push(
+            createBacktestReportFull({
+              id: `backtest-full-${reportId}`,
+              taskId: s.taskId,
+              status: 'completed',
+              generatedAt: new Date(s.createdAt).toLocaleTimeString(
+                language === 'zh' ? 'zh-CN' : 'en-US',
+                { hour12: false },
+              ),
+              overview: {
+                ...createBacktestReportFull().overview,
+                name: s.strategyName,
+                instruments: [s.symbol],
+                frequency: s.timeframe,
+                timeRange: {
+                  start: s.startTime ? new Date(s.startTime).toISOString().slice(0, 10) : '',
+                  end: s.endTime ? new Date(s.endTime).toISOString().slice(0, 10) : '',
+                },
+              },
+              returnMetrics: {
+                ...createBacktestReportFull().returnMetrics,
+                totalReturn: s.totalReturn,
+                annualizedReturn: s.annualizedReturn,
+              },
+              riskMetrics: {
+                ...createBacktestReportFull().riskMetrics,
+                maxDrawdown: s.maxDrawdown,
+              },
+              riskAdjMetrics: {
+                ...createBacktestReportFull().riskAdjMetrics,
+                sharpeRatio: s.sharpeRatio,
+              },
+              tradeStats: {
+                ...createBacktestReportFull().tradeStats,
+                winRate: s.winRate,
+                totalTrades: s.totalTrades,
+              },
+            }),
+          );
+        });
+
+        // 合并 reports（以 id 去重）
+        setReports((current) => {
+          const existing = new Set(current.map((r) => r.id));
+          const merged = [...current];
+          for (const r of historicalResearchReports) {
+            if (!existing.has(r.id)) merged.push(r);
+          }
+          return merged;
+        });
+        // 合并 backtestReports（以 id 去重）
+        setBacktestReports((current) => {
+          const existing = new Set(current.map((r) => r.id));
+          const merged = [...current];
+          for (const r of historicalReports) {
+            if (!existing.has(r.id)) merged.push(r);
+          }
+          return merged;
+        });
+      })
+      .catch(() => {
+        // API 不可用，忽略
+      });
+    return () => { cancelled = true; };
+  }, [language]);
 
   const researchMode = useMemo(() => getResearchMode(activeMode, language), [activeMode, language]);
   const localizedJobs = useMemo(() => jobs.map((job) => localizeResearchJob(job, language)), [jobs, language]);
@@ -62,56 +180,29 @@ export function useResearchWorkflow(language: LanguageCode) {
   function handleSelectStrategy(strategy: StrategyRow) {
     setSelectedStrategy(strategy);
     setActiveMode(strategy.mode);
+    // 用策略定义的默认值初始化参数
+    const defaultParams: Record<string, unknown> = {};
+    for (const param of strategy.params ?? []) {
+      defaultParams[param.key] = param.default;
+    }
+    setBacktestConfig((current) => ({ ...current, params: defaultParams }));
     setState((current) => ({ ...current, activePage: 'workspace' }));
   }
 
-  function createMockJobAndReport(runId: number, jobId: string, sequence: number) {
-    const nextJob = createResearchJob(
-      {
-        id: jobId,
-        mode: activeMode,
-        sequence,
-        strategy: selectedStrategyForLanguage,
-        configSummary: activeConfigSummary,
-      },
-      language,
-    );
-    const nextReport = createResearchReport(
-      {
-        id: `report-${runId}`,
-        jobId,
-        mode: activeMode,
-        sequence,
-        strategy: selectedStrategyForLanguage,
-        generatedAt: formatReportTime(language),
-        configSummary: activeConfigSummary,
-      },
-      language,
-    );
-    const nextBacktestReport = createBacktestReportFull({
-      id: `backtest-full-report-${runId}`,
-      taskId: jobId,
-      status: 'completed',
-      generatedAt: formatReportTime(language),
-    });
-    setJobs((current) => [nextJob, ...current]);
-    setReports((current) => [nextReport, ...current]);
-    setBacktestReports((current) => [nextBacktestReport, ...current]);
-    setActiveReportId(nextReport.id);
-  }
-
   const handleRunResearch = useCallback(() => {
-    const runId = Date.now();
     const sequence = jobs.length + 1;
 
-    // 尝试 API 提交，失败则 fallback 到模拟数据
+    // 尝试 API 提交，失败则不创建任务
     if (selectedStrategy) {
       submitBacktestTask({
         strategy: selectedStrategy.id,
-        symbol: '600519',
-        timeframe: '1d',
-        initialCash: 1000000,
-        slippage: 0.001,
+        symbol: backtestConfig.symbol,
+        timeframe: backtestConfig.timeframe,
+        initialCash: backtestConfig.initialCash,
+        slippage: backtestConfig.slippage,
+        startTs: backtestConfig.startTs,
+        endTs: backtestConfig.endTs,
+        params: backtestConfig.params,
       })
         .then((taskId) => {
           // 创建本地 job 跟踪进度（初始 progress=0）
@@ -123,6 +214,19 @@ export function useResearchWorkflow(language: LanguageCode) {
 
           // 流式跟踪任务
           submitAndStream(taskId, (event) => {
+            if (event.type === 'status') {
+              // 将 API 任务状态映射到内部 job 状态
+              const statusMap: Record<string, string> = {
+                pending: 'Queued',
+                running: 'Running',
+                completed: 'Completed',
+                failed: 'Failed',
+              };
+              const nextState = statusMap[event.message ?? ''] ?? 'Running';
+              setJobs((current) =>
+                current.map((j) => j.id === taskId ? { ...j, state: nextState, progress: event.percent ?? j.progress } : j),
+              );
+            }
             if (event.type === 'progress') {
               // 实时更新 job 进度
               setJobs((current) =>
@@ -130,15 +234,19 @@ export function useResearchWorkflow(language: LanguageCode) {
               );
             }
             if (event.type === 'result') {
+              // 任务完成，更新 job 状态
+              setJobs((current) =>
+                current.map((j) => j.id === taskId ? { ...j, state: 'Completed', progress: 100 } : j),
+              );
               // 创建报告 — 用真实回测结果映射
               const nextReport = createResearchReport(
-                { id: `report-${runId}`, jobId: taskId, mode: activeMode, sequence, strategy: selectedStrategyForLanguage, generatedAt: formatReportTime(language), configSummary: activeConfigSummary },
+                { id: `report-${Date.now()}`, jobId: taskId, mode: activeMode, sequence, strategy: selectedStrategyForLanguage, generatedAt: formatReportTime(language), configSummary: activeConfigSummary },
                 language,
               );
               const nextBacktestReport = mapBacktestResultToReport(
                 event.data as { taskId?: string; backtestResult?: unknown } | undefined,
                 {
-                  id: `backtest-full-report-${runId}`, taskId, status: 'completed', generatedAt: formatReportTime(language),
+                  id: `backtest-full-report-${Date.now()}`, taskId, status: 'completed', generatedAt: formatReportTime(language),
                 },
               );
               setReports((current) => [nextReport, ...current]);
@@ -146,21 +254,20 @@ export function useResearchWorkflow(language: LanguageCode) {
               setActiveReportId(nextReport.id);
             }
             if (event.type === 'error') {
-              // 任务失败，fallback 到模拟数据
-              createMockJobAndReport(runId, `job-${runId}`, sequence);
+              // 任务失败，标记原 job 为失败状态
+              setJobs((current) =>
+                current.map((j) => j.id === taskId ? { ...j, state: 'Failed', progress: j.progress } : j),
+              );
             }
           });
         })
         .catch(() => {
-          // API 不可用，fallback 到模拟数据
-          createMockJobAndReport(runId, `job-${runId}`, sequence);
+          // API 不可用，不创建任务
         });
-    } else {
-      createMockJobAndReport(runId, `job-${runId}`, sequence);
     }
 
     setState((current) => ({ ...current, activePage: 'jobs' }));
-  }, [jobs.length, selectedStrategy, activeMode, selectedStrategyForLanguage, activeConfigSummary, language, submitBacktestTask, submitAndStream]);
+  }, [jobs.length, selectedStrategy, activeMode, selectedStrategyForLanguage, activeConfigSummary, language, submitBacktestTask, submitAndStream, backtestConfig]);
 
   function handleViewReport(job: ResearchJob) {
     const report = reports.find((item) => item.jobId === job.id);
@@ -196,6 +303,8 @@ export function useResearchWorkflow(language: LanguageCode) {
     backtestReports,
     reportJobIds,
     activeConfigSummary,
+    backtestConfig,
+    setBacktestConfig,
     handleNavClick,
     handleSelectStrategy,
     handleRunResearch,
