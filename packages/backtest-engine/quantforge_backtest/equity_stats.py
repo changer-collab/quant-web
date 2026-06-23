@@ -28,7 +28,13 @@ class AnnualReturn:
 
 
 def compute_drawdown_curve(equity_curve: list[EquityPoint]) -> list[DrawdownPoint]:
-    """从权益曲线计算逐点回撤率（0 表示无回撤，负值表示回撤）"""
+    """从权益曲线计算逐点回撤率（0 表示无回撤，负值表示回撤）
+
+    返回负值表示回撤深度（0 = 无回撤，-0.18 = 18% 回撤），
+    以匹配前端 ECharts 回撤面积图的渲染需求。
+    注意：与 metrics.calc_metrics 中 max_drawdown 的正值约定相反。
+    若初始权益 ≤ 0，在有正值权益出现前回撤记为 0。
+    """
     if not equity_curve:
         return []
     result: list[DrawdownPoint] = []
@@ -47,6 +53,7 @@ def compute_period_returns(
     """从权益曲线计算月度和年度收益率
 
     按月/年分组取末尾权益，计算相邻周期收益率（百分比）。
+    注意：date.fromtimestamp 使用本地时区，与数据中心 bar.timestamp 约定一致。
     """
     if len(equity_curve) < 2:
         return [], []
