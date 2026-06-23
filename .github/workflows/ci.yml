@@ -7,9 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  lint-test-build:
+  js:
+    name: JS Lint + Test + Build + Smoke
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -36,3 +36,34 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: API smoke test
+        run: bash scripts/smoke-test.sh
+
+  python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python packages
+        run: |
+          pip install -e packages/strategy-runtime \
+            -e packages/data-client \
+            -e packages/backtest-engine \
+            -e packages/strategies \
+            -e packages/factor-lab \
+            -e packages/ai-engine \
+            -e packages/obsidian-sync
+
+      - name: Python tests
+        run: |
+          for pkg in strategy-runtime backtest-engine strategies data-client factor-lab ai-engine obsidian-sync; do
+            echo "::group::pytest: $pkg"
+            (cd packages/$pkg && python -m pytest -v)
+            echo "::endgroup::"
+          done
