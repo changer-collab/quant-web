@@ -92,9 +92,12 @@ export function mapBacktestResultToReport(
         equity: p.equity,
         drawdown: 0,
       })),
-      monthlyReturns: [],
-      annualReturns: [],
-      drawdownSeries: [],
+      monthlyReturns: Array.isArray((result as any).monthlyReturns)
+        ? (result as any).monthlyReturns : [],
+      annualReturns: Array.isArray((result as any).annualReturns)
+        ? (result as any).annualReturns : [],
+      drawdownSeries: Array.isArray((result as any).drawdownCurve)
+        ? (result as any).drawdownCurve : [],
     },
     robustness: {
       paramSensitivity: [],
