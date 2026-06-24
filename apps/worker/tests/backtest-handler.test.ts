@@ -33,7 +33,7 @@ describe('BacktestHandler', () => {
     const queue = new TaskQueue();
     queue.registerHandler(handler);
 
-    const task = queue.submit(TaskType.Backtest, {
+    const task = await queue.submit(TaskType.Backtest, {
       strategyName: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
@@ -42,9 +42,10 @@ describe('BacktestHandler', () => {
     });
 
     await queue.processAll();
-    expect(task.status).toBe(TaskStatus.Completed);
-    expect(task.result).toBeDefined();
-    expect(task.result!.backtestResult).toBeDefined();
+    const completed = await queue.get(task.id);
+    expect(completed!.status).toBe(TaskStatus.Completed);
+    expect(completed!.result).toBeDefined();
+    expect(completed!.result!.backtestResult).toBeDefined();
   });
 
   it('Python 返回错误时报错', async () => {
@@ -58,14 +59,75 @@ describe('BacktestHandler', () => {
     const queue = new TaskQueue();
     queue.registerHandler(handler);
 
-    const task = queue.submit(TaskType.Backtest, {
+    const task = await queue.submit(TaskType.Backtest, {
       strategyName: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
     });
 
     await queue.processAll();
-    expect(task.status).toBe(TaskStatus.Failed);
-    expect(task.error).toContain('No bars');
+    const failed = await queue.get(task.id);
+    expect(failed!.status).toBe(TaskStatus.Failed);
+    expect(failed!.error).toContain('No bars');
+  });
+
+  it('回测成功后调用 syncBacktest', async () => {
+    const bridge = createMockBridge();
+    const handler = new BacktestHandler(bridge);
+    const queue = new TaskQueue();
+    queue.registerHandler(handler);
+
+    const task = await queue.submit(TaskType.Backtest, {
+      strategy: 'mock',
+      symbol: 'TEST',
+      timeframe: TimeFrame.D1,
+    });
+
+    await queue.processAll();
+
+    // 验证 syncBacktest 被调用
+    const calls = (bridge.call as ReturnType<typeof vi.fn>).mock.calls;
+    const syncCall = calls.find((c: Record<string, unknown>[]) => {
+      const req = c[0] as Record<string, unknown>;
+      return req?.command === 'syncBacktest';
+    });
+    expect(syncCall).toBeDefined();
+    const syncReq = syncCall![0] as Record<string, unknown>;
+    expect(syncReq.strategyName).toBe('mock');
+    expect(syncReq.symbol).toBe('TEST');
+    expect(syncReq.backtestData).toBeDefined();
+  });
+
+  it('sync 失败不影响回测结果', async () => {
+    const callMock = vi.fn<() => Promise<PythonResult>>();
+    // 第 1 次：backtest 成功，第 2 次：analyze 成功，第 3 次：sync 失败
+    callMock
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          config: {},
+          metrics: { totalReturn: 0.1, annualizedReturn: 0.15, sharpeRatio: 1.5, maxDrawdown: 0.08, winRate: 0.55, totalTrades: 10 },
+          equityCurve: [],
+          trades: [],
+        },
+      })
+      .mockResolvedValueOnce({ ok: true, data: { analysis: {} } })
+      .mockRejectedValueOnce(new Error('sync failed'));
+
+    const bridge = createMockBridge({ call: callMock });
+    const handler = new BacktestHandler(bridge);
+    const queue = new TaskQueue();
+    queue.registerHandler(handler);
+
+    const task = await queue.submit(TaskType.Backtest, {
+      strategy: 'mock',
+      symbol: 'TEST',
+      timeframe: TimeFrame.D1,
+    });
+
+    await queue.processAll();
+    const completed = await queue.get(task.id);
+    expect(completed!.status).toBe(TaskStatus.Completed);
+    expect(completed!.result!.backtestResult).toBeDefined();
   });
 });
