@@ -15,10 +15,12 @@ export function useTasks() {
   const submitBacktestTask = useCallback(
     async (payload: {
       strategy: string;
-      symbol?: string;
-      timeframe?: string;
+      symbol: string;
+      timeframe: string;
       initialCash?: number;
       slippage?: number;
+      startTs?: number;
+      endTs?: number;
       params?: Record<string, unknown>;
     }): Promise<string> => {
       const { id } = await submitBacktest(payload);
@@ -30,9 +32,21 @@ export function useTasks() {
   /** 通过 SSE 流式跟踪任务 */
   const submitAndStream = useCallback(
     (taskId: string, onEvent: (event: TaskStreamEvent) => void): (() => void) => {
-      return streamTask(taskId, onEvent, () => {
-        // SSE 错误时静默关闭
-      });
+      const timer = setTimeout(() => {
+        onEvent({ type: 'error', taskId, error: { code: 'TIMEOUT', message: 'Task timed out' } });
+      }, 60_000);
+      const close = streamTask(
+        taskId,
+        (event) => {
+          if (event.type === 'result' || event.type === 'error') clearTimeout(timer);
+          onEvent(event);
+        },
+        () => {
+          clearTimeout(timer);
+          onEvent({ type: 'error', taskId, error: { code: 'SSE_ERROR', message: 'SSE connection failed' } });
+        },
+      );
+      return () => { clearTimeout(timer); close(); };
     },
     [],
   );
@@ -41,10 +55,12 @@ export function useTasks() {
   const submitAndPoll = useCallback(
     async (payload: {
       strategy: string;
-      symbol?: string;
-      timeframe?: string;
+      symbol: string;
+      timeframe: string;
       initialCash?: number;
       slippage?: number;
+      startTs?: number;
+      endTs?: number;
       params?: Record<string, unknown>;
     }): Promise<ApiTask> => {
       const taskId = await submitBacktestTask(payload);

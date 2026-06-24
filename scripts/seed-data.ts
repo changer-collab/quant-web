@@ -42,8 +42,8 @@ async function main(): Promise<void> {
   const dc = await createDataCenter({ dbPath: DB_PATH, persistence: "immediate" });
   console.log(`数据中心已创建: ${DB_PATH}`);
 
-  // 3. 创建采集器（只用 baostock，AKShare 在国内网络可能不稳定）
-  const { registry } = createCollector({ sources: ["baostock"] });
+  // 3. 创建采集器（baostock + mootdx + tencent）
+  const { registry } = createCollector({ sources: ["baostock", "mootdx", "tencent"] });
   const scheduler = new CollectorScheduler(registry, dc.repos);
 
   // 4. 采集标的列表
@@ -77,7 +77,55 @@ async function main(): Promise<void> {
     }
   }
 
-  // 6. 关闭数据中心
+  // 6. 采集复权因子
+  console.log("\n--- 采集复权因子 ---");
+  for (const symbol of SYMBOLS) {
+    const adjTask = CollectorPresets.adjustmentFactor(symbol, "baostock", {
+      start: START_DATE,
+      end: END_DATE,
+    });
+    try {
+      const results = await scheduler.execute(adjTask);
+      for (const r of results) {
+        console.log(`  ${symbol} 复权因子: 写入 ${r.recordsWritten} 条`);
+      }
+    } catch (err) {
+      console.warn(`  ${symbol} 复权因子采集失败（非阻塞）: ${err}`);
+    }
+  }
+
+  // 7. 采集财务报告
+  console.log("\n--- 采集财务报告 ---");
+  for (const symbol of SYMBOLS) {
+    const finTask = CollectorPresets.financialReport(symbol, "baostock", {
+      start: START_DATE,
+      end: END_DATE,
+    });
+    try {
+      const results = await scheduler.execute(finTask);
+      for (const r of results) {
+        console.log(`  ${symbol} 财务报告: 写入 ${r.recordsWritten} 条`);
+      }
+    } catch (err) {
+      console.warn(`  ${symbol} 财务报告采集失败（非阻塞）: ${err}`);
+    }
+  }
+
+  // 8. 采集估值数据（腾讯）
+  console.log("\n--- 采集估值数据（腾讯） ---");
+  for (const symbol of SYMBOLS) {
+    const valTask = CollectorPresets.valuation(symbol, "tencent");
+    try {
+      const results = await scheduler.execute(valTask);
+      for (const r of results) {
+        console.log(`  ${symbol} 估值: 写入 ${r.recordsWritten} 条`);
+      }
+    } catch (err) {
+      console.warn(`  ${symbol} 估值采集失败（非阻塞）: ${err}`);
+    }
+  }
+
+  // 9. 关闭数据中心
   await dc.close();
   console.log("\n=== 数据采集完成，数据库已保存 ===");
 }

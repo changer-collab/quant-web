@@ -26,12 +26,14 @@ function resolveWasmPath(file: string): string {
   const fromPackage = path.resolve(__dirname, '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', file);
   if (fs.existsSync(fromPackage)) return fromPackage;
 
-  // 尝试从 process.cwd() 向上逐层查找
-  const cwd = process.cwd();
-  const parts = cwd.split(path.sep);
-  for (let i = parts.length; i > 0; i--) {
-    const candidate = path.resolve(...parts.slice(0, i), 'node_modules', 'sql.js', 'dist', file);
+  // 尝试从 process.cwd() 向上逐层查找（用 path.dirname 避免 Windows 驱动器相对路径问题）
+  let dir = process.cwd();
+  while (true) {
+    const candidate = path.join(dir, 'node_modules', 'sql.js', 'dist', file);
     if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // 到达根目录
+    dir = parent;
   }
 
   // 最后尝试：从 sql.js 包自身位置定位
@@ -45,7 +47,7 @@ function resolveWasmPath(file: string): string {
   }
 
   // 全部失败，返回默认路径（sql.js 会抛出明确错误）
-  return path.resolve(cwd, 'node_modules', 'sql.js', 'dist', file);
+  return path.resolve(process.cwd(), 'node_modules', 'sql.js', 'dist', file);
 }
 
 /** SQLite 连接上下文 — 包含 Drizzle 实例和底层 sql.js 实例 */
@@ -276,6 +278,33 @@ CREATE TABLE IF NOT EXISTS watermarks (
   last_timestamp INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (source, data_type, symbol)
+);
+
+CREATE TABLE IF NOT EXISTS factor_definitions (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  formula TEXT NOT NULL,
+  category TEXT NOT NULL,
+  modes TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  status TEXT NOT NULL,
+  version TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  submitted_at INTEGER NOT NULL,
+  started_at INTEGER,
+  completed_at INTEGER,
+  result TEXT,
+  error TEXT,
+  progress INTEGER,
+  lines TEXT
 );
 `;
 

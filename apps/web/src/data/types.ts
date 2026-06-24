@@ -239,6 +239,10 @@ export interface CreateResearchJobInput {
   mode?: ResearchModeId;
   strategy?: StrategyRow;
   configSummary?: ResearchRunConfigSummary;
+  /** 初始状态（内部英文值，如 "Running"/"Completed"），默认 "Running" */
+  initialState?: string;
+  /** 初始进度（0-100），默认 0 */
+  initialProgress?: number;
 }
 
 export interface CreateResearchReportInput extends CreateResearchJobInput {
@@ -725,14 +729,14 @@ export interface ReportStressTest {
     recoveryDays: number;
     note: string;
   }[];
-  /** 蒙特卡洛模拟结果 */
+  /** 蒙特卡洛模拟结果（无数据时为 null） */
   monteCarlo: {
     simulatedPaths: number;
     medianReturn: number;
     percentile5: number;
     percentile95: number;
     probPositiveReturn: number;
-  };
+  } | null;
 }
 
 /** 成本敏感性分析（框架1/2/5 要求） */
@@ -908,6 +912,26 @@ export interface ReportUiCopy {
   benchmarkComparison: Record<string, string>;
   riskWarnings: Record<string, string>;
   tabs: Record<ReportTabId, string>;
+  chartLabels: {
+    annualizedReturn: string;
+    maxDrawdown: string;
+    sharpe: string;
+    cumulativeReturn: string;
+    annualizedVolatility: string;
+    returnRate: string;
+    var95: string;
+    strategy: string;
+    benchmark: string;
+    excess: string;
+    returnComparison: string;
+    riskAdjReturn: string;
+    backtestReport: string;
+    switchReport: string;
+    reportModules: string;
+    noData: string;
+    priceUp: string;
+    priceDown: string;
+  };
 }
 
 // ─── 因子评估报告类型（13 大模块） ──────────────────────────

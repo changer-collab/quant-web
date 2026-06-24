@@ -3,16 +3,32 @@
  *
  * 用法: tsx src/main.ts
  * 环境变量:
- *   API_BASE_URL - API 地址，默认 http://127.0.0.1:3000
+ *   API_BASE_URL - API 地址，默认 http://127.0.0.1:3002
  *   POLL_INTERVAL_MS - 轮询间隔，默认 1000
  */
 
 import { BacktestHandler } from './handlers/backtest-handler.js';
+import { CollectHandler } from './handlers/collect-handler.js';
 import { PythonBridge } from './python-bridge.js';
-import type { StreamEvent } from './types.js';
-import type { TaskRecord } from './queue.js';
+import { TaskStatus, type StreamEvent } from './types.js';
+import type { TaskRecord, TaskHandler } from './queue.js';
 
-const API_BASE = process.env.API_BASE_URL ?? 'http://127.0.0.1:3000';
+/** 根据任务类型创建对应的 handler */
+function createHandler(taskType: string): TaskHandler | null {
+  switch (taskType) {
+    case 'backtest': {
+      const bridge = new PythonBridge({ timeout: 120_000 });
+      return new BacktestHandler(bridge);
+    }
+    case 'collect': {
+      return new CollectHandler();
+    }
+    default:
+      return null;
+  }
+}
+
+const API_BASE = process.env.API_BASE_URL ?? 'http://127.0.0.1:3002';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS ?? '1000', 10);
 
 /** API 返回的任务视图 */
@@ -54,22 +70,19 @@ async function processTask(task: ApiTaskView): Promise<void> {
   }
 
   // 2. 根据任务类型选择 handler
-  if (task.type !== 'backtest') {
+  const handler = createHandler(task.type);
+  if (!handler) {
     await apiPost(`/api/internal/tasks/${taskId}/fail`, {
       error: `Unsupported task type: ${task.type}`,
     });
     return;
   }
 
-  // 3. 执行回测
-  const bridge = new PythonBridge({ timeout: 120_000 });
-  const handler = new BacktestHandler(bridge);
-
-  // 构造 TaskRecord（BacktestHandler 需要的格式）
+  // 3. 构造 TaskRecord
   const taskRecord: TaskRecord = {
     id: taskId,
     type: task.type as never,
-    status: 'running',
+    status: TaskStatus.Running,
     payload: task.payload,
     submittedAt: Date.now(),
     startedAt: Date.now(),

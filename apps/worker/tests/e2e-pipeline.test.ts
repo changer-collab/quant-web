@@ -45,18 +45,18 @@ describe('端到端管道测试', () => {
     // 验证交易记录
     expect(Array.isArray(data.trades)).toBe(true);
     expect(data.trades.length).toBeGreaterThan(0);
-    // 验证权益曲线 (Python 返回 snake_case: equity_curve)
-    expect(Array.isArray(data.equity_curve)).toBe(true);
-    expect(data.equity_curve.length).toBeGreaterThan(0);
-    // 验证指标 (Python 返回 snake_case)
+    // 验证权益曲线 (Python 返回 camelCase: equityCurve)
+    expect(Array.isArray(data.equityCurve)).toBe(true);
+    expect(data.equityCurve.length).toBeGreaterThan(0);
+    // 验证指标 (Python 返回 camelCase)
     expect(data.metrics).toBeDefined();
-    expect(typeof data.metrics.total_return).toBe('number');
-    expect(typeof data.metrics.annualized_return).toBe('number');
-    expect(typeof data.metrics.sharpe_ratio).toBe('number');
-    expect(typeof data.metrics.max_drawdown).toBe('number');
-    expect(typeof data.metrics.win_rate).toBe('number');
-    expect(typeof data.metrics.total_trades).toBe('number');
-    expect(data.metrics.total_trades).toBeGreaterThan(0);
+    expect(typeof data.metrics.totalReturn).toBe('number');
+    expect(typeof data.metrics.annualizedReturn).toBe('number');
+    expect(typeof data.metrics.sharpeRatio).toBe('number');
+    expect(typeof data.metrics.maxDrawdown).toBe('number');
+    expect(typeof data.metrics.winRate).toBe('number');
+    expect(typeof data.metrics.totalTrades).toBe('number');
+    expect(data.metrics.totalTrades).toBeGreaterThan(0);
   });
 
   it('PythonBridge → 不存在的策略 → 报错', async () => {

@@ -127,6 +127,9 @@ importers:
       '@quant/data-center':
         specifier: workspace:*
         version: link:../../services/data-center
+      '@quant/data-collector':
+        specifier: workspace:*
+        version: link:../../services/data-collector
       sql.js:
         specifier: ^1.11.0
         version: 1.14.1

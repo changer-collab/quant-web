@@ -5,10 +5,11 @@ import type {
   ResearchJob,
   ResearchReport,
   BacktestReportFull,
+  ReportConclusion,
+  ReportRiskWarnings,
 } from './types';
 import { getContent, getResearchMode } from './accessors';
 import { localizeJobState, localizeResearchJob } from './localization';
-import { MOCK_REPORT } from './mock/report';
 
 function resolveResearchTarget(input: CreateResearchJobInput, language?: LanguageCode) {
   const content = getContent(language);
@@ -83,26 +84,6 @@ export function createResearchReport(input: CreateResearchReportInput, language?
   };
 }
 
-/** 创建一个模拟的完整回测报告 */
-export function createBacktestReportFull(
-  source?: Partial<BacktestReportFull>,
-): BacktestReportFull {
-  return {
-    ...MOCK_REPORT,
-    ...source,
-    overview: { ...MOCK_REPORT.overview, ...source?.overview },
-    dataParams: { ...MOCK_REPORT.dataParams, ...source?.dataParams },
-    returnMetrics: { ...MOCK_REPORT.returnMetrics, ...source?.returnMetrics },
-    riskMetrics: { ...MOCK_REPORT.riskMetrics, ...source?.riskMetrics },
-    riskAdjMetrics: { ...MOCK_REPORT.riskAdjMetrics, ...source?.riskAdjMetrics },
-    tradeStats: { ...MOCK_REPORT.tradeStats, ...source?.tradeStats },
-    equityData: { ...MOCK_REPORT.equityData, ...source?.equityData },
-    robustness: { ...MOCK_REPORT.robustness, ...source?.robustness },
-    attribution: { ...MOCK_REPORT.attribution, ...source?.attribution },
-    issues: { ...MOCK_REPORT.issues, ...source?.issues },
-  };
-}
-
 /** Python BacktestResult 结构（经 _to_camel 转换后的 camelCase） */
 interface PythonBacktestResult {
   config: {
@@ -113,6 +94,7 @@ interface PythonBacktestResult {
     endDate?: number;
     initialCash?: number;
     slippage?: number;
+    strategyKind?: string;
     params?: Record<string, unknown>;
   };
   trades?: unknown[];
@@ -130,105 +112,330 @@ interface PythonBacktestResult {
   };
 }
 
-/** Worker 返回的 result 结构 */
-interface WorkerTaskResult {
-  taskId?: string;
-  backtestResult?: PythonBacktestResult;
-}
-
 /** 时间戳转日期字符串 */
 function tsToDate(ts: number): string {
   if (!ts) return '';
   return new Date(ts).toISOString().split('T')[0];
 }
 
-/** 将 Worker 返回的真实回测结果映射为 BacktestReportFull（未覆盖字段保持 mock） */
+/** 创建空白报告模板（不含 mock 数据，所有可选字段为空） */
+function createEmptyReport(source?: Partial<BacktestReportFull>): BacktestReportFull {
+  const src = source as Record<string, unknown> | undefined;
+  const base: BacktestReportFull = {
+    id: '',
+    taskId: '',
+    strategyName: '',
+    strategyVersion: '',
+    strategyDescription: '',
+    status: 'completed',
+    generatedAt: '',
+
+    overview: {
+      name: '',
+      version: '',
+      logic: '',
+      instruments: [],
+      timeRange: { start: '', end: '' },
+      frequency: '',
+      benchmark: '',
+      strategyCategory: 'timing',
+      suitableMarketRegime: [],
+      coreLogic: '',
+    },
+
+    dataParams: {
+      dataSource: '',
+      adjustmentType: '',
+      fee: { commission: 0, stampTax: 0 },
+      slippage: { model: '', value: 0 },
+      capital: { initialCash: 0, maxLeverage: 0, positionLimit: 0 },
+      params: [],
+    },
+
+    returnMetrics: {
+      cumulativeReturn: 0,
+      totalReturn: 0,
+      annualizedReturn: 0,
+      alpha: 0,
+      benchmarkReturn: 0,
+    },
+
+    riskMetrics: {
+      maxDrawdown: 0,
+      maxDrawdownDuration: 0,
+      annualizedVolatility: 0,
+      downsideVolatility: 0,
+      var95: 0,
+      cvar95: 0,
+      calmarRatio: 0,
+    },
+
+    riskAdjMetrics: {
+      sharpeRatio: 0,
+      sortinoRatio: 0,
+      informationRatio: 0,
+      treynorRatio: 0,
+    },
+
+    tradeStats: {
+      totalTrades: 0,
+      winningTrades: 0,
+      losingTrades: 0,
+      winRate: 0,
+      profitLossRatio: 0,
+      avgHoldingDays: 0,
+      turnoverRate: 0,
+      maxSingleProfit: 0,
+      maxSingleLoss: 0,
+      pnlDistribution: [],
+    },
+
+    equityData: {
+      equityCurve: [],
+      benchmarkCurve: [],
+      monthlyReturns: [],
+      annualReturns: [],
+      drawdownCurve: [],
+    },
+
+    robustness: {
+      paramSensitivity: [],
+      rollingWindows: [],
+      marketRegimes: [],
+      outOfSampleReturn: 0,
+      shuffledReturn: 0,
+    },
+
+    attribution: {
+      industryExposures: [],
+      factorExposures: [],
+      timingSelection: { timing: 0, selection: 0, residual: 0 },
+    },
+
+    issues: {
+      overfittingRisk: 'low',
+      survivorshipBias: false,
+      lookAheadBias: false,
+      liquidityAssessment: '',
+      capacityEstimate: '',
+    },
+
+    executiveSummary: {
+      oneLineConclusion: '',
+      recommendedForLive: false,
+      recommendationReason: '',
+      keyMetrics: { annualizedReturn: 0, maxDrawdown: 0, sharpeRatio: 0 },
+      beatsBenchmark: false,
+      mainRisks: [],
+      strategyCategory: '',
+    },
+
+    conclusion: {
+      advantages: [],
+      potentialRisks: [],
+      improvements: [],
+      liveTradingAdvice: {
+        suggestedCapital: '',
+        suggestedInitialPosition: '',
+        riskControlRules: [],
+      },
+      suitableMarketRegime: [],
+    },
+
+    positionAnalysis: {
+      avgPositionLevel: 0,
+      positionDistribution: [],
+      volatilityRelation: '',
+      positionAdjustments: {
+        profitAddCount: 0,
+        lossAddCount: 0,
+        profitAddEffect: 0,
+        lossAddEffect: 0,
+      },
+      maxSinglePosition: 0,
+      adjustmentFrequency: 0,
+      positionCurve: [],
+    },
+
+    subStrategyAttribution: {
+      independentComparison: [],
+      marginalContributions: [],
+      timeSeriesAttribution: [],
+      interactionEffect: 0,
+    },
+
+    stressTest: {
+      scenarios: [],
+      monteCarlo: null,
+    },
+
+    costSensitivity: {
+      costAssumption: { commission: 0, stampTax: 0, slippage: 0, impactCost: 0 },
+      beforeAfterCost: [],
+      costDragRatio: 0,
+      slippageSensitivity: [],
+      annualTurnover: 0,
+    },
+
+    benchmarkComparison: {
+      rows: [],
+    },
+
+    riskWarnings: {
+      limitations: [],
+      codeSnippets: [],
+      glossary: [],
+      redLines: [],
+    },
+  };
+
+  if (!src) return base;
+
+  // 深度合并 src 到 base（只覆盖已存在的 key，避免引入 mock 字段）
+  return {
+    ...base,
+    ...src,
+    overview: { ...base.overview, ...(src.overview as Record<string, unknown>) },
+    dataParams: { ...base.dataParams, ...(src.dataParams as Record<string, unknown>) },
+    returnMetrics: { ...base.returnMetrics, ...(src.returnMetrics as Record<string, unknown>) },
+    riskMetrics: { ...base.riskMetrics, ...(src.riskMetrics as Record<string, unknown>) },
+    riskAdjMetrics: { ...base.riskAdjMetrics, ...(src.riskAdjMetrics as Record<string, unknown>) },
+    tradeStats: { ...base.tradeStats, ...(src.tradeStats as Record<string, unknown>) },
+    equityData: { ...base.equityData, ...(src.equityData as Record<string, unknown>) },
+    robustness: { ...base.robustness, ...(src.robustness as Record<string, unknown>) },
+    attribution: { ...base.attribution, ...(src.attribution as Record<string, unknown>) },
+    issues: { ...base.issues, ...(src.issues as Record<string, unknown>) },
+    executiveSummary: { ...base.executiveSummary, ...(src.executiveSummary as Record<string, unknown>) },
+    conclusion: { ...base.conclusion, ...(src.conclusion as Record<string, unknown>) },
+    positionAnalysis: { ...base.positionAnalysis, ...(src.positionAnalysis as Record<string, unknown>) },
+    subStrategyAttribution: { ...base.subStrategyAttribution, ...(src.subStrategyAttribution as Record<string, unknown>) },
+    stressTest: { ...base.stressTest, ...(src.stressTest as Record<string, unknown>) },
+    costSensitivity: { ...base.costSensitivity, ...(src.costSensitivity as Record<string, unknown>) },
+    benchmarkComparison: { ...base.benchmarkComparison, ...(src.benchmarkComparison as Record<string, unknown>) },
+    riskWarnings: { ...base.riskWarnings, ...(src.riskWarnings as Record<string, unknown>) },
+  } as BacktestReportFull;
+}
+
+/** 创建一个空白回测报告（不依赖 mock 数据） */
+export function createBacktestReportFull(
+  source?: Partial<BacktestReportFull>,
+): BacktestReportFull {
+  return createEmptyReport(source);
+}
+
+/** 将 Worker 返回的真实回测结果映射为 BacktestReportFull（未覆盖字段保持空） */
 export function mapBacktestResultToReport(
-  taskResult: { backtestResult?: unknown } | undefined,
+  taskResult: { backtestResult?: unknown; analysis?: unknown } | undefined,
   source?: Partial<BacktestReportFull>,
 ): BacktestReportFull {
   const bt = taskResult?.backtestResult as PythonBacktestResult | undefined;
-  if (!bt) return createBacktestReportFull(source);
+  const analysis = taskResult?.analysis as Record<string, unknown> | undefined;
+  if (!bt) return createEmptyReport(source);
 
   const metrics = bt.metrics ?? {};
   const config = bt.config ?? {};
 
-  return createBacktestReportFull({
+  const report = createEmptyReport({
     ...source,
+    strategyName: config.strategyName ?? source?.strategyName ?? '',
     overview: {
-      ...source?.overview,
-      name: config.strategyName ?? source?.overview?.name ?? MOCK_REPORT.overview.name,
-      version: source?.overview?.version ?? MOCK_REPORT.overview.version,
-      logic: source?.overview?.logic ?? MOCK_REPORT.overview.logic,
-      benchmark: source?.overview?.benchmark ?? MOCK_REPORT.overview.benchmark,
-      instruments: config.instruments ?? source?.overview?.instruments ?? MOCK_REPORT.overview.instruments,
+      name: config.strategyName ?? source?.overview?.name ?? '',
       timeRange: {
-        start: tsToDate(config.startDate ?? 0) || source?.overview?.timeRange.start || MOCK_REPORT.overview.timeRange.start,
-        end: tsToDate(config.endDate ?? 0) || source?.overview?.timeRange.end || MOCK_REPORT.overview.timeRange.end,
+        start: tsToDate(config.startDate ?? 0) || source?.overview?.timeRange.start || '',
+        end: tsToDate(config.endDate ?? 0) || source?.overview?.timeRange.end || '',
       },
-      frequency: config.timeframe ?? source?.overview?.frequency ?? MOCK_REPORT.overview.frequency,
+      frequency: config.timeframe ?? source?.overview?.frequency ?? '',
+      strategyCategory: config.strategyKind ?? source?.overview?.strategyCategory ?? 'timing',
     },
     dataParams: {
-      ...source?.dataParams,
-      dataSource: source?.dataParams?.dataSource ?? MOCK_REPORT.dataParams.dataSource,
-      adjustmentType: source?.dataParams?.adjustmentType ?? MOCK_REPORT.dataParams.adjustmentType,
-      fee: { ...MOCK_REPORT.dataParams.fee, ...source?.dataParams?.fee },
       capital: {
-        ...MOCK_REPORT.dataParams.capital,
-        ...source?.dataParams?.capital,
-        initialCash: config.initialCash ?? source?.dataParams?.capital?.initialCash ?? MOCK_REPORT.dataParams.capital.initialCash,
+        initialCash: config.initialCash ?? 0,
+        maxLeverage: 1.0,
+        positionLimit: 0.95,
       },
-      slippage: {
-        ...MOCK_REPORT.dataParams.slippage,
-        ...source?.dataParams?.slippage,
-        value: config.slippage ?? source?.dataParams?.slippage?.value ?? MOCK_REPORT.dataParams.slippage.value,
-      },
-      params: source?.dataParams?.params ?? MOCK_REPORT.dataParams.params,
+      slippage: { model: 'fixed', value: config.slippage ?? 0 },
     },
     returnMetrics: {
-      ...MOCK_REPORT.returnMetrics,
-      ...source?.returnMetrics,
-      totalReturn: metrics.totalReturn ?? source?.returnMetrics?.totalReturn ?? MOCK_REPORT.returnMetrics.totalReturn,
-      annualizedReturn: metrics.annualizedReturn ?? source?.returnMetrics?.annualizedReturn ?? MOCK_REPORT.returnMetrics.annualizedReturn,
+      cumulativeReturn: metrics.totalReturn ?? 0,
+      totalReturn: metrics.totalReturn ?? 0,
+      annualizedReturn: metrics.annualizedReturn ?? 0,
     },
     riskMetrics: {
-      ...MOCK_REPORT.riskMetrics,
-      ...source?.riskMetrics,
-      maxDrawdown: metrics.maxDrawdown ?? source?.riskMetrics?.maxDrawdown ?? MOCK_REPORT.riskMetrics.maxDrawdown,
+      maxDrawdown: metrics.maxDrawdown ?? 0,
     },
     riskAdjMetrics: {
-      ...MOCK_REPORT.riskAdjMetrics,
-      ...source?.riskAdjMetrics,
-      sharpeRatio: metrics.sharpeRatio ?? source?.riskAdjMetrics?.sharpeRatio ?? MOCK_REPORT.riskAdjMetrics.sharpeRatio,
+      sharpeRatio: metrics.sharpeRatio ?? 0,
     },
     tradeStats: {
-      ...MOCK_REPORT.tradeStats,
-      ...source?.tradeStats,
-      totalTrades: metrics.totalTrades ?? source?.tradeStats?.totalTrades ?? MOCK_REPORT.tradeStats.totalTrades,
-      winRate: metrics.winRate ?? source?.tradeStats?.winRate ?? MOCK_REPORT.tradeStats.winRate,
+      totalTrades: metrics.totalTrades ?? 0,
+      winRate: metrics.winRate ?? 0,
     },
     executiveSummary: {
-      ...MOCK_REPORT.executiveSummary,
-      ...source?.executiveSummary,
       keyMetrics: {
-        annualizedReturn: metrics.annualizedReturn ?? source?.executiveSummary?.keyMetrics.annualizedReturn ?? MOCK_REPORT.executiveSummary.keyMetrics.annualizedReturn,
-        maxDrawdown: metrics.maxDrawdown ?? source?.executiveSummary?.keyMetrics.maxDrawdown ?? MOCK_REPORT.executiveSummary.keyMetrics.maxDrawdown,
-        sharpeRatio: metrics.sharpeRatio ?? source?.executiveSummary?.keyMetrics.sharpeRatio ?? MOCK_REPORT.executiveSummary.keyMetrics.sharpeRatio,
+        annualizedReturn: metrics.annualizedReturn ?? 0,
+        maxDrawdown: metrics.maxDrawdown ?? 0,
+        sharpeRatio: metrics.sharpeRatio ?? 0,
       },
     },
     equityData: {
-      ...MOCK_REPORT.equityData,
-      ...source?.equityData,
-      equityCurve: (bt.equityCurve ?? []).map((p) => ({
-        timestamp: p.timestamp,
-        equity: p.equity,
-      })),
+      equityCurve: (bt.equityCurve ?? []).map((p) => ({ timestamp: p.timestamp, equity: p.equity })),
       drawdownCurve: bt.drawdownCurve ?? [],
       monthlyReturns: bt.monthlyReturns ?? [],
       annualReturns: bt.annualReturns ?? [],
-      benchmarkCurve: [],
     },
   });
+
+  // 合并 AI 分析结果（覆盖结论性字段）
+  if (analysis) {
+    const es = analysis.executiveSummary as Record<string, unknown> | undefined;
+    if (es) {
+      report.executiveSummary = {
+        ...report.executiveSummary,
+        oneLineConclusion: (es.oneLineConclusion as string) || report.executiveSummary.oneLineConclusion,
+        recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
+        recommendationReason: (es.recommendationReason as string) || report.executiveSummary.recommendationReason,
+        mainRisks: (es.mainRisks as string[]) ?? report.executiveSummary.mainRisks,
+      };
+    }
+    const ov = analysis.overview as Record<string, unknown> | undefined;
+    if (ov) {
+      report.overview = {
+        ...report.overview,
+        logic: (ov.logic as string) || report.overview.logic,
+        coreLogic: (ov.coreLogic as string) || report.overview.coreLogic,
+        suitableMarketRegime: (ov.suitableMarketRegime as string[]) ?? report.overview.suitableMarketRegime,
+      };
+    }
+    const iss = analysis.issues as Record<string, unknown> | undefined;
+    if (iss) {
+      report.issues = {
+        ...report.issues,
+        overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+        liquidityAssessment: (iss.liquidityAssessment as string) || report.issues.liquidityAssessment,
+        capacityEstimate: (iss.capacityEstimate as string) || report.issues.capacityEstimate,
+      };
+    }
+    const con = analysis.conclusion as Record<string, unknown> | undefined;
+    if (con) {
+      report.conclusion = {
+        ...report.conclusion,
+        advantages: (con.advantages as string[]) ?? report.conclusion.advantages,
+        potentialRisks: (con.potentialRisks as string[]) ?? report.conclusion.potentialRisks,
+        improvements: (con.improvements as string[]) ?? report.conclusion.improvements,
+        liveTradingAdvice: (con.liveTradingAdvice as ReportConclusion['liveTradingAdvice']) ?? report.conclusion.liveTradingAdvice,
+      };
+    }
+    const rw = analysis.riskWarnings as Record<string, unknown> | undefined;
+    if (rw) {
+      report.riskWarnings = {
+        ...report.riskWarnings,
+        limitations: (rw.limitations as ReportRiskWarnings['limitations']) ?? report.riskWarnings.limitations,
+        redLines: (rw.redLines as ReportRiskWarnings['redLines']) ?? report.riskWarnings.redLines,
+      };
+    }
+  }
+
+  return report;
 }
 
 export { localizeJobState, localizeResearchJob };

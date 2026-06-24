@@ -154,13 +154,6 @@ function DrawdownChart({ report, ui }: Props) {
         { type: 'inside', start: 0, end: 100 },
         { type: 'slider', start: 0, end: 100, height: 20, bottom: 4 },
       ],
-      visualMap: {
-        show: false,
-        dimension: 1,
-        pieces: [
-          { lte: 0, color: '#ff6b6b' },
-        ],
-      },
       series: [
         {
           type: 'line',

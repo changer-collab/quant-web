@@ -1,84 +1,64 @@
 .modeTabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-md);
-  margin-top: var(--space-xl);
-  animation: slideUp 0.4s ease-out both;
+  display: inline-flex;
+  gap: 2px;
+  margin-top: var(--space-lg);
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 16, 15, 0.5);
+  animation: slideUp 0.3s ease-out both;
 }
 
 .modeTab {
-  min-height: var(--mode-tab-height);
-  padding: 13px var(--space-lg);
+  padding: 6px 16px;
   color: var(--muted);
-  text-align: left;
-  border: 1px solid var(--line);
-  background: rgba(17, 25, 23, 0.82);
+  text-align: center;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.25s, color 0.2s, transform 0.15s, box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+  border-radius: calc(var(--radius-sm) - 2px);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1;
 }
 
 .modeTab::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 10%;
-  right: 10%;
-  height: 2px;
-  background: var(--gradient-accent);
-  opacity: 0;
-  transition: opacity 0.3s, left 0.3s, right 0.3s;
+  display: none;
 }
 
 .modeTab:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-.modeTab:hover::after {
-  opacity: 0.4;
-  left: 5%;
-  right: 5%;
+  color: var(--text);
+  background: rgba(77, 240, 160, 0.06);
 }
 
 .modeTab:hover,
 .modeTabActive {
   color: var(--text);
-  border-color: rgba(77, 240, 160, 0.55);
-  background: linear-gradient(135deg, rgba(77, 240, 160, 0.16), rgba(98, 216, 255, 0.05));
-}
-
-.modeTabActive::after {
-  opacity: 0.7;
-  left: 5%;
-  right: 5%;
+  background: rgba(77, 240, 160, 0.12);
 }
 
 .modeTab:active {
-  transform: translateY(0) scale(0.98);
+  transform: none;
 }
 
 .modeTab:focus-visible {
   outline: 2px solid var(--cyan);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .modeTabLabel,
 .modeTabDesc {
-  display: block;
+  display: inline;
 }
 
 .modeTabLabel {
-  font-size: var(--text-lg);
-  font-weight: 800;
+  font-size: var(--text-sm);
+  font-weight: 500;
 }
 
 .modeTabDesc {
-  margin-top: var(--space-sm);
-  color: var(--muted);
-  font-size: var(--text-sm);
+  display: none;
 }
 
 .modeSummary {

@@ -12,6 +12,7 @@ export enum TaskType {
   FactorCompute = 'factor_compute',
   FactorEval = 'factor_eval',
   AITrain = 'ai_train',
+  Collect = 'collect',
 }
 
 /** 任务状态 */

@@ -14,18 +14,19 @@ function pct(v: number): string {
 }
 
 /** 滑点敏感性曲线 */
-function SlippageChart({ report }: Props) {
+function SlippageChart({ report, ui }: Props) {
   const data = report.costSensitivity.slippageSensitivity;
+  const labels = ui.chartLabels;
 
   const option = useMemo<EChartsOption>(() => {
     if (data.length === 0) return {};
     return {
       tooltip: { ...CHART_DEFAULTS.tooltip, trigger: 'axis' },
-      legend: { data: ['年化收益', '夏普'], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
+      legend: { data: [labels.annualizedReturn, labels.sharpe], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
       grid: { top: 32, right: 48, bottom: 32, left: 48 },
       xAxis: {
         type: 'category',
-        name: '滑点(bp)',
+        name: ui.costSensitivity.slippage + '(bp)',
         nameTextStyle: { color: '#8fa29b', fontSize: 10 },
         data: data.map((d) => d.slippageBp),
         axisLabel: { fontSize: 10, color: '#8fa29b' },
@@ -34,14 +35,14 @@ function SlippageChart({ report }: Props) {
       yAxis: [
         {
           type: 'value',
-          name: '收益',
+          name: labels.returnRate,
           nameTextStyle: { color: '#8fa29b', fontSize: 10 },
           axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${v}%` },
           splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
         },
         {
           type: 'value',
-          name: '夏普',
+          name: labels.sharpe,
           nameTextStyle: { color: '#8fa29b', fontSize: 10 },
           axisLabel: { fontSize: 10, color: '#8fa29b' },
           splitLine: { show: false },
@@ -49,7 +50,7 @@ function SlippageChart({ report }: Props) {
       ],
       series: [
         {
-          name: '年化收益',
+          name: labels.annualizedReturn,
           type: 'line',
           data: data.map((d) => +(d.annualizedReturn * 100).toFixed(1)),
           lineStyle: { color: '#4df0a0', width: 2 },
@@ -58,7 +59,7 @@ function SlippageChart({ report }: Props) {
           symbolSize: 6,
         },
         {
-          name: '夏普',
+          name: labels.sharpe,
           type: 'line',
           yAxisIndex: 1,
           data: data.map((d) => d.sharpe),

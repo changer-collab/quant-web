@@ -27,3 +27,57 @@
 - **路径解析**：API 和 Worker 均通过 `findProjectRoot()` 定位 quant.db
 - **SSE 行为**：任务终态（completed/failed）时发送 result/error 事件后关闭连接
 - **前端 fallback**：API 不可用或任务失败时降级到模拟数据
+
+---
+
+## 错误 13：前端预览 ERR_CONNECTION_REFUSED（2026-06-24）
+
+> 场景：API + Worker 已在运行，通过 preview_url 打开前端预览，浏览器报 `ERR_CONNECTION_REFUSED`（错误代码 -102）
+> 结论：已修复，前端 dev server 正常启动并预览成功
+
+### 现象
+
+- 浏览器访问 `http://127.0.0.1:4173/` 报 `ERR_CONNECTION_REFUSED`（错误代码 -102）
+- API（3002）和 Worker 均正常运行，任务可正常提交处理
+
+### 根本原因
+
+**前端 vite dev server 从未启动**，4173 端口无进程监听。
+
+之前的 `preview_url` 仅打开了浏览器 URL，但并未实际启动 dev server 进程。API 和 Worker 是此前会话中已启动的长驻进程，而前端从未被启动过，导致连接被拒绝。
+
+### 诊断过程
+
+1. 检查 4173 端口：`netstat` 无输出 → 端口空闲，无服务监听
+2. 检查依赖：`apps/web/node_modules` 和根 `node_modules` 均存在
+3. 检查配置：`vite.config.ts` 代理配置正确（`/api` → `localhost:3002`），`package.json` 的 `dev` 脚本正确（`vite --host 127.0.0.1 --port 4173`）
+4. 检查环境：pnpm 9.15.0、node v24.15.0 可用
+
+### 修复方案
+
+无需修改配置，直接启动 vite dev server：
+
+```powershell
+cd d:\quant-web\apps\web
+pnpm dev
+```
+
+后台启动方式（PowerShell）：
+
+```powershell
+Start-Process -FilePath "cmd" -ArgumentList "/c","pnpm dev > dev-server.log 2>&1" -WorkingDirectory "d:\quant-web\apps\web" -WindowStyle Hidden
+```
+
+### 验证结果
+
+- `netstat` 确认 4173 端口 LISTENING（PID 40840）
+- VITE v7.3.5 ready in 219ms，无编译错误
+- HMR 已启用（vite 默认内置）
+- 浏览器预览成功加载页面
+
+### 修复要点
+
+- **根因**：preview_url 只打开浏览器 URL，不会启动 dev server；前端需单独启动
+- **配置无需改动**：`vite.config.ts` 和 `package.json` 均正确
+- **HMR**：Vite 7 默认支持热模块替换，无需额外配置
+- **访问地址**：`http://127.0.0.1:4173`

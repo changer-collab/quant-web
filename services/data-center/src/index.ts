@@ -103,6 +103,8 @@ export type {
   DataExporter,
   ExportFormat,
   RepositorySet,
+  TaskDefinition,
+  TaskRepository,
 } from './repository/index.js';
 
 // data-center 核心类型和工厂接口（无服务端实现）

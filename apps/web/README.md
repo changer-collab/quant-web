@@ -32,6 +32,13 @@ Error Boundary
 前端测试 82 个用例（含 21 个 Mock 数据验证测试）
 页面底部语境化：5 个独立底部组件（ActivityFeed / StrategyGrid / BacktestHistory / ExperimentTable / DataCoveragePanel）取代统一的策略表格
 因子评估报告：13 模块专业因子报告（基本信息 / 描述性统计 / 有效性检验 / 风险分析 / 换手率与成本 / 中性化与剥离 / 分域表现 / 相关性分析 / 多因子贡献 / 经济逻辑 / 稳健性检验 / 监控指标 / 结论与建议），Tab 导航 + 可折叠 Section，KPI 卡片 / 数据表 / 横向柱状图 / 纵向分布图 / 热力图 / SVG 折线图，中英双语 Mock 数据与 UI 文案
+回测报告完善：18 模块完整覆盖（10 现有增强 + 8 新增），覆盖 5 类策略框架（择股/择时/仓位管理/组合策略/策略组合）
+  - 新增 8 模块：执行摘要（一页纸核心结论）/ 结论与建议（优势/风险/改进/实盘建议）/ 仓位分析（仓位管理策略核心）/ 子策略归因（组合策略归因）/ 压力测试（历史极端场景 + 蒙特卡洛）/ 成本敏感性（滑点敏感性 + 扣费前后对比）/ 基准比较表 / 风险提示与附录（不足/代码/术语表/红线检查）
+  - 增强 5 模块：ReportOverview（一键结论）/ ReportRiskMetrics（VaR/CVaR/偏度峰度）/ ReportTradeStats（信号分布）/ ReportRobustness（蒙特卡洛/热力图）/ ReportAttribution（Brinson/子策略对比）
+  - 默认 Tab 为执行摘要，Tab 导航 18 项
+  - 类型集中在 src/data/types.ts，Mock 数据集中在 src/data/mock/report.ts，UI 文案进入 zh.ts/en.ts
+  - Playwright 视觉验证通过：18 Tab + 3 分辨率（1920×1080/1366×768/768×1024）响应式验证
+  - 修复 ECharts DrawdownChart 的 visualMap 配置导致的 coord undefined 运行时错误
 ```
 
 暂未引入：

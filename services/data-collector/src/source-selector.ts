@@ -6,7 +6,7 @@
 
 /** 数据源优先级配置 */
 export const SOURCE_PRIORITY: Record<string, string[]> = {
-  bar: ['akshare', 'baostock', 'efinance', 'yfinance', 'tushare'],
+  bar: ['mootdx', 'akshare', 'baostock', 'efinance', 'yfinance', 'tushare'],
   tick: ['tushare'],
   instrument: ['akshare', 'baostock', 'efinance', 'tushare'],
   calendar: ['tushare'],

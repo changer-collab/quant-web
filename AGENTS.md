@@ -13,6 +13,7 @@
 - 策略运行时 Agent：负责 `packages/strategy-runtime`。
 - 因子工坊 Agent：负责 `packages/factor-lab`。因子工坊只做因子定义、计算、评估和注册的类型与接口，不做回测撮合和策略执行。
 - 策略库 Agent：负责 `packages/strategies`。
+- 循环引擎 Agent：负责 `packages/loop-engine`。循环引擎只定义循环工程（Loop Engineering）的类型骨架与条件判断纯函数接口，不实现调度引擎、不持久化状态、不承载核心算法。当前阶段为预留骨架，单次闭环打通后再实现。
 
 角色之间边界要清晰，重叠越少越好。如果两个 Agent 的职责分不开，说明角色该合并或者该重新拆。
 
@@ -25,10 +26,11 @@
 - 数据中心 Agent 只做存储、标准化、覆盖率、质量和查询。数据中心是通用数据服务，不绑定任何上层业务，可独立部署供多项目消费。数据中心内部分为 6 个数据子域：reference（参考数据）、market（L1 行情）、l2（L2 行情）、fundamental（基本面，默认 PIT 过滤）、event（资讯事件）、quality（数据质量校验）。数据中心不负责数据采集，数据由 data-collector 写入。
 - 数据采集器 Agent 只做数据拉取、清洗和写入数据中心。数据采集器不存储数据、不提供查询接口、不感知上层业务逻辑。数据采集器通过适配器模式支持多数据源（CSV、Tushare、AKShare 等），通过水位机制实现增量采集。
 - 回测引擎 Agent 只做事件回放、撮合模拟、持仓、资金曲线、指标和结果导出。
-- AI 引擎 Agent 只做特征、标签、训练、预测、评估和模型注册。
+- AI 引擎 Agent 只做特征、标签、训练、预测、评估、模型注册、报告分析文本生成。报告分析文本生成当前作为 AI 引擎的子职责（放在 `report_analysis/` 子模块），后续要解耦为独立模块。
 - 策略运行时 Agent 只定义策略接口、上下文、生命周期和运行适配。
 - 因子工坊 Agent 只做因子定义、计算、评估和注册的类型与接口；因子评估指标（IC、分组收益、分层回测）的计算委托给回测引擎。
 - 策略库 Agent 只写策略实现、策略样例和策略元数据。
+- 循环引擎 Agent 只定义循环生命周期类型（状态、配置、迭代记录）、终止条件判断的纯函数接口和循环汇总结构；不实现调度引擎、不做状态持久化、不直接调用回测/AI/因子引擎、不直接读数据中心、不处理 HTTP。循环的调度编排由 Worker 负责，循环状态持久化由 Worker 通过 API 任务表实现。
 
 ## 工作范围
 
@@ -40,10 +42,11 @@ Worker Agent         -> apps/worker
 数据中心 Agent       -> services/data-center
 数据采集器 Agent     -> services/data-collector
 回测引擎 Agent       -> packages/backtest-engine
-AI 引擎 Agent        -> packages/ai-engine
+AI 引擎 Agent        -> packages/ai-engine（含 report_analysis 子模块）
 策略运行时 Agent     -> packages/strategy-runtime
 因子工坊 Agent       -> packages/factor-lab
 策略库 Agent         -> packages/strategies
+循环引擎 Agent       -> packages/loop-engine
 ```
 
 `runtime/` 是运行产物目录，不分配开发 Agent。
@@ -63,6 +66,9 @@ AI 引擎 Agent        -> packages/ai-engine
 - 回测引擎 Agent 承载因子评估指标（IC、Rank IC、排序分组收益、分层回测）的计算，因子是回测引擎的一种输入维度。
 - AI 引擎 Agent 输出预测、评分、模型指标，由 Worker 或回测流程使用。
 - AI 引擎 Agent 的特征提取能力可被因子挖掘流程复用，但因子评估（IC、分组收益、分层回测）不是 AI 引擎的职责。
+- 循环引擎 Agent 只向 Worker 提供循环类型定义和条件判断纯函数接口；循环的每次迭代是 Worker 编排的一个子任务，子任务调用回测引擎、AI 引擎或因子工坊。
+- 循环引擎 Agent 不直接调度迭代，不持有循环运行状态；循环状态由 Worker 通过 API 任务表读写。
+- 循环引擎 Agent 的迭代结果（IterationRecord）只存引用（子任务 ID、结果摘要），不内联回测/AI/因子的完整结果类型，避免跨包类型耦合。
 
 ### 类型归属原则
 
@@ -86,6 +92,11 @@ AI 引擎 Agent        -> packages/ai-engine
 因子工坊（factor-lab，Python）拥有：
   FactorDefinition, FactorStatus, FactorEvalTab,
   FactorMetrics, FactorRow, FactorEvaluationResult
+
+循环引擎（loop-engine，Python）拥有：
+  LoopType, LoopStatus, IterationStatus,
+  LoopConfig, IterationRecord, LoopRecord,
+  LoopCondition, LoopSummary
 ```
 
 TS 层（api/worker）需要的类型在各自 `types.ts` 中内联，与 Python 侧保持值对齐。
@@ -95,8 +106,11 @@ TS 层（api/worker）需要的类型在各自 `types.ts` 中内联，与 Python
 ```text
 apps/api -> services/data-center
 apps/worker -> services/data-center
+apps/worker -> services/data-collector
 
+packages/data-client -> packages/strategy-runtime
 packages/strategy-runtime -> packages/data-client
+packages/strategy-runtime -> packages/ai-engine
 packages/backtest-engine -> packages/strategy-runtime
 packages/backtest-engine -> packages/factor-lab
 packages/factor-lab -> packages/strategy-runtime
@@ -104,6 +118,10 @@ packages/factor-lab -> packages/data-client
 packages/ai-engine -> packages/data-client
 packages/strategies -> packages/strategy-runtime
 packages/obsidian-sync -> packages/data-client
+packages/obsidian-sync -> packages/strategy-runtime
+packages/obsidian-sync -> packages/backtest-engine
+packages/obsidian-sync -> packages/factor-lab
+packages/loop-engine -> (无外部依赖，纯类型骨架)
 services/data-collector -> services/data-center
 ```
 
@@ -111,7 +129,7 @@ TS 层内部通信：
 - API 与 Worker 不共享进程状态，Worker 通过 HTTP 轮询 API 的 `/api/internal/tasks/*` 端点领取、上报任务。
 - 前端通过 SSE `/api/tasks/:id/stream` 接收任务事件（progress/log/result/error）。
 
-TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）调用 `quantforge_strategy.cli`，不直接 import Python 包。
+TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）调用 `quantforge_strategy.cli`，不直接 import Python 包。循环编排同样由 Worker 通过 PythonBridge 驱动，loop-engine 不自带进程入口。
 
 ## 角色专属规则
 
@@ -124,10 +142,11 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 数据中心 Agent：不处理策略、回测、AI 训练和网站任务调度；不感知因子定义和因子计算逻辑；不负责数据采集，数据由 data-collector 写入。数据中心是通用数据服务，不绑定任何上层业务，可独立部署。
 - 数据采集器 Agent：不存储数据、不提供查询接口、不感知上层业务逻辑；只通过数据中心的写入接口推送标准化数据。数据采集器可独立部署，按需启停。
 - 回测引擎 Agent：不直接读取数据中心，不直接处理 HTTP；因子评估（IC 曲线、排序分组收益、分层回测）是回测引擎的合法能力，因子是回测引擎的一种输入维度。
-- AI 引擎 Agent：不做回测撮合，不做实盘执行；特征提取可被因子挖掘复用，但因子评估指标的计算不是 AI 引擎的职责。
+- AI 引擎 Agent：不做回测撮合，不做实盘执行；特征提取可被因子挖掘复用，但因子评估指标的计算不是 AI 引擎的职责。报告分析文本生成放在 `report_analysis/` 子模块，接口设计为"输入 dict，输出文本"，不依赖 BacktestResult 等业务类型，避免跨包类型耦合。当前用规则引擎+模板生成，预留 LLM 接口。
 - 策略运行时 Agent：接口优先稳定，避免过度抽象；策略运行时可 re-export 数据客户端的行情类型（Bar、Tick、TimeFrame 等），供下游模块通过合法依赖链获取；CLI 入口是 Worker 子进程调用的唯一入口。
 - 因子工坊 Agent：因子定义和计算接口优先稳定；因子评估指标的计算不在此实现，委托给回测引擎。
 - 策略库 Agent：策略不直接依赖网站后端。
+- 循环引擎 Agent：当前阶段只定义类型骨架（LoopType/LoopStatus/IterationStatus/LoopConfig/IterationRecord/LoopRecord/LoopCondition/LoopSummary），不实现调度引擎、不实现状态持久化、不自带进程入口；循环调度始终由 Worker 负责，循环状态持久化始终由 Worker 通过 API 任务表实现；迭代结果只存引用和摘要，不内联其他引擎的完整结果类型；单次闭环（backtest → obsidian-sync、backtest → web 报告展示）打通后才进入循环引擎的实现阶段。
 
 ## 全局硬性规则
 
@@ -138,3 +157,21 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 不为了记录过程创建额外文档；用户明确要求时除外。
 - 当前不做真实下单、券商连接、实盘低延迟交易、权限系统、策略市场。
 - 未来实盘执行层必须单独设计，不允许把普通 API 和任务队列放进低延迟下单路径。
+
+## 子项目规则引用
+
+操作任何子项目前，**必须先读取**该子项目的 `AGENT.md`，以其规则为准。以下为完整引用清单：
+
+<!-- @include: apps/web/AGENT.md -->
+<!-- @include: apps/api/AGENT.md -->
+<!-- @include: apps/worker/AGENT.md -->
+<!-- @include: services/data-center/AGENT.md -->
+<!-- @include: services/data-collector/AGENT.md -->
+<!-- @include: packages/backtest-engine/AGENT.md -->
+<!-- @include: packages/ai-engine/AGENT.md -->
+<!-- @include: packages/strategy-runtime/AGENT.md -->
+<!-- @include: packages/factor-lab/AGENT.md -->
+<!-- @include: packages/strategies/AGENT.md -->
+<!-- @include: packages/loop-engine/AGENT.md -->
+
+**执行规则**：当任务涉及上述某个子项目时，Agent 必须先用 Read 工具读取对应的 `AGENT.md`，然后以该文件的规则为约束执行任务。如果子项目 AGENT.md 与根级 AGENTS.md 冲突，以根级为准。

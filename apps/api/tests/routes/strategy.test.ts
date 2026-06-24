@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildApp } from '../../src/app.js';
 import { InMemoryTaskService } from '../../src/plugins/task-service.js';
+import { strategySyncService } from '../../src/services/strategy-sync.js';
 import type { DataCenter } from '@quant/data-center';
 
 function createMockDataCenter(): DataCenter {
@@ -71,7 +72,27 @@ function createMockDataCenter(): DataCenter {
 }
 
 describe('Strategy Routes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('GET /api/strategies 返回策略列表', async () => {
+    const mockStrategies = [
+      {
+        name: 'dual_ma',
+        description: '双均线策略',
+        params: [
+          { key: 'short_period', label: '短均线周期', type: 'number', default: 5, min: 2, max: 50 },
+          { key: 'long_period', label: '长均线周期', type: 'number', default: 20, min: 5, max: 200 },
+        ],
+        version: '0.1.0',
+        modes: ['traditional'],
+        kind: 'combined',
+      },
+    ];
+
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue(mockStrategies);
+
     const app = await buildApp({
       dataCenter: createMockDataCenter(),
       taskService: new InMemoryTaskService(),
@@ -81,14 +102,27 @@ describe('Strategy Routes', () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body).toBeInstanceOf(Array);
-    expect(body.length).toBeGreaterThan(0);
-    expect(body[0]).toHaveProperty('name');
-    expect(body[0]).toHaveProperty('params');
+    expect(body.length).toBe(1);
+    expect(body[0].name).toBe('dual_ma');
+    expect(body[0].params).toBeInstanceOf(Array);
 
     await app.close();
   });
 
   it('GET /api/strategies/:name 返回策略详情', async () => {
+    const mockStrategies = [
+      {
+        name: 'dual_ma',
+        description: '双均线策略',
+        params: [],
+        version: '0.1.0',
+        modes: ['traditional'],
+        kind: 'combined',
+      },
+    ];
+
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue(mockStrategies);
+
     const app = await buildApp({
       dataCenter: createMockDataCenter(),
       taskService: new InMemoryTaskService(),
@@ -96,13 +130,15 @@ describe('Strategy Routes', () => {
 
     const res = await app.inject({ method: 'GET', url: '/api/strategies/dual_ma' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toHaveProperty('name');
-    expect(res.json()).toHaveProperty('params');
+    expect(res.json().name).toBe('dual_ma');
+    expect(res.json().modes).toBeInstanceOf(Array);
 
     await app.close();
   });
 
   it('GET /api/strategies/:name 不存在返回 404', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([]);
+
     const app = await buildApp({
       dataCenter: createMockDataCenter(),
       taskService: new InMemoryTaskService(),

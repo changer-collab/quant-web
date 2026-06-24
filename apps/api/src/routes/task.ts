@@ -1,20 +1,23 @@
 import { TaskType, TaskStatus } from '../types.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { ReportRepository } from '../storage/report-repo.js';
+import { mapBacktestResultToReport } from '../services/report-mapper.js';
+import type { BacktestResult } from '../types.js';
 
 export async function taskRoutes(app: FastifyInstance) {
   app.post('/', async (req, reply) => {
     const { type, payload } = req.body as { type: TaskType; payload: Record<string, unknown> };
-    const task = app.taskService.submit(type, payload);
+    const task = await app.taskService.submit(type, payload);
     return reply.code(202).send({ id: task.id, status: task.status });
   });
 
   app.get('/', async (req) => {
     const { type, status } = req.query as { type?: TaskType; status?: TaskStatus };
-    return app.taskService.list({ type, status });
+    return await app.taskService.list({ type, status });
   });
 
   app.get<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const task = app.taskService.get(req.params.id);
+    const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     return task;
   });
@@ -22,7 +25,7 @@ export async function taskRoutes(app: FastifyInstance) {
   /** SSE: 流式推送任务事件 */
   app.get<{ Params: { id: string } }>('/:id/stream', async (req: FastifyRequest, reply: FastifyReply) => {
     const taskId = (req.params as { id: string }).id;
-    const task = app.taskService.get(taskId);
+    const task = await app.taskService.get(taskId);
     if (!task) {
       return reply.code(404).send({ error: 'Task not found' });
     }
@@ -70,17 +73,17 @@ export async function taskRoutes(app: FastifyInstance) {
 export async function internalTaskRoutes(app: FastifyInstance) {
   /** Worker 获取 pending 任务 */
   app.get('/pending', async () => {
-    return app.taskService.list({ status: TaskStatus.Pending });
+    return await app.taskService.list({ status: TaskStatus.Pending });
   });
 
   /** Worker 认领任务（pending → running） */
   app.post<{ Params: { id: string } }>('/:id/claim', async (req, reply) => {
-    const task = app.taskService.get(req.params.id);
+    const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     if (task.status !== TaskStatus.Pending) {
       return reply.code(409).send({ error: 'Task is not pending' });
     }
-    app.taskService.updateTask(req.params.id, {
+    await app.taskService.updateTask(req.params.id, {
       status: TaskStatus.Running,
       startedAt: Date.now(),
     }, { type: 'status', taskId: req.params.id, message: TaskStatus.Running });
@@ -89,10 +92,10 @@ export async function internalTaskRoutes(app: FastifyInstance) {
 
   /** Worker 推送事件（progress/log） */
   app.post<{ Params: { id: string } }>('/:id/event', async (req, reply) => {
-    const task = app.taskService.get(req.params.id);
+    const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     const event = req.body as { type: 'progress' | 'log'; percent?: number; message?: string; level?: string };
-    app.taskService.updateTask(req.params.id, {}, {
+    await app.taskService.updateTask(req.params.id, {}, {
       type: event.type,
       taskId: req.params.id,
       percent: event.percent,
@@ -100,31 +103,112 @@ export async function internalTaskRoutes(app: FastifyInstance) {
       level: event.level,
     });
     if (event.type === 'progress' && event.percent !== undefined) {
-      app.taskService.updateTask(req.params.id, { progress: event.percent });
+      await app.taskService.updateTask(req.params.id, { progress: event.percent });
     }
     return { ok: true };
   });
 
   /** Worker 完成任务 */
   app.post<{ Params: { id: string } }>('/:id/complete', async (req, reply) => {
-    const task = app.taskService.get(req.params.id);
+    const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     const { result } = req.body as { result: Record<string, unknown> };
-    app.taskService.updateTask(req.params.id, {
+    await app.taskService.updateTask(req.params.id, {
       status: TaskStatus.Completed,
       result,
       completedAt: Date.now(),
       progress: 100,
     }, { type: 'result', taskId: req.params.id, data: result });
+
+    // 如果是回测任务，自动保存报告
+    if (task.type === TaskType.Backtest) {
+      try {
+        const reportRepo = new ReportRepository();
+        const taskResult = result as { backtestResult: BacktestResult; analysis?: Record<string, unknown> };
+        const backtestResult = taskResult.backtestResult;
+        const payload = task.payload as { strategy: string; symbol: string; timeframe: string };
+
+        const report = mapBacktestResultToReport(backtestResult, {
+          strategyName: payload.strategy,
+          symbol: payload.symbol,
+          timeframe: payload.timeframe,
+        });
+
+        // 合并 AI 分析结果到报告（覆盖结论性字段）
+        if (taskResult.analysis) {
+          const ai = taskResult.analysis as Record<string, unknown>;
+          if (ai.executiveSummary) {
+            const es = ai.executiveSummary as Record<string, unknown>;
+            report.executiveSummary = {
+              ...report.executiveSummary,
+              oneLineConclusion: es.oneLineConclusion as string ?? report.executiveSummary.oneLineConclusion,
+              recommendedForLive: es.recommendedForLive as boolean ?? report.executiveSummary.recommendedForLive,
+              riskPoints: es.mainRisks as string[] ?? report.executiveSummary.riskPoints,
+            };
+          }
+          if (ai.overview) {
+            const ov = ai.overview as Record<string, unknown>;
+            report.overview = {
+              ...report.overview,
+              logic: ov.logic as string ?? report.overview.logic,
+              suitableMarketRegime: ov.suitableMarketRegime as string[] ?? report.overview.suitableMarketRegime,
+            };
+          }
+          if (ai.issues) {
+            const iss = ai.issues as Record<string, unknown>;
+            report.issues = [
+              ...((iss.liquidityAssessment ? [{ severity: 'medium', message: iss.liquidityAssessment as string }] : [])),
+              ...((iss.capacityEstimate ? [{ severity: 'low', message: iss.capacityEstimate as string }] : [])),
+            ];
+          }
+          if (ai.conclusion) {
+            const con = ai.conclusion as Record<string, unknown>;
+            report.conclusion = {
+              ...report.conclusion,
+              strengths: con.advantages as string[] ?? report.conclusion.strengths,
+              risks: con.potentialRisks as string[] ?? report.conclusion.risks,
+              improvements: con.improvements as string[] ?? report.conclusion.improvements,
+            };
+          }
+          if (ai.riskWarnings) {
+            const rw = ai.riskWarnings as Record<string, unknown>;
+            report.riskWarnings = {
+              keyRisks: (rw.limitations as Array<{ description: string }>)?.map(l => l.description) ?? report.riskWarnings.keyRisks,
+              redLines: (rw.redLines as Array<{ rule: string; passed: boolean }>)?.map(r => `${r.rule}: ${r.passed ? '通过' : '未通过'}`) ?? report.riskWarnings.redLines,
+            };
+          }
+        }
+
+        await reportRepo.save({
+          id: report.id,
+          taskId: task.id,
+          strategyName: payload.strategy,
+          symbol: payload.symbol,
+          timeframe: payload.timeframe,
+          createdAt: Date.now(),
+          totalReturn: backtestResult.metrics.totalReturn,
+          annualizedReturn: backtestResult.metrics.annualizedReturn,
+          sharpeRatio: backtestResult.metrics.sharpeRatio,
+          maxDrawdown: backtestResult.metrics.maxDrawdown,
+          winRate: backtestResult.metrics.winRate,
+          totalTrades: backtestResult.metrics.totalTrades,
+          reportData: report,
+        });
+      } catch (err) {
+        // 报告保存失败不影响任务完成
+        console.error('[api] Failed to save backtest report:', err);
+      }
+    }
+
     return { ok: true };
   });
 
   /** Worker 报告任务失败 */
   app.post<{ Params: { id: string } }>('/:id/fail', async (req, reply) => {
-    const task = app.taskService.get(req.params.id);
+    const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     const { error } = req.body as { error: string };
-    app.taskService.updateTask(req.params.id, {
+    await app.taskService.updateTask(req.params.id, {
       status: TaskStatus.Failed,
       error,
       completedAt: Date.now(),

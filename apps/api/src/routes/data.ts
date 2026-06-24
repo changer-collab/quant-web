@@ -1,7 +1,27 @@
 import type { FastifyInstance } from 'fastify';
 import { InstrumentStatus, TimeFrame } from '@quant/data-center';
+import { TaskType } from '../types.js';
 
 export async function dataRoutes(app: FastifyInstance) {
+  /** 触发数据采集任务（异步，由 Worker 执行） */
+  app.post('/collect', async (req, reply) => {
+    const { source, dataType, symbols, start, end } = req.body as {
+      source: string;
+      dataType: string;
+      symbols?: string[];
+      start?: number;
+      end?: number;
+    };
+    const task = await app.taskService.submit(TaskType.Collect, {
+      source,
+      dataType,
+      symbols: symbols ?? [],
+      start,
+      end,
+    });
+    return reply.code(202).send({ id: task.id, status: task.status });
+  });
+
   app.get('/instruments', async (req) => {
     const { industry, sector, status } = req.query as {
       industry?: string;

@@ -14,14 +14,15 @@ function pct(v: number): string {
 }
 
 /** 历史场景对比柱状图 */
-function ScenariosChart({ report }: Props) {
+function ScenariosChart({ report, ui }: Props) {
   const scenarios = report.stressTest.scenarios;
+  const labels = ui.stressTest;
 
   const option = useMemo<EChartsOption>(() => {
     if (scenarios.length === 0) return {};
     return {
       tooltip: { ...CHART_DEFAULTS.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { data: ['策略回撤', '基准回撤'], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
+      legend: { data: [labels.strategyDrawdown, labels.benchmarkDrawdown], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
       grid: { top: 32, right: 16, bottom: 24, left: 56 },
       xAxis: {
         type: 'category',
@@ -35,11 +36,11 @@ function ScenariosChart({ report }: Props) {
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       series: [
-        { name: '策略回撤', type: 'bar', data: scenarios.map((s) => +(s.strategyDrawdown * 100).toFixed(1)), itemStyle: { color: '#4df0a0' } },
-        { name: '基准回撤', type: 'bar', data: scenarios.map((s) => +(s.benchmarkDrawdown * 100).toFixed(1)), itemStyle: { color: '#ff6b6b' } },
+        { name: labels.strategyDrawdown, type: 'bar', data: scenarios.map((s) => +(s.strategyDrawdown * 100).toFixed(1)), itemStyle: { color: '#4df0a0' } },
+        { name: labels.benchmarkDrawdown, type: 'bar', data: scenarios.map((s) => +(s.benchmarkDrawdown * 100).toFixed(1)), itemStyle: { color: '#ff6b6b' } },
       ],
     };
-  }, [scenarios]);
+  }, [scenarios, labels]);
 
   if (scenarios.length === 0) return null;
   return (
@@ -54,66 +55,79 @@ export function ReportStressTest({ report, ui }: Props) {
   const labels = ui.stressTest;
   const mc = s.monteCarlo;
 
+  // 无数据时显示提示
+  if (s.scenarios.length === 0 && !mc) {
+    return (
+      <section className={styles.panel}>
+        <p className={styles.tableWrap}>{labels.scenarios ? '' : '暂无压力测试数据'}</p>
+      </section>
+    );
+  }
+
   return (
     <section className={styles.panel}>
       {/* 历史极端场景 */}
-      <div className={styles.block}>
-        <h4 className={styles.sectionTitle}>{labels.scenarios}</h4>
-        <ScenariosChart report={report} ui={ui} />
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>{labels.scenarioName}</th>
-                <th>{labels.period}</th>
-                <th>{labels.strategyDrawdown}</th>
-                <th>{labels.benchmarkDrawdown}</th>
-                <th>{labels.recoveryDays}</th>
-                <th>{labels.note}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.scenarios.map((sc) => (
-                <tr key={sc.name}>
-                  <td className={styles.nameCell}>{sc.name}</td>
-                  <td>{sc.period}</td>
-                  <td className={`${styles.numCell} ${styles.cellRisk}`}>{pct(sc.strategyDrawdown)}</td>
-                  <td className={`${styles.numCell} ${styles.cellRisk}`}>{pct(sc.benchmarkDrawdown)}</td>
-                  <td className={styles.numCell}>{sc.recoveryDays}</td>
-                  <td className={styles.noteCell}>{sc.note}</td>
+      {s.scenarios.length > 0 && (
+        <div className={styles.block}>
+          <h4 className={styles.sectionTitle}>{labels.scenarios}</h4>
+          <ScenariosChart report={report} ui={ui} />
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>{labels.scenarioName}</th>
+                  <th>{labels.period}</th>
+                  <th>{labels.strategyDrawdown}</th>
+                  <th>{labels.benchmarkDrawdown}</th>
+                  <th>{labels.recoveryDays}</th>
+                  <th>{labels.note}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {s.scenarios.map((sc) => (
+                  <tr key={sc.name}>
+                    <td className={styles.nameCell}>{sc.name}</td>
+                    <td>{sc.period}</td>
+                    <td className={`${styles.numCell} ${styles.cellRisk}`}>{pct(sc.strategyDrawdown)}</td>
+                    <td className={`${styles.numCell} ${styles.cellRisk}`}>{pct(sc.benchmarkDrawdown)}</td>
+                    <td className={styles.numCell}>{sc.recoveryDays}</td>
+                    <td className={styles.noteCell}>{sc.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 蒙特卡洛模拟 */}
-      <div className={styles.block}>
-        <h4 className={styles.sectionTitle}>{labels.monteCarlo}</h4>
-        <div className={styles.mcGrid}>
-          <div className={styles.mcCard}>
-            <span className={styles.mcLabel}>{labels.simulatedPaths}</span>
-            <strong className={styles.mcValue}>{mc.simulatedPaths.toLocaleString()}</strong>
-          </div>
-          <div className={styles.mcCard}>
-            <span className={styles.mcLabel}>{labels.medianReturn}</span>
-            <strong className={`${styles.mcValue} ${styles.mcGood}`}>{pct(mc.medianReturn)}</strong>
-          </div>
-          <div className={styles.mcCard}>
-            <span className={styles.mcLabel}>{labels.percentile5}</span>
-            <strong className={`${styles.mcValue} ${styles.mcWarn}`}>{pct(mc.percentile5)}</strong>
-          </div>
-          <div className={styles.mcCard}>
-            <span className={styles.mcLabel}>{labels.percentile95}</span>
-            <strong className={`${styles.mcValue} ${styles.mcGood}`}>{pct(mc.percentile95)}</strong>
-          </div>
-          <div className={styles.mcCard}>
-            <span className={styles.mcLabel}>{labels.probPositiveReturn}</span>
-            <strong className={styles.mcValue}>{pct(mc.probPositiveReturn)}</strong>
+      {mc && (
+        <div className={styles.block}>
+          <h4 className={styles.sectionTitle}>{labels.monteCarlo}</h4>
+          <div className={styles.mcGrid}>
+            <div className={styles.mcCard}>
+              <span className={styles.mcLabel}>{labels.simulatedPaths}</span>
+              <strong className={styles.mcValue}>{mc.simulatedPaths.toLocaleString()}</strong>
+            </div>
+            <div className={styles.mcCard}>
+              <span className={styles.mcLabel}>{labels.medianReturn}</span>
+              <strong className={`${styles.mcValue} ${styles.mcGood}`}>{pct(mc.medianReturn)}</strong>
+            </div>
+            <div className={styles.mcCard}>
+              <span className={styles.mcLabel}>{labels.percentile5}</span>
+              <strong className={`${styles.mcValue} ${styles.mcWarn}`}>{pct(mc.percentile5)}</strong>
+            </div>
+            <div className={styles.mcCard}>
+              <span className={styles.mcLabel}>{labels.percentile95}</span>
+              <strong className={`${styles.mcValue} ${styles.mcGood}`}>{pct(mc.percentile95)}</strong>
+            </div>
+            <div className={styles.mcCard}>
+              <span className={styles.mcLabel}>{labels.probPositiveReturn}</span>
+              <strong className={styles.mcValue}>{pct(mc.probPositiveReturn)}</strong>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

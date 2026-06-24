@@ -26,6 +26,8 @@ import {
   SqliteTradeRecordRepository,
   SqliteOrderRecordRepository,
   SqliteWatermarkRepository,
+  SqliteFactorRepository,
+  SqliteTaskRepository,
 } from './sqlite/index.js';
 import {
   ReferenceDataProviderImpl,
@@ -142,6 +144,8 @@ export function createSqliteRepositorySet(db: DrizzleDb): RepositorySet {
     tradeRecords: new SqliteTradeRecordRepository(db),
     orderRecords: new SqliteOrderRecordRepository(db),
     watermarks: new SqliteWatermarkRepository(db),
+    factors: new SqliteFactorRepository(db),
+    tasks: new SqliteTaskRepository(db),
   };
 }
 

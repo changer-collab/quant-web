@@ -14,14 +14,15 @@ function pct(v: number): string {
 }
 
 /** 子策略独立对比柱状图 */
-function ComparisonChart({ report }: Props) {
+function ComparisonChart({ report, ui }: Props) {
   const data = report.subStrategyAttribution.independentComparison;
+  const labels = ui.chartLabels;
 
   const option = useMemo<EChartsOption>(() => {
     if (data.length === 0) return {};
     return {
       tooltip: { ...CHART_DEFAULTS.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { data: ['年化收益', '最大回撤', '夏普'], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
+      legend: { data: [labels.annualizedReturn, labels.maxDrawdown, labels.sharpe], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
       grid: { top: 32, right: 16, bottom: 24, left: 48 },
       xAxis: {
         type: 'category',
@@ -35,12 +36,12 @@ function ComparisonChart({ report }: Props) {
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       series: [
-        { name: '年化收益', type: 'bar', data: data.map((d) => +(d.annualizedReturn * 100).toFixed(1)), itemStyle: { color: '#4df0a0' } },
-        { name: '最大回撤', type: 'bar', data: data.map((d) => +(d.maxDrawdown * 100).toFixed(1)), itemStyle: { color: '#ff6b6b' } },
-        { name: '夏普', type: 'bar', data: data.map((d) => d.sharpe), itemStyle: { color: '#62d8ff' } },
+        { name: labels.annualizedReturn, type: 'bar', data: data.map((d) => +(d.annualizedReturn * 100).toFixed(1)), itemStyle: { color: '#4df0a0' } },
+        { name: labels.maxDrawdown, type: 'bar', data: data.map((d) => +(d.maxDrawdown * 100).toFixed(1)), itemStyle: { color: '#ff6b6b' } },
+        { name: labels.sharpe, type: 'bar', data: data.map((d) => d.sharpe), itemStyle: { color: '#62d8ff' } },
       ],
     };
-  }, [data]);
+  }, [data, labels]);
 
   if (data.length === 0) return null;
   return (
@@ -108,10 +109,10 @@ export function ReportSubStrategyAttribution({ report, ui }: Props) {
             <thead>
               <tr>
                 <th>{labels.module}</th>
-                <th>年化收益</th>
-                <th>年化波动</th>
-                <th>最大回撤</th>
-                <th>夏普</th>
+                <th>{ui.chartLabels.annualizedReturn}</th>
+                <th>{ui.chartLabels.annualizedVolatility}</th>
+                <th>{ui.chartLabels.maxDrawdown}</th>
+                <th>{ui.chartLabels.sharpe}</th>
               </tr>
             </thead>
             <tbody>

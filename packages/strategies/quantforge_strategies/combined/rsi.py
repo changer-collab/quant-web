@@ -9,6 +9,7 @@ from quantforge_strategy import (
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
     StrategyKind, StrategyParamDef,
 )
+from ..indicators import rsi, last_valid
 
 
 class RSIStrategy(Strategy):
@@ -18,9 +19,7 @@ class RSIStrategy(Strategy):
         self._period = period
         self._oversold = oversold
         self._overbought = overbought
-        self._gains: deque[float] = deque(maxlen=period)
-        self._losses: deque[float] = deque(maxlen=period)
-        self._prev_close: float | None = None
+        self._prices: deque[float] = deque(maxlen=period + 2)
         self._bought = False
 
     @property
@@ -41,7 +40,7 @@ class RSIStrategy(Strategy):
                                  min=50, max=90),
             ],
             version="0.1.0",
-            kind=StrategyKind.Combined,
+            kind=StrategyKind.Timing,
         )
 
     @property
@@ -49,47 +48,37 @@ class RSIStrategy(Strategy):
         return StrategyState.Idle
 
     def init(self, context) -> None:
-        self._gains.clear()
-        self._losses.clear()
-        self._prev_close = None
+        self._prices.clear()
         self._bought = False
 
-    def _calc_rsi(self) -> float | None:
-        if len(self._gains) < self._period:
-            return None
-        avg_gain = sum(self._gains) / self._period
-        avg_loss = sum(self._losses) / self._period
-        if avg_loss == 0:
-            return 100.0
-        rs = avg_gain / avg_loss
-        return 100.0 - (100.0 / (1.0 + rs))
-
     def on_bar(self, bar: Bar, context) -> None:
-        if self._prev_close is not None:
-            change = bar.close - self._prev_close
-            self._gains.append(max(change, 0.0))
-            self._losses.append(max(-change, 0.0))
-        self._prev_close = bar.close
+        self._prices.append(bar.close)
 
-        rsi = self._calc_rsi()
-        if rsi is None:
+        if len(self._prices) < self._period + 1:
             return
 
-        if rsi < self._oversold and not self._bought:
+        rsi_series = rsi(list(self._prices), self._period)
+        rsi_value = last_valid(rsi_series)
+        if rsi_value is None:
+            return
+
+        if rsi_value < self._oversold and not self._bought:
             account = context.get_account()
             qty = int(account.cash / bar.close)
             if qty > 0:
                 context.submit_order(OrderRequest(
                     symbol=bar.symbol, side=OrderSide.Buy,
                     type=OrderType.Market, quantity=qty,
+                    reason=f"RSI超卖：RSI={rsi_value:.2f}<{self._oversold}",
                 ))
                 self._bought = True
-        elif rsi > self._overbought and self._bought:
+        elif rsi_value > self._overbought and self._bought:
             pos = context.get_position(bar.symbol)
             if pos and pos.quantity > 0:
                 context.submit_order(OrderRequest(
                     symbol=bar.symbol, side=OrderSide.Sell,
                     type=OrderType.Market, quantity=int(pos.quantity),
+                    reason=f"RSI超买：RSI={rsi_value:.2f}>{self._overbought}",
                 ))
                 self._bought = False
 

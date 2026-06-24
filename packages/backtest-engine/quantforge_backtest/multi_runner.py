@@ -162,6 +162,7 @@ class MultiSymbolRunner:
             end_date=last_bars[-1].timestamp if last_bars else 0,
             initial_cash=self.initial_cash,
             slippage=self.slippage,
+            strategy_kind=self.strategy.meta.kind.value,
         )
 
         return BacktestResult(

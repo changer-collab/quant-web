@@ -31,13 +31,13 @@ export type TaskEventHandler = (event: TaskEvent) => void;
 
 /** 任务服务接口 — API 层通过此接口操作任务，不直接依赖 Worker */
 export interface TaskService {
-  submit(type: TaskType, payload: Record<string, unknown>): TaskView;
-  get(taskId: string): TaskView | undefined;
-  list(filter?: { type?: TaskType; status?: TaskStatus }): TaskView[];
+  submit(type: TaskType, payload: Record<string, unknown>): Promise<TaskView>;
+  get(taskId: string): Promise<TaskView | undefined>;
+  list(filter?: { type?: TaskType; status?: TaskStatus }): Promise<TaskView[]>;
   /** 订阅指定任务的事件 */
   subscribe(taskId: string, handler: TaskEventHandler): () => void;
   /** 更新任务（供 Worker 调用） */
-  updateTask(taskId: string, updates: Partial<TaskView>, event?: TaskEvent): void;
+  updateTask(taskId: string, updates: Partial<TaskView>, event?: TaskEvent): Promise<void>;
 }
 
 /** 内存实现（当前阶段） */
@@ -46,7 +46,7 @@ export class InMemoryTaskService implements TaskService {
   private readonly subscribers = new Map<string, Set<TaskEventHandler>>();
   private idCounter = 0;
 
-  submit(type: TaskType, payload: Record<string, unknown>): TaskView {
+  async submit(type: TaskType, payload: Record<string, unknown>): Promise<TaskView> {
     const id = `task-${++this.idCounter}`;
     const task: TaskView = {
       id, type, status: TaskStatus.Pending, payload,
@@ -59,11 +59,11 @@ export class InMemoryTaskService implements TaskService {
     return task;
   }
 
-  get(taskId: string): TaskView | undefined {
+  async get(taskId: string): Promise<TaskView | undefined> {
     return this.tasks.get(taskId);
   }
 
-  list(filter?: { type?: TaskType; status?: TaskStatus }): TaskView[] {
+  async list(filter?: { type?: TaskType; status?: TaskStatus }): Promise<TaskView[]> {
     const all = Array.from(this.tasks.values());
     return all.filter((t) => {
       if (filter?.type && t.type !== filter.type) return false;
@@ -80,7 +80,7 @@ export class InMemoryTaskService implements TaskService {
     return () => this.subscribers.get(taskId)?.delete(handler);
   }
 
-  updateTask(taskId: string, updates: Partial<TaskView>, event?: TaskEvent): void {
+  async updateTask(taskId: string, updates: Partial<TaskView>, event?: TaskEvent): Promise<void> {
     const task = this.tasks.get(taskId);
     if (!task) return;
     Object.assign(task, updates);

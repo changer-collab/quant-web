@@ -6,6 +6,8 @@
  */
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { StreamEvent } from "./types.js";
 
 export interface PythonBridgeConfig {
@@ -13,6 +15,8 @@ export interface PythonBridgeConfig {
   pythonPath?: string;
   /** 超时毫秒数，默认 60000 */
   timeout?: number;
+  /** Python 子进程工作目录，默认自动探测项目根目录 */
+  cwd?: string;
 }
 
 export interface PythonResult {
@@ -21,13 +25,30 @@ export interface PythonResult {
   error?: { code: string; message: string };
 }
 
+/**
+ * 从当前工作目录向上查找项目根目录（以 pnpm-workspace.yaml 为标志）
+ * 确保 Python 子进程的相对路径（如 data/quant.db）能正确解析
+ */
+function resolveProjectRoot(): string {
+  let dir = process.cwd();
+  while (true) {
+    if (existsSync(join(dir, "pnpm-workspace.yaml"))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break; // 到达根目录
+    dir = parent;
+  }
+  return process.cwd();
+}
+
 export class PythonBridge {
   private readonly pythonPath: string;
   private readonly timeout: number;
+  private readonly cwd: string;
 
   constructor(config?: PythonBridgeConfig) {
     this.pythonPath = config?.pythonPath ?? "python";
     this.timeout = config?.timeout ?? 60_000;
+    this.cwd = config?.cwd ?? resolveProjectRoot();
   }
 
   /**
@@ -41,6 +62,7 @@ export class PythonBridge {
     return new Promise<PythonResult>((resolve, reject) => {
       const proc = spawn(this.pythonPath, ["-m", "quantforge_strategy"], {
         stdio: ["pipe", "pipe", "pipe"],
+        cwd: this.cwd,
       });
 
       let stdout = "";
@@ -95,6 +117,7 @@ export class PythonBridge {
     return new Promise<PythonResult>((resolve, reject) => {
       const proc = spawn(this.pythonPath, ["-m", "quantforge_strategy"], {
         stdio: ["pipe", "pipe", "pipe"],
+        cwd: this.cwd,
       });
 
       let buffer = "";

@@ -185,7 +185,7 @@ function ContributionWaterfall({ report, ui }: Props) {
 
     // 加一个总计柱
     data.push({
-      name: '总计',
+      name: labels.totalLabel,
       base: 0,
       value: cumulative,
       rawValue: cumulative,
@@ -198,7 +198,7 @@ function ContributionWaterfall({ report, ui }: Props) {
         formatter(params: unknown) {
           const p = Array.isArray(params) ? params[0] : params;
           const it = p as { name: string; seriesName: string; value: number };
-          if (it.seriesName === '基线') return '';
+          if (it.seriesName === labels.baseline) return '';
           const d = data.find((d) => d.name === it.name);
           if (!d) return '';
           return `${d.name}: <b>${fmtPct(d.rawValue)}</b>`;
@@ -219,7 +219,7 @@ function ContributionWaterfall({ report, ui }: Props) {
       series: [
         // 不可见的基线柱
         {
-          name: '基线',
+          name: labels.baseline,
           type: 'bar',
           stack: 'waterfall',
           data: data.map((d) => d.base),
@@ -228,7 +228,7 @@ function ContributionWaterfall({ report, ui }: Props) {
         },
         // 可见的值柱
         {
-          name: '贡献',
+          name: labels.contribution,
           type: 'bar',
           stack: 'waterfall',
           data: data.map((d, i) => ({

@@ -101,6 +101,22 @@
   line-height: 1.5;
 }
 
+.configInput {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs, 6px);
+  background: var(--surface, var(--bg));
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.configInput:focus {
+  border-color: var(--green);
+}
+
 .runSummary {
   display: grid;
   gap: 9px;

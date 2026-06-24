@@ -9,17 +9,14 @@ def test_meta():
     assert s.meta.name == "macd"
     assert len(s.meta.params) == 3
     assert s.meta.version
-    assert s.meta.kind.value == "combined"
+    assert s.meta.kind.value == "timing"
 
 
 def test_init():
     s = MACDStrategy(fast_period=5, slow_period=10, signal_period=3)
     s.init(None)  # type: ignore
     assert s._bought is False
-    assert s._ema_fast is None
-    assert s._ema_slow is None
-    assert s._dea is None
-    assert s._prev_macd is None
+    assert len(s._prices) == 0
 
 
 def test_registered():
