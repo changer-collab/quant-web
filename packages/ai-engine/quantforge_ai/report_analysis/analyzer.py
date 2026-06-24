@@ -2,7 +2,7 @@
 
 设计原则：
 - 不依赖 BacktestResult 等业务类型，输入/输出均为 dict
-- 当前用规则引擎+模板生成，预留 LLM 接口
+- 双模式：LLM 驱动（优先）+ 规则引擎 fallback
 - 放在独立子模块，未来可拆包
 
 输入 dict 结构：
@@ -23,6 +23,9 @@
 """
 
 from __future__ import annotations
+
+import json
+import logging
 from typing import Any
 
 from .templates import (
@@ -35,17 +38,62 @@ from .templates import (
     generate_limitations,
     generate_red_lines,
 )
+from .config import LLMConfig
+from .llm_client import LLMClient, LLMClientError
+from .prompts import build_prompts
+
+logger = logging.getLogger(__name__)
 
 
 class ReportAnalyzer:
-    """基于真实回测指标生成报告分析文本
+    """基于回测指标生成报告分析文本
 
-    接口为纯 dict，不依赖任何业务类型。
-    未来可替换为 LLM 调用，只需保持输入/输出 dict 结构不变。
+    双模式：
+    - use_llm=True（默认）：调用 DeepSeek 生成分析，失败时自动 fallback 到规则引擎
+    - use_llm=False：纯规则引擎，行为与升级前完全一致
     """
+
+    def __init__(self, use_llm: bool = True, llm_config: LLMConfig | None = None):
+        self._use_llm = use_llm
+        self._llm_client = LLMClient(llm_config) if use_llm else None
 
     def analyze(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """分析入口 — 输入 dict，输出 dict"""
+        if self._use_llm and self._llm_client and self._llm_client.available:
+            try:
+                return self._analyze_via_llm(input_data)
+            except LLMClientError as e:
+                logger.warning("LLM 分析失败，fallback 到规则引擎: %s", e)
+
+        return self._analyze_via_rules(input_data)
+
+    def _analyze_via_llm(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        """通过 DeepSeek LLM 生成分析"""
+        system_prompt, user_prompt = build_prompts(input_data)
+        raw = self._llm_client.chat(system_prompt, user_prompt)
+
+        # 兼容 LLM 可能包裹 ```json ... ``` 的情况
+        text = raw.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+
+        try:
+            result = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise LLMClientError(f"LLM 输出 JSON 解析失败: {e}") from e
+
+        # 校验必要字段，缺失则 fallback
+        required_keys = {"executiveSummary", "overview", "issues", "conclusion", "riskWarnings"}
+        if not required_keys.issubset(result.keys()):
+            raise LLMClientError(f"LLM 输出缺少必要字段: {result.keys()}")
+
+        return result
+
+    def _analyze_via_rules(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        """通过规则引擎生成分析（与升级前行为一致）"""
         config = input_data.get("config", {})
         metrics = input_data.get("metrics", {})
         strategy_name = config.get("strategyName", "")
@@ -58,6 +106,8 @@ class ReportAnalyzer:
             "conclusion": self._analyze_conclusion(metrics),
             "riskWarnings": self._analyze_risk_warnings(metrics, config),
         }
+
+    # ---- 以下规则引擎方法与升级前完全一致，未做任何修改 ----
 
     def _analyze_executive(self, metrics: dict) -> dict:
         m = metrics

@@ -1,11 +1,16 @@
-"""ReportAnalyzer 测试"""
+"""ReportAnalyzer 测试 — 纯规则引擎模式"""
 
 import pytest
 from quantforge_ai.report_analysis import ReportAnalyzer
 
 
+def _make_analyzer():
+    """创建纯规则引擎模式的 analyzer，不受环境变量影响"""
+    return ReportAnalyzer(use_llm=False)
+
+
 def test_analyze_excellent_strategy():
-    analyzer = ReportAnalyzer()
+    analyzer = _make_analyzer()
     input_data = {
         "config": {"strategyName": "dual_ma", "timeframe": "1d", "strategyKind": "timing"},
         "metrics": {"totalReturn": 0.36, "annualizedReturn": 0.17, "sharpeRatio": 1.8,
@@ -21,7 +26,7 @@ def test_analyze_excellent_strategy():
 
 
 def test_analyze_poor_strategy():
-    analyzer = ReportAnalyzer()
+    analyzer = _make_analyzer()
     input_data = {
         "config": {"strategyName": "dual_ma", "timeframe": "1d", "strategyKind": "timing"},
         "metrics": {"totalReturn": -0.36, "annualizedReturn": -0.21, "sharpeRatio": -1.79,
@@ -35,7 +40,7 @@ def test_analyze_poor_strategy():
 
 def test_analyzer_does_not_depend_on_backtest_types():
     """验证 analyzer 接口为纯 dict，不依赖 BacktestResult 类型"""
-    analyzer = ReportAnalyzer()
+    analyzer = _make_analyzer()
     result = analyzer.analyze({"config": {}, "metrics": {}})
     assert "executiveSummary" in result
     assert "overview" in result
@@ -45,7 +50,7 @@ def test_analyzer_does_not_depend_on_backtest_types():
 
 
 def test_analyze_issues_overfitting_risk():
-    analyzer = ReportAnalyzer()
+    analyzer = _make_analyzer()
     # 交易次数 < 10 → high
     result = analyzer.analyze({
         "config": {"timeframe": "1d"},
@@ -69,7 +74,7 @@ def test_analyze_issues_overfitting_risk():
 
 
 def test_analyze_red_lines():
-    analyzer = ReportAnalyzer()
+    analyzer = _make_analyzer()
     result = analyzer.analyze({
         "config": {},
         "metrics": {"maxDrawdown": -0.15, "sharpeRatio": 0.8, "totalTrades": 25},

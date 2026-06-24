@@ -108,9 +108,12 @@ runtime/                运行产物（不分配开发 Agent）
 ## 本地运行
 
 ```bash
+cp .env.example .env   # 复制环境变量模板，填入 API Key 等密钥
 pnpm install
 pnpm dev
 ```
+
+所有密钥统一在项目根目录 `.env` 管理（已被 gitignore，不会提交）。
 
 ## 验证
 
