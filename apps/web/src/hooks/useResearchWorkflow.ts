@@ -16,7 +16,7 @@ import {
   type BacktestReportFull,
   type StrategyRow,
 } from '../appData';
-import { fetchReports } from '../api/reports';
+import { fetchReports, fetchReport } from '../api/reports';
 import { useTasks } from './useTasks';
 
 function formatReportTime(language: LanguageCode): string {
@@ -43,8 +43,9 @@ export function useResearchWorkflow(language: LanguageCode) {
   const [backtestReports, setBacktestReports] = useState<BacktestReportFull[]>([]);
   const [activeReportId, setActiveReportId] = useState<string | undefined>();
   const [backtestConfig, setBacktestConfig] = useState<BacktestConfig>(() => {
-    const endTs = Date.now();
-    const startTs = endTs - 365 * 24 * 60 * 60 * 1000; // 近 1 年
+    // 数据库现有行情数据范围：2023-01-01 ~ 2024-12-31
+    const startTs = 1672675200000; // 2023-01-01
+    const endTs = 1735574400000; // 2024-12-31
     return {
       symbol: '600519',
       timeframe: '1d',
@@ -61,65 +62,85 @@ export function useResearchWorkflow(language: LanguageCode) {
   useEffect(() => {
     let cancelled = false;
     fetchReports({ limit: 50 })
-      .then((summaries) => {
+      .then(async (summaries) => {
         if (cancelled) return;
         const historicalResearchReports: ResearchReport[] = [];
         const historicalReports: BacktestReportFull[] = [];
-        const defaults = createBacktestReportFull();
         const locale = language === 'zh' ? 'zh-CN' : 'en-US';
+
+        // 批量获取完整报告数据（并行请求，失败时降级到摘要）
+        const detailPromises = summaries.map((s) =>
+          fetchReport(s.id).catch(() => null),
+        );
+        const details = await Promise.all(detailPromises);
+        if (cancelled) return;
 
         summaries.forEach((s, index) => {
           const reportId = `report-${s.id}`;
           const generatedAt = new Date(s.createdAt).toLocaleTimeString(locale, { hour12: false });
-          // 同步创建 ResearchReport，使 handleSwitchBacktestReport 反推能匹配
+
           historicalResearchReports.push(
             createResearchReport(
-              {
-                id: reportId,
-                jobId: s.taskId,
-                sequence: index + 1,
-                generatedAt,
-              },
+              { id: reportId, jobId: s.taskId, sequence: index + 1, generatedAt },
               language,
             ),
           );
-          // backtestReports 项 id 必须为 backtest-full-${reportId}，与 activeBacktestReport 查找逻辑一致
-          historicalReports.push(
-            createBacktestReportFull({
-              id: `backtest-full-${reportId}`,
-              taskId: s.taskId,
-              status: 'completed',
-              generatedAt,
-              overview: {
-                ...defaults.overview,
-                name: s.strategyName,
-                instruments: [s.symbol],
-                frequency: s.timeframe,
-                timeRange: {
-                  start: s.startTime ? new Date(s.startTime).toISOString().slice(0, 10) : '',
-                  end: s.endTime ? new Date(s.endTime).toISOString().slice(0, 10) : '',
+
+          const detail = details[index];
+          if (detail?.reportData) {
+            // 有完整 reportData，直接使用
+            const rd = detail.reportData as Partial<BacktestReportFull>;
+            historicalReports.push(
+              createBacktestReportFull({
+                id: `backtest-full-${reportId}`,
+                taskId: s.taskId,
+                status: 'completed',
+                generatedAt,
+                strategyName: s.strategyName,
+                ...rd,
+              }),
+            );
+          } else {
+            // 无完整数据，用摘要构建（降级）
+            const defaults = createBacktestReportFull();
+            historicalReports.push(
+              createBacktestReportFull({
+                id: `backtest-full-${reportId}`,
+                taskId: s.taskId,
+                status: 'completed',
+                generatedAt,
+                strategyName: s.strategyName,
+                overview: {
+                  ...defaults.overview,
+                  name: s.strategyName,
+                  instruments: [s.symbol],
+                  frequency: s.timeframe,
+                  timeRange: {
+                    start: s.startTime ? new Date(s.startTime).toISOString().slice(0, 10) : '',
+                    end: s.endTime ? new Date(s.endTime).toISOString().slice(0, 10) : '',
+                  },
                 },
-              },
-              returnMetrics: {
-                ...defaults.returnMetrics,
-                totalReturn: s.totalReturn,
-                annualizedReturn: s.annualizedReturn,
-              },
-              riskMetrics: {
-                ...defaults.riskMetrics,
-                maxDrawdown: s.maxDrawdown,
-              },
-              riskAdjMetrics: {
-                ...defaults.riskAdjMetrics,
-                sharpeRatio: s.sharpeRatio,
-              },
-              tradeStats: {
-                ...defaults.tradeStats,
-                winRate: s.winRate,
-                totalTrades: s.totalTrades,
-              },
-            }),
-          );
+                returnMetrics: {
+                  ...defaults.returnMetrics,
+                  totalReturn: s.totalReturn,
+                  annualizedReturn: s.annualizedReturn,
+                },
+                riskMetrics: {
+                  ...defaults.riskMetrics,
+                  maxDrawdown: s.maxDrawdown,
+                },
+                riskAdjMetrics: {
+                  ...defaults.riskAdjMetrics,
+                  sharpeRatio: s.sharpeRatio,
+                },
+                tradeStats: {
+                  ...defaults.tradeStats,
+                  winRate: s.winRate,
+                  totalTrades: s.totalTrades,
+                },
+              }),
+            );
+          }
         });
 
         // 合并 reports（以 id 去重）
