@@ -9,6 +9,7 @@ from quantforge_strategy import (
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
     StrategyKind, StrategyParamDef,
 )
+from ..indicators import macd, last_valid
 
 
 class MACDStrategy(Strategy):
@@ -27,11 +28,7 @@ class MACDStrategy(Strategy):
         self._fast_period = fast_period
         self._slow_period = slow_period
         self._signal_period = signal_period
-        self._ema_fast: float | None = None
-        self._ema_slow: float | None = None
-        self._dea: float | None = None
-        self._prev_macd: float | None = None
-        self._prices: deque[float] = deque(maxlen=slow_period + 1)
+        self._prices: deque[float] = deque(maxlen=slow_period + signal_period + 5)
         self._bought = False
 
     @property
@@ -52,7 +49,7 @@ class MACDStrategy(Strategy):
                                  min=2, max=50),
             ],
             version="0.1.0",
-            kind=StrategyKind.Combined,
+            kind=StrategyKind.Timing,
         )
 
     @property
@@ -60,58 +57,53 @@ class MACDStrategy(Strategy):
         return StrategyState.Idle
 
     def init(self, context) -> None:
-        self._ema_fast = None
-        self._ema_slow = None
-        self._dea = None
-        self._prev_macd = None
         self._prices.clear()
         self._bought = False
-
-    def _ema(self, prev: float | None, price: float, period: int) -> float:
-        if prev is None:
-            return price
-        alpha = 2.0 / (period + 1)
-        return alpha * price + (1 - alpha) * prev
 
     def on_bar(self, bar: Bar, context) -> None:
         self._prices.append(bar.close)
 
-        # 需要至少 slow_period 根 bar 才能初始化慢线 EMA
-        if len(self._prices) < self._slow_period:
+        # 需要足够的数据来计算 MACD
+        if len(self._prices) < self._slow_period + self._signal_period:
             return
 
-        self._ema_fast = self._ema(self._ema_fast, bar.close, self._fast_period)
-        self._ema_slow = self._ema(self._ema_slow, bar.close, self._slow_period)
-
-        if self._ema_fast is None or self._ema_slow is None:
+        prices = list(self._prices)
+        dif, dea, hist = macd(
+            prices, self._fast_period, self._slow_period, self._signal_period
+        )
+        macd_value = last_valid(hist)
+        if macd_value is None:
             return
 
-        dif = self._ema_fast - self._ema_slow
-        self._dea = self._ema(self._dea, dif, self._signal_period)
-        macd = (dif - self._dea) * 2.0
+        # 检测柱状图由负转正/由正转负
+        # 取最后两个有效值
+        valid_hist = [h for h in hist if h == h]  # filter NaN
+        if len(valid_hist) < 2:
+            return
+        prev_macd = valid_hist[-2]
+        cur_macd = valid_hist[-1]
 
-        if self._prev_macd is not None:
-            # 金叉：MACD 柱由负转正
-            if macd > 0 and self._prev_macd <= 0 and not self._bought:
-                account = context.get_account()
-                qty = int(account.cash / bar.close)
-                if qty > 0:
-                    context.submit_order(OrderRequest(
-                        symbol=bar.symbol, side=OrderSide.Buy,
-                        type=OrderType.Market, quantity=qty,
-                    ))
-                    self._bought = True
-            # 死叉：MACD 柱由正转负
-            elif macd < 0 and self._prev_macd >= 0 and self._bought:
-                pos = context.get_position(bar.symbol)
-                if pos and pos.quantity > 0:
-                    context.submit_order(OrderRequest(
-                        symbol=bar.symbol, side=OrderSide.Sell,
-                        type=OrderType.Market, quantity=int(pos.quantity),
-                    ))
-                    self._bought = False
-
-        self._prev_macd = macd
+        # 金叉：MACD 柱由负转正
+        if cur_macd > 0 and prev_macd <= 0 and not self._bought:
+            account = context.get_account()
+            qty = int(account.cash / bar.close)
+            if qty > 0:
+                context.submit_order(OrderRequest(
+                    symbol=bar.symbol, side=OrderSide.Buy,
+                    type=OrderType.Market, quantity=qty,
+                    reason=f"MACD金叉：柱状图{prev_macd:.4f}→{cur_macd:.4f}",
+                ))
+                self._bought = True
+        # 死叉：MACD 柱由正转负
+        elif cur_macd < 0 and prev_macd >= 0 and self._bought:
+            pos = context.get_position(bar.symbol)
+            if pos and pos.quantity > 0:
+                context.submit_order(OrderRequest(
+                    symbol=bar.symbol, side=OrderSide.Sell,
+                    type=OrderType.Market, quantity=int(pos.quantity),
+                    reason=f"MACD死叉：柱状图{prev_macd:.4f}→{cur_macd:.4f}",
+                ))
+                self._bought = False
 
     def finish(self) -> StrategyResult:
         return StrategyResult(meta=self.meta)

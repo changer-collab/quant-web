@@ -28,6 +28,36 @@ export function ReportOverview({ report, ui }: Props) {
         <p className={overview.logicText}>{o.logic}</p>
       </div>
 
+      {/* 策略类型与适用市场 */}
+      {(o.strategyCategory || (o.suitableMarketRegime && o.suitableMarketRegime.length > 0)) && (
+        <div className={overview.metaGrid}>
+          {o.strategyCategory && (
+            <div className={overview.metaItem}>
+              <span className={overview.metaLabel}>{labels.strategyCategory}</span>
+              <span className={overview.metaValue}>{o.strategyCategory}</span>
+            </div>
+          )}
+          {o.suitableMarketRegime && o.suitableMarketRegime.length > 0 && (
+            <div className={overview.metaItem}>
+              <span className={overview.metaLabel}>{labels.suitableMarketRegime}</span>
+              <div className={overview.chipRow}>
+                {o.suitableMarketRegime.map((r, i) => (
+                  <span key={i} className={overview.chip}>{r}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 核心逻辑说明 */}
+      {o.coreLogic && (
+        <div className={overview.logicCard}>
+          <span className={overview.logicLabel}>{labels.coreLogic}</span>
+          <p className={overview.logicText}>{o.coreLogic}</p>
+        </div>
+      )}
+
       <div className={overview.metaGrid}>
         <div className={overview.metaItem}>
           <span className={overview.metaLabel}>{labels.instruments}</span>
@@ -50,6 +80,56 @@ export function ReportOverview({ report, ui }: Props) {
           <span className={overview.metaValue}>{o.benchmark}</span>
         </div>
       </div>
+
+      {/* 组合构成（如有） */}
+      {o.composition && o.composition.length > 0 && (
+        <div className={section.section}>
+          <h4 className={overview.logicLabel}>{labels.composition}</h4>
+          <table className={overview.compositionTable}>
+            <thead>
+              <tr>
+                <th>{labels.composition}</th>
+                <th>权重</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {o.composition.map((c) => (
+                <tr key={c.name}>
+                  <td>{c.name}</td>
+                  <td className={overview.mono}>{(c.weight * 100).toFixed(0)}%</td>
+                  <td>{c.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 关键参数 */}
+      {o.keyParameters && o.keyParameters.length > 0 && (
+        <div className={section.section}>
+          <h4 className={overview.logicLabel}>{labels.keyParameters}</h4>
+          <table className={overview.compositionTable}>
+            <thead>
+              <tr>
+                <th>{labels.paramName}</th>
+                <th>{labels.paramValue}</th>
+                <th>{labels.paramDescription}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {o.keyParameters.map((p) => (
+                <tr key={p.name}>
+                  <td>{p.name}</td>
+                  <td className={overview.mono}>{p.value}</td>
+                  <td>{p.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }

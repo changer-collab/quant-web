@@ -9,6 +9,7 @@ from quantforge_strategy import (
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
     StrategyKind, StrategyParamDef,
 )
+from ..indicators import kdj, last_valid
 
 
 class KDJStrategy(Strategy):
@@ -30,10 +31,9 @@ class KDJStrategy(Strategy):
         self._period = period
         self._oversold = oversold
         self._overbought = overbought
-        self._highs: deque[float] = deque(maxlen=period)
-        self._lows: deque[float] = deque(maxlen=period)
-        self._k: float = 50.0
-        self._d: float = 50.0
+        self._highs: deque[float] = deque(maxlen=period + 1)
+        self._lows: deque[float] = deque(maxlen=period + 1)
+        self._closes: deque[float] = deque(maxlen=period + 1)
         self._prev_k: float | None = None
         self._prev_d: float | None = None
         self._bought = False
@@ -56,7 +56,7 @@ class KDJStrategy(Strategy):
                                  min=60, max=95),
             ],
             version="0.1.0",
-            kind=StrategyKind.Combined,
+            kind=StrategyKind.Timing,
         )
 
     @property
@@ -66,8 +66,7 @@ class KDJStrategy(Strategy):
     def init(self, context) -> None:
         self._highs.clear()
         self._lows.clear()
-        self._k = 50.0
-        self._d = 50.0
+        self._closes.clear()
         self._prev_k = None
         self._prev_d = None
         self._bought = False
@@ -75,47 +74,47 @@ class KDJStrategy(Strategy):
     def on_bar(self, bar: Bar, context) -> None:
         self._highs.append(bar.high)
         self._lows.append(bar.low)
+        self._closes.append(bar.close)
 
         if len(self._highs) < self._period:
             return
 
-        highest = max(self._highs)
-        lowest = min(self._lows)
-        if highest == lowest:
-            rsv = 50.0
-        else:
-            rsv = (bar.close - lowest) / (highest - lowest) * 100.0
-
-        # 递推 K、D
-        self._k = (2.0 / 3.0) * self._k + (1.0 / 3.0) * rsv
-        self._d = (2.0 / 3.0) * self._d + (1.0 / 3.0) * self._k
+        k_series, d_series, _ = kdj(
+            list(self._highs), list(self._lows), list(self._closes), self._period
+        )
+        k = last_valid(k_series)
+        d = last_valid(d_series)
+        if k is None or d is None:
+            return
 
         if self._prev_k is not None and self._prev_d is not None:
             # 金叉：K 上穿 D 且 K 处于超卖区
-            golden_cross = self._prev_k <= self._prev_d and self._k > self._d
+            golden_cross = self._prev_k <= self._prev_d and k > d
             # 死叉：K 下穿 D 且 K 处于超买区
-            death_cross = self._prev_k >= self._prev_d and self._k < self._d
+            death_cross = self._prev_k >= self._prev_d and k < d
 
-            if golden_cross and self._k < self._oversold and not self._bought:
+            if golden_cross and k < self._oversold and not self._bought:
                 account = context.get_account()
                 qty = int(account.cash / bar.close)
                 if qty > 0:
                     context.submit_order(OrderRequest(
                         symbol=bar.symbol, side=OrderSide.Buy,
                         type=OrderType.Market, quantity=qty,
+                        reason=f"KDJ金叉超卖：K={k:.2f}上穿D={d:.2f}",
                     ))
                     self._bought = True
-            elif death_cross and self._k > self._overbought and self._bought:
+            elif death_cross and k > self._overbought and self._bought:
                 pos = context.get_position(bar.symbol)
                 if pos and pos.quantity > 0:
                     context.submit_order(OrderRequest(
                         symbol=bar.symbol, side=OrderSide.Sell,
                         type=OrderType.Market, quantity=int(pos.quantity),
+                        reason=f"KDJ死叉超买：K={k:.2f}下穿D={d:.2f}",
                     ))
                     self._bought = False
 
-        self._prev_k = self._k
-        self._prev_d = self._d
+        self._prev_k = k
+        self._prev_d = d
 
     def finish(self) -> StrategyResult:
         return StrategyResult(meta=self.meta)

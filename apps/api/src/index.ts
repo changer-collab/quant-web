@@ -1,10 +1,44 @@
 import { buildApp } from './app.js';
 import { createDataCenter } from '@quant/data-center/storage';
-import { InMemoryTaskService } from './plugins/task-service.js';
+import { SqliteTaskService } from './plugins/sqlite-task-service.js';
+import { initApiDb, closeApiDb } from './storage/connection.js';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
-const dataCenter = await createDataCenter({ dbPath: 'data/quant.db' });
-const taskService = new InMemoryTaskService();
+/** 从当前工作目录向上查找项目根目录（以 pnpm-workspace.yaml 为标志） */
+function findProjectRoot(): string {
+  let dir = process.cwd();
+  while (true) {
+    if (existsSync(join(dir, 'pnpm-workspace.yaml'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return process.cwd();
+}
+
+const projectRoot = findProjectRoot();
+const dbPath = resolve(projectRoot, 'data', 'quant.db');
+const dataCenter = await createDataCenter({ dbPath });
+
+// 初始化 API 层数据库
+await initApiDb();
+
+// 使用 SQLite 任务服务
+const taskService = new SqliteTaskService(dataCenter.repos.tasks);
+await taskService.init();
 
 const app = await buildApp({ dataCenter, taskService });
 
-await app.listen({ port: 3000, host: '0.0.0.0' });
+// 优雅关闭
+process.on('SIGINT', async () => {
+  closeApiDb();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  closeApiDb();
+  process.exit(0);
+});
+
+await app.listen({ port: 3002, host: '0.0.0.0' });

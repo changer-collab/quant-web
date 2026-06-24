@@ -8,7 +8,6 @@ version = "0.1.0"
 description = "QuantForge AI 引擎 — 特征提取、模型训练、预测"
 requires-python = ">=3.11"
 dependencies = [
-    "quantforge-strategy",
     "numpy",
     "pandas",
     "scikit-learn",

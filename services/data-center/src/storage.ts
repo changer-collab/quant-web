@@ -41,6 +41,7 @@ export type {
 // storage — 存储层实现
 export { createDataCenter, createSqliteRepositorySet, createProviders } from './storage/factory.js';
 export { createSqliteConnection, createSqliteContext, resolveDbPath } from './storage/sqlite/connection.js';
+export { SqliteTaskRepository } from './storage/sqlite/task-repo.js';
 
 // provider — Provider 实现
 export {

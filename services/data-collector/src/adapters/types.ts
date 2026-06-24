@@ -40,8 +40,24 @@ export interface YfinanceExtra {
   pythonPath?: string;
 }
 
+/** Mootdx 适配器额外参数 */
+export interface MootdxExtra {
+  /** Python 可执行文件路径，默认 python */
+  pythonPath?: string;
+  /** 通达信服务器 IP（可选，自动探测） */
+  server?: string;
+  /** 通达信服务器端口，默认 7709 */
+  port?: number;
+}
+
+/** 腾讯财经适配器额外参数 */
+export interface TencentExtra {
+  /** 请求超时毫秒，默认 10000 */
+  timeout?: number;
+}
+
 /** 所有适配器 extra 类型的联合 */
-export type AdapterExtra = TushareExtra | AkshareExtra | CsvExtra | BaostockExtra | EfinanceExtra | YfinanceExtra | Record<string, unknown>;
+export type AdapterExtra = TushareExtra | AkshareExtra | CsvExtra | BaostockExtra | EfinanceExtra | YfinanceExtra | MootdxExtra | TencentExtra | Record<string, unknown>;
 
 /** 适配器拉取选项 */
 export interface AdapterFetchOptions {

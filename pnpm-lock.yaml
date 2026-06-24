@@ -47,10 +47,19 @@ importers:
       '@quant/data-center':
         specifier: workspace:*
         version: link:../../services/data-center
+      drizzle-orm:
+        specifier: ^0.44.2
+        version: 0.44.7(@types/sql.js@1.4.11)(sql.js@1.14.1)
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
+      sql.js:
+        specifier: ^1.12.0
+        version: 1.14.1
     devDependencies:
+      '@types/sql.js':
+        specifier: ^1.4.9
+        version: 1.4.11
       tsx:
         specifier: ^4.19.0
         version: 4.22.4
@@ -118,6 +127,9 @@ importers:
       '@quant/data-center':
         specifier: workspace:*
         version: link:../../services/data-center
+      '@quant/data-collector':
+        specifier: workspace:*
+        version: link:../../services/data-collector
       sql.js:
         specifier: ^1.11.0
         version: 1.14.1

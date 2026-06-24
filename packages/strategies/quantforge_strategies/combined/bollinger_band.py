@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from collections import deque
-import math
 
 from quantforge_strategy import (
     Strategy, StrategyMeta, StrategyResult, StrategyState,
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
     StrategyKind, StrategyParamDef,
 )
+from ..indicators import bollinger, last_valid
 
 
 class BollingerBandStrategy(Strategy):
@@ -36,7 +36,7 @@ class BollingerBandStrategy(Strategy):
                                  min=0.5, max=4.0),
             ],
             version="0.1.0",
-            kind=StrategyKind.Combined,
+            kind=StrategyKind.Timing,
         )
 
     @property
@@ -53,14 +53,13 @@ class BollingerBandStrategy(Strategy):
         if len(self._prices) < self._period:
             return
 
-        prices = list(self._prices)[-self._period:]
-        ma = sum(prices) / len(prices)
-        variance = sum((p - ma) ** 2 for p in prices) / len(prices)
-        std = math.sqrt(variance)
-        upper = ma + self._num_std * std
-        lower = ma - self._num_std * std
+        middle, upper, lower = bollinger(list(self._prices), self._period, self._num_std)
+        upper_val = last_valid(upper)
+        lower_val = last_valid(lower)
+        if upper_val is None or lower_val is None:
+            return
 
-        if bar.close <= lower and not self._bought:
+        if bar.close <= lower_val and not self._bought:
             # 跌破下轨买入
             account = context.get_account()
             qty = int(account.cash / bar.close)
@@ -68,15 +67,17 @@ class BollingerBandStrategy(Strategy):
                 context.submit_order(OrderRequest(
                     symbol=bar.symbol, side=OrderSide.Buy,
                     type=OrderType.Market, quantity=qty,
+                    reason=f"跌破布林下轨：close={bar.close:.2f}<=lower={lower_val:.2f}",
                 ))
                 self._bought = True
-        elif bar.close >= upper and self._bought:
+        elif bar.close >= upper_val and self._bought:
             # 突破上轨卖出
             pos = context.get_position(bar.symbol)
             if pos and pos.quantity > 0:
                 context.submit_order(OrderRequest(
                     symbol=bar.symbol, side=OrderSide.Sell,
                     type=OrderType.Market, quantity=int(pos.quantity),
+                    reason=f"突破布林上轨：close={bar.close:.2f}>=upper={upper_val:.2f}",
                 ))
                 self._bought = False
 

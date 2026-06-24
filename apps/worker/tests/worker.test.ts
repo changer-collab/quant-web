@@ -32,20 +32,22 @@ describe('Worker', () => {
   it('提交和处理任务', async () => {
     const dc = createMockDataCenter();
     const worker = new Worker({ dataCenter: dc, handlers: [makeSimpleHandler(TaskType.Backtest)] });
-    const task = worker.submit(TaskType.Backtest, { symbol: 'TEST' });
+    const task = await worker.submit(TaskType.Backtest, { symbol: 'TEST' });
     expect(task.status).toBe(TaskStatus.Pending);
     await worker.processAll();
-    expect(task.status).toBe(TaskStatus.Completed);
-    expect(worker.getTask(task.id)).toBeDefined();
+    const completed = await worker.getTask(task.id);
+    expect(completed).toBeDefined();
+    expect(completed!.status).toBe(TaskStatus.Completed);
+    expect(await worker.getTask(task.id)).toBeDefined();
     await worker.close();
   });
 
   it('列出任务', async () => {
     const dc = createMockDataCenter();
     const worker = new Worker({ dataCenter: dc, handlers: [makeSimpleHandler(TaskType.Backtest)] });
-    worker.submit(TaskType.Backtest, { symbol: 'A' });
-    worker.submit(TaskType.Backtest, { symbol: 'B' });
-    expect(worker.listTasks()).toHaveLength(2);
+    await worker.submit(TaskType.Backtest, { symbol: 'A' });
+    await worker.submit(TaskType.Backtest, { symbol: 'B' });
+    expect(await worker.listTasks()).toHaveLength(2);
     await worker.close();
   });
 
@@ -55,10 +57,10 @@ describe('Worker', () => {
       dataCenter: dc,
       handlers: [makeSimpleHandler(TaskType.Backtest), makeSimpleHandler(TaskType.FactorCompute)],
     });
-    worker.submit(TaskType.Backtest, { symbol: 'A' });
-    worker.submit(TaskType.FactorCompute, { factorIds: ['f1'] });
-    expect(worker.listTasks(TaskType.Backtest)).toHaveLength(1);
-    expect(worker.listTasks(TaskType.FactorCompute)).toHaveLength(1);
+    await worker.submit(TaskType.Backtest, { symbol: 'A' });
+    await worker.submit(TaskType.FactorCompute, { factorIds: ['f1'] });
+    expect(await worker.listTasks(TaskType.Backtest)).toHaveLength(1);
+    expect(await worker.listTasks(TaskType.FactorCompute)).toHaveLength(1);
     await worker.close();
   });
 });

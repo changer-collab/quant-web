@@ -295,3 +295,36 @@ export const watermarks = sqliteTable('watermarks', {
 }, (table) => [
   primaryKey({ columns: [table.source, table.dataType, table.symbol] }),
 ]);
+
+// ─── 因子定义 ─────────────────────────────────────────────
+
+/** 因子定义表 */
+export const factorDefinitions = sqliteTable('factor_definitions', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  formula: text('formula').notNull(),
+  category: text('category').notNull(),
+  modes: text('modes').notNull(), // JSON array
+  frequency: text('frequency').notNull(),
+  status: text('status').notNull(),
+  version: text('version').notNull(),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+// ─── 任务 ─────────────────────────────────────────────────
+
+/** 任务表 */
+export const tasks = sqliteTable('tasks', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  status: text('status').notNull(),
+  payload: text('payload').notNull(), // JSON
+  submittedAt: integer('submitted_at').notNull(),
+  startedAt: integer('started_at'),
+  completedAt: integer('completed_at'),
+  result: text('result'), // JSON
+  error: text('error'),
+  progress: integer('progress'),
+  lines: text('lines'), // JSON array
+});

@@ -4,6 +4,7 @@ import { InMemoryTaskService } from '../../src/plugins/task-service.js';
 import type { DataCenter } from '@quant/data-center';
 
 function createMockDataCenter(): DataCenter {
+  const factorStore = new Map<string, any>();
   return {
     providers: {
       reference: {
@@ -59,7 +60,14 @@ function createMockDataCenter(): DataCenter {
         }),
       },
     },
-    repos: {} as never,
+    repos: {
+      factors: {
+        save: async (factor: any) => { factorStore.set(factor.id, { ...factor }); },
+        getAll: async () => Array.from(factorStore.values()),
+        getById: async (id: string) => factorStore.get(id),
+        delete: async (id: string) => { factorStore.delete(id); },
+      },
+    } as never,
     exporter: {} as never,
     close: async () => {},
     status: () => 'ready' as const,

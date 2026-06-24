@@ -23,6 +23,8 @@ export type {
   DataExporter,
   ExportFormat,
   RepositorySet,
+  TaskDefinition,
+  TaskRepository,
 } from './types.js';
 
 export type { ReferenceQuery } from '../reference/types.js';

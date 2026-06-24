@@ -24,7 +24,7 @@ function ParamSensitivityHeatmap({ report, ui }: Props) {
     // 取第一个参数做热力图展示（多参数时可扩展为 tab）
     const ps = rb.paramSensitivity[0];
     const paramValues = ps.variations.map((v) => String(v.value));
-    const metrics = ['收益率', '夏普', '最大回撤'];
+    const metrics = [ui.chartLabels.returnRate, ui.chartLabels.sharpe, ui.chartLabels.maxDrawdown];
 
     const data: [number, number, number][] = [];
     ps.variations.forEach((v, vi) => {
@@ -114,6 +114,7 @@ function ParamSensitivityHeatmap({ report, ui }: Props) {
 /** 滚动窗口折线图 */
 function RollingWindowChart({ report, ui }: Props) {
   const rb = report.robustness;
+  const chartLabels = ui.chartLabels;
   const labels = ui.robustness;
 
   const option = useMemo<EChartsOption>(() => {
@@ -127,7 +128,7 @@ function RollingWindowChart({ report, ui }: Props) {
         trigger: 'axis',
       },
       legend: {
-        data: ['收益率', '夏普', '最大回撤'],
+        data: [chartLabels.returnRate, chartLabels.sharpe, chartLabels.maxDrawdown],
         top: 0,
         right: 0,
         textStyle: { color: '#8fa29b', fontSize: 11 },
@@ -152,7 +153,7 @@ function RollingWindowChart({ report, ui }: Props) {
       ],
       series: [
         {
-          name: '收益率',
+          name: chartLabels.returnRate,
           type: 'line',
           data: rb.rollingWindows.map((rw) => rw.return),
           lineStyle: { color: '#4df0a0', width: 2 },
@@ -160,7 +161,7 @@ function RollingWindowChart({ report, ui }: Props) {
           showSymbol: false,
         },
         {
-          name: '夏普',
+          name: chartLabels.sharpe,
           type: 'line',
           data: rb.rollingWindows.map((rw) => rw.sharpe),
           lineStyle: { color: '#62d8ff', width: 1.5 },
@@ -168,7 +169,7 @@ function RollingWindowChart({ report, ui }: Props) {
           showSymbol: false,
         },
         {
-          name: '最大回撤',
+          name: chartLabels.maxDrawdown,
           type: 'line',
           data: rb.rollingWindows.map((rw) => rw.drawdown),
           lineStyle: { color: '#ff6b6b', width: 1.5 },
@@ -177,7 +178,7 @@ function RollingWindowChart({ report, ui }: Props) {
         },
       ],
     };
-  }, [rb, labels]);
+  }, [rb, chartLabels]);
 
   if (rb.rollingWindows.length === 0) return null;
 
@@ -199,13 +200,14 @@ function RollingWindowChart({ report, ui }: Props) {
 /** 市场环境分组柱状图 */
 function MarketRegimeChart({ report, ui }: Props) {
   const rb = report.robustness;
+  const chartLabels = ui.chartLabels;
   const labels = ui.robustness;
 
   const option = useMemo<EChartsOption>(() => {
     if (rb.marketRegimes.length === 0) return {};
 
     const regimeLabels = rb.marketRegimes.map((mr) => {
-      return mr.regime === 'bull' ? '牛市' : mr.regime === 'bear' ? '熊市' : '震荡市';
+      return mr.regime === 'bull' ? 'Bull' : mr.regime === 'bear' ? 'Bear' : 'Sideways';
     });
 
     return {
@@ -214,7 +216,7 @@ function MarketRegimeChart({ report, ui }: Props) {
         trigger: 'axis',
       },
       legend: {
-        data: ['收益率', '夏普', '最大回撤'],
+        data: [chartLabels.returnRate, chartLabels.sharpe, chartLabels.maxDrawdown],
         top: 0,
         right: 0,
         textStyle: { color: '#8fa29b', fontSize: 11 },
@@ -233,7 +235,7 @@ function MarketRegimeChart({ report, ui }: Props) {
       },
       series: [
         {
-          name: '收益率',
+          name: chartLabels.returnRate,
           type: 'bar',
           data: rb.marketRegimes.map((mr) => ({
             value: mr.return * 100,
@@ -241,7 +243,7 @@ function MarketRegimeChart({ report, ui }: Props) {
           })),
         },
         {
-          name: '夏普',
+          name: chartLabels.sharpe,
           type: 'bar',
           data: rb.marketRegimes.map((mr) => ({
             value: mr.sharpe,
@@ -249,7 +251,7 @@ function MarketRegimeChart({ report, ui }: Props) {
           })),
         },
         {
-          name: '最大回撤',
+          name: chartLabels.maxDrawdown,
           type: 'bar',
           data: rb.marketRegimes.map((mr) => ({
             value: mr.drawdown * 100,
@@ -258,7 +260,7 @@ function MarketRegimeChart({ report, ui }: Props) {
         },
       ],
     };
-  }, [rb, labels]);
+  }, [rb, chartLabels]);
 
   if (rb.marketRegimes.length === 0) return null;
 
@@ -280,6 +282,7 @@ function MarketRegimeChart({ report, ui }: Props) {
 export function ReportRobustness({ report, ui }: Props) {
   const rb = report.robustness;
   const labels = ui.robustness;
+  const wf = rb.walkForward;
 
   return (
     <div className={styles.robustnessPanel}>
@@ -318,6 +321,41 @@ export function ReportRobustness({ report, ui }: Props) {
 
       {/* 市场环境分组柱状图 */}
       <MarketRegimeChart report={report} ui={ui} />
+
+      {/* Walk-Forward 分析 */}
+      {wf && wf.windows.length > 0 && (
+        <div className={styles.chartSection}>
+          <h4 className={styles.sectionTitle}>{labels.walkForward}</h4>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>区间</th>
+                <th>{labels.inSampleReturn}</th>
+                <th>{labels.outOfSampleReturn}</th>
+                <th>{labels.decay}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {wf.windows.map((w) => (
+                <tr key={w.period}>
+                  <td>{w.period}</td>
+                  <td className={styles.toneGood}>{pct(w.inSampleReturn)}</td>
+                  <td className={styles.toneGood}>{pct(w.outOfSampleReturn)}</td>
+                  <td className={w.decay > 0.2 ? styles.toneWarn : styles.toneGood}>{(w.decay * 100).toFixed(0)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className={styles.testSummary}>
+            <div className={styles.testCard}>
+              <span className={styles.testLabel}>{labels.avgDecay}</span>
+              <strong className={(wf.avgDecay ?? 0) > 0.2 ? styles.toneWarn : styles.toneGood}>
+                {((wf.avgDecay ?? 0) * 100).toFixed(0)}%
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Out-of-sample & Shuffled */}
       <div className={styles.testSummary}>

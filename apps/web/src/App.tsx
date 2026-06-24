@@ -26,13 +26,12 @@ import infoPanelStyles from './styles/info-panel.module.css';
 import './styles/tokens.css';
 
 export default function App() {
-  const { language, handleLanguageChange, navItems, ui, strategies: mockStrategies, ticks, researchModes, factors: mockFactors, factorEvalResults, reportUiCopy } = useLanguage();
+  const { language, handleLanguageChange, navItems, ui, researchModes, factorEvalResults, reportUiCopy } = useLanguage();
   const { strategies: apiStrategies } = useStrategies();
   const { tasks: apiTasks } = useTasks();
   const { factors: apiFactors } = useFactors();
-  // API 优先，无数据时 fallback 到模拟数据
-  const strategies = apiStrategies.length > 0 ? apiStrategies : mockStrategies;
-  const factors = apiFactors.length > 0 ? apiFactors : mockFactors;
+  const strategies = apiStrategies;
+  const factors = apiFactors;
   const {
     state,
     activeMode,
@@ -45,6 +44,8 @@ export default function App() {
     backtestReports,
     reportJobIds,
     activeConfigSummary,
+    backtestConfig,
+    setBacktestConfig,
     handleNavClick,
     handleSelectStrategy,
     handleRunResearch,
@@ -153,7 +154,7 @@ export default function App() {
               ) : (
                 <>
                   <ReportSummary report={activeReport} ui={ui} />
-                  <ChartMockup ariaLabel={ui.chartAriaLabel} />
+                  <ChartMockup ariaLabel={ui.chartAriaLabel} priceUp={reportUiCopy.chartLabels.priceUp} priceDown={reportUiCopy.chartLabels.priceDown} />
                 </>
               )
             ) : state.activePage === 'workspace' ? (
@@ -162,12 +163,15 @@ export default function App() {
                 configSummary={activeConfigSummary}
                 onRunResearch={handleRunResearch}
                 strategies={strategies}
-                ticks={ticks}
+                selectedStrategy={selectedStrategy}
+                backtestConfig={backtestConfig}
+                onConfigChange={setBacktestConfig}
+                ticks={[]}
                 ui={ui}
               />
             ) : (
               <>
-                <ChartMockup ariaLabel={ui.chartAriaLabel} />
+                <ChartMockup ariaLabel={ui.chartAriaLabel} priceUp={reportUiCopy.chartLabels.priceUp} priceDown={reportUiCopy.chartLabels.priceDown} />
                 {state.activePage === 'dashboard' && (
                   <ActivityFeed jobs={allJobs} ui={ui} />
                 )}

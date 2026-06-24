@@ -6,9 +6,9 @@ interface Props {
   ui: ReportUiCopy;
 }
 
-function RiskIndicator({ level }: { level: 'low' | 'medium' | 'high' }) {
+function RiskIndicator({ level, ui }: { level: 'low' | 'medium' | 'high'; ui: ReportUiCopy['issues'] }) {
   const cls = level === 'low' ? styles.riskLow : level === 'medium' ? styles.riskMed : styles.riskHigh;
-  const label = level === 'low' ? '低' : level === 'medium' ? '中' : '高';
+  const label = level === 'low' ? ui.lowSeverity : level === 'medium' ? ui.mediumSeverity : ui.highSeverity;
   return (
     <span className={`${styles.riskDot} ${cls}`} title={label}>
       <span className={styles.riskLabel}>{label}</span>
@@ -26,14 +26,14 @@ export function ReportIssues({ report, ui }: Props) {
         <article className={styles.issueCard}>
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.overfitting}</span>
-            <RiskIndicator level={issues.overfittingRisk} />
+            <RiskIndicator level={issues.overfittingRisk} ui={labels} />
           </div>
         </article>
         <article className={styles.issueCard}>
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.survivorshipBias}</span>
             <span className={issues.survivorshipBias ? styles.issueBadWarn : styles.issueBadGood}>
-              {issues.survivorshipBias ? '是' : '否'}
+              {issues.survivorshipBias ? labels.yesLabel : labels.noLabel}
             </span>
           </div>
         </article>
@@ -41,7 +41,7 @@ export function ReportIssues({ report, ui }: Props) {
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.lookAheadBias}</span>
             <span className={issues.lookAheadBias ? styles.issueBadWarn : styles.issueBadGood}>
-              {issues.lookAheadBias ? '是' : '否'}
+              {issues.lookAheadBias ? labels.yesLabel : labels.noLabel}
             </span>
           </div>
         </article>

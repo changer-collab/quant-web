@@ -19,6 +19,8 @@ class Order:
     price: float | None = None
     status: OrderStatus = OrderStatus.Pending
     timestamp: int = 0
+    # 交易原因（策略填写，用于归因和日志）
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -30,6 +32,8 @@ class Trade:
     price: float
     quantity: float
     timestamp: int = 0
+    # 交易原因（从 Order 透传）
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -39,3 +43,5 @@ class OrderRequest:
     type: OrderType
     quantity: float
     price: float | None = None
+    # 交易原因（策略填写，用于归因和日志）
+    reason: str | None = None

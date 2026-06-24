@@ -23,6 +23,11 @@ class BacktestConfig:
     initial_cash: float = DEFAULT_INITIAL_CASH
     slippage: float = DEFAULT_SLIPPAGE
     params: dict[str, Any] = field(default_factory=dict)
+    # 是否启用 A 股市场规则（T+1、印花税、佣金等）
+    # True 使用默认 ASHARE_RULES，False 不启用任何规则
+    enable_market_rules: bool = False
+    # 策略类型（来自 StrategyMeta.kind，用于前端按类型过滤报告模块）
+    strategy_kind: str = "combined"
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,137 @@
+/* ── Report Executive Summary ─────────────────────────────── */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.header {
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, rgba(77, 240, 160, 0.08), rgba(98, 216, 255, 0.05));
+  border: 1px solid rgba(77, 240, 160, 0.2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.conclusion {
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: var(--leading-relaxed);
+  color: var(--text);
+  margin: 0;
+  flex: 1;
+}
+
+.recommendBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.recommendYes {
+  background: rgba(77, 240, 160, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(77, 240, 160, 0.3);
+}
+
+.recommendNo {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--red, #ff6b6b);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-md);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+}
+
+.keyMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .keyMetricsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.45);
+  border-radius: var(--radius-sm);
+}
+
+.metricLabel {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted);
+}
+
+.metricValue {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.reasonBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.reasonText {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text);
+}
+
+.risksList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.riskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 107, 107, 0.06);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.riskDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red, #ff6b6b);
+  flex-shrink: 0;
+}

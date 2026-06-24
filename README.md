@@ -1,76 +1,108 @@
 # QuantForge
 
-QuantForge 是一个面向个人量化研究者的量化策略研究平台。
+面向个人量化研究者的策略研究平台。
 
-当前阶段不是实盘交易，而是先打通研究原型闭环：
-
-```text
-选择策略 -> 配置研究参数 -> 运行回测或训练 -> 查看任务和报告 -> 迭代策略
-```
-
-## 当前阶段
-
-项目已迁移到 pnpm + Turborepo monorepo 结构，当前可运行部分是 `apps/web`（前端研究原型）。
-
-已完成的主要模块：
+## 核心闭环
 
 ```text
-apps/web              前端研究原型（React + TS + Vite），已对接真实后端
-apps/api              HTTP API（Fastify），含 SSE 流式推送
-apps/worker           异步任务 Worker，HTTP 轮询 API 领取任务
-services/data-center  独立数据中心（SQLite + Drizzle，6 数据子域）
-services/data-collector 数据采集器（6 数据源适配器，水位增量采集）
-packages/backtest-engine 事件驱动回测引擎
-packages/factor-lab   因子工坊（计算 + 评估调度）
-packages/strategy-runtime 策略运行时接口（CLI NDJSON 流式输出）
-packages/strategies   策略库（双均线、RSI）
+选择策略 → 配置参数 → 运行回测/训练 → 查看任务和报告 → 迭代策略
 ```
 
-真实回测闭环已打通：API → Worker → Python CLI → 结果回传 → 前端 SSE。
+前后端端到端闭环已打通：前端提交回测 → API → Worker → Python CLI → 真实回测指标 → SSE 推送 → 前端报告显示。
 
-待完成：
+## 模块连接图
+
+绿色实线 = 已连通；红色虚线 = 断点
+
+```mermaid
+graph LR
+  subgraph 数据层
+    DC[data-collector<br/>TS · 采集+调度]
+    DCE[data-center<br/>TS · SQLite存储]
+    DCL[data-client<br/>PY · 读SQLite]
+  end
+
+  subgraph 执行层
+    SR[strategy-runtime<br/>PY · CLI入口]
+    BT[backtest-engine<br/>PY · 回测]
+    FL[factor-lab<br/>PY · 因子评估]
+    AI[ai-engine<br/>PY · AI训练]
+  end
+
+  subgraph 输出层
+    OB[obsidian-sync<br/>PY · 同步看板]
+    WEB[apps/web<br/>React · 研究原型]
+  end
+
+  DC -->|写入| DCE
+  DCE -->|quant.db| DCL
+  DCL -->|Bar数据| SR
+  SR -->|backtest| BT
+  SR -->|factorEval| FL
+  SR -->|aiTrain| AI
+
+  BT -.->|断点1| OB
+  FL -.->|断点2| OB
+  AI -.->|断点3| OB
+  BT -.->|断点4| WEB
+  WEB -.->|断点5| OB
+  OB -.->|断点6| WEB
+
+  ORC((orchestrator<br/>不存在)) -.->|断点7| SR
+```
+
+### 已连通链路
 
 ```text
-- AI 引擎（特征、标签、训练、预测、模型注册）
-- 数据中心生命周期管理完善
-- 真实数据源接入
-- 实盘执行层
+data-collector → data-center (SQLite) → data-client → strategy-runtime CLI
+  ├→ backtest-engine
+  ├→ factor-lab
+  └→ ai-engine
 ```
 
-## 后续规划
+数据从采集到执行完整可跑，每个模块单独有测试覆盖。前端通过 SSE 已能消费 CLI 的 `progress/log/status/result/error` 事件流（`useTaskStream` ↔ `cli.py` NDJSON 一一对应）。
 
-```text
-1. 继续稳定 apps/web，按需要引入路由
-2. services/data-center 生命周期管理完善
-3. packages/ai-engine 特征、标签、训练、预测和模型注册
-4. services/data-collector 真实数据源接入
-5. 高频增强
-6. 实盘执行层
-```
+### 断点分析
 
-规划原则：
+| 断点 | 从 | 到 | 现状 | 修复方式 |
+| ---- | -- | -- | ---- | -------- |
+| 1 | backtest 结果 | obsidian-sync | CLI 的 `run_backtest` 返回后直接结束，不调用 `SyncService.sync_backtest_result()` | 在 worker `BacktestHandler` 拿到 `backtestResult` 后调用 sync（保持 CLI 纯计算，sync 作为编排动作放 worker，失败可独立重试） |
+| 2 | factor 评估结果 | obsidian-sync | `run_factor_eval` 不同步 | 在 worker `FactorEvalHandler` 后置调用 `sync_factor` |
+| 3 | AI 训练结果 | obsidian-sync | `run_ai_train` 不同步 | 在 worker AI handler 后置调用 sync |
+| 4 | backtest 结果 | apps/web | 前端能消费事件流，但 `result.data`（回测指标/资金曲线）无专门渲染组件，未形成可视化报告 | 前端补回测报告组件（指标卡、资金曲线、持仓表） |
+| 5 | web 前端 | obsidian-sync | 前端不触发同步 | 前端加同步触发按钮，调 API 端点 |
+| 6 | obsidian 看板 | web 反馈 | Obsidian 看板不回流到前端 | 前端读 Obsidian Local REST API 展示看板 |
+| 7 | orchestrator | — | 不存在，无编排层把整条链串起来 | 新建 orchestrator 服务（或扩展 worker 编排能力） |
 
-```text
-先打通研究闭环，再补基础设施
-先保持依赖边界清晰，再扩展能力
-真实交易放到最后，并且必须单独设计执行层
-```
+### 核心问题
+
+`strategy-runtime` CLI 是"一次性 stdin→stdout"设计：接收命令 → 执行 → 返回结果 → 结束。它不会把结果传给下一步，也不持久化。`obsidian-sync` 的 `SyncService` 代码完整（`sync_backtest_result`、`sync_factor`、`sync_all` 都写好了），但执行层（CLI 命令、worker handler）无任何调用方。
+
+### 最小闭环路径
+
+优先打通：`backtest-engine → obsidian-sync`
+
+调用点决策：放在 worker `BacktestHandler` 内（拿到 `backtestResult` 后调用 sync），而非 CLI 命令内。理由：
+- 符合 AGENTS.md 边界规则——"Worker 只编排异步任务"，sync 属于编排动作；
+- CLI 保持纯计算，不引入 obsidian-sync 依赖；
+- sync 失败可独立重试，不影响 CLI 返回结果。
 
 ## 项目结构
 
 ```text
-apps/web              当前前端应用
-apps/api              HTTP API（已实现，Fastify）
-apps/worker           异步任务 Worker（已实现）
-services/data-center  独立数据中心（已实现）
-services/data-collector 数据采集器（已实现）
-packages/backtest-engine 回测引擎（已实现）
-packages/factor-lab   因子研发工坊（已实现）
-packages/ai-engine    后续 AI 量化引擎
-packages/strategy-runtime 策略运行时（已实现）
-packages/strategies   策略库（已实现）
-packages/common       公共类型（已移除，迁移至各所有者模块）
-runtime/
+apps/web                前端研究原型（React + Vite）
+apps/api                HTTP API（Fastify + SSE）
+apps/worker             异步任务 Worker（HTTP 轮询 + PythonBridge）
+services/data-center    数据中心（SQLite + Drizzle，6 数据子域）
+services/data-collector 数据采集器（6 数据源适配器，水位增量采集）
+packages/backtest-engine  回测引擎
+packages/factor-lab     因子工坊（计算 + 评估调度）
+packages/strategy-runtime 策略运行时（CLI NDJSON 流式输出）
+packages/ai-engine      AI 引擎（特征/训练/预测）
+packages/strategies     策略库
+packages/data-client    Python 数据客户端
+packages/obsidian-sync  Obsidian 同步
+runtime/                运行产物（不分配开发 Agent）
 ```
 
 ## 本地运行
@@ -82,72 +114,21 @@ pnpm dev
 
 ## 验证
 
-修改前端信息架构、策略模式、任务数据、文案或组件后，运行：
-
 ```bash
 pnpm lint
 pnpm test
 pnpm build
 ```
 
-## 更新约定
-
-以后每次项目更新，都要同步更新：
-
-```text
-README.md   记录当前项目阶段、已完成进度、运行方式
-AGENT.md    记录项目级执行规则：概述、技术栈、编码规范、流程、硬约束、陷阱
-```
-
-每个可独立开发的子项目目录也要维护自己的：
-
-```text
-README.md
-AGENT.md
-```
-
-当前需要维护子项目文档的目录：
-
-```text
-apps/web
-apps/api
-apps/worker
-services/data-center
-services/data-collector
-packages/backtest-engine
-packages/ai-engine
-packages/factor-lab
-packages/strategy-runtime
-packages/strategies
-```
-
-`runtime/` 是运行产物目录，不按独立开发项目维护文档；除非后续它变成明确的工具或服务模块。
-
-如果更新涉及 Agent 规则、架构边界、目录边界或必须遵守的工作流，也要同步更新：
-
-```text
-AGENTS.md   记录多 Agent 角色定义、能力边界、工作范围、协作接口、角色专属规则
-```
-
 ## 边界
 
-当前只做研究和回测原型，不做：
+当前只做研究和回测原型，不做：真实下单、券商连接、实盘低延迟交易、权限系统、策略市场。
 
-```text
-真实下单
-券商连接
-实盘低延迟交易
-权限系统
-策略市场
-```
+未来实盘执行层必须单独设计：`market_gateway`、`order_gateway`、`risk_guard`、`broker_adapter`。
 
-未来如果做实盘执行层，必须单独设计：
+## 文档约定
 
-```text
-market_gateway
-order_gateway
-risk_guard
-broker_adapter
-```
-
-普通 API 和任务队列不能放在低延迟下单路径中。
+- `README.md`：项目概览和运行方式（本文件）
+- `AGENT.md`：执行规则、编码规范、已知陷阱
+- `AGENTS.md`：多 Agent 角色定义、能力边界、依赖白名单
+- 每个可独立开发子项目维护自己的 `README.md` 和 `AGENT.md`

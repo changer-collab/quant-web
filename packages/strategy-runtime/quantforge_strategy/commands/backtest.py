@@ -14,7 +14,13 @@ from quantforge_strategy import TimeFrame
 def run_backtest(params: dict[str, Any], emit: Callable[[str, dict], None] | None = None) -> dict[str, Any]:
     _emit = emit or (lambda *a, **kw: None)
 
-    strategy_name = params["strategy"]
+    strategy_name = params.get("strategy")
+    if not strategy_name:
+        return {
+            "ok": False,
+            "error": {"code": "MISSING_STRATEGY", "message": "params.strategy is required"},
+        }
+
     config = params.get("config", {})
     data_range = params.get("dataRange", {})
 
@@ -161,9 +167,11 @@ def _emit_progress(emit: Callable[[str, dict], None], index: int, total: int) ->
 
 
 def _result_to_dict(result) -> dict[str, Any]:
+    from quantforge_backtest import compute_drawdown_curve, compute_period_returns
+
     def _to_dict(obj):
         if dataclasses.is_dataclass(obj):
-            return {f: _to_dict(getattr(obj, f)) for f in obj.__dataclass_fields__}
+            return {_to_camel(f): _to_dict(getattr(obj, f)) for f in obj.__dataclass_fields__}
         if isinstance(obj, list):
             return [_to_dict(i) for i in obj]
         if isinstance(obj, (int, float, str, bool)) or obj is None:
@@ -171,4 +179,25 @@ def _result_to_dict(result) -> dict[str, Any]:
         if hasattr(obj, "value"):  # Enum
             return obj.value
         return str(obj)
-    return _to_dict(result)
+
+    data = _to_dict(result)
+
+    # 附加衍生统计（内部字段保持 snake_case 匹配前端 types.ts 约定）
+    dd_curve = compute_drawdown_curve(result.equity_curve)
+    monthly, annual = compute_period_returns(result.equity_curve)
+    data["drawdownCurve"] = [
+        {"timestamp": p.timestamp, "drawdown": p.drawdown} for p in dd_curve
+    ]
+    data["monthlyReturns"] = [
+        {"year": m.year, "month": m.month, "return_pct": m.return_pct} for m in monthly
+    ]
+    data["annualReturns"] = [
+        {"year": a.year, "return_pct": a.return_pct} for a in annual
+    ]
+    return data
+
+
+def _to_camel(snake: str) -> str:
+    """snake_case → camelCase"""
+    parts = snake.split("_")
+    return parts[0] + "".join(p.title() for p in parts[1:])

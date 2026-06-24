@@ -2,3 +2,10 @@ packages:
   - "apps/*"
   - "packages/*"
   - "services/*"
+
+# Exclude better-sqlite3 (requires C++ build tools) from being installed as
+# drizzle-orm's optional dependency. sql.js (pure WASM) is used instead.
+# NOTE: Keep comments in ASCII to avoid encoding issues on Windows.
+ignoredOptionalDependencies:
+  - "better-sqlite3"
+  - "@types/better-sqlite3"

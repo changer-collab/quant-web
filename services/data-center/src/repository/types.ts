@@ -203,6 +203,52 @@ export interface WatermarkRepository {
   list(source: string, dataType?: string): Promise<Watermark[]>;
 }
 
+// ─── 因子 ───────────────────────────────────────────────
+
+/** 因子定义 */
+export interface FactorDefinition {
+  id: string;
+  name: string;
+  formula: string;
+  category: string;
+  modes: string[];
+  frequency: string;
+  status: string;
+  version: string;
+}
+
+/** 因子存储接口 */
+export interface FactorRepository {
+  save(factor: FactorDefinition): Promise<void>;
+  getAll(): Promise<FactorDefinition[]>;
+  getById(id: string): Promise<FactorDefinition | undefined>;
+  delete(id: string): Promise<void>;
+}
+
+// ─── 任务 ───────────────────────────────────────────────
+
+/** 任务定义 */
+export interface TaskDefinition {
+  id: string;
+  type: string;
+  status: string;
+  payload: Record<string, unknown>;
+  submittedAt: number;
+  startedAt?: number;
+  completedAt?: number;
+  result?: Record<string, unknown>;
+  error?: string;
+  progress?: number;
+  lines?: string[];
+}
+
+/** 任务存储接口 */
+export interface TaskRepository {
+  save(task: TaskDefinition): Promise<void>;
+  getById(id: string): Promise<TaskDefinition | undefined>;
+  list(filter?: { type?: string; status?: string }): Promise<TaskDefinition[]>;
+}
+
 // ─── 聚合：Repository 集合 ──────────────────────────────
 
 /** 所有 Repository 的集合 — 由工厂函数创建 */
@@ -225,6 +271,8 @@ export interface RepositorySet {
   tradeRecords: TradeRecordRepository;
   orderRecords: OrderRecordRepository;
   watermarks: WatermarkRepository;
+  factors: FactorRepository;
+  tasks: TaskRepository;
 }
 
 /** 数据导出格式 */

@@ -11,6 +11,14 @@ import {
   ReportRobustness,
   ReportAttribution,
   ReportIssues,
+  ReportExecutiveSummary,
+  ReportConclusion,
+  ReportPositionAnalysis,
+  ReportSubStrategyAttribution,
+  ReportStressTest,
+  ReportCostSensitivity,
+  ReportBenchmarkComparison,
+  ReportRiskWarnings,
 } from './report/index';
 import reportStyles from '../styles/report.module.css';
 
@@ -24,24 +32,60 @@ interface FullReportProps {
   onSwitchReport?: (reportId: string) => void;
 }
 
-const TABS: { id: ReportTabId; label: string }[] = [
-  { id: 'overview', label: 'overview' },
-  { id: 'dataParams', label: 'dataParams' },
-  { id: 'returnMetrics', label: 'returnMetrics' },
-  { id: 'riskMetrics', label: 'riskMetrics' },
-  { id: 'riskAdjMetrics', label: 'riskAdjMetrics' },
-  { id: 'tradeStats', label: 'tradeStats' },
-  { id: 'equity', label: 'equity' },
-  { id: 'robustness', label: 'robustness' },
-  { id: 'attribution', label: 'attribution' },
-  { id: 'issues', label: 'issues' },
+/** 始终显示的核心 tab */
+const ALWAYS_VISIBLE_TABS: ReportTabId[] = [
+  'executiveSummary', 'overview', 'dataParams',
+  'returnMetrics', 'riskMetrics', 'riskAdjMetrics', 'tradeStats', 'equity',
+  'issues', 'conclusion', 'riskWarnings',
 ];
 
+/** 检查可选 tab 是否有数据 */
+function getVisibleOptionalTabs(report: BacktestReportFull): ReportTabId[] {
+  const tabs: ReportTabId[] = [];
+
+  if (report.robustness.paramSensitivity.length > 0 || report.robustness.rollingWindows.length > 0) {
+    tabs.push('robustness');
+  }
+  if (report.attribution.industryExposures.length > 0 || report.attribution.factorExposures.length > 0) {
+    tabs.push('attribution');
+  }
+  if (report.positionAnalysis.positionDistribution.length > 0) {
+    tabs.push('positionAnalysis');
+  }
+  // 子策略归因：只有组合策略（composite）且有数据时才显示
+  const category = report.overview.strategyCategory ?? 'timing';
+  if (category === 'composite' && report.subStrategyAttribution.independentComparison.length > 0) {
+    tabs.push('subStrategyAttribution');
+  }
+  if (report.stressTest.scenarios.length > 0) {
+    tabs.push('stressTest');
+  }
+  if (report.costSensitivity.beforeAfterCost.length > 0) {
+    tabs.push('costSensitivity');
+  }
+  if (report.benchmarkComparison.rows.length > 0) {
+    tabs.push('benchmarkComparison');
+  }
+
+  return tabs;
+}
+
+/** 获取所有应显示的 tab（核心 tab + 有数据的可选 tab） */
+function getVisibleTabs(report: BacktestReportFull): ReportTabId[] {
+  return [...ALWAYS_VISIBLE_TABS.slice(0, 8), ...getVisibleOptionalTabs(report), ...ALWAYS_VISIBLE_TABS.slice(8)];
+}
+
 export function FullReport({ report, ui, allReports, onSwitchReport }: FullReportProps) {
-  const [activeTab, setActiveTab] = useState<ReportTabId>('overview');
+  const visibleTabs = getVisibleTabs(report);
+  const [activeTab, setActiveTab] = useState<ReportTabId>('executiveSummary');
+
+  // 当 activeTab 不在 visibleTabs 中时（如切换报告后数据减少），回退到第一个 tab
+  const effectiveTab: ReportTabId = visibleTabs.includes(activeTab) ? activeTab : visibleTabs[0] ?? 'executiveSummary';
 
   function renderTabContent() {
-    switch (activeTab) {
+    switch (effectiveTab) {
+      case 'executiveSummary':
+        return <ReportExecutiveSummary report={report} ui={ui} />;
       case 'overview':
         return <ReportOverview report={report} ui={ui} />;
       case 'dataParams':
@@ -60,8 +104,22 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
         return <ReportRobustness report={report} ui={ui} />;
       case 'attribution':
         return <ReportAttribution report={report} ui={ui} />;
+      case 'positionAnalysis':
+        return <ReportPositionAnalysis report={report} ui={ui} />;
+      case 'subStrategyAttribution':
+        return <ReportSubStrategyAttribution report={report} ui={ui} />;
+      case 'stressTest':
+        return <ReportStressTest report={report} ui={ui} />;
+      case 'costSensitivity':
+        return <ReportCostSensitivity report={report} ui={ui} />;
+      case 'benchmarkComparison':
+        return <ReportBenchmarkComparison report={report} ui={ui} />;
       case 'issues':
         return <ReportIssues report={report} ui={ui} />;
+      case 'conclusion':
+        return <ReportConclusion report={report} ui={ui} />;
+      case 'riskWarnings':
+        return <ReportRiskWarnings report={report} ui={ui} />;
       default:
         return null;
     }
@@ -72,7 +130,7 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
       {/* Report header */}
       <header className={reportStyles.reportHeader}>
         <div className={reportStyles.reportHeaderLeft}>
-          <p className={reportStyles.reportEyebrow}>回测报告</p>
+          <p className={reportStyles.reportEyebrow}>{ui.chartLabels.backtestReport}</p>
           <h2 className={reportStyles.reportTitle}>{report.strategyName}</h2>
           <p className={reportStyles.reportDesc}>{report.strategyDescription}</p>
         </div>
@@ -82,7 +140,7 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
               className={reportStyles.reportSelect}
               value={report.id}
               onChange={(e) => onSwitchReport(e.target.value)}
-              aria-label="切换历史回测报告"
+              aria-label={ui.chartLabels.switchReport}
             >
               {allReports.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -99,15 +157,15 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
       </header>
 
       {/* Tab navigation */}
-      <nav className={reportStyles.tabNav} aria-label="报告模块">
-        {TABS.map((tab) => (
+      <nav className={reportStyles.tabNav} aria-label={ui.chartLabels.reportModules}>
+        {visibleTabs.map((tabId) => (
           <button
-            key={tab.id}
-            className={`${reportStyles.tabBtn} ${activeTab === tab.id ? reportStyles.tabActive : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            key={tabId}
+            className={`${reportStyles.tabBtn} ${effectiveTab === tabId ? reportStyles.tabActive : ''}`}
+            onClick={() => setActiveTab(tabId)}
             type="button"
           >
-            {ui.tabs[tab.id]}
+            {ui.tabs[tabId]}
           </button>
         ))}
       </nav>

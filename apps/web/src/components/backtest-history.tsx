@@ -42,7 +42,7 @@ export function BacktestHistory({
       <h3>{ui.backtestHistoryTitle}</h3>
       <div className={s.list}>
         {backtestJobs.map((job) => {
-          const isComplete = job.state === 'Completed' || job.state === '已完成';
+          const isComplete = job.state === 'Completed';
           const mode = job.mode ?? 'traditional';
           const simReturn = MODE_RETURN[mode] ?? '';
           const simSharpe = MODE_SHARPE[mode] ?? '';
@@ -69,7 +69,7 @@ export function BacktestHistory({
                 {!isComplete && (
                   <div className={s.progress}>
                     <i
-                      className={`${s.progressBar} ${job.state === 'Running' || job.state === '运行中' ? s.progressDone : ''}`}
+                      className={`${s.progressBar} ${job.state === 'Running' ? s.progressDone : ''}`}
                       style={{ width: `${job.progress}%` }}
                     />
                   </div>

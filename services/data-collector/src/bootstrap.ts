@@ -1,13 +1,13 @@
 import { AdapterRegistryImpl } from './registry/index.js';
 import { CollectorScheduler } from './scheduler.js';
-import { CsvAdapter, TushareAdapter, AkshareAdapter, BaostockAdapter, EfinanceAdapter, YfinanceAdapter } from './adapters/index.js';
+import { CsvAdapter, TushareAdapter, AkshareAdapter, BaostockAdapter, EfinanceAdapter, YfinanceAdapter, MootdxAdapter, TencentAdapter } from './adapters/index.js';
 
 /**
  * 采集器启动配置
  */
 export interface CollectorBootstrapConfig {
   /** 启用的数据源列表，不传则启用全部 */
-  sources?: ('tushare' | 'akshare' | 'csv' | 'baostock' | 'efinance' | 'yfinance')[];
+  sources?: ('tushare' | 'akshare' | 'csv' | 'baostock' | 'efinance' | 'yfinance' | 'mootdx' | 'tencent')[];
   /** 数据目录路径（SQLite 文件等），默认 ./data */
   dataDir?: string;
 }
@@ -51,6 +51,12 @@ export function createCollector(config?: CollectorBootstrapConfig): CollectorBoo
         break;
       case 'yfinance':
         registry.register(new YfinanceAdapter());
+        break;
+      case 'mootdx':
+        registry.register(new MootdxAdapter());
+        break;
+      case 'tencent':
+        registry.register(new TencentAdapter());
         break;
       default:
         console.warn(`未知数据源: ${source}，已跳过`);

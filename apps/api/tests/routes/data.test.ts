@@ -140,4 +140,22 @@ describe('Data Routes', () => {
 
     await app.close();
   });
+
+  it('POST /api/data/collect 创建数据采集任务', async () => {
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/data/collect',
+      payload: { source: 'baostock', dataType: 'bar', symbols: ['600519'] },
+    });
+    expect(res.statusCode).toBe(202);
+    expect(res.json()).toHaveProperty('id');
+    expect(res.json().status).toBe('pending');
+
+    await app.close();
+  });
 });

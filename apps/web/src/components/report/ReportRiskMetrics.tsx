@@ -28,7 +28,7 @@ function RiskBullets({ report, ui }: Props) {
     const varMax = Math.max(ceil(varVal, 2), 4);
     const volMax = Math.max(ceil(vol, 5), 10);
 
-    const categories = ['最大回撤', 'VaR(95%)', '年化波动率'];
+    const categories = [ui.chartLabels.maxDrawdown, ui.chartLabels.var95, ui.chartLabels.annualizedVolatility];
     const values = [dd, varVal, vol];
     const maxes = [ddMax, varMax, volMax];
 
@@ -38,6 +38,7 @@ function RiskBullets({ report, ui }: Props) {
       return ratio < 0.3 ? '#4df0a0' : ratio < 0.6 ? '#e9c46a' : '#ff6b6b';
     };
 
+    const riskLabels = ui.riskMetrics;
     return {
       tooltip: {
         ...CHART_DEFAULTS.tooltip,
@@ -45,7 +46,7 @@ function RiskBullets({ report, ui }: Props) {
         axisPointer: { type: 'shadow' },
         formatter(params: unknown) {
           const ps = Array.isArray(params) ? params : [params];
-          const val = ps.find((p) => (p as { seriesName: string }).seriesName === '实际值');
+          const val = ps.find((p) => (p as { seriesName: string }).seriesName === riskLabels.actualValue);
           if (!val) return '';
           const it = val as { name: string; value: number };
           return `${it.name}: <b>${it.value.toFixed(1)}%</b>`;
@@ -118,7 +119,7 @@ function RiskBullets({ report, ui }: Props) {
         },
         // 实际值柱
         {
-          name: '实际值',
+          name: ui.riskMetrics.actualValue,
           type: 'bar',
           data: values.map((v, i) => ({
             value: v,
@@ -145,7 +146,7 @@ function RiskBullets({ report, ui }: Props) {
         },
       ],
     };
-  }, [m]);
+  }, [m, ui]);
 
   return (
     <div className={styles.chartSection}>
@@ -219,7 +220,7 @@ function DrawdownWaterfall({ report, ui }: Props) {
 
   return (
     <div className={styles.chartSection}>
-      <h4 className={styles.sectionTitle}>回撤水位线</h4>
+      <h4 className={styles.sectionTitle}>{ui.equity.drawdownChart ?? '回撤水位线'}</h4>
       <ReactEChartsCore
         echarts={echarts}
         option={option}
@@ -244,6 +245,9 @@ export function ReportRiskMetrics({ report, ui }: Props) {
     { label: labels.var, value: pct(m.var95), tone: 'warn' },
     { label: labels.cvar, value: pct(m.cvar95), tone: 'warn' },
     { label: labels.calmar, value: m.calmarRatio.toFixed(2), tone: m.calmarRatio > 1 ? 'good' : 'warn' },
+    ...(m.sortinoRatio !== undefined ? [{ label: labels.sortino, value: m.sortinoRatio.toFixed(2), tone: m.sortinoRatio > 1 ? 'good' : 'warn' as const }] : []),
+    ...(m.skewness !== undefined ? [{ label: labels.skewness, value: m.skewness.toFixed(2), tone: m.skewness < 0 ? 'warn' : 'info' as const }] : []),
+    ...(m.kurtosis !== undefined ? [{ label: labels.kurtosis, value: m.kurtosis.toFixed(2), tone: m.kurtosis > 3 ? 'warn' : 'info' as const }] : []),
   ];
 
   return (

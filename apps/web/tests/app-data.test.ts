@@ -222,8 +222,8 @@ it('research jobs are localized from selected strategy or active mode', () => {
     {
       id: 'job-custom',
       kind: 'High-Frequency Research',
-      progress: 100,
-      state: 'Completed',
+      progress: 0,
+      state: 'Running',
       strategyName: 'Order Flow Momentum',
       name: 'Run Research: Order Flow Momentum',
     },
@@ -231,9 +231,9 @@ it('research jobs are localized from selected strategy or active mode', () => {
   assert.equal(defaultJob.kind, 'AI 量化');
   assert.equal(defaultJob.strategyName, 'AI 量化策略草稿 #8');
   assert.equal(defaultJob.name, '运行研究：AI 量化策略草稿 #8');
-  assert.equal(defaultJob.progress, 100);
-  assert.equal(defaultJob.state, '已完成');
-  assert.equal(localizeResearchJob(selectedJob, 'zh').state, '已完成');
+  assert.equal(defaultJob.progress, 0);
+  assert.equal(defaultJob.state, 'Running');
+  assert.equal(localizeResearchJob(selectedJob, 'zh').state, '运行中');
 });
 
 it('research jobs keep the selected run configuration summary', () => {

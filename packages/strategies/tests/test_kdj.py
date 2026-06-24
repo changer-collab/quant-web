@@ -9,17 +9,18 @@ def test_meta():
     assert s.meta.name == "kdj"
     assert len(s.meta.params) == 3
     assert s.meta.version
-    assert s.meta.kind.value == "combined"
+    assert s.meta.kind.value == "timing"
 
 
 def test_init():
     s = KDJStrategy(period=9, oversold=20.0, overbought=80.0)
     s.init(None)  # type: ignore
     assert s._bought is False
-    assert s._k == 50.0
-    assert s._d == 50.0
     assert s._prev_k is None
     assert s._prev_d is None
+    assert len(s._highs) == 0
+    assert len(s._lows) == 0
+    assert len(s._closes) == 0
 
 
 def test_registered():

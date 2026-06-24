@@ -15,7 +15,10 @@ pnpm-debug.log*
 .pnpm-store/
 
 # local data (SQLite, CSV, etc.)
-data/
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.csv
 
 # Python
 __pycache__/

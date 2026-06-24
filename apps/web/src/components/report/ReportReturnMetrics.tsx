@@ -13,15 +13,16 @@ function pct(v: number): string {
   return `${(v * 100).toFixed(1)}%`;
 }
 
-/** 收益对比条形图 - 策略 vs 基准 */
-function ReturnComparison({ report, ui }: Props) {
+/** 策略收益条形图（不含基准对比，基准比较在独立模块展示） */
+function ReturnChart({ report, ui }: Props) {
   const m = report.returnMetrics;
+  const labels = ui.chartLabels;
 
   const option = useMemo<EChartsOption>(() => {
     const items = [
-      { name: '累计收益', strategy: m.cumulativeReturn * 100, benchmark: m.benchmarkReturn * 100 },
-      { name: '年化收益', strategy: m.annualizedReturn * 100, benchmark: m.benchmarkReturn * 100 },
-      { name: '超额收益', strategy: m.alpha * 100, benchmark: 0 },
+      { name: labels.cumulativeReturn, value: m.cumulativeReturn * 100 },
+      { name: labels.annualizedReturn, value: m.annualizedReturn * 100 },
+      { name: 'Alpha', value: m.alpha * 100 },
     ];
 
     return {
@@ -30,21 +31,11 @@ function ReturnComparison({ report, ui }: Props) {
         trigger: 'axis',
         formatter(params: unknown) {
           const ps = Array.isArray(params) ? params : [params];
-          let tip = (ps[0] as { name: string }).name;
-          ps.forEach((p) => {
-            const it = p as { seriesName: string; value: number; marker: string };
-            tip += `<br/>${it.marker} ${it.seriesName}: <b>${it.value >= 0 ? '+' : ''}${it.value.toFixed(1)}%</b>`;
-          });
-          return tip;
+          const p = ps[0] as { name: string; value: number; marker: string };
+          return `${p.name}<br/>${p.marker} <b>${p.value >= 0 ? '+' : ''}${p.value.toFixed(1)}%</b>`;
         },
       },
-      legend: {
-        data: ['策略', '基准'],
-        top: 0,
-        right: 0,
-        textStyle: { color: '#8fa29b', fontSize: 11 },
-      },
-      grid: { top: 32, right: 16, bottom: 8, left: 80 },
+      grid: { top: 16, right: 48, bottom: 8, left: 80 },
       xAxis: {
         type: 'value',
         axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${v.toFixed(0)}%` },
@@ -58,37 +49,13 @@ function ReturnComparison({ report, ui }: Props) {
       },
       series: [
         {
-          name: '策略',
+          name: labels.strategy,
           type: 'bar',
           data: items.map((i) => ({
-            value: i.strategy,
+            value: i.value,
             itemStyle: {
-              color: i.strategy >= 0 ? '#4df0a0' : '#ff6b6b',
-              borderRadius: i.strategy >= 0 ? [0, 2, 2, 0] : [2, 0, 0, 2],
-            },
-          })),
-          barWidth: 14,
-          label: {
-            show: true,
-            position: 'right',
-            fontSize: 9,
-            fontFamily: 'Cascadia Code, Consolas, monospace',
-            fontWeight: 600,
-            color: '#8fa29b',
-            formatter(params: unknown) {
-              const p = params as { value: number };
-              return `${p.value >= 0 ? '+' : ''}${p.value.toFixed(1)}%`;
-            },
-          },
-        },
-        {
-          name: '基准',
-          type: 'bar',
-          data: items.map((i) => ({
-            value: i.benchmark,
-            itemStyle: {
-              color: '#62d8ff',
-              borderRadius: i.benchmark >= 0 ? [0, 2, 2, 0] : [2, 0, 0, 2],
+              color: i.value >= 0 ? '#4df0a0' : '#ff6b6b',
+              borderRadius: i.value >= 0 ? [0, 2, 2, 0] : [2, 0, 0, 2],
             },
           })),
           barWidth: 14,
@@ -107,16 +74,16 @@ function ReturnComparison({ report, ui }: Props) {
         },
       ],
     };
-  }, [m]);
+  }, [m, labels]);
 
   return (
     <div className={styles.chartSection}>
-      <h4 className={styles.sectionTitle}>收益对比</h4>
+      <h4 className={styles.sectionTitle}>{labels.returnComparison}</h4>
       <ReactEChartsCore
         echarts={echarts}
         option={option}
         theme="quant-dark"
-        style={{ height: 160 }}
+        style={{ height: 140 }}
         notMerge
         lazyUpdate
       />
@@ -129,6 +96,7 @@ function RiskAdjustedRadar({ report, ui }: Props) {
   const rm = report.returnMetrics;
   const rkm = report.riskMetrics;
   const ram = report.riskAdjMetrics;
+  const labels = ui.chartLabels;
 
   const option = useMemo<EChartsOption>(() => {
     // 归一化各指标到 0~100 分
@@ -145,11 +113,11 @@ function RiskAdjustedRadar({ report, ui }: Props) {
       },
       radar: {
         indicator: [
-          { name: '夏普比率', max: 100 },
-          { name: '索提诺比率', max: 100 },
-          { name: '卡尔玛比率', max: 100 },
-          { name: '信息比率', max: 100 },
-          { name: '特雷诺比率', max: 100 },
+          { name: labels.sharpe, max: 100 },
+          { name: 'Sortino', max: 100 },
+          { name: 'Calmar', max: 100 },
+          { name: 'Info', max: 100 },
+          { name: 'Treynor', max: 100 },
           { name: 'Alpha', max: 100 },
         ],
         shape: 'polygon',
@@ -165,7 +133,7 @@ function RiskAdjustedRadar({ report, ui }: Props) {
           data: [
             {
               value: [sharpeScore, sortinoScore, calmarScore, infoScore, treynorScore, alphaScore],
-              name: '策略',
+              name: labels.strategy,
               lineStyle: { color: '#4df0a0', width: 2 },
               itemStyle: { color: '#4df0a0' },
               areaStyle: { color: 'rgba(77, 240, 160, 0.15)' },
@@ -174,11 +142,11 @@ function RiskAdjustedRadar({ report, ui }: Props) {
         },
       ],
     };
-  }, [rm, rkm, ram]);
+  }, [rm, rkm, ram, labels]);
 
   return (
     <div className={styles.chartSection}>
-      <h4 className={styles.sectionTitle}>风险调整后收益</h4>
+      <h4 className={styles.sectionTitle}>{labels.riskAdjReturn}</h4>
       <ReactEChartsCore
         echarts={echarts}
         option={option}
@@ -200,13 +168,12 @@ export function ReportReturnMetrics({ report, ui }: Props) {
     { label: labels.totalReturn, value: pct(m.totalReturn), tone: m.totalReturn > 0 ? 'good' : 'warn' },
     { label: labels.annualizedReturn, value: pct(m.annualizedReturn), tone: m.annualizedReturn > 0 ? 'good' : 'warn' },
     { label: labels.alpha, value: pct(m.alpha), tone: m.alpha > 0 ? 'good' : 'warn' },
-    { label: labels.benchmarkReturn, value: pct(m.benchmarkReturn), tone: 'info' },
   ];
 
   return (
     <div>
-      {/* 收益对比条形图 */}
-      <ReturnComparison report={report} ui={ui} />
+      {/* 策略收益条形图 */}
+      <ReturnChart report={report} ui={ui} />
 
       {/* 指标卡片 */}
       <div className={styles.metricGrid}>

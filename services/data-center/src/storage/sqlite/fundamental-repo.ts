@@ -297,9 +297,9 @@ export class SqliteValuationRepository implements ValuationRepository {
         .orderBy(valuations.timestamp);
       return rows.map((r) => ({
         symbol: r.symbol, timestamp: r.timestamp,
-        marketCap: r.marketCap, peTTM: r.peTTM, pb: r.pb,
-        psTTM: r.psTTM, dividendYield: r.dividendYield,
-        turnoverRate: r.turnoverRate, floatShares: r.floatShares,
+        marketCap: r.marketCap ?? undefined, peTTM: r.peTTM ?? undefined, pb: r.pb ?? undefined,
+        psTTM: r.psTTM ?? undefined, dividendYield: r.dividendYield ?? undefined,
+        turnoverRate: r.turnoverRate ?? undefined, floatShares: r.floatShares ?? undefined,
       }));
     } catch (err) {
       throw new QueryError(`查询估值失败: ${symbol}`, err);

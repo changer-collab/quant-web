@@ -55,3 +55,38 @@ def test_order_request_no_price():
         type=OrderType.Market, quantity=100,
     )
     assert r.price is None
+
+
+def test_order_request_with_reason():
+    r = OrderRequest(
+        symbol="600000", side=OrderSide.Buy,
+        type=OrderType.Market, quantity=100,
+        reason="金叉买入",
+    )
+    assert r.reason == "金叉买入"
+
+
+def test_order_request_reason_default_none():
+    r = OrderRequest(
+        symbol="600000", side=OrderSide.Buy,
+        type=OrderType.Market, quantity=100,
+    )
+    assert r.reason is None
+
+
+def test_order_with_reason():
+    o = Order(
+        id="o1", symbol="600000", side=OrderSide.Buy,
+        type=OrderType.Market, quantity=100,
+        reason="RSI超卖",
+    )
+    assert o.reason == "RSI超卖"
+
+
+def test_trade_with_reason():
+    t = Trade(
+        id="t1", order_id="o1", symbol="600000",
+        side=OrderSide.Buy, price=10.5, quantity=100, timestamp=1000,
+        reason="MACD金叉",
+    )
+    assert t.reason == "MACD金叉"

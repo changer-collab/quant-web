@@ -39,10 +39,12 @@ export function fetchTask(id: string): Promise<ApiTask> {
 
 export function submitBacktest(payload: {
   strategy: string;
-  symbol?: string;
-  timeframe?: string;
+  symbol: string;
+  timeframe: string;
   initialCash?: number;
   slippage?: number;
+  startTs?: number;
+  endTs?: number;
   params?: Record<string, unknown>;
 }): Promise<{ id: string; status: ApiTaskStatus }> {
   return apiPost('/tasks', { type: 'backtest', payload });

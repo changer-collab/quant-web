@@ -4,16 +4,12 @@ import s from '../styles/activity-feed.module.css';
 function jobToIcon(state: string) {
   switch (state) {
     case 'Running':
-    case '运行中':
       return s.dotRunning;
     case 'Completed':
-    case '已完成':
       return s.dotCompleted;
     case 'Failed':
-    case '失败':
       return s.dotFailed;
     case 'Queued':
-    case '排队中':
       return s.dotQueued;
     default:
       return '';
@@ -23,16 +19,12 @@ function jobToIcon(state: string) {
 function jobToBadge(state: string) {
   switch (state) {
     case 'Running':
-    case '运行中':
       return s.badgeGreen;
     case 'Completed':
-    case '已完成':
       return s.badgeGreen;
     case 'Failed':
-    case '失败':
       return s.badgeRed;
     case 'Queued':
-    case '排队中':
       return s.badgeAmber;
     default:
       return '';

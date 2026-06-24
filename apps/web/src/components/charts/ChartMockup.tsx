@@ -21,7 +21,7 @@ const MOCK_BARS: BarDatum[] = [
 
 const MOCK_LINE = [28, 38, 45, 52, 48, 65, 72, 78, 85, 92];
 
-export function ChartMockup({ ariaLabel }: { ariaLabel: string }) {
+export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: string; priceUp?: string; priceDown?: string }) {
   const barData = MOCK_BARS;
   const lineData = MOCK_LINE;
 
@@ -126,7 +126,7 @@ export function ChartMockup({ ariaLabel }: { ariaLabel: string }) {
               className={chartStyles.barRect}
               style={{ animationDelay: `${i * 0.06}s` }}
             >
-              <title>{b.value}% {b.up ? '涨' : '跌'}</title>
+              <title>{b.value}% {b.up ? (priceUp ?? 'Up') : (priceDown ?? 'Down')}</title>
             </rect>
           </g>
         ))}

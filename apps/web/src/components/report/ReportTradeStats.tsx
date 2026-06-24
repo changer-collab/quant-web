@@ -110,6 +110,9 @@ export function ReportTradeStats({ report, ui }: Props) {
     { label: labels.turnover, value: pct(ts.turnoverRate), tone: ts.turnoverRate > 0.5 ? 'warn' : 'info' },
     { label: labels.maxProfit, value: currency(ts.maxSingleProfit), tone: 'good' },
     { label: labels.maxLoss, value: currency(Math.abs(ts.maxSingleLoss)), tone: 'warn' },
+    ...(ts.maxConsecutiveWins !== undefined ? [{ label: labels.maxConsecutiveWins, value: `${ts.maxConsecutiveWins} 次`, tone: 'good' as const }] : []),
+    ...(ts.maxConsecutiveLosses !== undefined ? [{ label: labels.maxConsecutiveLosses, value: `${ts.maxConsecutiveLosses} 次`, tone: 'warn' as const }] : []),
+    ...(ts.concentrationIndex !== undefined ? [{ label: labels.concentrationIndex, value: ts.concentrationIndex.toFixed(2), tone: ts.concentrationIndex > 0.5 ? 'warn' : 'info' as const }] : []),
   ];
 
   const maxVal = Math.max(ts.winningTrades, ts.losingTrades);

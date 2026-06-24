@@ -1,4 +1,5 @@
 import type { MarketTick, ResearchMode, ResearchModeId, StrategyRow, UiCopy } from '../appData';
+import type { BacktestConfig } from '../hooks/useResearchWorkflow';
 import { MetricCard } from './common';
 import { AiDiagnostics, TickTable } from './market-tables';
 import { StrategyTable } from './strategy-table';
@@ -12,11 +13,17 @@ function WorkspaceMockup({
   configSummary,
   mode,
   onRunResearch,
+  selectedStrategy,
+  backtestConfig,
+  onConfigChange,
   ui,
 }: {
   configSummary: string[];
   mode: ResearchMode;
   onRunResearch: () => void;
+  selectedStrategy?: StrategyRow;
+  backtestConfig: BacktestConfig;
+  onConfigChange: (config: BacktestConfig) => void;
   ui: UiCopy;
 }) {
   return (
@@ -38,6 +45,60 @@ function WorkspaceMockup({
             </article>
           ))}
         </div>
+        {selectedStrategy && (
+          <div className={workspace.configList}>
+            <div className={workspace.configItem}>
+              <span className={workspace.configLabel}>标的代码</span>
+              <input
+                type="text"
+                value={backtestConfig.symbol}
+                onChange={(e) => onConfigChange({ ...backtestConfig, symbol: e.target.value })}
+                className={workspace.configInput}
+                placeholder="如 600519"
+              />
+            </div>
+            <div className={workspace.configItem}>
+              <span className={workspace.configLabel}>时间范围</span>
+              <select
+                value={backtestConfig.timeframe}
+                onChange={(e) => onConfigChange({ ...backtestConfig, timeframe: e.target.value })}
+                className={workspace.configInput}
+              >
+                <option value="1d">日线</option>
+                <option value="1w">周线</option>
+                <option value="1h">小时</option>
+              </select>
+            </div>
+            <div className={workspace.configItem}>
+              <span className={workspace.configLabel}>初始资金</span>
+              <input
+                type="number"
+                value={backtestConfig.initialCash}
+                onChange={(e) => onConfigChange({ ...backtestConfig, initialCash: Number(e.target.value) })}
+                className={workspace.configInput}
+              />
+            </div>
+            {(selectedStrategy.params ?? []).map((param) => (
+              <div className={workspace.configItem} key={param.key}>
+                <span className={workspace.configLabel}>{param.label}</span>
+                <input
+                  type={param.type === 'number' ? 'number' : 'text'}
+                  value={String(backtestConfig.params[param.key] ?? param.default)}
+                  onChange={(e) => {
+                    const val = param.type === 'number' ? Number(e.target.value) : e.target.value;
+                    onConfigChange({
+                      ...backtestConfig,
+                      params: { ...backtestConfig.params, [param.key]: val },
+                    });
+                  }}
+                  className={workspace.configInput}
+                  min={param.min}
+                  max={param.max}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         <div className={workspace.runSummary}>
           <span className={workspace.runSummaryLabel}>{ui.currentRunSummary}</span>
           <div className={infoPanelStyles.chipRow}>
@@ -89,6 +150,9 @@ export function WorkspaceContent({
   mode,
   onRunResearch,
   strategies,
+  selectedStrategy,
+  backtestConfig,
+  onConfigChange,
   ticks,
   ui,
 }: {
@@ -96,6 +160,9 @@ export function WorkspaceContent({
   mode: ResearchMode;
   onRunResearch: () => void;
   strategies: StrategyRow[];
+  selectedStrategy?: StrategyRow;
+  backtestConfig: BacktestConfig;
+  onConfigChange: (config: BacktestConfig) => void;
   ticks: MarketTick[];
   ui: UiCopy;
 }) {
@@ -113,7 +180,15 @@ export function WorkspaceContent({
           ))}
         </div>
       </section>
-      <WorkspaceMockup configSummary={configSummary} mode={mode} onRunResearch={onRunResearch} ui={ui} />
+      <WorkspaceMockup
+        configSummary={configSummary}
+        mode={mode}
+        onRunResearch={onRunResearch}
+        selectedStrategy={selectedStrategy}
+        backtestConfig={backtestConfig}
+        onConfigChange={onConfigChange}
+        ui={ui}
+      />
       {mode.id === 'hft' ? (
         <TickTable ticks={ticks} ui={ui} />
       ) : mode.id === 'ai' ? (

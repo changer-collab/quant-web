@@ -2,44 +2,41 @@ import { TaskType } from '../types.js';
 import type { FactorDefinition } from '../types.js';
 import type { FastifyInstance } from 'fastify';
 
-// 内存因子注册表（后续迁移到 DataCenter）
-const factorStore = new Map<string, FactorDefinition>();
-
 export async function factorRoutes(app: FastifyInstance) {
   app.get('/', async () => {
-    return Array.from(factorStore.values());
+    const factors = await app.dataCenter.repos.factors.getAll();
+    return factors;
   });
 
   app.post('/', async (req, reply) => {
     const definition = req.body as FactorDefinition;
-    factorStore.set(definition.id, definition);
+    await app.dataCenter.repos.factors.save(definition);
     return reply.code(201).send(definition);
   });
 
   app.get<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const factor = factorStore.get(req.params.id);
+    const factor = await app.dataCenter.repos.factors.getById(req.params.id);
     if (!factor) return reply.code(404).send({ error: 'Factor not found' });
     return factor;
   });
 
   app.put<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const existing = factorStore.get(req.params.id);
+    const existing = await app.dataCenter.repos.factors.getById(req.params.id);
     if (!existing) return reply.code(404).send({ error: 'Factor not found' });
     const updated = { ...existing, ...(req.body as Partial<FactorDefinition>) };
-    factorStore.set(req.params.id, updated);
+    await app.dataCenter.repos.factors.save(updated);
     return updated;
   });
 
   app.delete<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const deleted = factorStore.delete(req.params.id);
-    if (!deleted) return reply.code(404).send({ error: 'Factor not found' });
+    await app.dataCenter.repos.factors.delete(req.params.id);
     return reply.code(204).send();
   });
 
   app.post<{ Params: { id: string } }>('/:id/evaluate', async (req, reply) => {
-    const factor = factorStore.get(req.params.id);
+    const factor = await app.dataCenter.repos.factors.getById(req.params.id);
     if (!factor) return reply.code(404).send({ error: 'Factor not found' });
-    const task = app.taskService.submit(TaskType.FactorEval, {
+    const task = await app.taskService.submit(TaskType.FactorEval, {
       factorId: factor.id,
       symbol: (req.body as { symbol?: string })?.symbol ?? '',
     });
@@ -52,7 +49,7 @@ export async function factorRoutes(app: FastifyInstance) {
       symbol: string;
       timeframe: string;
     };
-    const task = app.taskService.submit(TaskType.FactorCompute, {
+    const task = await app.taskService.submit(TaskType.FactorCompute, {
       factorIds, symbol, timeframe,
     });
     return reply.code(202).send({ taskId: task.id, status: task.status });

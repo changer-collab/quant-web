@@ -1,6 +1,36 @@
-import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useResearchWorkflow } from '../src/hooks/useResearchWorkflow';
+
+vi.mock('../src/api/reports', () => ({
+  fetchReports: vi.fn().mockResolvedValue([]),
+  fetchReport: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('../src/api/tasks', () => ({
+  submitBacktest: vi.fn().mockResolvedValue({ id: 'task-1', status: 'pending' }),
+  streamTask: vi.fn().mockImplementation((_taskId: string, onEvent: (e: any) => void) => {
+    const t1 = setTimeout(() => {
+      onEvent({ type: 'status', taskId: 'task-1', message: 'completed', percent: 100 });
+      setTimeout(() => {
+        onEvent({ type: 'result', taskId: 'task-1', data: { backtestResult: {} } });
+      }, 10);
+    }, 10);
+    return () => clearTimeout(t1);
+  }),
+  fetchTasks: vi.fn().mockResolvedValue([]),
+}));
+
+const mockStrategy = {
+  id: 'strategy-traditional-core',
+  mode: 'traditional' as const,
+  name: 'Test Strategy',
+  type: 'Traditional',
+  return: '+10%',
+  drawdown: '-5%',
+  sharpe: '1.5',
+  status: 'Stable',
+};
 
 describe('useResearchWorkflow', () => {
   it('initializes with dashboard as active page', () => {
@@ -27,31 +57,31 @@ describe('useResearchWorkflow', () => {
 
   it('switches mode and navigates to workspace on strategy select', () => {
     const { result } = renderHook(() => useResearchWorkflow('en'));
-    const mockStrategy = {
-      id: 'strategy-traditional-core',
-      mode: 'traditional' as const,
-      name: 'Test Strategy',
-      type: 'Traditional',
-      return: '+10%',
-      drawdown: '-5%',
-      sharpe: '1.5',
-      status: 'Stable',
-    };
     act(() => result.current.handleSelectStrategy(mockStrategy));
     expect(result.current.activeMode).toBe('traditional');
     expect(result.current.state.activePage).toBe('workspace');
   });
 
-  it('creates a job and report when running research', () => {
+  it('navigates to jobs page when running research', async () => {
     const { result } = renderHook(() => useResearchWorkflow('en'));
+    act(() => result.current.handleSelectStrategy(mockStrategy));
     act(() => result.current.handleRunResearch());
-    expect(result.current.localizedJobs.length).toBeGreaterThan(0);
     expect(result.current.state.activePage).toBe('jobs');
+    await waitFor(() => {
+      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
+    }, { timeout: 5000 });
   });
 
-  it('navigates to report page when viewing a report', () => {
+  it('navigates to report page when viewing a report', async () => {
     const { result } = renderHook(() => useResearchWorkflow('en'));
+    act(() => result.current.handleSelectStrategy(mockStrategy));
     act(() => result.current.handleRunResearch());
+    await waitFor(() => {
+      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
+    }, { timeout: 5000 });
+    await waitFor(() => {
+      expect(result.current.reportJobIds.length).toBeGreaterThan(0);
+    }, { timeout: 5000 });
     const jobWithReport = result.current.localizedJobs.find((job) =>
       result.current.reportJobIds.includes(job.id),
     );
@@ -82,14 +112,15 @@ describe('useResearchWorkflow', () => {
     expect(result.current.researchMode.id).toBe('ai');
   });
 
-  it('localizes jobs when language changes', () => {
-    renderHook(({ lang }) => useResearchWorkflow(lang), {
-      initialProps: { lang: 'en' as const },
-    });
-    // The hook doesn't re-render on language change via rerender in this setup,
-    // but we can test that creating a job in Chinese works
+  it('localizes jobs when language changes', async () => {
     const { result: zhResult } = renderHook(() => useResearchWorkflow('zh'));
+    act(() => zhResult.current.handleSelectStrategy(mockStrategy));
     act(() => zhResult.current.handleRunResearch());
-    expect(zhResult.current.localizedJobs[0].state).toBe('已完成');
+    await waitFor(() => {
+      expect(zhResult.current.localizedJobs.length).toBeGreaterThan(0);
+    }, { timeout: 5000 });
+    await waitFor(() => {
+      expect(zhResult.current.localizedJobs[0].state).toBe('已完成');
+    }, { timeout: 5000 });
   });
 });
