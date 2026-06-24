@@ -50,10 +50,22 @@ def _run_ai_train(params: dict) -> dict:
     return run_ai_train(params, emit=emit)
 
 
+def _run_analyze(params: dict) -> dict:
+    from .commands.analyze import run_analyze
+    return run_analyze(params, emit=emit)
+
+
+def _run_sync_backtest(params: dict) -> dict:
+    from .commands.sync_backtest import run_sync_backtest
+    return run_sync_backtest(params, emit=emit)
+
+
 _COMMANDS = {
     "backtest": _run_backtest,
     "factorEval": _run_factor_eval,
     "aiTrain": _run_ai_train,
+    "analyze": _run_analyze,
+    "syncBacktest": _run_sync_backtest,
 }
 
 
