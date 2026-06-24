@@ -79,7 +79,6 @@ def _run_single(
         slippage=config.get("slippage"),
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
-    _maybe_sync_obsidian(strategy_name, symbol, result)
     return {"ok": True, "data": _result_to_dict(result)}
 
 
@@ -157,7 +156,6 @@ def _run_composite(
         slippage=config.get("slippage"),
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
-    _maybe_sync_obsidian("composite", ",".join(bars_by_symbol.keys()), result)
     return {"ok": True, "data": _result_to_dict(result)}
 
 
@@ -203,22 +201,3 @@ def _to_camel(snake: str) -> str:
     """snake_case → camelCase"""
     parts = snake.split("_")
     return parts[0] + "".join(p.title() for p in parts[1:])
-
-
-def _maybe_sync_obsidian(strategy_name: str, symbol: str, result) -> None:
-    """回测完成后同步到 Obsidian vault（运行时可选，OBSIDIAN_API_URL 控制开关）
-
-    同步失败不影响回测结果。obsidian-sync 是运行时可选依赖，
-    与 backtest-engine 等包同理（CLI 延迟导入，不增加 strategy-runtime 包声明依赖）。
-    """
-    import os
-    if not os.getenv("OBSIDIAN_API_URL"):
-        return
-    try:
-        import asyncio
-        from quantforge_obsidian import SyncService
-        sync = SyncService()
-        if sync.enabled:
-            asyncio.run(sync.sync_backtest_result(strategy_name, symbol, result))
-    except Exception:
-        pass
