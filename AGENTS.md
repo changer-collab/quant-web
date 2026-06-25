@@ -126,6 +126,7 @@ services/data-collector -> services/data-center
 ```
 
 TS 层内部通信：
+
 - API 与 Worker 不共享进程状态，Worker 通过 HTTP 轮询 API 的 `/api/internal/tasks/*` 端点领取、上报任务。
 - 前端通过 SSE `/api/tasks/:id/stream` 接收任务事件（progress/log/result/error）。
 
@@ -159,7 +160,7 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 未来实盘执行层必须单独设计，不允许把普通 API 和任务队列放进低延迟下单路径。
 - 所有密钥和环境变量统一管理：项目根目录一个 `.env`（gitignored）+ 一个 `.env.example`（提交到 git）。各子项目不单独维护 `.env` 文件。Python 包纯读 `os.environ`，不引入 dotenv 依赖，由启动入口负责加载。
 - **Git 分支与提交约定**：
-  - 本地开发统一使用 `changer` 分支，不要无缘无故创建新的分支。
+  - 本地开发统一使用 `changer` 分支，不要无缘无故创建新的分支。#这里changer可以改成共同开发者自己的分支
   - 开发完成后在 `changer` 分支提交。
   - 推送时使用 `git push origin changer`，不要直接向 `main` 分支推送。
   - 推送完成后，使用 `gh pr create` 创建从 `changer` 到 `main` 的 Pull Request（若已有同名 PR 则跳过）。
@@ -169,15 +170,25 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 操作任何子项目前，**必须先读取**该子项目的 `AGENT.md`，以其规则为准。以下为完整引用清单：
 
 <!-- @include: apps/web/AGENT.md -->
+
 <!-- @include: apps/api/AGENT.md -->
+
 <!-- @include: apps/worker/AGENT.md -->
+
 <!-- @include: services/data-center/AGENT.md -->
+
 <!-- @include: services/data-collector/AGENT.md -->
+
 <!-- @include: packages/backtest-engine/AGENT.md -->
+
 <!-- @include: packages/ai-engine/AGENT.md -->
+
 <!-- @include: packages/strategy-runtime/AGENT.md -->
+
 <!-- @include: packages/factor-lab/AGENT.md -->
+
 <!-- @include: packages/strategies/AGENT.md -->
+
 <!-- @include: packages/loop-engine/AGENT.md -->
 
 **执行规则**：当任务涉及上述某个子项目时，Agent 必须先用 Read 工具读取对应的 `AGENT.md`，然后以该文件的规则为约束执行任务。如果子项目 AGENT.md 与根级 AGENTS.md 冲突，以根级为准。
