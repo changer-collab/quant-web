@@ -1,0 +1,24 @@
+# Ralph Progress Log
+Started: Thu Jun 25 17:16:57     2026
+---
+## Codebase Patterns
+- backtest-engine 的 Trade 类来自 strategy-runtime 包（quantforge_strategy.order），不在 backtest-engine 内定义
+- 所有 runner（BacktestRunner、MultiSymbolRunner、MultiStrategyRunner）都用 calc_metrics + calc_trade_stats 构建 BacktestResult
+- _to_camel() 函数自动把 snake_case 字段转 camelCase，新增字段无需手动处理映射
+- Windows 环境下时间戳用秒级（10位）测试，毫秒级（13位）在 equity_stats 模块有专门处理
+
+## [2026-06-25] - story-1
+- 实现了什么：补全 Python 回测引擎缺失的衍生统计指标
+- 修改了哪些文件：
+  - packages/backtest-engine/quantforge_backtest/types.py — BacktestMetrics 新增 sortino_ratio/calmar_ratio/annualized_volatility/max_drawdown_duration；BacktestResult 新增 profit_loss_ratio/avg_holding_days/max_single_profit/max_single_loss
+  - packages/backtest-engine/quantforge_backtest/metrics.py — calc_metrics() 新增下行偏差/索提诺比率/年化波动率/卡玛比率/最大回撤持续天数计算；新增 calc_trade_stats() 函数用 FIFO 匹配买卖交易计算盈亏比/平均持仓天数/单笔极值
+  - packages/backtest-engine/quantforge_backtest/runner.py — 导入 calc_trade_stats，在 run() 中调用并传递结果到 BacktestResult
+  - packages/backtest-engine/quantforge_backtest/multi_runner.py — 同上
+  - packages/backtest-engine/quantforge_backtest/multi_strategy_runner.py — 同上
+  - packages/backtest-engine/quantforge_backtest/__init__.py — 导出 calc_trade_stats
+  - packages/backtest-engine/tests/test_metrics.py — 新增 sortino_ratio/calmar_ratio/annualized_volatility/max_drawdown_duration/trade_stats 测试
+- **后续迭代注意事项：**
+  - calc_metrics 新增了可选参数 `trades`（当前未使用，trade_stats 单独计算），如后续需要在 metrics 内部整合可扩展
+  - _result_to_dict 已有 _to_camel 自动转换，strategy-runtime 无需额外修改
+  - 66 个 backtest-engine 测试全部通过
+---
