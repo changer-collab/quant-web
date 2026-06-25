@@ -158,6 +158,11 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 当前不做真实下单、券商连接、实盘低延迟交易、权限系统、策略市场。
 - 未来实盘执行层必须单独设计，不允许把普通 API 和任务队列放进低延迟下单路径。
 - 所有密钥和环境变量统一管理：项目根目录一个 `.env`（gitignored）+ 一个 `.env.example`（提交到 git）。各子项目不单独维护 `.env` 文件。Python 包纯读 `os.environ`，不引入 dotenv 依赖，由启动入口负责加载。
+- **Git 分支与提交约定**：
+  - 本地开发统一使用 `changer` 分支，不要无缘无故创建新的分支。
+  - 开发完成后在 `changer` 分支提交。
+  - 推送时使用 `git push origin changer`，不要直接向 `main` 分支推送。
+  - 推送完成后，使用 `gh pr create` 创建从 `changer` 到 `main` 的 Pull Request（若已有同名 PR 则跳过）。
 
 ## 子项目规则引用
 
