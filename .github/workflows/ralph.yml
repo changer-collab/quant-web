@@ -1,0 +1,72 @@
+name: Ralph - Autonomous Agent Loop
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_iterations:
+        description: 'Maximum iterations (stories to process)'
+        required: false
+        default: '10'
+
+# 防止并发运行
+concurrency:
+  group: ralph-loop
+  cancel-in-progress: false
+
+jobs:
+  ralph:
+    name: Autonomous Agent Loop
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 最长 6 小时
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Python packages
+        run: |
+          pip install -e packages/strategy-runtime \
+            -e packages/data-client \
+            -e packages/backtest-engine \
+            -e packages/strategies \
+            -e packages/factor-lab \
+            -e packages/ai-engine \
+            -e packages/obsidian-sync
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Ralph
+        run: |
+          chmod +x scripts/ralph/ralph.sh
+          ./scripts/ralph/ralph.sh --tool claude ${{ github.event.inputs.max_iterations }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Push results
+        if: always()
+        run: |
+          BRANCH=$(jq -r '.branchName // "ralph/auto"' scripts/ralph/prd.json)
+          git push origin "$BRANCH" --force-with-lease || true

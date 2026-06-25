@@ -29,3 +29,9 @@ __pycache__/
 
 # turbo
 .turbo
+
+# Ralph autonomous agent loop (runtime artifacts)
+scripts/ralph/prd.json
+scripts/ralph/progress.txt
+scripts/ralph/.last-branch
+scripts/ralph/archive/

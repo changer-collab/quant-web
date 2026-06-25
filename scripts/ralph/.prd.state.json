@@ -1,0 +1,21 @@
+{
+  "iterations": 2,
+  "lastExitCode": 0,
+  "lastError": {
+    "iteration": 2,
+    "exitCode": 0,
+    "timestamp": "2026-06-25T23:21:24.692Z",
+    "detectedFailures": [
+      "vitest_fail",
+      "lint_error",
+      "typescript_error",
+      "build_fail"
+    ],
+    "summary": "﻿鎴戞潵鍒嗘瀽涓婁竴杞殑閿欒骞跺紑濮嬪伐浣溿€傞鍏堣鍙栧繀瑕佺殑鏂囦欢銆傛垜鏉ュ垎鏋愬綋鍓嶇姸鎬併€傛牴鎹?prd.json锛?- story-1/2/3 宸插畬鎴愶紙passes: true锛?- **story-4**锛堝墠绔?null/绌烘暟鎹覆鏌撲慨澶嶏級鏄渶楂樼殑鏈畬鎴愭晠浜?- 涓婁竴杞湁 `vitest_fail` 閿欒 **鍒嗘瀽涓婁竴杞け璐ュ師鍥?*锛?- 涓婁竴杞?`.last-error.json` 鎶ュ憡 `vitest_fail`锛屼絾 summary 鏄贡鐮?- 鏌ョ湅 progress.txt锛宻tory-2 + story-3 鍦?2026-06-26 鐨勮褰曚腑鏄剧ず瀹炵幇骞舵爣璁颁负 passes: true - 浣?`.last-error.json` 璇?`detectedFailures: [\"vitest_fail\"]` 鈥?杩欐剰鍛崇潃 API 渚х殑 vitest 娴嬭瘯鍙兘浠嶇劧澶辫触 Now fix the RiskBullets component to handle null var95 and annu"
+  },
+  "storyAttempts": {},
+  "lastChanges": " docs/plans/2026-06-25-harness-engineering.md       | 722 ---------------------  docs/roadmap.md                                    |  76 ++-  scripts/ralph/prd.json                             |   2 +-  scripts/ralph/progress.txt                         |  31 +  11 files changed, 79 insertions(+), 1718 deletions(-)",
+  "consecutiveNoProgress": 0,
+  "feature": "real-backtest-report",
+  "version": 1
+}
