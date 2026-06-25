@@ -21,7 +21,7 @@ from .types import (
 from .matcher import Matcher
 from .portfolio import PortfolioManager
 from .replay import BarReplay
-from .metrics import calc_metrics
+from .metrics import calc_metrics, calc_trade_stats
 from .market_rules import ASHARE_RULES, MarketRules
 
 
@@ -186,9 +186,16 @@ class BacktestRunner:
             strategy_kind=self.strategy.meta.kind.value,
         )
 
+        # 计算交易级衍生统计
+        trade_stats = calc_trade_stats(all_trades)
+
         return BacktestResult(
             config=config,
             trades=all_trades,
             equity_curve=equity_curve,
             metrics=calc_metrics(equity_curve, self.initial_cash, len(all_trades)),
+            profit_loss_ratio=trade_stats["profit_loss_ratio"],
+            avg_holding_days=trade_stats["avg_holding_days"],
+            max_single_profit=trade_stats["max_single_profit"],
+            max_single_loss=trade_stats["max_single_loss"],
         )

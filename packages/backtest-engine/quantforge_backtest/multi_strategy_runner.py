@@ -10,7 +10,7 @@ from .types import (
     DEFAULT_INITIAL_CASH, DEFAULT_SLIPPAGE,
 )
 from .multi_runner import MultiSymbolRunner
-from .metrics import calc_metrics
+from .metrics import calc_metrics, calc_trade_stats
 
 
 class MultiStrategyRunner:
@@ -79,11 +79,18 @@ class MultiStrategyRunner:
             slippage=self.slippage,
         )
 
+        # 计算交易级衍生统计
+        trade_stats = calc_trade_stats(all_trades)
+
         return BacktestResult(
             config=config,
             trades=all_trades,
             equity_curve=merged_equity,
             metrics=calc_metrics(merged_equity, self.initial_cash, len(all_trades)),
+            profit_loss_ratio=trade_stats["profit_loss_ratio"],
+            avg_holding_days=trade_stats["avg_holding_days"],
+            max_single_profit=trade_stats["max_single_profit"],
+            max_single_loss=trade_stats["max_single_loss"],
         )
 
     def _merge_equity_curves(
