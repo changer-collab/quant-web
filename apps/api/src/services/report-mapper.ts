@@ -63,8 +63,8 @@ export function mapBacktestResultToReport(
     },
     riskMetrics: {
       maxDrawdown: metrics.maxDrawdown,
-      maxDrawdownDuration: null,
-      annualizedVolatility: null,
+      maxDrawdownDuration: metrics.maxDrawdownDuration ?? null,
+      annualizedVolatility: metrics.annualizedVolatility ?? null,
       var95: null,
       var99: null,
       cvar95: null,
@@ -73,31 +73,31 @@ export function mapBacktestResultToReport(
     },
     riskAdjMetrics: {
       sharpeRatio: metrics.sharpeRatio,
-      sortinoRatio: null,
-      calmarRatio: null,
+      sortinoRatio: metrics.sortinoRatio ?? null,
+      calmarRatio: metrics.calmarRatio ?? null,
       informationRatio: null,
     },
     tradeStats: {
       totalTrades: metrics.totalTrades,
       winRate: metrics.winRate,
-      profitLossRatio: null,
-      avgHoldingDays: null,
-      maxSingleProfit: null,
-      maxSingleLoss: null,
+      profitLossRatio: result.profitLossRatio ?? null,
+      avgHoldingDays: result.avgHoldingDays ?? null,
+      maxSingleProfit: result.maxSingleProfit ?? null,
+      maxSingleLoss: result.maxSingleLoss ?? null,
       annualTurnover: null,
     },
     equityData: {
-      equityCurve: (result.equityCurve as Array<{ timestamp: number; equity: number }>).map(p => ({
-        timestamp: p.timestamp,
-        equity: p.equity,
-        drawdown: 0,
-      })),
-      monthlyReturns: Array.isArray((result as any).monthlyReturns)
-        ? (result as any).monthlyReturns : [],
-      annualReturns: Array.isArray((result as any).annualReturns)
-        ? (result as any).annualReturns : [],
-      drawdownSeries: Array.isArray((result as any).drawdownCurve)
-        ? (result as any).drawdownCurve : [],
+      equityCurve: result.equityCurve.map((p, _i) => {
+        const dd = result.drawdownCurve.find(d => d.timestamp === p.timestamp);
+        return {
+          timestamp: p.timestamp,
+          equity: p.equity,
+          drawdown: dd ? dd.drawdown : 0,
+        };
+      }),
+      monthlyReturns: result.monthlyReturns,
+      annualReturns: result.annualReturns,
+      drawdownCurve: result.drawdownCurve,
     },
     robustness: {
       paramSensitivity: [],

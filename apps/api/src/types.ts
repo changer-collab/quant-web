@@ -129,9 +129,9 @@ export interface BacktestReportFull {
   };
   equityData: {
     equityCurve: Array<{ timestamp: number; equity: number; drawdown: number }>;
-    monthlyReturns: Array<{ year: number; month: number; return: number }>;
-    annualReturns: Array<{ year: number; return: number }>;
-    drawdownSeries: Array<{ timestamp: number; drawdown: number }>;
+    monthlyReturns: Array<{ year: number; month: number; return_pct: number }>;
+    annualReturns: Array<{ year: number; return_pct: number }>;
+    drawdownCurve: Array<{ timestamp: number; drawdown: number }>;
   };
   robustness: {
     paramSensitivity: Array<{ paramName: string; values: number[]; returns: number[] }>;
@@ -239,5 +239,27 @@ export interface BacktestResult {
     maxDrawdown: number;
     winRate: number;
     totalTrades: number;
+    /** 索提诺比率（下行偏差） */
+    sortinoRatio: number;
+    /** 卡玛比率（年化收益/最大回撤） */
+    calmarRatio: number;
+    /** 年化波动率 */
+    annualizedVolatility: number;
+    /** 最大回撤持续天数（从峰值到新高的最长天数） */
+    maxDrawdownDuration: number;
   };
+  /** 平均盈利/平均亏损 */
+  profitLossRatio: number;
+  /** 平均持仓天数 */
+  avgHoldingDays: number;
+  /** 单笔最大盈利 */
+  maxSingleProfit: number;
+  /** 单笔最大亏损 */
+  maxSingleLoss: number;
+  /** 回撤曲线（由 Python compute_drawdown_curve 计算） */
+  drawdownCurve: Array<{ timestamp: number; drawdown: number }>;
+  /** 月度收益（由 Python compute_period_returns 计算） */
+  monthlyReturns: Array<{ year: number; month: number; return_pct: number }>;
+  /** 年度收益（由 Python compute_period_returns 计算） */
+  annualReturns: Array<{ year: number; return_pct: number }>;
 }
