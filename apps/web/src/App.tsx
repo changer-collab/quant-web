@@ -17,7 +17,7 @@ import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
 import { JobList } from './components/jobs';
-import type { ResearchJob, ResearchModeId } from './appData';
+import type { ResearchJob, ResearchModeId, JobTemplate } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
 import hero from './styles/hero.module.css';
@@ -64,6 +64,7 @@ export default function App() {
       progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
       strategyName: (task.payload.strategy as string) ?? '',
       mode: 'traditional' as ResearchModeId,
+      template: task.type as JobTemplate,
     }));
     return [...localizedJobs, ...apiJobs];
   }, [localizedJobs, apiTasks]);
@@ -77,12 +78,20 @@ export default function App() {
       : isGeneratedReportPage && activeReport
         ? activeReport.status
         : activePage.status;
-  const heroMetrics =
-    state.activePage === 'workspace'
-      ? researchMode.heroMetrics
-      : isGeneratedReportPage && activeReport
-        ? activeReport.metrics
-        : activePage.heroMetrics;
+  const heroMetrics = useMemo(() => {
+    if (state.activePage === 'workspace') return researchMode.heroMetrics;
+    if (isGeneratedReportPage && activeBacktestReport) {
+      const rm = activeBacktestReport.returnMetrics;
+      const rs = activeBacktestReport.riskAdjMetrics;
+      return [
+        { label: '年化收益', value: `${(rm.annualizedReturn * 100).toFixed(1)}%`, tone: rm.annualizedReturn > 0 ? 'good' as const : 'warn' as const },
+        { label: '最大回撤', value: `${(activeBacktestReport.riskMetrics.maxDrawdown * 100).toFixed(1)}%`, tone: 'warn' as const },
+        { label: '夏普比率', value: rs.sharpeRatio.toFixed(2), tone: rs.sharpeRatio > 1 ? 'good' as const : 'warn' as const },
+        { label: '交易次数', value: activeBacktestReport.tradeStats.totalTrades.toLocaleString(), tone: 'info' as const },
+      ];
+    }
+    return activePage.heroMetrics;
+  }, [state.activePage, isGeneratedReportPage, activeBacktestReport, researchMode.heroMetrics, activePage.heroMetrics]);
   const sections =
     state.activePage === 'workspace'
       ? researchMode.sections

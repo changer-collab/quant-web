@@ -101,21 +101,22 @@ export function ReportTradeStats({ report, ui }: Props) {
   const labels = ui.tradeStats;
 
   const stats = [
-    { label: labels.totalTrades, value: ts.totalTrades.toString(), tone: 'info' },
-    { label: labels.wins, value: ts.winningTrades.toString(), tone: 'good' },
-    { label: labels.losses, value: ts.losingTrades.toString(), tone: 'warn' },
-    { label: labels.winRate, value: pct(ts.winRate), tone: ts.winRate > 0.5 ? 'good' : 'warn' },
-    { label: labels.profitLossRatio, value: ts.profitLossRatio.toFixed(2), tone: ts.profitLossRatio > 1.5 ? 'good' : 'info' },
-    { label: labels.avgHolding, value: `${ts.avgHoldingDays} 天`, tone: 'info' },
-    { label: labels.turnover, value: pct(ts.turnoverRate), tone: ts.turnoverRate > 0.5 ? 'warn' : 'info' },
-    { label: labels.maxProfit, value: currency(ts.maxSingleProfit), tone: 'good' },
-    { label: labels.maxLoss, value: currency(Math.abs(ts.maxSingleLoss)), tone: 'warn' },
-    ...(ts.maxConsecutiveWins !== undefined ? [{ label: labels.maxConsecutiveWins, value: `${ts.maxConsecutiveWins} 次`, tone: 'good' as const }] : []),
-    ...(ts.maxConsecutiveLosses !== undefined ? [{ label: labels.maxConsecutiveLosses, value: `${ts.maxConsecutiveLosses} 次`, tone: 'warn' as const }] : []),
-    ...(ts.concentrationIndex !== undefined ? [{ label: labels.concentrationIndex, value: ts.concentrationIndex.toFixed(2), tone: ts.concentrationIndex > 0.5 ? 'warn' : 'info' as const }] : []),
+    { label: labels.totalTrades, value: (ts.totalTrades ?? 0).toString(), tone: 'info' },
+    { label: labels.winRate, value: pct(ts.winRate ?? 0), tone: (ts.winRate ?? 0) > 0.5 ? 'good' : 'warn' },
+    ...(ts.profitLossRatio != null ? [{ label: labels.profitLossRatio, value: ts.profitLossRatio.toFixed(2), tone: ts.profitLossRatio > 1.5 ? 'good' as const : 'info' as const }] : []),
+    ...(ts.avgHoldingDays != null ? [{ label: labels.avgHolding, value: `${ts.avgHoldingDays} 天`, tone: 'info' as const }] : []),
+    ...(ts.turnoverRate != null ? [{ label: labels.turnover, value: pct(ts.turnoverRate), tone: ts.turnoverRate > 0.5 ? 'warn' as const : 'info' as const }] : []),
+    ...(ts.maxSingleProfit != null ? [{ label: labels.maxProfit, value: currency(ts.maxSingleProfit), tone: 'good' as const }] : []),
+    ...(ts.maxSingleLoss != null ? [{ label: labels.maxLoss, value: currency(Math.abs(ts.maxSingleLoss)), tone: 'warn' as const }] : []),
+    ...(ts.maxConsecutiveWins !== undefined && ts.maxConsecutiveWins != null ? [{ label: labels.maxConsecutiveWins, value: `${ts.maxConsecutiveWins} 次`, tone: 'good' as const }] : []),
+    ...(ts.maxConsecutiveLosses !== undefined && ts.maxConsecutiveLosses != null ? [{ label: labels.maxConsecutiveLosses, value: `${ts.maxConsecutiveLosses} 次`, tone: 'warn' as const }] : []),
+    ...(ts.concentrationIndex !== undefined && ts.concentrationIndex != null ? [{ label: labels.concentrationIndex, value: ts.concentrationIndex.toFixed(2), tone: ts.concentrationIndex > 0.5 ? 'warn' as const : 'info' as const }] : []),
   ];
 
-  const maxVal = Math.max(ts.winningTrades, ts.losingTrades);
+  const winCount = ts.winningTrades ?? 0;
+  const lossCount = ts.losingTrades ?? 0;
+  const hasWinLoss = winCount > 0 || lossCount > 0;
+  const maxVal = hasWinLoss ? Math.max(winCount, lossCount) : 0;
 
   return (
     <div className={styles.tradeStats}>
@@ -128,29 +129,33 @@ export function ReportTradeStats({ report, ui }: Props) {
         ))}
       </div>
 
-      <h4 className={styles.sectionTitle}>盈亏对比</h4>
-      <div className={styles.barChart}>
-        <div className={styles.barRow}>
-          <span className={styles.barLabel}>{labels.wins}</span>
-          <div className={styles.barTrack}>
-            <div
-              className={styles.barGood}
-              style={{ width: `${(ts.winningTrades / maxVal) * 100}%` }}
-            />
+      {hasWinLoss && (
+        <>
+          <h4 className={styles.sectionTitle}>盈亏对比</h4>
+          <div className={styles.barChart}>
+            <div className={styles.barRow}>
+              <span className={styles.barLabel}>{labels.wins}</span>
+              <div className={styles.barTrack}>
+                <div
+                  className={styles.barGood}
+                  style={{ width: `${maxVal > 0 ? (winCount / maxVal) * 100 : 0}%` }}
+                />
+              </div>
+              <span className={styles.barValue}>{winCount}</span>
+            </div>
+            <div className={styles.barRow}>
+              <span className={styles.barLabel}>{labels.losses}</span>
+              <div className={styles.barTrack}>
+                <div
+                  className={styles.barWarn}
+                  style={{ width: `${maxVal > 0 ? (lossCount / maxVal) * 100 : 0}%` }}
+                />
+              </div>
+              <span className={styles.barValue}>{lossCount}</span>
+            </div>
           </div>
-          <span className={styles.barValue}>{ts.winningTrades}</span>
-        </div>
-        <div className={styles.barRow}>
-          <span className={styles.barLabel}>{labels.losses}</span>
-          <div className={styles.barTrack}>
-            <div
-              className={styles.barWarn}
-              style={{ width: `${(ts.losingTrades / maxVal) * 100}%` }}
-            />
-          </div>
-          <span className={styles.barValue}>{ts.losingTrades}</span>
-        </div>
-      </div>
+        </>
+      )}
 
       <PnlHistogram report={report} ui={ui} />
     </div>

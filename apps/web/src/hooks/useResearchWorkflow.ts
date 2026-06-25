@@ -89,7 +89,7 @@ export function useResearchWorkflow(language: LanguageCode) {
           const detail = details[index];
           if (detail?.reportData) {
             // 有完整 reportData，直接使用
-            const rd = detail.reportData as Partial<BacktestReportFull>;
+            const { id: _apiId, ...rdRest } = detail.reportData as Partial<BacktestReportFull> & { id?: string };
             historicalReports.push(
               createBacktestReportFull({
                 id: `backtest-full-${reportId}`,
@@ -97,7 +97,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                 status: 'completed',
                 generatedAt,
                 strategyName: s.strategyName,
-                ...rd,
+                ...rdRest,
               }),
             );
           } else {
@@ -161,6 +161,14 @@ export function useResearchWorkflow(language: LanguageCode) {
           }
           return merged;
         });
+
+        // 自动选中最新报告（如果尚未选中）
+        if (!cancelled) {
+          setActiveReportId((current) => {
+            if (current) return current;
+            return historicalResearchReports[0]?.id;
+          });
+        }
       })
       .catch(() => {
         // API 不可用，忽略
