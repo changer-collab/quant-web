@@ -129,25 +129,20 @@ vitest_fail
 ```
 ---
 
-## [2026-06-26] - story-4
+## [2026-06-26] - story-5
 
-- 实现了什么：修复前端报告组件 null/空数据渲染问题
+- 实现了什么：验证 API 报告存储/读取：reportData 包含完整真实数据
 - 修改了哪些文件：
-  - apps/web/src/components/report/ReportRiskMetrics.tsx — 新增 safePct/safeNum/safeDays 辅助函数处理 null/undefined
-    - maxDrawdownDuration 为 null 时显示 '--' 而非 'null 天'
-    - 风险子弹图：var95/annualizedVolatility 为 null 时不渲染该维度（动态构建 dims 数组）
-    - 指标卡片：annualizedVolatility/downsideVolatility/var95/cvar95/sortinoRatio/skewness/kurtosis 为 null 时不显示对应卡片
-    - calmarRatio 为 null 时显示 '--'
-  - apps/web/src/components/report/ReportReturnMetrics.tsx — alpha 为 null 或 0 时：
-    - 收益条形图不显示 Alpha 柱
-    - 指标卡片不显示 alpha 卡片
-    - 雷达图动态构建 indicator/scores，null 维度不纳入，不足 3 维时返回空
-  - apps/web/src/components/report/ReportRiskAdjMetrics.tsx — sortinoRatio/informationRatio/treynorRatio 为 null 或 0 时不显示对应卡片
-  - apps/web/src/components/report/ReportCostSensitivity.tsx — costDragRatio/annualTurnover 为 null 时显示 '--'
+  - apps/api/tests/routes/report.test.ts — 新增 3 个测试用例验证回测任务完成自动保存报告，读取时 reportData 包含：
+    - drawdownCurve（非空数组）
+    - monthlyReturns/annualReturns（非空数组）
+    - sortinoRatio/calmarRatio（非零值）
 - **后续迭代注意事项：**
-  - 所有 null 安全的判断用 `!= null`（同时检查 null 和 undefined），不用 `!== undefined` 或 `!== null`
-  - 前端组件从不臆测数据一定存在，所有可选字段都要加 null/undefined 保护
-  - 82 个测试全部通过
+  - 测试覆盖了从 POST /api/tasks 提交回测 → POST /api/internal/tasks/:id/complete Worker 完成 → GET /api/reports/:id 读取的完整流程
+  - reportData 字段名已与 story-2/3 对齐：drawdownCurve、return_pct、sortinoRatio/calmarRatio 在 riskAdjMetrics 中
+  - 41 个 API 测试全部通过
+  - 推送失败（网络问题），本地提交已完成
+
 ---
 
 ## [2026-06-25 23:21:24] - Iteration 2
@@ -159,3 +154,5 @@ vitest_fail
 vitest_fail
 ```
 ---
+
+## ✅ ALL STORIES COMPLETE

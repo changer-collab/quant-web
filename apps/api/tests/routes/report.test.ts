@@ -259,8 +259,9 @@ describe('Report Routes', () => {
       // 验证衍生统计指标在 reportData 中的非零值
       expect(report.reportData.riskAdjMetrics.sortinoRatio).toBeDefined();
       expect(report.reportData.riskAdjMetrics.sortinoRatio).toBeGreaterThan(0);
-      expect(report.reportData.riskAdjMetrics.calmarRatio).toBeDefined();
-      expect(report.reportData.riskAdjMetrics.calmarRatio).toBeGreaterThan(0);
+      // calmarRatio 在 riskMetrics 中（对齐前端类型）
+      expect(report.reportData.riskMetrics.calmarRatio).toBeDefined();
+      expect(report.reportData.riskMetrics.calmarRatio).toBeGreaterThan(0);
 
       // 验证 tradeStats 也有值
       expect(report.reportData.tradeStats.profitLossRatio).toBeGreaterThan(0);

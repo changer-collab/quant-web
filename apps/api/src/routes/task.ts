@@ -143,7 +143,6 @@ export async function internalTaskRoutes(app: FastifyInstance) {
               ...report.executiveSummary,
               oneLineConclusion: es.oneLineConclusion as string ?? report.executiveSummary.oneLineConclusion,
               recommendedForLive: es.recommendedForLive as boolean ?? report.executiveSummary.recommendedForLive,
-              riskPoints: es.mainRisks as string[] ?? report.executiveSummary.riskPoints,
             };
           }
           if (ai.overview) {
@@ -156,25 +155,27 @@ export async function internalTaskRoutes(app: FastifyInstance) {
           }
           if (ai.issues) {
             const iss = ai.issues as Record<string, unknown>;
-            report.issues = [
-              ...((iss.liquidityAssessment ? [{ severity: 'medium', message: iss.liquidityAssessment as string }] : [])),
-              ...((iss.capacityEstimate ? [{ severity: 'low', message: iss.capacityEstimate as string }] : [])),
-            ];
+            report.issues = {
+              ...report.issues,
+              liquidityAssessment: iss.liquidityAssessment as string ?? report.issues.liquidityAssessment,
+              capacityEstimate: iss.capacityEstimate as string ?? report.issues.capacityEstimate,
+            };
           }
           if (ai.conclusion) {
             const con = ai.conclusion as Record<string, unknown>;
             report.conclusion = {
               ...report.conclusion,
-              strengths: con.advantages as string[] ?? report.conclusion.strengths,
-              risks: con.potentialRisks as string[] ?? report.conclusion.risks,
+              advantages: con.advantages as string[] ?? report.conclusion.advantages,
+              potentialRisks: con.potentialRisks as string[] ?? report.conclusion.potentialRisks,
               improvements: con.improvements as string[] ?? report.conclusion.improvements,
             };
           }
           if (ai.riskWarnings) {
             const rw = ai.riskWarnings as Record<string, unknown>;
             report.riskWarnings = {
-              keyRisks: (rw.limitations as Array<{ description: string }>)?.map(l => l.description) ?? report.riskWarnings.keyRisks,
-              redLines: (rw.redLines as Array<{ rule: string; passed: boolean }>)?.map(r => `${r.rule}: ${r.passed ? '通过' : '未通过'}`) ?? report.riskWarnings.redLines,
+              ...report.riskWarnings,
+              limitations: (rw.limitations as Array<{ category: string; description: string }>) ?? report.riskWarnings.limitations,
+              redLines: (rw.redLines as Array<{ rule: string; threshold: string; actual: string; passed: boolean }>) ?? report.riskWarnings.redLines,
             };
           }
         }

@@ -91,6 +91,8 @@
       "dependsOn": ["story-3"],
       "passes": true
     },
+    {
+      "id": "story-6",
       "title": "端到端验收：回测报告展示完整真实数据",
       "description": "启动 API + Worker + 前端，跑一次 dual_ma 回测，验证全链路：(1) SSE 推送包含 drawdownCurve/monthlyReturns/annualReturns；(2) 前端权益曲线图展示真实数据点；(3) 回撤曲线图展示非零回撤值；(4) 月度热力图展示非空月份数据；(5) 年度柱状图展示非空年度数据；(6) 风险指标卡片展示真实 sortinoRatio/calmarRatio（非 0）；(7) 交易统计卡片展示真实 profitLossRatio/avgHoldingDays；(8) 刷新页面后历史报告仍展示上述数据；(9) 控制台无 TypeScript 类型错误。这是验收故事，不改代码，只验证。",
       "acceptanceCriteria": [

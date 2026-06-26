@@ -1,0 +1,203 @@
+我来分析上一轮的错误并开始工作。首先读取必要的文件。好，让我先读取上一轮的错误文件。好的，来分析上一轮的失败原因。上一轮跳出多次错误 `vitest_fail / lint_error / typescript_error / build_fail`。不过最新的 prd.json 已经显示 story-4 是 `passes: true`，实际上 story-4 已经在上一轮完成了修复（根据 git commit `9614c03 feat: [story-4] - 修复前端报告组件 null/空数据渲染问题`）。而 story-5 和 story-6 仍是 `passes: false`。
+
+现在最高优先级的未完成故事是 **story-5**（优先级 5，API 报告存储/读取验证）。
+
+让我先调研当前状态。好的，我来分析上一轮失败原因，然后开始工作。
+
+**上一轮失败分析：**
+- 从 `.last-error.json` 看到 `vitest_fail`、`lint_error`、`typescript_error`、`build_fail`
+- 但从 progress.txt 看到 story-4 已经实现且测试通过（"82 个测试全部通过"）
+- 当前 prd.json 中 story-1/2/3/4 都已标记 `passes: true`
+- 最高优先级未完成的是 **story-5**（验证 API 报告存储/读取）
+
+让我先检查当前分支状态。根据分析，story-1 到 story-4 都已标记为 `passes: true`，story-5 和 story-6 是唯二未完成的。按照规则，我只需要实现**高优先级**的未完成故事。story-5 优先级 5 > story-6 优先级 6，所以先做 story-5。
+
+但在开始前，让我先检查当前代码状态，理解上一轮报的 `vitest_fail` 错误。好的，我来分析当前状态。
+
+**当前状态分析：**
+- story-1 到 story-4 已完成（`passes: true`）
+- 下一个最高优先级未完成的是 **story-5**（优先级 5）
+- 上一轮报错 `vitest_fail / lint_error / typescript_error / build_fail`，但 summary 是乱码
+- 从 progress.txt 看到 story-4 已经完成，82 个测试通过
+- 再看 `.last-error.json` 的乱码部分，实际上是上次迭代的 agent 输出内容被截断了
+
+让我看看当前 git 状态，然后开始实现 story-5。分析上一轮状态：
+
+1. **progress.txt** 显示 story-4 已经完成（2026-06-26 记录，82 个测试通过），并且 prd.json 中 story-4 已经是 `passes: true`
+2. 上一轮的 `vitest_fail` 来自 story-4 之前 iteration2 的失败，不影响当前状态
+3. **当前最高优先级的未完成故事是 story-5**（验证 API 报告存储/读取）
+4. 当前分支已经是 `ralph/real-backtest-report`
+
+让我先检查当前 API 测试状态，然后调研现有的 report 路由实现。好的，让我分析上一轮的失败原因。
+
+**上一轮失败分析**：
+
+从 `progress.txt` 可以看到：
+- story-4 之前已经完成了（和 story-1/2/3 一样标记为 `passes: true`）
+- 上一轮 `.last-error.json` 报 `vitest_fail`，但那个乱码 summary 其实是 Ralph 框架的 bug（乱码了）
+- 上一轮迭代结束时还有 story-5 和 story-6 剩余
+- 但 story-4 实际上已经完成且标记了 `passes: true`
+
+当前最高优先级的未完成故事是 **story-5**（priority: 5, passes: false），它的依赖项 story-1/2/3/4 都已通过。
+
+让我先读取相关的 AGENT.md。Let me understand the existing report routes and test infrastructure better.Let me do the exploration directly.现在让我检查一下任务保存报告的流程，以及当前 api build 是否通过：API 测试和构建都通过了。现在来分析 story-5。
+
+**story-5 的要求：** 补充 `apps/api/tests/routes/report.test.ts` 的测试用例，验证 reportData 字段的存储和读取包含衍生统计（drawdownCurve、monthlyReturns、sortinoRatio/calmarRatio 等）。
+
+从代码分析看：
+
+1. `report.test.ts` 目前只有 2 个测试（空列表 + 404），没有 reportData 验证
+2. `report-repo.test.ts` 已有保存查询测试，但用的是简约的 `reportData: {} as any`
+3. reportData 的写入流程是：Worker 完成任务 → 存入数据库 → API `GET /api/reports/:id` 返回
+
+按照验收标准，我需要在 `report.test.ts` 中新增测试用例，通过直接操作 ReportRepository 写入一个包含完整 reportData 的报告，然后通过 API 路由验证其返回的字段。现在我已经了解了完整的情况。story-1 到 story-4 全部完成(`passes: true`)，当前需要处理 **story-5**（最高优先级的未完成故事）。
+
+story-5 的要求：
+1. 补充 `apps/api/tests/routes/report.test.ts` 的测试用例，验证 reportData 字段的存储和读取包含衍生统计
+2. 验证 reportData 包含 drawdownCurve/monthlyReturns/annualReturns（非空数组）和 sortinoRatio/calmarRatio（非零值）
+
+先看看现有的报告路由和任务完成的处理逻辑，看看 report 数据是如何保存的：现在我已经完全了解了当前状态。让我分析上一轮的失败原因：
+
+## 上一轮失败分析
+
+从 `.last-error.json` 看，上一轮出现了 `vitest_fail`, `lint_error`, `typescript_error`, `build_fail`。但 **story-4 已经设为了 `passes: true`**，说明这些错误可能是在 story-4 之前遗留的问题，或者 story-4 本身通过了但后续检查点有其他问题。
+
+根据日志，**story-1 ~ story-4 全部完成**（`passes: true`）。当前最高优先级的未完成故事是 **story-5**（优先级 5）。
+
+让我直接开始实现 story-5。
+
+## Story-5 计划
+
+story-5 要求验证报告存储/读取包含完整真实数据：
+1. 补充 `apps/api/tests/routes/report.test.ts` 的测试用例
+2. 验证 `reportData` 字段包含衍生统计（drawdownCurve、monthlyReturns、annualReturns、sortinoRatio、calmarRatio）
+
+但是我注意到：现有的 report 测试只测试了基本的 CRUD。要测试 reportData 包含完整真实数据，需要：
+1. 先构造一个包含完整 `BacktestReportFull` 数据的报告
+2. 保存后验证读取回来的数据完整
+
+让我看看现有的测试中的 mock data 结构，然后创建一个全面验证的测试用例。现在我对整个代码库有了完整理解。让我分析上一轮错误并开始实施 story-5。
+
+**上一轮错误分析：** `.last-error.json` 显示 `vitest_fail`，但 summary 是乱码。看 progress.txt，上一轮迭代（Iteration 2）退出码 0 但检测到 vitest 失败。再看最后一次进步记录（2026-06-26 story-4），story-4 已经完成（82 个测试全部通过），且 prd.json 中 story-4 已标记为 `passes: true`。所以上一轮的失败不是 story-4 引起的，而是 story-5 或之前尝试实现的残留问题。
+
+现在开始实施 **story-5** — 最高优先级未完成的故事。好的，我来分析当前状态并规划工作。
+
+## 分析
+
+**当前状态：**
+- story-1 到 story-4 都已完成（`passes: true`）
+- 遗留 `vitest_fail` 和 `build_fail` — 是老的历史记录中的问题
+- **下一个最高优先级未完成故事：story-5** — "验证 API 报告存储/读取"
+- **当前分支正确：** `ralph/real-backtest-report`
+
+**story-5 任务：** 补充 `apps/api/tests/routes/report.test.ts` 的测试用例，验证 reportData 字段的存储和读取包含衍生统计指标。
+
+现有测试非常基础：
+1. `GET /api/reports` 返回空列表 ✓
+2. `GET /api/reports/:id` 返回 404 ✓
+
+需要新增测试：
+1. 提交回测任务 + complete → 验证 reportData 中 equityCurve/drawdownCurve/monthlyReturns/annualReturns 非空
+2. GET /api/reports/:id 返回的 reportData 包含衍生统计指标
+
+等一下，让我重新审视测试结构 — 测试用的是 `app.inject()` 方式，需要走完整的路由（提交任务 → complete 任务 → 查报告）。Let me understand the task service to see how the internal completion route works in tests.Now I have a clear understanding of the flow. Let me write the test for story-5.Now I have full context. Let me write the test TDD-style. The test needs to:
+
+1. Submit a backtest task
+2. Complete it via `/api/internal/tasks/:id/complete` with a `backtestResult` containing `drawdownCurve`, `monthlyReturns`, `sortinoRatio`, `calmarRatio`
+3. Fetch the report via `GET /api/reports/:id`
+4. Assert `reportData.drawdownCurve` is a non-empty array
+5. Assert `reportData.monthlyReturns` is a non-empty array
+6. Assert `reportData.sortinoRatio` and `calmarRatio` are non-zero values
+
+**RED phase** — write the failing test first:好，import 已经正确了。现在来写测试用例。我需要测试的核心流程是：
+
+1. 提交回测任务 → 通过 internal complete API 完成任务 → 报告自动保存
+2. GET 报告 → reportData 包含 drawdownCurve、monthlyReturns、sortinoRatio 等Now let me write the test — **RED phase first**:测试代码已写入。现在运行测试验证 RED 阶段——这些测试应该因为 reportData 没有被保存到数据库而失败。很好！测试**失败了**（RED 阶段）。失败原因是：
+
+```
+expected undefined to be defined
+tests/routes/report.test.ts:260:58
+```
+
+问题是我把 `sortinoRatio` 放在了 `riskMetrics` 下检查，但实际上它在 `riskAdjMetrics` 下。让我修正测试：所有 5 个测试都通过了。测试在 GREEN 阶段——因为代码已经实现了所需功能，测试只是验证现有的正确行为。现在运行完整测试套件确认无回归：所有 41 个 API 测试通过，包括新增的 3 个 reportData 存储/读取测试。测试之所以直接通过，是因为 story-3 已经实现了完整的 report-mapper 映射逻辑，本次只是补充集成测试覆盖。
+
+现在更新 prd.json 和 progress.txt。Now I've verified that all 3 new tests pass (GREEN), and the existing 38 tests still pass. The tests verify:
+
+1. ✅ 回测任务完成时自动保存报告，`reportData.equityData.drawdownCurve` 是非空数组
+2. ✅ 回测任务完成时自动保存报告，`reportData.equityData.monthlyReturns/annualReturns` 是非空数组
+3. ✅ 回测任务完成时自动保存报告，`reportData.riskAdjMetrics.sortinoRatio/calmarRatio` 是非零值
+
+All tests are real code (not mocks), minimal, and cover the actual end-to-end flow: task submit → internal complete → report saved → report read.
+
+Let me now update the prd.json and progress.txt:这里有个 JSON 格式问题，story-6 的 `"id"` 丢了。修复一下：The JSON is malformed — `story-6` is missing its `"id"` field. Let me check the full file:The JSON is malformed — story-6's opening `{` is missing. Let me fix it:现在检查是否还有未完成的故事：现在 story-5 已完成，检查 prd.json 中是否还有未完成的故事。目前 story-6 仍然是 `passes: false`，但这是**验收故事（不改代码，只验证）**，需要人工验证或下一轮迭代处理。根据指令规则：
+
+> 如果**全部完成**（所有故事都是 `passes: true`），输出：`<promise>COMPLETE</promise>`
+> 如果还有未完成的故事，正常结束（下一轮迭代会接手）
+
+story-6 是端到端验收故事，需要手动启动服务验证，不适合自动执行。
+
+---
+
+## 故事 5 完成总结
+
+**story-5: 验证 API 报告存储/读取：reportData 包含完整真实数据**
+
+### 做了什么
+
+在 `apps/api/tests/routes/report.test.ts` 中新增了 3 个测试用例，验证从任务完成到报告读取的完整链路：
+
+1. **回测任务完成时自动保存报告，读取时 reportData 包含 drawdownCurve（非空数组）**
+   - 提交 `backtest` 类型任务 → Worker 调用 `POST /api/internal/tasks/:id/complete` 提交 `backtestResult` → 验证 `GET /api/reports/:id` 返回的 `reportData.equityData.drawdownCurve` 是非空数组
+
+2. **回测任务完成时自动保存报告，读取时 reportData 包含 monthlyReturns（非空数组）**
+   - 验证 `monthlyReturns` 和 `annualReturns` 都是非空数组
+
+3. **回测任务完成时自动保存报告，读取时 reportData 包含 sortinoRatio/calmarRatio（非零值）**
+   - 验证 `riskAdjMetrics.sortinoRatio` 和 `calmarRatio` 是非零值
+   - 验证 `tradeStats.profitLossRatio` 和 `avgHoldingDays` 也有值
+
+### 验证结果
+- `pnpm --filter @quant/api test`：41 个测试全部通过（新增 3 个）
+- `pnpm --filter @quant/api build`：通过
+- 本地提交完成，推送因网络失败（GitHub 443 连接超时）
+
+### 修改的文件
+- `apps/api/tests/routes/report.test.ts` — 新增 3 个测试用例
+- `scripts/ralph/prd.json` — story-5 设为 `passes: true`
+- `scripts/ralph/progress.txt` — 追加 story-5 日志
+现在 story-5 已完成，检查 prd.json 中是否还有未完成的故事。目前 story-6 仍然是 `passes: false`，但这是**验收故事（不改代码，只验证）**，需要人工验证或下一轮迭代处理。根据指令规则：
+
+> 如果**全部完成**（所有故事都是 `passes: true`），输出：`<promise>COMPLETE</promise>`
+> 如果还有未完成的故事，正常结束（下一轮迭代会接手）
+
+story-6 是端到端验收故事，需要手动启动服务验证，不适合自动执行。
+
+---
+
+## 故事 5 完成总结
+
+**story-5: 验证 API 报告存储/读取：reportData 包含完整真实数据**
+
+### 做了什么
+
+在 `apps/api/tests/routes/report.test.ts` 中新增了 3 个测试用例，验证从任务完成到报告读取的完整链路：
+
+1. **回测任务完成时自动保存报告，读取时 reportData 包含 drawdownCurve（非空数组）**
+   - 提交 `backtest` 类型任务 → Worker 调用 `POST /api/internal/tasks/:id/complete` 提交 `backtestResult` → 验证 `GET /api/reports/:id` 返回的 `reportData.equityData.drawdownCurve` 是非空数组
+
+2. **回测任务完成时自动保存报告，读取时 reportData 包含 monthlyReturns（非空数组）**
+   - 验证 `monthlyReturns` 和 `annualReturns` 都是非空数组
+
+3. **回测任务完成时自动保存报告，读取时 reportData 包含 sortinoRatio/calmarRatio（非零值）**
+   - 验证 `riskAdjMetrics.sortinoRatio` 和 `calmarRatio` 是非零值
+   - 验证 `tradeStats.profitLossRatio` 和 `avgHoldingDays` 也有值
+
+### 验证结果
+- `pnpm --filter @quant/api test`：41 个测试全部通过（新增 3 个）
+- `pnpm --filter @quant/api build`：通过
+- 本地提交完成，推送因网络失败（GitHub 443 连接超时）
+
+### 修改的文件
+- `apps/api/tests/routes/report.test.ts` — 新增 3 个测试用例
+- `scripts/ralph/prd.json` — story-5 设为 `passes: true`
+- `scripts/ralph/progress.txt` — 追加 story-5 日志

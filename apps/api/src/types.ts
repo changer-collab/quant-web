@@ -58,122 +58,221 @@ export interface FactorDefinition {
 
 export interface BacktestReportFull {
   id: string;
-  status: string;
-  executiveSummary: {
-    oneLineConclusion: string;
-    recommendedForLive: boolean;
-    keyMetrics: {
-      annualizedReturn: number;
-      maxDrawdown: number;
-      sharpeRatio: number;
-    };
-    riskPoints: string[];
-  };
+  taskId: string;
+  strategyName: string;
+  strategyVersion: string;
+  strategyDescription: string;
+
+  // 1. 策略概述
   overview: {
     name: string;
     version: string;
     logic: string;
-    strategyCategory: string;
-    suitableMarketRegime: string[];
-    dataRange: {
-      symbol: string;
-      timeframe: string;
-      startTime?: number;
-      endTime?: number;
-    };
-    costAssumptions: {
-      commission: number;
-      slippage: number;
-    };
+    instruments: string[];
+    timeRange: { start: string; end: string };
+    frequency: string;
+    benchmark: string;
+    strategyCategory?: string;
+    suitableMarketRegime?: string[];
+    coreLogic?: string;
+    composition?: Array<{ name: string; weight: number; description: string }>;
+    keyParameters?: Array<{ name: string; value: string; description: string }>;
   };
+
+  // 2. 数据与参数
   dataParams: {
-    symbol: string;
-    timeframe: string;
-    startTime?: number;
-    endTime?: number;
-    initialCash: number;
-    slippage: number;
+    dataSource: string;
+    adjustmentType: string;
+    fee: { commission: number; stampTax: number };
+    slippage: { model: string; value: number };
+    capital: { initialCash: number; maxLeverage: number; positionLimit: number };
+    params: { label: string; value: string }[];
   };
+
+  // 3. 收益指标
   returnMetrics: {
     cumulativeReturn: number;
+    totalReturn: number;
     annualizedReturn: number;
-    benchmarkReturn: number;
     alpha: number;
-    beta: number;
-    trackingError: number;
+    benchmarkReturn: number;
   };
+
+  // 4. 风险指标
   riskMetrics: {
     maxDrawdown: number;
     maxDrawdownDuration: number | null;
     annualizedVolatility: number | null;
+    downsideVolatility: number;
     var95: number | null;
-    var99: number | null;
     cvar95: number | null;
-    skewness: number | null;
-    kurtosis: number | null;
+    calmarRatio: number;
+    sortinoRatio?: number;
+    skewness?: number;
+    kurtosis?: number;
   };
+
+  // 5. 风险调整后收益
   riskAdjMetrics: {
     sharpeRatio: number;
-    sortinoRatio: number | null;
-    calmarRatio: number | null;
-    informationRatio: number | null;
+    sortinoRatio: number;
+    informationRatio: number;
+    treynorRatio: number;
   };
+
+  // 6. 交易统计
   tradeStats: {
     totalTrades: number;
+    winningTrades: number;
+    losingTrades: number;
     winRate: number;
     profitLossRatio: number | null;
     avgHoldingDays: number | null;
+    turnoverRate: number;
     maxSingleProfit: number | null;
     maxSingleLoss: number | null;
-    annualTurnover: number | null;
+    pnlDistribution: number[];
+    maxConsecutiveWins?: number;
+    maxConsecutiveLosses?: number;
+    concentrationIndex?: number;
   };
+
+  // 7. 资金曲线
   equityData: {
-    equityCurve: Array<{ timestamp: number; equity: number; drawdown: number }>;
+    equityCurve: Array<{ timestamp: number; equity: number }>;
+    benchmarkCurve: Array<{ timestamp: number; equity: number }>;
     monthlyReturns: Array<{ year: number; month: number; return_pct: number }>;
     annualReturns: Array<{ year: number; return_pct: number }>;
     drawdownCurve: Array<{ timestamp: number; drawdown: number }>;
   };
+
+  // 8. 稳健性检验
   robustness: {
     paramSensitivity: Array<{ paramName: string; values: number[]; returns: number[] }>;
     rollingWindows: Array<{ windowSize: number; returns: number[]; sharpeRatios: number[] }>;
     marketRegimes: Array<{ regime: string; startDate: number; endDate: number; return: number }>;
+    outOfSampleReturn: number;
+    shuffledReturn: number;
   };
+
+  // 9. 风险归因
   attribution: {
-    brinsonAttribution: Array<{ category: string; allocation: number; selection: number; total: number }>;
-    factorExposure: Array<{ factor: string; exposure: number; contribution: number }>;
+    industryExposures: Array<{ industry: string; weight: number; contribution: number }>;
+    factorExposures: Array<{ factor: string; exposure: number; contribution: number }>;
+    timingSelection: { timing: number; selection: number; residual: number };
   };
-  issues: Array<{ severity: string; message: string }>;
+
+  // 10. 潜在问题
+  issues: {
+    overfittingRisk: 'low' | 'medium' | 'high';
+    survivorshipBias: boolean;
+    lookAheadBias: boolean;
+    liquidityAssessment: string;
+    capacityEstimate: string;
+  };
+
+  // 11. 执行摘要
+  executiveSummary: {
+    oneLineConclusion: string;
+    recommendedForLive: boolean;
+    recommendationReason: string;
+    keyMetrics: { annualizedReturn: number; maxDrawdown: number; sharpeRatio: number };
+    beatsBenchmark: boolean;
+    mainRisks: string[];
+    strategyCategory: string;
+  };
+
+  // 12. 结论与建议
   conclusion: {
-    strengths: string[];
-    risks: string[];
+    advantages: string[];
+    potentialRisks: string[];
     improvements: string[];
-    liveSuggestions: string[];
+    liveTradingAdvice: {
+      suggestedCapital: string;
+      suggestedInitialPosition: string;
+      riskControlRules: string[];
+    };
+    suitableMarketRegime: string[];
   };
+
+  // 13. 仓位分析
   positionAnalysis: {
-    avgPosition: number;
-    positionDistribution: Array<{ range: string; percentage: number }>;
-    positionVolatilityCorrelation: number;
-    positionChangeFrequency: number;
+    avgPositionLevel: number;
+    positionDistribution: Array<{ level: string; ratio: number }>;
+    volatilityRelation: string;
+    positionAdjustments: {
+      profitAddCount: number;
+      lossAddCount: number;
+      profitAddEffect: number;
+      lossAddEffect: number;
+    };
+    maxSinglePosition: number;
+    adjustmentFrequency: number;
+    positionCurve: Array<{ timestamp: number; position: number }>;
   };
+
+  // 14. 子策略归因
   subStrategyAttribution: {
-    subStrategies: Array<{ name: string; weight: number; return: number; contribution: number }>;
-    correlationMatrix: Array<{ strategy1: string; strategy2: string; correlation: number }>;
+    independentComparison: Array<{
+      name: string;
+      annualizedReturn: number;
+      annualizedVolatility: number;
+      maxDrawdown: number;
+      sharpe: number;
+      description: string;
+    }>;
+    marginalContributions: Array<{ module: string; contribution: number }>;
+    timeSeriesAttribution: Array<{
+      period: string;
+      contributions: Array<{ module: string; value: number }>;
+      total: number;
+    }>;
+    interactionEffect: number;
   };
+
+  // 15. 压力测试
   stressTest: {
-    scenarios: Array<{ name: string; return: number; maxDrawdown: number }>;
+    scenarios: Array<{
+      name: string;
+      period: string;
+      strategyDrawdown: number;
+      benchmarkDrawdown: number;
+      recoveryDays: number;
+      note: string;
+    }>;
+    monteCarlo: {
+      simulatedPaths: number;
+      medianReturn: number;
+      percentile5: number;
+      percentile95: number;
+      probPositiveReturn: number;
+    } | null;
   };
+
+  // 16. 成本敏感性
   costSensitivity: {
-    costDrag: number;
-    sensitivityRange: Array<{ costMultiplier: number; netReturn: number }>;
+    costAssumption: { commission: number; stampTax: number; slippage: number; impactCost: number };
+    beforeAfterCost: Array<{ metric: string; beforeCost: number; afterCost: number }>;
+    costDragRatio: number;
+    slippageSensitivity: Array<{ slippageBp: number; annualizedReturn: number; sharpe: number }>;
+    annualTurnover: number;
   };
+
+  // 17. 基准比较
   benchmarkComparison: {
-    benchmarkName: string;
-    comparisonMetrics: Array<{ metric: string; strategy: number; benchmark: number; difference: number }>;
+    rows: Array<{ metric: string; strategy: string; benchmark: string; excess: string }>;
   };
+
+  // 18. 风险提示与附录
   riskWarnings: {
-    keyRisks: string[];
-    redLines: string[];
+    limitations: Array<{ category: string; description: string }>;
+    codeSnippets: Array<{ title: string; language: string; code: string }>;
+    glossary: Array<{ term: string; definition: string }>;
+    redLines: Array<{ rule: string; threshold: string; actual: string; passed: boolean }>;
   };
+
+  status: string;
+  generatedAt: string;
 }
 
 export interface BacktestReportSummary {

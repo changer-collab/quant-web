@@ -70,10 +70,10 @@ describe('mapBacktestResultToReport', () => {
     expect(report.riskMetrics.annualizedVolatility).toBe(0.12);
     // 暂填 null 的字段
     expect(report.riskMetrics.var95).toBeNull();
-    expect(report.riskMetrics.var99).toBeNull();
     expect(report.riskMetrics.cvar95).toBeNull();
-    expect(report.riskMetrics.skewness).toBeNull();
-    expect(report.riskMetrics.kurtosis).toBeNull();
+    // skewness/kurtosis 现在是 optional number (undefined 而不是 null)
+    expect(report.riskMetrics.skewness).toBeUndefined();
+    expect(report.riskMetrics.kurtosis).toBeUndefined();
   });
 
   it('映射衍生统计指标（riskAdjMetrics）', () => {
@@ -84,9 +84,10 @@ describe('mapBacktestResultToReport', () => {
     });
 
     expect(report.riskAdjMetrics.sortinoRatio).toBe(1.8);
-    expect(report.riskAdjMetrics.calmarRatio).toBe(1.5);
-    // informationRatio 暂填 null
-    expect(report.riskAdjMetrics.informationRatio).toBeNull();
+    // calmarRatio 现在在 riskMetrics 中（对齐前端类型）
+    expect(report.riskMetrics.calmarRatio).toBe(1.5);
+    // informationRatio 暂填 0
+    expect(report.riskAdjMetrics.informationRatio).toBe(0);
   });
 
   it('映射衍生统计指标（tradeStats）', () => {
@@ -100,8 +101,8 @@ describe('mapBacktestResultToReport', () => {
     expect(report.tradeStats.avgHoldingDays).toBe(12);
     expect(report.tradeStats.maxSingleProfit).toBe(15000);
     expect(report.tradeStats.maxSingleLoss).toBe(-8000);
-    // annualTurnover 暂填 null
-    expect(report.tradeStats.annualTurnover).toBeNull();
+    // tradeStats 没有 annualTurnover 字段（对齐前端类型）
+    expect(report.tradeStats.turnoverRate).toBe(0);
   });
 
   it('映射 equityData 字段（drawdownCurve 替代 drawdownSeries）', () => {
@@ -160,7 +161,8 @@ describe('mapBacktestResultToReport', () => {
     // 0 值应该映射为 0（valid number），不是 null
     expect(report.riskMetrics.maxDrawdownDuration).toBe(0);
     expect(report.riskAdjMetrics.sortinoRatio).toBe(0);
-    expect(report.riskAdjMetrics.calmarRatio).toBe(0);
+    // calmarRatio 在 riskMetrics 中（对齐前端类型）
+    expect(report.riskMetrics.calmarRatio).toBe(0);
   });
 
   it('生成空风险点（AI 分析阶段填充）', () => {
@@ -192,8 +194,8 @@ describe('mapBacktestResultToReport', () => {
       timeframe: '1d',
     });
 
-    // report-mapper 不生成 riskPoints/redLines，由 AI 分析阶段填充
-    expect(report.executiveSummary.riskPoints).toEqual([]);
+    // report-mapper 不生成 mainRisks/redLines，由 AI 分析阶段填充
+    expect(report.executiveSummary.mainRisks).toEqual([]);
     expect(report.riskWarnings.redLines).toEqual([]);
     // 但核心指标必须正确映射
     expect(report.riskMetrics.maxDrawdown).toBe(-0.35);

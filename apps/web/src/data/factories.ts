@@ -340,6 +340,8 @@ export function mapBacktestResultToReport(
     strategyName: config.strategyName ?? source?.strategyName ?? '',
     overview: {
       name: config.strategyName ?? source?.overview?.name ?? '',
+      logic: String(config.logic ?? ''),
+      instruments: [String(config.instruments?.[0] ?? config.symbol ?? '')],
       timeRange: {
         start: tsToDate(config.startDate ?? 0) || source?.overview?.timeRange.start || '',
         end: tsToDate(config.endDate ?? 0) || source?.overview?.timeRange.end || '',
@@ -362,13 +364,22 @@ export function mapBacktestResultToReport(
     },
     riskMetrics: {
       maxDrawdown: metrics.maxDrawdown ?? 0,
+      maxDrawdownDuration: metrics.maxDrawdownDuration ?? 0,
+      annualizedVolatility: metrics.annualizedVolatility ?? 0,
+      calmarRatio: metrics.calmarRatio ?? 0,
+      sortinoRatio: metrics.sortinoRatio ?? undefined,
     },
     riskAdjMetrics: {
       sharpeRatio: metrics.sharpeRatio ?? 0,
+      sortinoRatio: metrics.sortinoRatio ?? 0,
     },
     tradeStats: {
       totalTrades: metrics.totalTrades ?? 0,
       winRate: metrics.winRate ?? 0,
+      profitLossRatio: bt.profitLossRatio ?? 0,
+      avgHoldingDays: bt.avgHoldingDays ?? 0,
+      maxSingleProfit: bt.maxSingleProfit ?? 0,
+      maxSingleLoss: bt.maxSingleLoss ?? 0,
     },
     executiveSummary: {
       keyMetrics: {
@@ -394,7 +405,7 @@ export function mapBacktestResultToReport(
         oneLineConclusion: (es.oneLineConclusion as string) || report.executiveSummary.oneLineConclusion,
         recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
         recommendationReason: (es.recommendationReason as string) || report.executiveSummary.recommendationReason,
-        mainRisks: (es.mainRisks as string[]) ?? report.executiveSummary.mainRisks,
+        mainRisks: (es.mainRisks as string[]) ?? (es.riskPoints as string[]) ?? report.executiveSummary.mainRisks,
       };
     }
     const ov = analysis.overview as Record<string, unknown> | undefined;
@@ -408,11 +419,13 @@ export function mapBacktestResultToReport(
     }
     const iss = analysis.issues as Record<string, unknown> | undefined;
     if (iss) {
+      // Handle both API format (object with fields) and old format
+      const apiIssues = iss as Record<string, unknown>;
       report.issues = {
         ...report.issues,
-        overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
-        liquidityAssessment: (iss.liquidityAssessment as string) || report.issues.liquidityAssessment,
-        capacityEstimate: (iss.capacityEstimate as string) || report.issues.capacityEstimate,
+        overfittingRisk: (apiIssues.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+        liquidityAssessment: (apiIssues.liquidityAssessment as string) || report.issues.liquidityAssessment,
+        capacityEstimate: (apiIssues.capacityEstimate as string) || report.issues.capacityEstimate,
       };
     }
     const con = analysis.conclusion as Record<string, unknown> | undefined;
