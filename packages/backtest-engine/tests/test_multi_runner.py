@@ -353,6 +353,34 @@ def test_multi_runner_sub_equity_present():
     assert len(result.sub_equity["600001"]) == 3
 
 
+def test_multi_runner_sub_equity_sums_to_total():
+    """归因核心不变量：各标的权益之和 ≈ 总权益曲线（每个时间点）。"""
+    selector = BuyAllSelector()
+    timer = FirstBarBuyTimer()
+    sizer = SmallQtySizer()
+    composite = DefaultComposite(selector, timer, sizer)
+
+    bars = {
+        "600000": _make_bars("600000", 3, 10.0),
+        "600001": _make_bars("600001", 3, 20.0),
+    }
+
+    runner = MultiSymbolRunner(
+        strategy=composite, bars=bars, initial_cash=100000,
+    )
+    result = runner.run()
+
+    assert result.sub_equity is not None
+    # 逐时间点比对：sum(per-symbol equity) ≈ total equity
+    for i, total_point in enumerate(result.equity_curve):
+        sub_sum = sum(
+            curve[i].equity for curve in result.sub_equity.values()
+        )
+        assert abs(sub_sum - total_point.equity) < 1e-6, (
+            f"时间点 {i}: 各标的权益之和 {sub_sum} ≠ 总权益 {total_point.equity}"
+        )
+
+
 def test_single_symbol_backtest_no_sub_equity():
     """单标的回测结果 sub_equity 为 None（BacktestRunner 不产生 sub_equity）。"""
     from quantforge_backtest import BacktestRunner

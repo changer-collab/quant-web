@@ -86,9 +86,16 @@ class MultiSymbolRunner:
         prev_closes: dict[str, float] = {}
 
         # 多标的归因：为每个 symbol 追踪独立权益曲线
-        # per-symbol equity = 该 symbol 持仓市值 + 按股票数量均分的现金份额
+        # per-symbol equity = 该 symbol 持仓市值 + 该 symbol 的现金桶
+        # 现金桶初始均分初始资金，成交时按该笔交易金额+成本增减对应桶。
+        # 这样 sum(per-symbol equity) 在每个时间点都精确等于总权益。
         per_symbol_equity: dict[str, list[EquityPoint]] = {}
-        total_positions_count: int = 0  # 所有 symbol 持仓股数之和，用于现金分配
+        symbol_cash: dict[str, float] = {}
+        _symbols = list(self.bars_by_symbol.keys())
+        if _symbols:
+            _cash_share = self.initial_cash / len(_symbols)
+            for _sym in _symbols:
+                symbol_cash[_sym] = _cash_share
 
         # 策略上下文实现
         class _Context:
@@ -183,6 +190,17 @@ class MultiSymbolRunner:
                     all_orders[idx] = filled_order
                     all_trades.append(trade)
                     portfolio.apply_trade(trade)
+                    # 归因：更新该 symbol 的现金桶（与 portfolio 现金口径一致）
+                    amount = trade.price * trade.quantity
+                    cost = 0.0
+                    if self.market_rules is not None:
+                        cost = self.market_rules.calc_total_cost(
+                            amount, trade.symbol, trade.side == OrderSide.Sell
+                        )
+                    if trade.side == OrderSide.Sell:
+                        symbol_cash[trade.symbol] = symbol_cash.get(trade.symbol, 0.0) + amount - cost
+                    else:
+                        symbol_cash[trade.symbol] = symbol_cash.get(trade.symbol, 0.0) - amount - cost
                     filled_indices.append(i)
 
             # 移除已成交订单
@@ -197,33 +215,17 @@ class MultiSymbolRunner:
             account = portfolio.get_account()
             equity_curve.append(EquityPoint(timestamp=current_ts, equity=account.equity))
 
-            # 更新 per-symbol 归因权益
-            positions = portfolio.get_all_positions()
-            total_qty = sum(p.quantity for p in positions)
-            cash_per_qty = account.cash / total_qty if total_qty > 0 else 0.0
-            # 跟踪哪些 symbol 在这个时间点有记录
-            recorded = set()
-            for p in positions:
-                if p.symbol not in per_symbol_equity:
-                    per_symbol_equity[p.symbol] = []
-                sym_equity = p.market_value + p.quantity * cash_per_qty
-                per_symbol_equity[p.symbol].append(
+            # 更新 per-symbol 归因权益 = 该 symbol 持仓市值 + 该 symbol 现金桶
+            pos_by_symbol = {p.symbol: p for p in portfolio.get_all_positions()}
+            for symbol in self.bars_by_symbol:
+                pos = pos_by_symbol.get(symbol)
+                market_value = pos.market_value if pos else 0.0
+                sym_equity = market_value + symbol_cash.get(symbol, 0.0)
+                if symbol not in per_symbol_equity:
+                    per_symbol_equity[symbol] = []
+                per_symbol_equity[symbol].append(
                     EquityPoint(timestamp=current_ts, equity=sym_equity)
                 )
-                recorded.add(p.symbol)
-            # 无持仓的标的：在记录点补 0 权益点
-            for symbol in self.bars_by_symbol:
-                if symbol not in recorded:
-                    if symbol in per_symbol_equity:
-                        # 曾经有持仓现已清仓 → 补 0
-                        per_symbol_equity[symbol].append(
-                            EquityPoint(timestamp=current_ts, equity=0.0)
-                        )
-                    else:
-                        # 从未持仓 → 也补一个 0 点，保证曲线长度一致
-                        per_symbol_equity[symbol] = [
-                            EquityPoint(timestamp=current_ts, equity=0.0)
-                        ]
 
             # 推送给策略
             self.strategy.on_bars(bars_at_ts, context)
