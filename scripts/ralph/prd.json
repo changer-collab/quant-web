@@ -1,72 +1,62 @@
 {
-  "feature": "real-backtest-report",
+  "feature": "full-loop-real-data-obsidian",
   "branchName": "ralph/real-backtest-report",
-  "description": "打通回测报告全链路真实数据：补全 Python 引擎缺失指标、统一 API/前端两套类型、修复前端 null/空数据渲染、确保端到端数据流通。",
+  "description": "拆件诊断修复回测全链路：每种故障隔离修复并验证后进入下一层。",
   "qualityChecks": {
     "js": "pnpm lint && pnpm test && pnpm build",
-    "python": "cd packages/backtest-engine && python -m pytest -v"
+    "python": "cd packages/backtest-engine && python -m pytest -v && cd packages/obsidian-sync && python -m pytest -v"
   },
   "userStories": [
     {
       "id": "story-1",
-      "title": "补全 Python 回测引擎缺失的衍生统计指标",
-      "description": "当前 BacktestMetrics 只有 6 个基础字段（totalReturn/annualizedReturn/sharpeRatio/maxDrawdown/winRate/totalTrades），但 BacktestReportFull 需要 30+ 个指标。需要在 packages/backtest-engine/quantforge_backtest/metrics.py 的 calc_metrics() 中新增：sortinoRatio（下行偏差）、calmarRatio（年化收益/最大回撤）、annualizedVolatility（日收益标准差×√252）、maxDrawdownDuration（从回撤峰值到新高的最长天数）。同时新增 packages/backtest-engine/quantforge_backtest/types.py 的 BacktestMetrics 字段声明。同时更新 BacktestResult 的 trades 列表，从中计算：profitLossRatio（平均盈利/平均亏损）、avgHoldingDays（平均持仓天数）、maxSingleProfit、maxSingleLoss。最后更新 packages/strategy-runtime/quantforge_strategy/commands/backtest.py 的 _result_to_dict()，确保新指标通过 _to_camel 转换后正确传递。",
+      "title": "先观测：在 Worker 和 API 添加关键日志埋点，跑一次回测收集实际故障证据",
+      "description": "当前不确定故障位置，不猜不修。先加诊断埋点，跑一次回测收集证据链。\n\n需埋点位置：\n1. `apps/worker/src/main.ts` processTask() 中：调用 handler.handle() 前后各加一行 console.log 打印传入 payload 和返回的 result key 集合\n2. `apps/worker/src/handlers/backtest-handler.ts`：handle() 中 Python CLI 调用成功后，console.log 打印 backtestData 的顶层 key 和 metrics 内容\n3. `apps/api/src/routes/task.ts` /complete 路由：收到请求后 console.log 打印 result 的顶层 key 和 backtestResult.metrics\n4. `apps/web/src/hooks/useResearchWorkflow.ts` handleRunResearch：SSE result 事件中 console.log 打印 event.data 的顶层 key\n\n验证方式：启动 API + Worker + 前端，提交一次 dual_ma 回测，查看各端控制台输出的日志。\n\n此 story 不改业务逻辑，只加日志。如果日志不足以定位，再加。",
       "acceptanceCriteria": [
-        "BacktestMetrics 新增 sortinoRatio、calmarRatio、annualizedVolatility、maxDrawdownDuration 字段",
-        "BacktestResult 新增 profitLossRatio、avgHoldingDays、maxSingleProfit、maxSingleLoss 字段",
-        "_result_to_dict() 正确传递所有新字段（通过 _to_camel 转换）",
-        "cd packages/backtest-engine && python -m pytest -v 通过",
-        "在 Python REPL 或测试中验证：sortinoRatio > 0、calmarRatio > 0、annualizedVolatility > 0"
+        "日志覆盖 Worker 收到 payload → Python 回测结果 → API /complete → 前端 SSE result 的所有链路",
+        "提交 dual_ma 回测后，能从日志看到每一层的输出",
+        "无 TypeScript 构建错误（pnpm build 通过）"
       ],
-      "agent": "backtest-agent",
+      "agent": "fullstack-agent",
       "priority": 1,
       "passes": true
     },
     {
       "id": "story-2",
-      "title": "统一 API BacktestResult 和 BacktestReportFull 类型，对齐 Web 侧",
-      "description": "apps/api/src/types.ts 中：(1) BacktestResult 新增 sortinoRatio/calmarRatio/annualizedVolatility/maxDrawdownDuration/profitLossRatio/avgHoldingDays/maxSingleProfit/maxSingleLoss 字段；(2) BacktestReportFull.equityData.monthlyReturns 字段名 return → return_pct；(3) BacktestReportFull.equityData.annualReturns 字段名 return → return_pct；(4) BacktestReportFull.equityData.drawdownSeries 重命名为 drawdownCurve。同时检查 apps/api/tests/ 中相关测试是否需要更新。",
+      "title": "修复 Worker 失败问题（依据 story-1 日志定位）",
+      "description": "依据 story-1 的日志分析 Worker 失败根因。可能是：\n- Python CLI 回测命令报错（如 dataRange.startTs 格式不对）\n- AI analyze 命令报错（如 LLM 调用失败导致异常未正确捕获）\n- Obsidian sync 命令报错（如 OBSIDIAN_API_URL 未设置时 Python 端抛异常而非优雅跳过）\n- PythonBridge 解析 NDJSON 失败\n- API /complete 接口不可达或返回非 2xx\n\n根据实际日志定位后修复（只修根因）。\n\n示例修复（根据实际情况选择）：\n- 如果 Python CLI 报错：修复 dataClient.query_bars 参数或 CLI 命令构建\n- 如果 AI analyze 报错：加强 try-catch 范围\n- 如果 sync 报错：加强 sync_backtest.py 的异常处理\n- 如果 API 不可达：检查 API_BASE_URL 配置或重试机制",
       "acceptanceCriteria": [
-        "BacktestResult 包含所有新指标字段（sortinoRatio/calmarRatio/annualizedVolatility/maxDrawdownDuration/profitLossRatio/avgHoldingDays/maxSingleProfit/maxSingleLoss）",
-        "BacktestReportFull.equityData.monthlyReturns 类型为 { year: number; month: number; return_pct: number }",
-        "BacktestReportFull.equityData.annualReturns 类型为 { year: number; return_pct: number }",
-        "BacktestReportFull.equityData.drawdownCurve 替代 drawdownSeries",
+        "回测任务能从 pending → running → completed 正常流转",
+        "Worker 控制台没有 ERROR 级别的输出",
         "pnpm --filter @quant/api test 通过",
-        "pnpm --filter @quant/api build 通过"
+        "pnpm build 通过"
       ],
-      "agent": "api-agent",
+      "agent": "fullstack-agent",
       "priority": 2,
       "dependsOn": ["story-1"],
       "passes": true
     },
     {
       "id": "story-3",
-      "title": "修复 API report-mapper 的字段映射和 null 处理",
-      "description": "apps/api/src/services/report-mapper.ts 的 mapBacktestResultToReport 中：(1) equityData.drawdownSeries → drawdownCurve；(2) 从 BacktestResult 新指标填充 returnMetrics（alpha/beta 暂填 0，后续 AI 分析覆盖）、riskMetrics（annualizedVolatility/var95/cvar95/skewness/kurtosis/maxDrawdownDuration）、riskAdjMetrics（sortinoRatio/calmarRatio/informationRatio/treynorRatio）、tradeStats（profitLossRatio/avgHoldingDays/maxSingleProfit/maxSingleLoss）；(3) 所有 nullable 字段用 null 而非 undefined，避免前端序列化问题。同时更新 apps/api/tests/services/report-mapper.test.ts，覆盖新字段的映射测试。",
+      "title": "修复前端 Job 列表名称显示异常（显示 '运行研究：backtest 草稿 #1'）",
+      "description": "当前 job 名称显示为 '运行研究：backtest 草稿 #1' 而非策略名（如 '运行研究：dual_ma'）。\n\n根因分析：`useResearchWorkflow.ts` 的 `handleRunResearch()` 中通过 `.then(taskId => ...)` 闭包访问的 `selectedStrategyForLanguage` 可能为 undefined（因为 .then 是异步的，闭包中捕获的是 render 时的引用，而 `selectedStrategyForLanguage` 是一个 useMemo 计算值）。\n\n修复：\n1. 在 `createResearchJob` 调用处，直接使用 `selectedStrategy`（同步变量）而非 `selectedStrategyForLanguage`（useMemo 值）来传入 strategy\n2. 或者确保 `.then()` 闭包中使用的变量是 stable ref（如通过 useRef 保存最新值）\n\n具体修改 `apps/web/src/hooks/useResearchWorkflow.ts` 的 `handleRunResearch`：\n- 在 .then() 之前将 strategy 信息存为局部变量\n- 在 createResearchJob 和 createResearchReport 时使用局部变量\n\n验证：提交 dual_ma 回测，job 列表显示 '运行研究：dual_ma' 而非 'backtest 草稿'。",
       "acceptanceCriteria": [
-        "report-mapper 输出 equityData.drawdownCurve（非 drawdownSeries）",
-        "report-mapper 输出 riskMetrics 包含 annualizedVolatility/maxDrawdownDuration 的真实值",
-        "report-mapper 输出 riskAdjMetrics 包含 sortinoRatio/calmarRatio 的真实值",
-        "report-mapper 输出 tradeStats 包含 profitLossRatio/avgHoldingDays/maxSingleProfit/maxSingleLoss 的真实值",
-        "pnpm --filter @quant/api test 通过",
-        "pnpm --filter @quant/api build 通过"
+        "提交 dual_ma 回测后，job 列表显示 '运行研究：dual_ma'",
+        "提交 A 策略，job 列表显示 '运行研究：{A策略名}'",
+        "pnpm --filter @quant/web test 通过",
+        "pnpm build 通过"
       ],
-      "agent": "api-agent",
+      "agent": "frontend-agent",
       "priority": 3,
       "dependsOn": ["story-2"],
       "passes": true
     },
     {
       "id": "story-4",
-      "title": "修复前端报告组件 null/空数据渲染问题",
-      "description": "以下组件在数据为 null/0 时会显示乱码或误导信息，需要逐个修复：(1) ReportRiskMetrics：${m.maxDrawdownDuration} 天 显示 'null 天' → 前端判断 null 时显示 '--'；风险子弹图 var95/annualizedVolatility 为 0 时显示 0.0% → null 时不渲染该维度；(2) ReportReturnMetrics：alpha 为 0 时显示 '0.0%' → null 时卡片不显示；(3) ReportRiskAdjMetrics：sortinoRatio/informationRatio/treynorRatio 为 0 时显示 '0.00' → null 时卡片不显示；(4) ReportRiskMetrics 雷达图：4/6 维度为 0 导致图形塌缩 → null 维度不纳入 radar indicator；(5) ReportCostSensitivity：costDragRatio/annualTurnover 为 0 时显示 0.0%/0x → null 时显示 '--'。",
+      "title": "修复 SSE error 事件后前端仍跳转报告页的问题",
+      "description": "当前 Worker 失败后，前端 SSE 收到 error 事件，但 error 事件处理中只设置了 job 状态为 Failed，没有阻止跳转到报告页。`handleRunResearch` 中 submitBacktestTask 的 .then() 内先创建了 job（状态 Running），然后 submitAndStream 注册事件回调。如果 Worker 很快失败，SSE 可能在 .then() 完成时已发送了 status:failed → result:error，导致 createResearchReport 和 mapBacktestResultToReport 仍然执行。\n\n修复：\n1. `useResearchWorkflow.ts` 中，在 SSE error 事件处理中：清除已创建的 report（如果有）、并且不要跳转到报告页\n2. 或者更根本：只有在 SSE result 事件（而非 error 事件）时才创建 report 并 setActiveReportId\n3. SSE event 中增加 `data.error` 的兜底判断\n\n此外，如果任务失败但仍然想查看历史回测数据，应该在 report 页面显示「任务失败」的状态提示而非空页面。\n\n验证：提交一个必然会失败的回测（如不存在的策略名），确认不会跳转到报告页。",
       "acceptanceCriteria": [
-        "ReportRiskMetrics：maxDrawdownDuration 为 null 时显示 '--' 而非 'null 天'",
-        "ReportRiskMetrics：风险子弹图在 var95/annualizedVolatility 为 null 时不渲染对应维度",
-        "ReportReturnMetrics：alpha 为 null 时不显示该卡片",
-        "ReportRiskAdjMetrics：sortinoRatio/informationRatio/treynorRatio 为 null 时不显示对应卡片",
-        "ReportRiskMetrics 雷达图：null 维度不纳入 indicator，避免塌缩",
-        "ReportCostSensitivity：costDragRatio/annualTurnover 为 null 时显示 '--'",
+        "Worker 失败后前端不跳转到报告页",
+        "job 状态显示为 Failed（红色/错误状态）",
         "pnpm --filter @quant/web test 通过",
         "pnpm build 通过"
       ],
@@ -77,39 +67,51 @@
     },
     {
       "id": "story-5",
-      "title": "验证 API 报告存储/读取：reportData 包含完整真实数据",
-      "description": "启动 API dev server，用 curl 测试报告端到端：(1) 提交回测任务 → 等待完成 → 检查数据库中 reportData JSON 是否包含 equityCurve/drawdownCurve/monthlyReturns/annualReturns（非空数组）以及新指标（sortinoRatio/calmarRatio/annualizedVolatility/maxDrawdownDuration）；(2) GET /api/reports/:id 返回的 reportData 是否完整。同时补充 apps/api/tests/routes/report.test.ts 的测试用例，验证 reportData 字段的存储和读取包含衍生统计。",
+      "title": "打通 Obsidian 同步链路并补齐同步内容",
+      "description": "更新 `packages/strategy-runtime/quantforge_strategy/commands/sync_backtest.py` 的 `_dict_to_backtest_result()`：补齐 sortino_ratio/calmar_ratio/annualized_volatility/max_drawdown_duration/profit_loss_ratio/avg_holding_days/max_single_profit/max_single_loss 字段以及 drawdownCurve/monthlyReturns/annualReturns 数组。\n\n更新 `packages/obsidian-sync/quantforge_obsidian/builders/backtest.py` 的 `build_backtest_report()`：在绩效表格中添加新指标，添加回撤曲线/月度收益/年度收益的 markdown 表格。\n\n同时修复 obsidian-sync 在不设置 OBSIDIAN_API_URL 时优雅跳过（当前已有该逻辑但验证是否正常）。",
       "acceptanceCriteria": [
-        "apps/api/tests/routes/report.test.ts 新增 reportData 存储/读取测试用例",
-        "curl GET /api/reports/:id 返回的 reportData 包含 drawdownCurve（非空数组）",
-        "curl GET /api/reports/:id 返回的 reportData 包含 monthlyReturns（非空数组）",
-        "curl GET /api/reports/:id 返回的 reportData 包含 sortinoRatio/calmarRatio（非零值）",
-        "pnpm --filter @quant/api test 通过"
+        "sync_backtest.py 的 _dict_to_backtest_result() 映射所有新指标字段和 equityData 数组",
+        "build_backtest_report() 包含 sortinoRatio/calmarRatio/annualizedVolatility/profitLossRatio/avgHoldingDays 和 equityData 表格",
+        "未设置 OBSIDIAN_API_URL 时不抛异常",
+        "cd packages/obsidian-sync && python -m pytest -v 通过",
+        "cd packages/backtest-engine && python -m pytest -v 通过"
       ],
-      "agent": "api-agent",
+      "agent": "obsidian-agent",
       "priority": 5,
-      "dependsOn": ["story-3"],
-      "passes": true
+      "dependsOn": ["story-2"],
+      "passes": false
     },
     {
       "id": "story-6",
-      "title": "端到端验收：回测报告展示完整真实数据",
-      "description": "启动 API + Worker + 前端，跑一次 dual_ma 回测，验证全链路：(1) SSE 推送包含 drawdownCurve/monthlyReturns/annualReturns；(2) 前端权益曲线图展示真实数据点；(3) 回撤曲线图展示非零回撤值；(4) 月度热力图展示非空月份数据；(5) 年度柱状图展示非空年度数据；(6) 风险指标卡片展示真实 sortinoRatio/calmarRatio（非 0）；(7) 交易统计卡片展示真实 profitLossRatio/avgHoldingDays；(8) 刷新页面后历史报告仍展示上述数据；(9) 控制台无 TypeScript 类型错误。这是验收故事，不改代码，只验证。",
+      "title": "完善回测功能：前端 Workspace 面板添加数据范围选择器",
+      "description": "在 `apps/web/src/components/workspace.tsx` 的 WorkspaceMockup 中添加日期范围选择输入框：\n- 起始日期：`<input type=\"date\">`\n- 结束日期：`<input type=\"date\">`\n- 默认值回填 2023-01-01 ~ 2024-12-31\n- onChange 时将日期字符串转为毫秒时间戳更新 backtestConfig.startTs/endTs\n- 添加工具函数 tsToDate/dateToTs",
       "acceptanceCriteria": [
-        "启动 API（pnpm --filter @quant/api dev）、Worker（tsx apps/worker/src/main.ts）、前端（pnpm --filter @quant/web dev）",
-        "在前端提交 dual_ma 回测任务并等待完成",
-        "报告页权益曲线图展示非空数据点",
-        "报告页回撤曲线图展示非零回撤值",
-        "报告页月度热力图展示非空月份数据",
-        "报告页年度柱状图展示非空年度数据",
-        "风险指标卡片 sortinoRatio/calmarRatio 为非零真实值",
-        "交易统计卡片 profitLossRatio/avgHoldingDays 为非零真实值",
-        "刷新页面后历史报告仍展示上述真实数据",
+        "Workspace 面板显示起始日期和结束日期输入框（type=date）",
+        "选择日期后提交回测时 payload 包含正确的 startTs/endTs",
+        "pnpm --filter @quant/web test 通过",
+        "pnpm build 通过"
+      ],
+      "agent": "frontend-agent",
+      "priority": 6,
+      "dependsOn": ["story-3"],
+      "passes": false
+    },
+    {
+      "id": "story-7",
+      "title": "端到端验证：回测全链路展示真实数据",
+      "description": "启动 API + Worker + 前端，跑一次 dual_ma 回测，验证：\n- SSE 正常推送（progress → status → result）\n- job 列表显示策略名称且状态为 Completed\n- 报告页权益曲线、回撤曲线、月度热力图、年度柱状图展示真实数据\n- 风险指标卡片展示非零真实值\n- 刷新页面后历史报告仍在\n- 控制台无 TypeScript 错误\n\n此 story 不改代码，只验证。",
+      "acceptanceCriteria": [
+        "前端报告页权益曲线/回撤曲线展示真实数据点",
+        "月度热力图展示非空月份数据",
+        "年度柱状图展示非空年度数据",
+        "风险指标卡片 sortinoRatio/calmarRatio 为非零值",
+        "交易统计卡片 profitLossRatio/avgHoldingDays 为非零值",
+        "刷新页面后历史报告仍展示数据",
         "控制台无 TypeScript 类型错误"
       ],
       "agent": "fullstack-agent",
-      "priority": 6,
-      "dependsOn": ["story-1", "story-2", "story-3", "story-4", "story-5"],
+      "priority": 7,
+      "dependsOn": ["story-4", "story-5", "story-6"],
       "passes": false
     }
   ]
