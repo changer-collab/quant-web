@@ -95,7 +95,7 @@ class KDJStrategy(Strategy):
 
             if golden_cross and k < self._oversold and not self._bought:
                 account = context.get_account()
-                qty = int(account.cash / bar.close)
+                qty = int(account.cash / bar.close / 100) * 100
                 if qty > 0:
                     context.submit_order(OrderRequest(
                         symbol=bar.symbol, side=OrderSide.Buy,
