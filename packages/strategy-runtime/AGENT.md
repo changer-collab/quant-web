@@ -7,7 +7,7 @@
 - 接口优先稳定，避免过度抽象。
 - 策略运行时可 re-export 数据客户端的行情类型（Bar、Tick、TimeFrame 等），供下游模块通过合法依赖链获取。
 - CLI 入口是 Worker 子进程调用的唯一入口，不直接暴露 HTTP。
-- CLI 命令通过延迟导入加载下游包，strategy-runtime 本身不依赖 backtest-engine、factor-lab、ai-engine、strategies、data-client。
+- CLI 命令通过延迟导入加载下游包，strategy-runtime 本身不依赖 backtest-engine、factor-lab、ai-engine、strategies、data-client；`commands/__init__.py` 也必须用函数内导入，避免导入单个命令时连带加载 sibling 命令依赖。
 - factorEval 只做命令编排；公式解析和计算委托给 factor-lab 的 `FormulaFactor`，不要在 strategy-runtime 内重复实现公式求值逻辑。
 - 更新本目录能力或进度时，同步更新本目录 `README.md` 和 `AGENT.md`，并按需同步根级文档。
 

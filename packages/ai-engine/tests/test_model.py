@@ -49,3 +49,18 @@ def test_predict_before_train():
         assert False, "should raise"
     except RuntimeError:
         pass
+
+
+def test_save_and_load_round_trips_trained_model(tmp_path):
+    X, y = _make_data()
+    trainer = ModelTrainer(TrainConfig(model_type=ModelType.RandomForest))
+    trainer.train(X, y)
+    expected = trainer.predict(X[:5]).tolist()
+
+    model_path = tmp_path / "model.joblib"
+    trainer.save(model_path)
+    loaded = ModelTrainer.load(model_path)
+
+    assert model_path.exists()
+    assert loaded.config == trainer.config
+    assert loaded.predict(X[:5]).tolist() == expected

@@ -117,6 +117,7 @@ packages/factor-lab -> packages/strategy-runtime
 packages/factor-lab -> packages/data-client
 packages/ai-engine -> packages/data-client
 packages/strategies -> packages/strategy-runtime
+packages/strategies -> packages/ai-engine（仅 AI 预测策略消费已训练模型/预测器）
 packages/obsidian-sync -> packages/data-client
 packages/obsidian-sync -> packages/strategy-runtime
 packages/obsidian-sync -> packages/backtest-engine
@@ -146,7 +147,7 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - AI 引擎 Agent：不做回测撮合，不做实盘执行；特征提取可被因子挖掘复用，但因子评估指标的计算不是 AI 引擎的职责。报告分析文本生成放在 `report_analysis/` 子模块，接口设计为"输入 dict，输出文本"，不依赖 BacktestResult 等业务类型，避免跨包类型耦合。当前用规则引擎+模板生成，预留 LLM 接口。
 - 策略运行时 Agent：接口优先稳定，避免过度抽象；策略运行时可 re-export 数据客户端的行情类型（Bar、Tick、TimeFrame 等），供下游模块通过合法依赖链获取；CLI 入口是 Worker 子进程调用的唯一入口。
 - 因子工坊 Agent：因子定义和计算接口优先稳定；因子评估指标的计算不在此实现，委托给回测引擎。
-- 策略库 Agent：策略不直接依赖网站后端。
+- 策略库 Agent：策略不直接依赖网站后端；AI 预测策略可依赖 AI 引擎加载已训练模型并生成信号，但不在策略库内训练模型。
 - 循环引擎 Agent：当前阶段只定义类型骨架（LoopType/LoopStatus/IterationStatus/LoopConfig/IterationRecord/LoopRecord/LoopCondition/LoopSummary），不实现调度引擎、不实现状态持久化、不自带进程入口；循环调度始终由 Worker 负责，循环状态持久化始终由 Worker 通过 API 任务表实现；迭代结果只存引用和摘要，不内联其他引擎的完整结果类型；单次闭环（backtest → obsidian-sync、backtest → web 报告展示）打通后才进入循环引擎的实现阶段。
 
 ## 全局硬性规则

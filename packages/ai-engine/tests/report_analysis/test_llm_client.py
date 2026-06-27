@@ -1,5 +1,7 @@
 """LLM 客户端测试"""
 
+import json
+
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -50,6 +52,7 @@ class TestLLMClient:
         mock_resp.json.return_value = {
             "choices": [{"message": {"content": '{"test": "ok"}'}}]
         }
+        mock_resp.text = json.dumps(mock_resp.json.return_value, ensure_ascii=False)
 
         with patch("httpx.Client") as MockClient:
             instance = MockClient.return_value.__enter__.return_value
@@ -97,6 +100,7 @@ class TestLLMClient:
         mock_resp.json.return_value = {
             "choices": [{"message": {"content": "任何文本都可以"}}]
         }
+        mock_resp.text = json.dumps(mock_resp.json.return_value, ensure_ascii=False)
 
         with patch("httpx.Client") as MockClient:
             instance = MockClient.return_value.__enter__.return_value

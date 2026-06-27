@@ -56,7 +56,7 @@
       ],
       "agent": "ai-agent",
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-4",
