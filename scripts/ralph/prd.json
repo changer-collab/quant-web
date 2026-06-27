@@ -74,7 +74,7 @@
       "agent": "backtest-agent",
       "priority": 4,
       "dependsOn": ["story-1"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-5",
@@ -90,7 +90,7 @@
       ],
       "agent": "data-client-agent",
       "priority": 5,
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-6",
@@ -108,7 +108,7 @@
       "agent": "backtest-agent",
       "priority": 6,
       "dependsOn": ["story-1"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-7",
