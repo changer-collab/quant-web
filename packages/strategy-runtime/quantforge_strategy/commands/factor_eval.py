@@ -61,10 +61,14 @@ def _make_factor(info: dict) -> Factor:
     from quantforge_factor import FactorDefinition, FactorStatus, FormulaFactor
     from quantforge_strategy import ResearchMode
 
+    formula = info.get("formula")
+    if formula is None:
+        raise ValueError("factor.formula is required")
+
     definition = FactorDefinition(
         id=info.get("id", "custom"),
         name=info.get("name", "custom"),
-        formula=info.get("formula", "close"),
+        formula=formula,
         category=info.get("category", "custom"),
         modes=[ResearchMode(m) for m in info.get("modes", ["traditional"])],
         frequency=TimeFrame(info.get("frequency", "1d")),

@@ -28,6 +28,17 @@ def test_factor_eval_module_delays_downstream_imports(monkeypatch) -> None:
     assert hasattr(module, "run_factor_eval")
 
 
+def test_make_factor_rejects_missing_formula() -> None:
+    from quantforge_strategy.commands.factor_eval import _make_factor
+
+    try:
+        _make_factor({"id": "momentum_5d"})
+    except ValueError as exc:
+        assert str(exc) == "factor.formula is required"
+    else:
+        raise AssertionError("missing formula should be rejected")
+
+
 def test_run_factor_eval_returns_validation_error_for_illegal_formula(monkeypatch) -> None:
     from quantforge_strategy.commands.factor_eval import run_factor_eval
 
