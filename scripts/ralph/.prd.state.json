@@ -1,19 +1,10 @@
 {
-  "iterations": 3,
+  "iterations": 0,
   "lastExitCode": 0,
-  "lastError": {
-    "iteration": 3,
-    "exitCode": 0,
-    "timestamp": "2026-06-25T23:34:10.745Z",
-    "detectedFailures": [
-      "vitest_fail",
-      "lint_error"
-    ],
-    "summary": "- 浠?`.last-error.json` 鐪嬪埌 `vitest_fail`銆乣lint_error`銆乣typescript_error`銆乣build_fail` 浣嗗湪寮€濮嬪墠锛岃鎴戝厛妫€鏌ュ綋鍓嶄唬鐮佺姸鎬侊紝鐞嗚В涓婁竴杞姤鐨?`vitest_fail` 閿欒銆傚ソ鐨勶紝鎴戞潵鍒嗘瀽褰撳墠鐘舵€併€? - story-1 鍒?story-4 宸插畬鎴愶紙`passes: true`锛?- 涓嬩竴涓渶楂樹紭鍏堢骇鏈畬鎴愮殑鏄?**story-5**锛堜紭鍏堢骇 5锛?- 涓婁竴杞姤閿?`vitest_fail / lint_error / typescript_error / build_fail`锛屼絾 summary 鏄贡鐮?- 浠?progress.txt 鐪嬪埌 story-4 宸茬粡瀹屾垚锛?2 涓祴璇曢€氳繃 - 鍐嶇湅 `.last-error.json` 鐨勪贡鐮侀儴鍒嗭紝瀹為檯涓婃槸涓婃杩唬鐨?agent 杈撳嚭鍐呭琚埅鏂簡 2. 涓婁竴杞殑 `vitest_fail` 鏉ヨ嚜 story-4 涔嬪墠 iteration2 "
-  },
+  "lastError": null,
   "storyAttempts": {},
-  "lastChanges": " docs/plans/2026-06-25-harness-engineering.md       | 722 ---------------------  docs/roadmap.md                                    |  76 ++-  scripts/ralph/prd.json                             |   2 +-  scripts/ralph/progress.txt                         |  31 +  11 files changed, 79 insertions(+), 1718 deletions(-)",
+  "lastChanges": "",
   "consecutiveNoProgress": 0,
-  "feature": "real-backtest-report",
+  "feature": "full-loop-real-data-obsidian",
   "version": 1
 }

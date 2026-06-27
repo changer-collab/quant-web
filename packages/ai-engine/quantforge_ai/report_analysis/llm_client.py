@@ -57,7 +57,11 @@ class LLMClient:
             with httpx.Client(timeout=60.0) as client:
                 resp = client.post(url, json=payload, headers=headers)
                 resp.raise_for_status()
-                data = resp.json()
+                # Windows 中文环境下 LLM API 可能返回包含非法 surrogate 的响应
+                # 先用 surrogatepass 编码再替换为合法字符
+                raw = resp.text
+                raw_clean = raw.encode("utf-8", errors="surrogatepass").decode("utf-8", errors="replace")
+                data = json.loads(raw_clean)
         except httpx.HTTPStatusError as e:
             raise LLMClientError(f"API 返回错误 {e.response.status_code}: {e.response.text}") from e
         except httpx.RequestError as e:

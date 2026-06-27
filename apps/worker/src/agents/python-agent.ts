@@ -6,6 +6,7 @@
  */
 
 import type { PythonBridge } from '../python-bridge.js';
+import type { StreamEvent } from '../types.js';
 import type { AgentExecutor, AgentRequest, AgentResponse } from './base.js';
 
 export class PythonAgent implements AgentExecutor {
@@ -21,7 +22,7 @@ export class PythonAgent implements AgentExecutor {
       if (request.onEvent) {
         result = await this.bridge.streamCall(
           request.params,
-          request.onEvent as (event: { event: string; [key: string]: unknown }) => void,
+          request.onEvent as (event: StreamEvent) => void,
         );
       } else {
         result = await this.bridge.call(request.params);

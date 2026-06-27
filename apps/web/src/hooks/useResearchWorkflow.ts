@@ -272,6 +272,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                 event.data as { taskId?: string; backtestResult?: unknown } | undefined,
                 {
                   id: `backtest-full-report-${Date.now()}`, taskId, status: 'completed', generatedAt: formatReportTime(language),
+                  strategyName: selectedStrategyForLanguage?.name ?? selectedStrategy?.name ?? '',
                 },
               );
               setReports((current) => [nextReport, ...current]);

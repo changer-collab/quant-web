@@ -1,158 +1,30 @@
 # Ralph Progress Log
-Started: Thu Jun 25 17:16:57     2026
+Started: 2026-06-26
 ---
+
 ## Codebase Patterns
 - backtest-engine 的 Trade 类来自 strategy-runtime 包（quantforge_strategy.order），不在 backtest-engine 内定义
 - 所有 runner（BacktestRunner、MultiSymbolRunner、MultiStrategyRunner）都用 calc_metrics + calc_trade_stats 构建 BacktestResult
 - _to_camel() 函数自动把 snake_case 字段转 camelCase，新增字段无需手动处理映射
 - Windows 环境下时间戳用秒级（10位）测试，毫秒级（13位）在 equity_stats 模块有专门处理
-
-## [2026-06-25] - story-1
-- 实现了什么：补全 Python 回测引擎缺失的衍生统计指标
-- 修改了哪些文件：
-  - packages/backtest-engine/quantforge_backtest/types.py — BacktestMetrics 新增 sortino_ratio/calmar_ratio/annualized_volatility/max_drawdown_duration；BacktestResult 新增 profit_loss_ratio/avg_holding_days/max_single_profit/max_single_loss
-  - packages/backtest-engine/quantforge_backtest/metrics.py — calc_metrics() 新增下行偏差/索提诺比率/年化波动率/卡玛比率/最大回撤持续天数计算；新增 calc_trade_stats() 函数用 FIFO 匹配买卖交易计算盈亏比/平均持仓天数/单笔极值
-  - packages/backtest-engine/quantforge_backtest/runner.py — 导入 calc_trade_stats，在 run() 中调用并传递结果到 BacktestResult
-  - packages/backtest-engine/quantforge_backtest/multi_runner.py — 同上
-  - packages/backtest-engine/quantforge_backtest/multi_strategy_runner.py — 同上
-  - packages/backtest-engine/quantforge_backtest/__init__.py — 导出 calc_trade_stats
-  - packages/backtest-engine/tests/test_metrics.py — 新增 sortino_ratio/calmar_ratio/annualized_volatility/max_drawdown_duration/trade_stats 测试
-- **后续迭代注意事项：**
-  - calc_metrics 新增了可选参数 `trades`（当前未使用，trade_stats 单独计算），如后续需要在 metrics 内部整合可扩展
-  - _result_to_dict 已有 _to_camel 自动转换，strategy-runtime 无需额外修改
-  - 66 个 backtest-engine 测试全部通过
----
-
-## [2026-06-26] - story-2 + story-3
-
-- 实现了什么：统一 API BacktestResult/BacktestReportFull 类型，修复 report-mapper 字段映射
-- 修改了哪些文件：
-  - apps/api/src/types.ts — BacktestResult 新增 sortinoRatio/calmarRatio/annualizedVolatility/maxDrawdownDuration/profitLossRatio/avgHoldingDays/maxSingleProfit/maxSingleLoss；BacktestReportFull.equityData.monthlyReturns/annualReturns 字段 return → return_pct；drawdownSeries → drawdownCurve
-  - apps/api/src/services/report-mapper.ts — equityData.drawdownSeries → drawdownCurve；riskMetrics 从 metrics 真实映射 annualizedVolatility/maxDrawdownDuration；riskAdjMetrics 映射 sortinoRatio/calmarRatio；tradeStats 映射 profitLossRatio/avgHoldingDays/maxSingleProfit/maxSingleLoss
-  - apps/api/tests/services/report-mapper.test.ts — 新增 6 个测试用例覆盖衍生统计字段映射
-  - scripts/ralph/prd.json — story-2/story-3 设为 passes: true
-- **后续迭代注意事项：**
-  - lint 报告中的 eslint 错误（worker、web、data-center、data-collector）是已有的，不属于本次修改范围
-  - story-4（前端 null/空数据修复）的前端组件类型定义（apps/web/src/data/types.ts）已经使用了正确的 return_pct 和 drawdownCurve 字段名
-  - 验证 report-mapper 输出时，0 值映射为 0（valid number），不是 null；只有原本为 null/undefined 的字段才映射为 null
----
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 16:56:11] - Iteration 2
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 16:56:14] - Iteration 3
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 16:58:38] - Iteration 1
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 16:58:40] - Iteration 2
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 16:58:42] - Iteration 3
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 17:01:00] - Iteration 1
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 17:01:03] - Iteration 2
-
-- Exit code: 1
-- Stories remaining: 5
----
-
-## [2026-06-25 17:01:56] - Iteration 1
-
-- Exit code: 0
-- Stories remaining: 5
----
-
-## [2026-06-25 17:02:00] - Iteration 2
-
-- Exit code: 0
-- Stories remaining: 5
----
-
-## [2026-06-25 17:06:46] - Iteration 1
-
-- Exit code: 0
-- Stories remaining: 5
----
-
-## [2026-06-25 17:06:50] - Iteration 2
-
-- Exit code: 0
-- Stories remaining: 5
----
-
-## [2026-06-25 22:54:03] - Iteration 1
-
-- Exit code: 0
-- Stories remaining: 5
----
-
-## [2026-06-25 22:54:07] - Iteration 2
-
-- Exit code: 0
-- Stories remaining: 5
----
-
-## [2026-06-25 23:06:22] - Iteration 1
-
-- Exit code: 0
-- Stories remaining: 3
-- **Detected issues:**
-```
-vitest_fail
-```
----
-
-## [2026-06-26] - story-5
-
-- 实现了什么：验证 API 报告存储/读取：reportData 包含完整真实数据
-- 修改了哪些文件：
-  - apps/api/tests/routes/report.test.ts — 新增 3 个测试用例验证回测任务完成自动保存报告，读取时 reportData 包含：
-    - drawdownCurve（非空数组）
-    - monthlyReturns/annualReturns（非空数组）
-    - sortinoRatio/calmarRatio（非零值）
-- **后续迭代注意事项：**
-  - 测试覆盖了从 POST /api/tasks 提交回测 → POST /api/internal/tasks/:id/complete Worker 完成 → GET /api/reports/:id 读取的完整流程
-  - reportData 字段名已与 story-2/3 对齐：drawdownCurve、return_pct、sortinoRatio/calmarRatio 在 riskAdjMetrics 中
-  - 41 个 API 测试全部通过
-  - 推送失败（网络问题），本地提交已完成
+- SSE 事件 data 字段：API `/complete` 路由中 `event.data = result`，result = `{ backtestResult, analysis }`
+- 前端 `mapBacktestResultToReport()` 接收 `{ backtestResult: PythonBacktestResult, analysis }` 格式
+- Obsidian sync 通过 Python CLI `syncBacktest` 命令由 Worker 在回测完成后触发
+- Worker 的 BacktestHandler 已在第 89-100 行包含 Obsidian 同步 try-catch
 
 ---
 
-## [2026-06-25 23:21:24] - Iteration 2
+## [2026-06-26] - PRD 重置 v2
+根本原因复盘：上一版 prd.json 犯的错误：
+1. **先入为主定位** — 没做诊断就直接锁定了"Worker→前端通信 bug"，实际上完全不知道故障在哪
+2. **猜修复不猜诊断** — story-1 直接写了一堆"检查点 X、检查点 Y"，相当于猜了 6 个可能的位置去修，不是去观测
+3. **跳过了第一性** — 不确定故障位置时，第一步永远是加日志观测，而不是猜修复
 
-- Exit code: 0
-- Stories remaining: 2
-- **Detected issues:**
-```
-vitest_fail
-```
+本次更新（v2）改为"先观测后修复"模式：
+- story-1: 只加日志埋点，不修任何业务逻辑
+- story-2: 根据 story-1 日志定位根因后精确修复
+- story-3/4: 前端显示异常修复（job 名称、失败跳转）
+- story-5: Obsidian 同步补齐
+- story-6: 数据范围选择器
+- story-7: 端到端验证
 ---
-
-## ✅ ALL STORIES COMPLETE

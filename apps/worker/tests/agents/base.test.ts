@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { AgentExecutor, AgentRequest, AgentResponse } from '../../src/agents/base.js';
+import type { AgentRequest, AgentResponse } from '../../src/agents/base.js';
 
 describe('Agent interfaces', () => {
   it('AgentRequest has required fields', () => {

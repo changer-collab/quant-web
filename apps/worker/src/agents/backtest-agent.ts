@@ -26,7 +26,7 @@ export class BacktestAgent implements AgentExecutor {
   constructor(private readonly inner: AgentExecutor) {}
 
   async execute(request: AgentRequest): Promise<AgentResponse> {
-    const params = request.params as BacktestParams;
+    const params = request.params as unknown as BacktestParams;
 
     // 转换为 Python CLI 格式
     const cliParams = {

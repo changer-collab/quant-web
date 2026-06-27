@@ -1,24 +1,25 @@
 ---
 name: "quantforge-code-review"
-description: "QuantForge 量化策略代码审查。审查策略逻辑安全性、回测配置正确性、架构边界合规性、因子计算正确性。当用户要求审查策略代码、回测配置、因子定义、跨模块依赖、或提交 PR 前的质量检查时调用。"
+description: "QuantWeb 量化平台专属审查——策略逻辑安全性、回测配置正确性、架构边界合规性、因子计算正确性。当需要审查策略/因子/回测代码、检查跨模块依赖、或 PR 前量化领域质量检查时调用。通用代码审查请走 /code-review。"
 ---
 
-# QuantForge Code Review
+# QuantWeb Code Review
 
-针对 QuantForge 量化交易平台的专属代码审查 skill，覆盖 Python 策略与 TypeScript 服务两层。
+QuantWeb 量化交易平台的量化领域专属审查。**通用代码审查（类型错误、性能、安全隐患等）由系统 `/code-review` 覆盖，本 skill 只审查量化特有内容。**
 
 ## 触发条件
 
-以下任一场景调用本 skill：
-- 用户要求"review 代码"、"检查这个策略"、"审查代码"
 - 用户修改了 `packages/strategies/`、`packages/factor-lab/`、`packages/backtest-engine/` 下的 Python 代码
-- 用户修改了 `apps/api/`、`apps/worker/`、`services/data-center/` 下的 TypeScript 代码
-- 提交 PR 前的质量检查
-- 新增策略或因子定义
+- 用户要求"检查这个策略"、"审查回测"、"检查因子"
+- 新增策略、因子定义或回测引擎改动
+- PR 前对量化逻辑的专项审查
+- **通用审查（bug/lint/类型/安全）请使用 `/code-review`，不要用本 skill 替代**
 
 ## 审查清单
 
 按优先级分为三级：🔴 阻断（必须修复）、🟡 警告（建议修复）、🟢 建议（改进方向）。
+
+**通用项（类型安全、边界条件、lint、安全隐患）由系统 `/code-review` 覆盖，本清单仅包含量化特有项。**
 
 ---
 
@@ -93,63 +94,20 @@ services/data-collector -> services/data-center
 
 ---
 
-### 四、TypeScript 服务质量（🟡 警告）
+### 四、Harness & 自动化质量（🟡 警告）
 
-#### 4.1 API 层（`apps/api/`）
-- [ ] API 路由是否只做 HTTP 入口和轻量编排，不包含回测/因子/模型的计算逻辑？
-- [ ] 内部端点 (`/api/internal/tasks/*`) 是否不走公共路由中间件？
-- [ ] 是否对输入做了基本校验（参数类型、范围、必填）？
-- [ ] SSE 端点是否正确处理客户端断连后的资源清理？
+针对 `scripts/ralph/` 和 ralph harness 相关文件：
 
-#### 4.2 Worker 层（`apps/worker/`）
-- [ ] Worker 是否通过 HTTP 轮询 API 领取任务，没有共享内存队列？
-- [ ] `PythonBridge` 子进程是否有超时和错误重试机制？
-- [ ] Worker 崩溃后是否有任务恢复或标记失败的逻辑？
+- [ ] prd.json 中的 story 是否遵循"一个 story 只改一个关注点"原则？
+- [ ] 验收标准是否覆盖类型结构一致性、嵌套对象对齐、前端渲染？（参考 ralph-harness skill 验收边界检查清单）
+- [ ] 新加的依赖是否在项目依赖白名单内？
+- [ ] progress.txt 是追加而非覆盖？
+- [ ] 改动是否有结构化日志（changelog.jsonl）记录，而非只有 git diff？
 
-#### 4.3 数据中心（`services/data-center/`）
-- [ ] 是否只做存储、标准化和查询，不感知策略/回测业务？
-- [ ] 数据模型是否对应 6 个子域（reference / market / l2 / fundamental / event / quality）？
-- [ ] 是否提供了合理的分页和过滤能力？
-
----
-
-### 五、Python 代码质量（🟡 警告）
-
-- [ ] 所有公开函数是否有类型注解（type hints）？
-- [ ] 复杂逻辑是否有中文注释说明？
-- [ ] 是否遵循包命名规范 `quantforge_<module>`？
-- [ ] 是否有对应的单元测试文件在 `tests/` 目录下？
-
----
-
-### 六、类型一致性（🟡 警告）
-
-检查 `packages/*`（Python）与 `apps/*`（TypeScript）之间的类型对齐：
-
-| Python 类型 (所有者) | TS 侧位置 | 检查规则 |
-|---------------------|----------|---------|
-| `TaskStatus`, `TaskType` | `apps/api/src/types.ts` | 枚举值必须和 Python 侧一致 |
-| `BacktestResult`, `EquityPoint` | `apps/api/src/types.ts` | 字段名、类型必须一致 |
-| `FactorMetrics`, `FactorRow` | `apps/api/src/types.ts` | 字段名、类型必须一致 |
-
-**审查方法**：对比 Python 类型定义文件与 TS 的 `types.ts`，确认没有字段缺失或类型不匹配。
-
----
-
-### 七、安全隐患（🔴 阻断）
-
-- [ ] 是否有任何连接真实券商、真实下单的代码？（当前阶段禁止）
-- [ ] API 端点是否有任何硬编码的密钥或 token？
-- [ ] Python 子进程是否有可能执行任意命令的路径？
-- [ ] 用户输入的 `StrategyParamDef` 值是否做了类型和范围校验？
-
----
-
-### 八、性能注意事项（🟢 建议）
+### 五、因子回测专有性能注意事项（🟢 建议）
 
 - [ ] 回测循环中是否避免了重复计算（如因子在每根 bar 上重新计算整个历史）？
 - [ ] 数据查询是否使用了合适的索引条件（symbol + timeframe + date_range）？
-- [ ] 前端列表是否做了分页/虚拟滚动（数据量大时）？
 - [ ] Worker 编排的并发任务是否设定了合理的并发上限？
 
 ---
@@ -196,6 +154,7 @@ services/data-collector -> services/data-center
 - ❌ 不跳过阻断项——所有 🔴 项必须给出明确的修复方案
 - ❌ 不猜测被修改文件的内容——必须先 `read_file` 再审查
 - ❌ 不审查与本次变更无关的文件
+- ❌ **不审查通用代码质量问题（类型错误、lint、边界条件、安全隐患）**——这些由系统 `/code-review` 覆盖
 - ❌ 不在审查报告中包含主观编码风格偏好（如命名风格），除非项目有强制规范
 - ❌ 不要将 `.codebuddy/`、`runtime/`、`node_modules/`、`__pycache__/` 中的文件纳入审查范围
 
@@ -203,5 +162,5 @@ services/data-collector -> services/data-center
 
 审查完成后，必须告知用户：
 1. 阻断项数量及是否可以合并
-2. 如果阻断项为 0，建议运行 `pnpm test` 确认
+2. 如果阻断项为 0，建议运行 `pnpm test` 或回归基线检测（`--check-regression`）确认
 3. 如果有策略逻辑变更，建议运行对应的回测验证

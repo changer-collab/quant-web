@@ -2,7 +2,7 @@ import { TaskType, TaskStatus } from '../types.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ReportRepository } from '../storage/report-repo.js';
 import { mapBacktestResultToReport } from '../services/report-mapper.js';
-import type { BacktestResult } from '../types.js';
+import type { BacktestResult, BacktestReportFull } from '../types.js';
 
 export async function taskRoutes(app: FastifyInstance) {
   app.post('/', async (req, reply) => {
@@ -137,45 +137,70 @@ export async function internalTaskRoutes(app: FastifyInstance) {
         // 合并 AI 分析结果到报告（覆盖结论性字段）
         if (taskResult.analysis) {
           const ai = taskResult.analysis as Record<string, unknown>;
+
+          // 清理所有字符串字段中的非法 surrogate 字符
+          function cleanStr(v: unknown): string {
+            if (typeof v !== 'string') return String(v ?? '');
+            return v.replace(/[\uDC00-\uDFFF]/g, '');
+          }
+          function cleanArray(arr: unknown): string[] {
+            if (!Array.isArray(arr)) return [];
+            return arr.map((item) => (typeof item === 'string' ? cleanStr(item) : String(item)));
+          }
+
           if (ai.executiveSummary) {
             const es = ai.executiveSummary as Record<string, unknown>;
             report.executiveSummary = {
               ...report.executiveSummary,
-              oneLineConclusion: es.oneLineConclusion as string ?? report.executiveSummary.oneLineConclusion,
-              recommendedForLive: es.recommendedForLive as boolean ?? report.executiveSummary.recommendedForLive,
+              oneLineConclusion: cleanStr(es.oneLineConclusion) || report.executiveSummary.oneLineConclusion,
+              recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
+              recommendationReason: cleanStr(es.recommendationReason) || report.executiveSummary.recommendationReason,
+              mainRisks: cleanArray(es.mainRisks).length ? cleanArray(es.mainRisks) : report.executiveSummary.mainRisks,
             };
           }
           if (ai.overview) {
             const ov = ai.overview as Record<string, unknown>;
+            // 确保 suitableMarketRegime 为数组，兼容 LLM 可能输出字符串或单个值的情况
+            let regime = report.overview.suitableMarketRegime;
+            if (ov.suitableMarketRegime !== undefined) {
+              if (Array.isArray(ov.suitableMarketRegime)) {
+                regime = cleanArray(ov.suitableMarketRegime);
+              } else if (typeof ov.suitableMarketRegime === 'string') {
+                regime = [cleanStr(ov.suitableMarketRegime)];
+              }
+            }
             report.overview = {
               ...report.overview,
-              logic: ov.logic as string ?? report.overview.logic,
-              suitableMarketRegime: ov.suitableMarketRegime as string[] ?? report.overview.suitableMarketRegime,
+              logic: cleanStr(ov.logic) || report.overview.logic,
+              coreLogic: cleanStr(ov.coreLogic) || report.overview.coreLogic,
+              suitableMarketRegime: regime,
             };
           }
           if (ai.issues) {
             const iss = ai.issues as Record<string, unknown>;
             report.issues = {
               ...report.issues,
-              liquidityAssessment: iss.liquidityAssessment as string ?? report.issues.liquidityAssessment,
-              capacityEstimate: iss.capacityEstimate as string ?? report.issues.capacityEstimate,
+              overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+              liquidityAssessment: cleanStr(iss.liquidityAssessment) || report.issues.liquidityAssessment,
+              capacityEstimate: cleanStr(iss.capacityEstimate) || report.issues.capacityEstimate,
             };
           }
           if (ai.conclusion) {
             const con = ai.conclusion as Record<string, unknown>;
             report.conclusion = {
               ...report.conclusion,
-              advantages: con.advantages as string[] ?? report.conclusion.advantages,
-              potentialRisks: con.potentialRisks as string[] ?? report.conclusion.potentialRisks,
-              improvements: con.improvements as string[] ?? report.conclusion.improvements,
+              advantages: cleanArray(con.advantages).length ? cleanArray(con.advantages) : report.conclusion.advantages,
+              potentialRisks: cleanArray(con.potentialRisks).length ? cleanArray(con.potentialRisks) : report.conclusion.potentialRisks,
+              improvements: cleanArray(con.improvements).length ? cleanArray(con.improvements) : report.conclusion.improvements,
+              liveTradingAdvice: (con.liveTradingAdvice as { suggestedCapital: string; suggestedInitialPosition: string; riskControlRules: string[] }) ?? report.conclusion.liveTradingAdvice,
             };
           }
           if (ai.riskWarnings) {
             const rw = ai.riskWarnings as Record<string, unknown>;
             report.riskWarnings = {
               ...report.riskWarnings,
-              limitations: (rw.limitations as Array<{ category: string; description: string }>) ?? report.riskWarnings.limitations,
-              redLines: (rw.redLines as Array<{ rule: string; threshold: string; actual: string; passed: boolean }>) ?? report.riskWarnings.redLines,
+              limitations: (rw.limitations as { category: string; description: string }[]) ?? report.riskWarnings.limitations,
+              redLines: (rw.redLines as { rule: string; threshold: string; actual: string; passed: boolean }[]) ?? report.riskWarnings.redLines,
             };
           }
         }

@@ -32,6 +32,11 @@ export default [
         Buffer: 'readonly',
         fetch: 'readonly',
         setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
+        clearInterval: 'readonly',
+        AbortController: 'readonly',
+        TextDecoder: 'readonly',
       },
     },
     plugins: {

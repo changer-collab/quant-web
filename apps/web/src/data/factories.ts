@@ -96,8 +96,12 @@ interface PythonBacktestResult {
     slippage?: number;
     strategyKind?: string;
     params?: Record<string, unknown>;
+    logic?: string;
+    version?: string;
+    description?: string;
+    symbol?: string;
   };
-  trades?: unknown[];
+  trades?: unknown[] | Array<Record<string, unknown>>;
   equityCurve?: { timestamp: number; equity: number }[];
   drawdownCurve?: { timestamp: number; drawdown: number }[];
   monthlyReturns?: { year: number; month: number; return_pct: number }[];
@@ -109,7 +113,15 @@ interface PythonBacktestResult {
     maxDrawdown?: number;
     winRate?: number;
     totalTrades?: number;
+    sortinoRatio?: number;
+    calmarRatio?: number;
+    annualizedVolatility?: number;
+    maxDrawdownDuration?: number;
   };
+  profitLossRatio?: number;
+  avgHoldingDays?: number;
+  maxSingleProfit?: number;
+  maxSingleLoss?: number;
 }
 
 /** 时间戳转日期字符串 */
@@ -340,6 +352,7 @@ export function mapBacktestResultToReport(
     strategyName: config.strategyName ?? source?.strategyName ?? '',
     overview: {
       name: config.strategyName ?? source?.overview?.name ?? '',
+      version: String(config.version ?? ''),
       logic: String(config.logic ?? ''),
       instruments: [String(config.instruments?.[0] ?? config.symbol ?? '')],
       timeRange: {
@@ -347,20 +360,27 @@ export function mapBacktestResultToReport(
         end: tsToDate(config.endDate ?? 0) || source?.overview?.timeRange.end || '',
       },
       frequency: config.timeframe ?? source?.overview?.frequency ?? '',
+      benchmark: '',
       strategyCategory: config.strategyKind ?? source?.overview?.strategyCategory ?? 'timing',
     },
     dataParams: {
+      dataSource: '',
+      adjustmentType: '',
+      fee: { commission: 0, stampTax: 0 },
+      slippage: { model: 'fixed', value: config.slippage ?? 0 },
       capital: {
         initialCash: config.initialCash ?? 0,
         maxLeverage: 1.0,
         positionLimit: 0.95,
       },
-      slippage: { model: 'fixed', value: config.slippage ?? 0 },
+      params: [],
     },
     returnMetrics: {
       cumulativeReturn: metrics.totalReturn ?? 0,
       totalReturn: metrics.totalReturn ?? 0,
       annualizedReturn: metrics.annualizedReturn ?? 0,
+      alpha: 0,
+      benchmarkReturn: 0,
     },
     riskMetrics: {
       maxDrawdown: metrics.maxDrawdown ?? 0,
@@ -368,28 +388,44 @@ export function mapBacktestResultToReport(
       annualizedVolatility: metrics.annualizedVolatility ?? 0,
       calmarRatio: metrics.calmarRatio ?? 0,
       sortinoRatio: metrics.sortinoRatio ?? undefined,
+      downsideVolatility: 0,
+      var95: 0,
+      cvar95: 0,
     },
     riskAdjMetrics: {
       sharpeRatio: metrics.sharpeRatio ?? 0,
       sortinoRatio: metrics.sortinoRatio ?? 0,
+      informationRatio: 0,
+      treynorRatio: 0,
     },
     tradeStats: {
       totalTrades: metrics.totalTrades ?? 0,
+      winningTrades: 0,
+      losingTrades: 0,
       winRate: metrics.winRate ?? 0,
       profitLossRatio: bt.profitLossRatio ?? 0,
       avgHoldingDays: bt.avgHoldingDays ?? 0,
+      turnoverRate: 0,
       maxSingleProfit: bt.maxSingleProfit ?? 0,
       maxSingleLoss: bt.maxSingleLoss ?? 0,
+      pnlDistribution: [],
     },
     executiveSummary: {
+      oneLineConclusion: '',
+      recommendedForLive: false,
+      recommendationReason: '',
       keyMetrics: {
         annualizedReturn: metrics.annualizedReturn ?? 0,
         maxDrawdown: metrics.maxDrawdown ?? 0,
         sharpeRatio: metrics.sharpeRatio ?? 0,
       },
+      beatsBenchmark: false,
+      mainRisks: [],
+      strategyCategory: config.strategyKind ?? 'timing',
     },
     equityData: {
       equityCurve: (bt.equityCurve ?? []).map((p) => ({ timestamp: p.timestamp, equity: p.equity })),
+      benchmarkCurve: [],
       drawdownCurve: bt.drawdownCurve ?? [],
       monthlyReturns: bt.monthlyReturns ?? [],
       annualReturns: bt.annualReturns ?? [],
@@ -410,11 +446,20 @@ export function mapBacktestResultToReport(
     }
     const ov = analysis.overview as Record<string, unknown> | undefined;
     if (ov) {
+      // 确保 suitableMarketRegime 为数组，兼容 LLM 可能输出字符串或单个值的情况
+      let regime = report.overview.suitableMarketRegime;
+      if (ov.suitableMarketRegime !== undefined) {
+        if (Array.isArray(ov.suitableMarketRegime)) {
+          regime = ov.suitableMarketRegime as string[];
+        } else if (typeof ov.suitableMarketRegime === 'string') {
+          regime = [ov.suitableMarketRegime as string];
+        }
+      }
       report.overview = {
         ...report.overview,
         logic: (ov.logic as string) || report.overview.logic,
         coreLogic: (ov.coreLogic as string) || report.overview.coreLogic,
-        suitableMarketRegime: (ov.suitableMarketRegime as string[]) ?? report.overview.suitableMarketRegime,
+        suitableMarketRegime: regime,
       };
     }
     const iss = analysis.issues as Record<string, unknown> | undefined;

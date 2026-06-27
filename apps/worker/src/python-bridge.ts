@@ -63,17 +63,20 @@ export class PythonBridge {
       const proc = spawn(this.pythonPath, ["-m", "quantforge_strategy"], {
         stdio: ["pipe", "pipe", "pipe"],
         cwd: this.cwd,
+        env: {
+          ...process.env,
+          PYTHONIOENCODING: "utf-8",
+        },
       });
-
       let stdout = "";
       let stderr = "";
 
       proc.stdout.on("data", (chunk: Buffer) => {
-        stdout += chunk.toString();
+        stdout += chunk.toString("utf-8");
       });
 
       proc.stderr.on("data", (chunk: Buffer) => {
-        stderr += chunk.toString();
+        stderr += chunk.toString("utf-8");
       });
 
       const timer = setTimeout(() => {
@@ -118,14 +121,17 @@ export class PythonBridge {
       const proc = spawn(this.pythonPath, ["-m", "quantforge_strategy"], {
         stdio: ["pipe", "pipe", "pipe"],
         cwd: this.cwd,
+        env: {
+          ...process.env,
+          PYTHONIOENCODING: "utf-8",
+        },
       });
-
       let buffer = "";
       let stderr = "";
       let finalResult: PythonResult | null = null;
 
       proc.stdout.on("data", (chunk: Buffer) => {
-        buffer += chunk.toString();
+        buffer += chunk.toString("utf-8");
         // 逐行解析 NDJSON
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? ""; // 保留未完成的行
@@ -150,7 +156,7 @@ export class PythonBridge {
       });
 
       proc.stderr.on("data", (chunk: Buffer) => {
-        stderr += chunk.toString();
+        stderr += chunk.toString("utf-8");
       });
 
       const timer = setTimeout(() => {

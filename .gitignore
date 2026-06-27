@@ -35,3 +35,6 @@ scripts/ralph/prd.json
 scripts/ralph/progress.txt
 scripts/ralph/.last-branch
 scripts/ralph/archive/
+
+# claude-mem project memory data (shared across team via git)
+.claude/settings.json

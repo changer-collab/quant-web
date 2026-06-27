@@ -83,7 +83,12 @@ class ReportAnalyzer:
         try:
             result = json.loads(text)
         except json.JSONDecodeError as e:
-            raise LLMClientError(f"LLM 输出 JSON 解析失败: {e}") from e
+            # 尝试清理非法 surrogate 后重试
+            try:
+                text_clean = text.encode("utf-8", errors="surrogatepass").decode("utf-8", errors="replace")
+                result = json.loads(text_clean)
+            except (json.JSONDecodeError, UnicodeEncodeError):
+                raise LLMClientError(f"LLM 输出 JSON 解析失败: {e}") from e
 
         # 校验必要字段，缺失则 fallback
         required_keys = {"executiveSummary", "overview", "issues", "conclusion", "riskWarnings"}
