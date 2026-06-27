@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { useLanguage, usePageContent } from './hooks/useLanguage';
 import { useResearchWorkflow } from './hooks/useResearchWorkflow';
 import { useStrategies } from './hooks/useStrategies';
@@ -7,7 +7,7 @@ import { useFactors } from './hooks/useFactors';
 import { ErrorBoundary } from './components/error-boundary';
 import { MetricCard } from './components/common';
 import { ChartMockup } from './components/charts';
-import { ReportSummary, FullReport } from './components/report';
+import { ReportSummary } from './components/report-summary';
 import { LanguageSettings } from './components/settings';
 import { FactorLabContent } from './components/factor-lab';
 import { WorkspaceContent, WorkspaceModeTabs } from './components/workspace';
@@ -24,6 +24,8 @@ import hero from './styles/hero.module.css';
 import buttons from './styles/buttons.module.css';
 import infoPanelStyles from './styles/info-panel.module.css';
 import './styles/tokens.css';
+
+const FullReport = lazy(() => import('./components/report').then((module) => ({ default: module.FullReport })));
 
 export default function App() {
   const { language, handleLanguageChange, navItems, ui, researchModes, factorEvalResults, reportUiCopy } = useLanguage();
@@ -166,7 +168,9 @@ export default function App() {
               <FactorLabContent factors={factors} factorEvalResults={factorEvalResults} ui={ui} language={language} />
             ) : isGeneratedReportPage && activeReport ? (
               activeBacktestReport ? (
-                <FullReport report={activeBacktestReport} ui={reportUiCopy} allReports={backtestReports} onSwitchReport={handleSwitchBacktestReport} />
+                <Suspense fallback={<ReportSummary report={activeReport} ui={ui} />}>
+                  <FullReport report={activeBacktestReport} ui={reportUiCopy} allReports={backtestReports} onSwitchReport={handleSwitchBacktestReport} />
+                </Suspense>
               ) : (
                 <>
                   <ReportSummary report={activeReport} ui={ui} />

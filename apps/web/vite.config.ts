@@ -9,6 +9,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 650,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const moduleId = id.replace(/\\/g, '/');
+          if (!moduleId.includes('node_modules')) return undefined;
+          if (moduleId.includes('/node_modules/zrender/')) return 'zrender';
+          if (moduleId.includes('/node_modules/echarts/') || moduleId.includes('/node_modules/echarts-for-react/')) return 'echarts';
+          if (moduleId.includes('/node_modules/react/') || moduleId.includes('/node_modules/react-dom/') || moduleId.includes('/node_modules/scheduler/')) return 'react-vendor';
+          if (moduleId.includes('/node_modules/lucide-react/')) return 'icons';
+          return 'vendor';
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

@@ -1,7 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { useResearchWorkflow } from '../src/hooks/useResearchWorkflow';
 import { getStrategies } from '../src/appData';
+
+const taskApiMockState = vi.hoisted(() => ({
+  streamHandlers: new Map<string, (event: any) => void>(),
+}));
 
 vi.mock('../src/api/reports', () => ({
   fetchReports: vi.fn().mockResolvedValue([]),
@@ -10,14 +14,9 @@ vi.mock('../src/api/reports', () => ({
 
 vi.mock('../src/api/tasks', () => ({
   submitBacktest: vi.fn().mockResolvedValue({ id: 'task-1', status: 'pending' }),
-  streamTask: vi.fn().mockImplementation((_taskId: string, onEvent: (e: any) => void) => {
-    const t1 = setTimeout(() => {
-      onEvent({ type: 'status', taskId: 'task-1', message: 'completed', percent: 100 });
-      setTimeout(() => {
-        onEvent({ type: 'result', taskId: 'task-1', data: { backtestResult: {} } });
-      }, 10);
-    }, 10);
-    return () => clearTimeout(t1);
+  streamTask: vi.fn().mockImplementation((taskId: string, onEvent: (event: any) => void) => {
+    taskApiMockState.streamHandlers.set(taskId, onEvent);
+    return () => taskApiMockState.streamHandlers.delete(taskId);
   }),
   fetchTasks: vi.fn().mockResolvedValue([]),
 }));
@@ -33,56 +32,82 @@ const mockStrategy = {
   status: 'Stable',
 };
 
+async function flushAsyncWork() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+async function renderWorkflow(language: 'en' | 'zh' = 'en') {
+  const view = renderHook(() => useResearchWorkflow(language));
+  await flushAsyncWork();
+  return view;
+}
+
+async function runResearch(result: { current: ReturnType<typeof useResearchWorkflow> }) {
+  act(() => result.current.handleRunResearch());
+  await flushAsyncWork();
+}
+
+function emitTaskEvent(event: any) {
+  const handler = taskApiMockState.streamHandlers.get(event.taskId);
+  if (!handler) throw new Error(`No stream handler registered for task ${event.taskId}`);
+  act(() => handler(event));
+}
+
+beforeEach(() => {
+  taskApiMockState.streamHandlers.clear();
+  vi.clearAllMocks();
+});
+
 describe('useResearchWorkflow', () => {
-  it('initializes with dashboard as active page', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('initializes with dashboard as active page', async () => {
+    const { result } = await renderWorkflow('en');
     expect(result.current.state.activePage).toBe('dashboard');
   });
 
-  it('initializes with traditional as default mode', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('initializes with traditional as default mode', async () => {
+    const { result } = await renderWorkflow('en');
     expect(result.current.activeMode).toBe('traditional');
   });
 
-  it('switches active page on nav click', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('switches active page on nav click', async () => {
+    const { result } = await renderWorkflow('en');
     act(() => result.current.handleNavClick('strategies'));
     expect(result.current.state.activePage).toBe('strategies');
   });
 
-  it('ignores invalid page ids', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('ignores invalid page ids', async () => {
+    const { result } = await renderWorkflow('en');
     act(() => result.current.handleNavClick('invalid-page'));
     expect(result.current.state.activePage).toBe('dashboard');
   });
 
-  it('switches mode and navigates to workspace on strategy select', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('switches mode and navigates to workspace on strategy select', async () => {
+    const { result } = await renderWorkflow('en');
     act(() => result.current.handleSelectStrategy(mockStrategy));
     expect(result.current.activeMode).toBe('traditional');
     expect(result.current.state.activePage).toBe('workspace');
   });
 
   it('navigates to jobs page when running research', async () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+    const { result } = await renderWorkflow('en');
     act(() => result.current.handleSelectStrategy(mockStrategy));
-    act(() => result.current.handleRunResearch());
+    await runResearch(result);
+
     expect(result.current.state.activePage).toBe('jobs');
-    await waitFor(() => {
-      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
+    expect(result.current.localizedJobs.length).toBeGreaterThan(0);
   });
 
   it('navigates to report page when viewing a report', async () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+    const { result } = await renderWorkflow('en');
     act(() => result.current.handleSelectStrategy(mockStrategy));
-    act(() => result.current.handleRunResearch());
-    await waitFor(() => {
-      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
-    await waitFor(() => {
-      expect(result.current.reportJobIds.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
+    await runResearch(result);
+    emitTaskEvent({ type: 'result', taskId: 'task-1', data: { backtestResult: {} } });
+
+    expect(result.current.reportJobIds.length).toBeGreaterThan(0);
     const jobWithReport = result.current.localizedJobs.find((job) =>
       result.current.reportJobIds.includes(job.id),
     );
@@ -94,7 +119,7 @@ describe('useResearchWorkflow', () => {
 
   it('uses selected backtest configuration in generated report diagnostics', async () => {
     const strategy = getStrategies('zh').find((item) => item.id === 'dual_ma');
-    const { result } = renderHook(() => useResearchWorkflow('zh'));
+    const { result } = await renderWorkflow('zh');
 
     act(() => result.current.handleSelectStrategy(strategy!));
     act(() => {
@@ -109,12 +134,10 @@ describe('useResearchWorkflow', () => {
         params: { short_period: 7, long_period: 30 },
       }));
     });
-    act(() => result.current.handleRunResearch());
+    await runResearch(result);
+    emitTaskEvent({ type: 'result', taskId: 'task-1', data: { backtestResult: {} } });
 
-    await waitFor(() => {
-      expect(result.current.activeReport).toBeDefined();
-    }, { timeout: 5000 });
-
+    expect(result.current.activeReport).toBeDefined();
     const activeReport = result.current.activeReport!;
     const runConfigSection = activeReport.diagnostics.find((section) => section.title === '运行配置');
     const flattenedDiagnostics = activeReport.diagnostics.flatMap((section) => section.items);
@@ -134,8 +157,8 @@ describe('useResearchWorkflow', () => {
     ]);
   });
 
-  it('does nothing when viewing report for a job without one', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('does nothing when viewing report for a job without one', async () => {
+    const { result } = await renderWorkflow('en');
     const fakeJob = {
       id: 'nonexistent',
       name: 'Fake',
@@ -148,22 +171,20 @@ describe('useResearchWorkflow', () => {
     expect(result.current.state.activePage).toBe('dashboard');
   });
 
-  it('changes research mode', () => {
-    const { result } = renderHook(() => useResearchWorkflow('en'));
+  it('changes research mode', async () => {
+    const { result } = await renderWorkflow('en');
     act(() => result.current.setActiveMode('ai'));
     expect(result.current.activeMode).toBe('ai');
     expect(result.current.researchMode.id).toBe('ai');
   });
 
   it('localizes jobs when language changes', async () => {
-    const { result: zhResult } = renderHook(() => useResearchWorkflow('zh'));
-    act(() => zhResult.current.handleSelectStrategy(mockStrategy));
-    act(() => zhResult.current.handleRunResearch());
-    await waitFor(() => {
-      expect(zhResult.current.localizedJobs.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
-    await waitFor(() => {
-      expect(zhResult.current.localizedJobs[0].state).toBe('已完成');
-    }, { timeout: 5000 });
+    const { result } = await renderWorkflow('zh');
+    act(() => result.current.handleSelectStrategy(mockStrategy));
+    await runResearch(result);
+    emitTaskEvent({ type: 'status', taskId: 'task-1', message: 'completed', percent: 100 });
+
+    expect(result.current.localizedJobs.length).toBeGreaterThan(0);
+    expect(result.current.localizedJobs[0].state).toBe('已完成');
   });
 });
