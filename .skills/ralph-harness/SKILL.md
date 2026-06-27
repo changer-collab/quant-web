@@ -662,6 +662,7 @@ ralph/<kebab-case-feature-name>
 | `import.meta.url === 'file://\${process.argv[1]}'` 判断是否 CLI 直接运行 | 在 Windows 上 `import.meta.url` 用正斜杠 `file:///D:/`，`process.argv[1]` 用反斜杠 `D:\\`，条件永远 false，所有命令执行后无输出无报错 | 改为 `import.meta.url.endsWith(process.argv[1].replace(/\\\\/g, '/'))` — 先将 `argv[1]` 反斜杠统一为正斜杠再比较 |
 | PowerShell `$Command \| claude --print 2>&1 \| Tee-Object` 管道阻塞 — claude 全部跑完才输出第一行 | 长时间无反馈（7+ 分钟静默），用户以为脚本卡死；无法观察 claude 正在做什么（读文件/跑测试/写代码） | 使用 `node ralph-run.mjs <prompt-file> <output-file>` 替代：启动 claude 的 `stream-json` 模式，实时解析并打印每一条 `assistant` 消息的 `text` 内容，同时用 `🔧 tool_name: detail` 显示工具调用。退出码和完整输出通过文件传递，不依赖管道。 |
 | `--print` + `--output-format stream-json` 缺少 `--verbose` | Claude CLI 报错：`When using --print, --output-format=stream-json requires --verbose` | 必须同时加 `--print --verbose --output-format stream-json` 三个标志。 |
+| **Claude 在 `--print` 非交互模式下问"是否批准"/"是否允许"** | Claude 调了 brainstorming/planning 等交互式 skill，输出设计提案后等待用户批准——但 `--print` 是无交互的批处理模式，没人回答，整轮迭代浪费 | **(1) 在 `AGENT_PROMPT.md` 中加硬规则**：明确告知 Agent 这是非交互批处理模式，禁止等待批准，读完 prd.json 直接执行。措辞：`你运行在非交互批处理模式（--print），没有人会回答你的问题。不要问"是否批准"、"是否允许"、"要不要继续"——读完 prd.json 后直接执行实现，不等待回复。不要调用要求用户交互的 skill（如 brainstorming/planning），直接写代码。` **(2) Ralph harness 启动前**检查 `AGENT_PROMPT.md` 是否包含此指令，缺失时自动追加。 |
 | Node `spawn("claude", [...], { shell: true })` 触发 DEP0190 | 安全性警告（shell 拼接参数有注入风险） | DEP0190 警告可安全忽略 — 所有参数均为硬编码常量，无用户输入注入风险。Windows 上 **必须** 保留 `shell: true`，因为 `.cmd` 文件需要通过 shell 解析执行，去掉会报 `spawn EINVAL`。使用 `shell: true` 时不传用户输入。 |
 | Node `spawn("claude", [...])` 不加 `shell: true` 报 `spawn EINVAL` | Windows 上 `.cmd` / `.bat` 文件不可直接 spawn，报 `EINVAL`（errno -4071） | Windows 必须加 `shell: true`，因为 `.cmd` 文件在 Windows 上不是可执行二进制，必须通过 `cmd.exe` 解释执行。Unix/macOS 上的二进制文件无此限制。|
 | 无基线检测直接修改代码 | 改完后引入新 bug，之前通过的测试全挂 | `--init-run` 时存基线测试结果，每个 story 后对比，退步则 `git checkout` 回滚 diff 文件 |
@@ -670,6 +671,7 @@ ralph/<kebab-case-feature-name>
 | error 只存最新不累计 | 无法发现重复模式，知识无法沉淀 | 追加到 `error-ledger.jsonl`，阈值 ≥3 次后输出升级建议 |
 | **Claude 改代码但忘记更新 prd.json 的 passes** | prd.json 状态落后于 git log，harness 认为零进展 | ralph-core.mjs 的 `updateProgress()` 增加 git diff 和 git log 交叉验证；Agent 提交前强制检查 prd.json 是否包含 passes 变更 |
 | **Story 说"打通同步链路"但只改 JSON mapper 没改 builder** | Obsidian 同步的 markdown 输出缺少新增字段 | 验收标准必须明确包含 builder 更新检查，PRD 中涉及同步管道的 story 必须列出 builder 的改动文件 |
+| **当前分支 ≠ PRD branchName 时 Agent 卡在 worktree 审批** | `--print` 非交互模式下 Agent 检测到分支不匹配，问"是否允许创建隔离 worktree"——无人回答，迭代空转 | **(1) PRD 生成后、启动 Ralph 前**，用户应手动 `git checkout -b ralph/<feature>` 切到目标分支。写进启动前的 checklist。**(2)** 如果必须在有未提交改动的分支上跑，先 `git stash` 或提交后再切。**(3) AGENT_PROMPT.md 的"不要问是否允许"规则**覆盖此场景。 |
 
 ---
 
@@ -791,7 +793,8 @@ rm scripts/ralph/ralph-v2.sh
 | v3.9 | 新增"故障排查"章节：`.prd.state.json` 损坏导致 prompt 为空的诊断与修复 | 2026-06-26 |
 | v3.10 | 新增"验收 Story 编写规范"和"验收边界检查清单"：类型结构一致性、嵌套对象对齐、数值语义正确性、中文渲染验证 | 2026-06-26 |
 | v4.0 | 新增 Harness Engineering 6 原则：真实信号守卫、回归基线检测、结构化改动日志、一键回滚、Error Ledger 台账与自动升级建议、AGENT_PROMPT 加"只加不改"指令 | 2026-06-26 |
-| v4.1 | 新增"Story 完成度审查清单"章节 + 验收边界检查清单补充 Obsidian builder/SSE error 检查项 + 反模式表中补充 prd.json passes 遗忘和 builder 遗漏 | 2026-06-27 |
+| v4.1 | 新增"Story 完成度审查清单"章节 | 2026-06-27 |
+| v4.2 | 新增"--print 非交互模式问是否批准"+"分支不匹配卡住"反模式 + AGENT_PROMPT 硬规则 | 2026-06-28 |
 
 ### 未来方向
 
