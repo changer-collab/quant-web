@@ -1,6 +1,5 @@
 import type { LanguageContent } from './types';
 import { FactorStatus, FactorEvalTab } from './types';
-import { MOCK_INSTRUMENTS } from './mock';
 import { aiCodeSample, hftCodeSample, traditionalCodeSample } from './codeSamples';
 
 export const enContent: LanguageContent = {

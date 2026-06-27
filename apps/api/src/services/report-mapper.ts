@@ -14,6 +14,14 @@ export function mapBacktestResultToReport(
 ): BacktestReportFull {
   const metrics = result.metrics;
   const config = result.config as Record<string, unknown>;
+  const formatDate = (ts?: number) => {
+    if (!ts) return '';
+    const date = new Date(ts);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   return {
     id: `report-${Date.now()}`,
@@ -44,8 +52,8 @@ export function mapBacktestResultToReport(
       logic: String(config.logic ?? ''),
       instruments: [metadata.symbol],
       timeRange: {
-        start: metadata.startTime ? new Date(metadata.startTime).toISOString().slice(0, 10) : '',
-        end: metadata.endTime ? new Date(metadata.endTime).toISOString().slice(0, 10) : '',
+        start: formatDate(metadata.startTime),
+        end: formatDate(metadata.endTime),
       },
       frequency: metadata.timeframe,
       benchmark: '',

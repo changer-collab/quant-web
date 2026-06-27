@@ -37,6 +37,13 @@ export default [
         clearInterval: 'readonly',
         AbortController: 'readonly',
         TextDecoder: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        Event: 'readonly',
+        EventSource: 'readonly',
+        Response: 'readonly',
+        RequestInfo: 'readonly',
+        RequestInit: 'readonly',
       },
     },
     plugins: {

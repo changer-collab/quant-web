@@ -126,12 +126,23 @@ export async function internalTaskRoutes(app: FastifyInstance) {
         const reportRepo = new ReportRepository();
         const taskResult = result as { backtestResult: BacktestResult; analysis?: Record<string, unknown> };
         const backtestResult = taskResult.backtestResult;
-        const payload = task.payload as { strategy: string; symbol: string; timeframe: string };
+        const payload = task.payload as {
+          strategy: string;
+          symbol: string;
+          timeframe: string;
+          startTs?: number;
+          endTs?: number;
+          initialCash?: number;
+          slippage?: number;
+          params?: Record<string, unknown>;
+        };
 
         const report = mapBacktestResultToReport(backtestResult, {
           strategyName: payload.strategy,
           symbol: payload.symbol,
           timeframe: payload.timeframe,
+          startTime: payload.startTs,
+          endTime: payload.endTs,
         });
 
         // 合并 AI 分析结果到报告（覆盖结论性字段）
@@ -211,6 +222,8 @@ export async function internalTaskRoutes(app: FastifyInstance) {
           strategyName: payload.strategy,
           symbol: payload.symbol,
           timeframe: payload.timeframe,
+          startTime: payload.startTs,
+          endTime: payload.endTs,
           createdAt: Date.now(),
           totalReturn: backtestResult.metrics.totalReturn,
           annualizedReturn: backtestResult.metrics.annualizedReturn,

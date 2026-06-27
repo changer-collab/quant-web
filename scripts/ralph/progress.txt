@@ -11,6 +11,29 @@ Started: 2026-06-26
 - 前端 `mapBacktestResultToReport()` 接收 `{ backtestResult: PythonBacktestResult, analysis }` 格式
 - Obsidian sync 通过 Python CLI `syncBacktest` 命令由 Worker 在回测完成后触发
 - Worker 的 BacktestHandler 已在第 89-100 行包含 Obsidian 同步 try-catch
+- eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
+- API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
+- worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
+
+---
+
+## [2026-06-27 13:00] - story-7
+- 端到端验证：story-7 不直接改代码，但修复了 build 阻塞问题以验证全链路
+- **修复**: worker 的 python-bridge.ts 中 `stdout` 变量未声明（`let stdout = ""`），导致 lint 报 `no-undef`
+- **修复**: worker 的 backtest-agent.ts 中 `request.params as BacktestParams` 需要 `as unknown as` 双转换（`Record<string, unknown>` 与 `BacktestParams` 不重叠）
+- **修复**: worker 的 python-agent.ts 中 `onEvent` 回调类型从 `{ event: string; [key: string]: unknown }` 改为 `StreamEvent`，需要导入 `StreamEvent` 类型
+- **修复**: API 的 task.ts 引用了 web 端的 `ReportRiskWarnings` 类型，改为 inline 类型
+- **修复**: eslint.config.mjs 添加 `setInterval`/`clearTimeout`/`clearInterval`/`AbortController`/`TextDecoder` 全局变量
+- 全链路 build/tests/lint 通过
+- **后续迭代注意事项：**
+  - eslint.config.mjs 是所有包的全局 eslint 配置，缺少的 Node.js 运行时全局变量（setTimeout 等）应往这里加
+  - API 的 types.ts 有独立于 web 端的类型定义，不要在 API 代码中引用 web 端类型
+  - worker 的 PythonBridge 有同步和流式两种调用模式，`call()` 方法中 `let stdout = ""` 漏掉变量声明
+- 所有 story (1-7) 均已完成
+---
+- eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
+- API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
+- worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
 
 ---
 
@@ -28,3 +51,5 @@ Started: 2026-06-26
 - story-6: 数据范围选择器
 - story-7: 端到端验证
 ---
+
+## ✅ ALL STORIES COMPLETE

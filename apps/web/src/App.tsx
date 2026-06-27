@@ -56,18 +56,25 @@ export default function App() {
 
   // 将 API 任务映射为 ResearchJob 并与本地任务合并
   const allJobs = useMemo<ResearchJob[]>(() => {
-    const apiJobs: ResearchJob[] = apiTasks.map((task) => ({
-      id: task.id,
-      name: `${task.type} #${task.id}`,
-      kind: task.type,
-      state: task.status,
-      progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
-      strategyName: (task.payload.strategy as string) ?? '',
-      mode: 'traditional' as ResearchModeId,
-      template: task.type as JobTemplate,
-    }));
+    // 策略 id → 显示名映射（用于刷新后从 API 任务还原真实策略名）
+    const strategyNameById = new Map(strategies.map((s) => [s.id, s.name]));
+    const apiJobs: ResearchJob[] = apiTasks.map((task) => {
+      const strategyId = (task.payload.strategy as string) ?? '';
+      const strategyName = strategyNameById.get(strategyId) ?? strategyId;
+      return {
+        id: task.id,
+        name: strategyName || `${task.type} #${task.id}`,
+        kind: task.type,
+        state: task.status,
+        progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
+        strategyName,
+        errorMessage: task.error,
+        mode: 'traditional' as ResearchModeId,
+        template: task.type as JobTemplate,
+      };
+    });
     return [...localizedJobs, ...apiJobs];
-  }, [localizedJobs, apiTasks]);
+  }, [localizedJobs, apiTasks, strategies]);
 
   const isGeneratedReportPage = state.activePage === 'backtest' && Boolean(activeReport);
   const pageTitle =

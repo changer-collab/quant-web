@@ -197,6 +197,44 @@ describe('Report Routes', () => {
       await app.close();
     });
 
+    it('回测任务完成时使用提交 payload 的起止日期保存报告区间', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const startTs = new Date('2023-01-02T00:00:00').getTime();
+      const endTs = new Date('2024-12-30T00:00:00').getTime();
+
+      const submitRes = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: {
+          type: 'backtest',
+          payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', startTs, endTs },
+        },
+      });
+      const taskId = submitRes.json().id;
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/internal/tasks/${taskId}/complete`,
+        payload: { result: { backtestResult: mockBacktestResult } },
+      });
+
+      const listRes = await app.inject({ method: 'GET', url: '/api/reports' });
+      const reports = listRes.json();
+      expect(reports[0].startTime).toBe(startTs);
+      expect(reports[0].endTime).toBe(endTs);
+
+      const detailRes = await app.inject({ method: 'GET', url: `/api/reports/${reports[0].id}` });
+      const report = detailRes.json();
+      expect(report.startTime).toBe(startTs);
+      expect(report.endTime).toBe(endTs);
+      expect(report.reportData.overview.timeRange).toEqual({ start: '2023-01-02', end: '2024-12-30' });
+
+      await app.close();
+    });
+
     it('回测任务完成时自动保存报告，读取时 reportData 包含 monthlyReturns（非空数组）', async () => {
       const app = await buildApp({
         dataCenter: createMockDataCenter(),

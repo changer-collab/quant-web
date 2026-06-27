@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { BacktestReportFull, ReportUiCopy } from '../../appData';
-import { ReactEChartsCore, echarts, CHART_DEFAULTS, fmtPct } from '../../lib/echarts-setup';
+import { ReactEChartsCore, echarts, CHART_DEFAULTS } from '../../lib/echarts-setup';
 import type { EChartsOption } from 'echarts';
 import styles from '@/styles/report-metrics.module.css';
 
@@ -11,11 +11,6 @@ interface Props {
 
 function pct(v: number): string {
   return `${(v * 100).toFixed(1)}%`;
-}
-
-/** 安全格式化：null/undefined 显示 '--' */
-function safePct(v: number | null | undefined): string {
-  return v !== null && v !== undefined ? `${(v * 100).toFixed(1)}%` : '--';
 }
 
 function safeNum(v: number | null | undefined, decimals = 2): string {
@@ -94,7 +89,7 @@ function RiskBullets({ report, ui }: Props) {
         {
           name: '参考区间',
           type: 'bar',
-          data: maxes.map((max, i) => ({
+          data: maxes.map((max) => ({
             value: max,
             itemStyle: {
               color: 'rgba(38, 54, 50, 0.35)',

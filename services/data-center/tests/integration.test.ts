@@ -338,7 +338,7 @@ describe('DataCenter 集成测试', () => {
       ]);
 
       // 并发调用 close
-      const results = await Promise.all([dcLocal.close(), dcLocal.close(), dcLocal.close()]);
+      await Promise.all([dcLocal.close(), dcLocal.close(), dcLocal.close()]);
       expect(dcLocal.isClosed()).toBe(true);
 
       // 数据应持久化

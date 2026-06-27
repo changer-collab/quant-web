@@ -30,6 +30,9 @@ __pycache__/
 # turbo
 .turbo
 
+# Superpowers local execution scratch
+.superpowers/
+
 # Ralph autonomous agent loop (runtime artifacts)
 scripts/ralph/prd.json
 scripts/ralph/progress.txt

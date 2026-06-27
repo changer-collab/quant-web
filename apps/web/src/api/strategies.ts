@@ -8,6 +8,8 @@ export interface ApiStrategy {
   modes?: string[];
   /** 策略类型标识（与 Python StrategyKind 对齐） */
   kind?: string;
+  /** 是否可独立回测（组件策略如选股器/择时器/仓位器不可独立回测） */
+  backtestable?: boolean;
 }
 
 export interface ApiStrategyParam {

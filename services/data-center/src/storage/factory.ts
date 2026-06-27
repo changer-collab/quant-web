@@ -47,7 +47,7 @@ import type {
   Level2DataProvider,
   DataQualityChecker,
 } from '../index.js';
-import { DataCenterError, CloseError } from '../errors.js';
+import { CloseError } from '../errors.js';
 
 // ─── 生命周期类型 ───────────────────────────────────────
 

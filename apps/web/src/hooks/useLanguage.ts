@@ -21,7 +21,6 @@ import {
   type FactorDisplayRow,
   type FactorEvalDisplayResult,
   type UiCopy,
-  type ReportUiCopy,
 } from '../appData';
 
 export function useLanguage() {

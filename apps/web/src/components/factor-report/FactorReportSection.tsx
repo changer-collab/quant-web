@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import s from '../../styles/factor-report-section.module.css';
 
 interface FactorReportSectionProps {
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   defaultOpen?: boolean;
   className?: string;
 }

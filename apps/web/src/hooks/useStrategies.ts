@@ -37,7 +37,13 @@ function mapStrategy(api: ApiStrategy): StrategyRow {
 export function useStrategies() {
   const { data, loading, error, reload } = useApi<ApiStrategy[]>(fetchStrategies);
 
-  const strategies = useMemo(() => (data ?? []).map(mapStrategy), [data]);
+  // 仅保留可独立回测的策略；组件策略（选股器/择时器/仓位器）无 on_bar，
+  // 独立回测会失败，从源头过滤掉，避免用户选中后任务报错。
+  // 注意：API 未返回 backtestable 时（旧后端）默认保留，避免误删全部策略。
+  const strategies = useMemo(
+    () => (data ?? []).filter((s) => s.backtestable !== false).map(mapStrategy),
+    [data],
+  );
 
   return { strategies, loading, error, reload };
 }

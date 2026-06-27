@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { BacktestReportFull, ReportUiCopy } from '../../appData';
-import { ReactEChartsCore, echarts, CHART_DEFAULTS, fmtPct } from '../../lib/echarts-setup';
+import { ReactEChartsCore, echarts, CHART_DEFAULTS } from '../../lib/echarts-setup';
 import type { EChartsOption } from 'echarts';
 import styles from '@/styles/report-tables.module.css';
 

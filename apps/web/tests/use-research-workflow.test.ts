@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useResearchWorkflow } from '../src/hooks/useResearchWorkflow';
+import { getStrategies } from '../src/appData';
 
 vi.mock('../src/api/reports', () => ({
   fetchReports: vi.fn().mockResolvedValue([]),
@@ -89,6 +90,48 @@ describe('useResearchWorkflow', () => {
     act(() => result.current.handleViewReport(jobWithReport!));
     expect(result.current.state.activePage).toBe('backtest');
     expect(result.current.activeReport).toBeDefined();
+  });
+
+  it('uses selected backtest configuration in generated report diagnostics', async () => {
+    const strategy = getStrategies('zh').find((item) => item.id === 'dual_ma');
+    const { result } = renderHook(() => useResearchWorkflow('zh'));
+
+    act(() => result.current.handleSelectStrategy(strategy!));
+    act(() => {
+      result.current.setBacktestConfig((current) => ({
+        ...current,
+        symbol: '600519',
+        timeframe: '1d',
+        startTs: new Date('2023-01-02T00:00:00').getTime(),
+        endTs: new Date('2024-12-30T00:00:00').getTime(),
+        initialCash: 2_000_000,
+        slippage: 0.002,
+        params: { short_period: 7, long_period: 30 },
+      }));
+    });
+    act(() => result.current.handleRunResearch());
+
+    await waitFor(() => {
+      expect(result.current.activeReport).toBeDefined();
+    }, { timeout: 5000 });
+
+    const activeReport = result.current.activeReport!;
+    const runConfigSection = activeReport.diagnostics.find((section) => section.title === '运行配置');
+    const flattenedDiagnostics = activeReport.diagnostics.flatMap((section) => section.items);
+
+    expect(runConfigSection?.items).toContain('回测区间: 2023-2024');
+    expect(runConfigSection?.items).toContain('起止日期: 2023-01-02 ~ 2024-12-30');
+    expect(runConfigSection?.items).toContain('标的代码: 600519');
+    expect(runConfigSection?.items).toContain('初始资金: 2,000,000');
+    expect(runConfigSection?.items).not.toContain('回测区间: 2021-2025');
+    expect(flattenedDiagnostics).toContain('策略类型: 趋势跟踪策略');
+    expect(flattenedDiagnostics).toContain('参数: 短均线周期=7, 长均线周期=30');
+    expect(result.current.activeBacktestReport?.overview.timeRange).toEqual({ start: '2023-01-02', end: '2024-12-30' });
+    expect(result.current.activeBacktestReport?.dataParams.capital.initialCash).toBe(2_000_000);
+    expect(result.current.activeBacktestReport?.dataParams.params).toEqual([
+      { label: '短均线周期', value: '7' },
+      { label: '长均线周期', value: '30' },
+    ]);
   });
 
   it('does nothing when viewing report for a job without one', () => {

@@ -57,12 +57,14 @@ export function createResearchReport(input: CreateResearchReportInput, language?
     metrics[0] = { label: labels.mode, value: modeName, tone: 'info' };
   }
 
-  const diagnostics = getResearchMode(mode, language).sections.map((section) => ({
-    title: section.title,
-    items: [...section.items],
-  }));
+  const diagnostics = input.diagnosticSections?.length
+    ? input.diagnosticSections.map((section) => ({ title: section.title, items: [...section.items] }))
+    : getResearchMode(mode, language).sections.map((section) => ({
+        title: section.title,
+        items: [...section.items],
+      }));
 
-  if (input.configSummary?.length) {
+  if (input.configSummary?.length && !diagnostics.some((section) => section.title === content.ui.runConfigurationTitle)) {
     diagnostics.unshift({
       title: content.ui.runConfigurationTitle,
       items: [...input.configSummary],
@@ -127,7 +129,11 @@ interface PythonBacktestResult {
 /** 时间戳转日期字符串 */
 function tsToDate(ts: number): string {
   if (!ts) return '';
-  return new Date(ts).toISOString().split('T')[0];
+  const date = new Date(ts);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /** 创建空白报告模板（不含 mock 数据，所有可选字段为空） */
@@ -364,16 +370,16 @@ export function mapBacktestResultToReport(
       strategyCategory: config.strategyKind ?? source?.overview?.strategyCategory ?? 'timing',
     },
     dataParams: {
-      dataSource: '',
-      adjustmentType: '',
-      fee: { commission: 0, stampTax: 0 },
-      slippage: { model: 'fixed', value: config.slippage ?? 0 },
+      dataSource: source?.dataParams?.dataSource ?? '',
+      adjustmentType: source?.dataParams?.adjustmentType ?? '',
+      fee: source?.dataParams?.fee ?? { commission: 0, stampTax: 0 },
+      slippage: { model: source?.dataParams?.slippage.model ?? 'fixed', value: config.slippage ?? source?.dataParams?.slippage.value ?? 0 },
       capital: {
-        initialCash: config.initialCash ?? 0,
-        maxLeverage: 1.0,
-        positionLimit: 0.95,
+        initialCash: config.initialCash ?? source?.dataParams?.capital.initialCash ?? 0,
+        maxLeverage: source?.dataParams?.capital.maxLeverage ?? 1.0,
+        positionLimit: source?.dataParams?.capital.positionLimit ?? 0.95,
       },
-      params: [],
+      params: source?.dataParams?.params ?? [],
     },
     returnMetrics: {
       cumulativeReturn: metrics.totalReturn ?? 0,
@@ -464,13 +470,18 @@ export function mapBacktestResultToReport(
     }
     const iss = analysis.issues as Record<string, unknown> | undefined;
     if (iss) {
-      // Handle both API format (object with fields) and old format
       const apiIssues = iss as Record<string, unknown>;
       report.issues = {
         ...report.issues,
         overfittingRisk: (apiIssues.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
         liquidityAssessment: (apiIssues.liquidityAssessment as string) || report.issues.liquidityAssessment,
         capacityEstimate: (apiIssues.capacityEstimate as string) || report.issues.capacityEstimate,
+        liquidityAssessmentItems: Array.isArray(apiIssues.liquidityAssessmentItems)
+          ? apiIssues.liquidityAssessmentItems as typeof report.issues.liquidityAssessmentItems
+          : report.issues.liquidityAssessmentItems,
+        capacityEstimateItems: Array.isArray(apiIssues.capacityEstimateItems)
+          ? apiIssues.capacityEstimateItems as typeof report.issues.capacityEstimateItems
+          : report.issues.capacityEstimateItems,
       };
     }
     const con = analysis.conclusion as Record<string, unknown> | undefined;

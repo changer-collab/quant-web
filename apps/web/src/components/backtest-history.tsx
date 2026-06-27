@@ -41,6 +41,11 @@ export function BacktestHistory({
                   <span>{job.state}</span>
                   {isComplete && <span>100%</span>}
                 </div>
+                {job.errorMessage && (
+                  <div className={s.errorDetail}>
+                    {job.errorMessage}
+                  </div>
+                )}
               </div>
               <div className={s.itemMetrics}>
                 {job.strategyName && (
