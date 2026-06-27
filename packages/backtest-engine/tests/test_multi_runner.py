@@ -1,11 +1,13 @@
 """MultiSymbolRunner 多标的回测测试"""
 
 from quantforge_strategy import (
-    SelectorStrategy, TimingStrategy, PositionStrategy,
+    SelectorStrategy, TimingStrategy, PositionStrategy, CompositeStrategy,
     StrategyMeta, StrategyResult, Bar, TimeFrame, Signal,
-    ResearchMode, StrategyKind,
+    ResearchMode, StrategyKind, StrategyState, OrderSide, OrderType,
+    OrderRequest,
 )
 from quantforge_backtest import DefaultComposite, MultiSymbolRunner
+from quantforge_backtest.market_rules import ASHARE_RULES
 from quantforge_backtest.types import BacktestResult
 
 
@@ -81,6 +83,90 @@ class SmallQtySizer(PositionStrategy):
         return StrategyResult(meta=self.meta)
 
 
+class BuyAndSellSameDay(CompositeStrategy):
+    """同一时间点同时提交买卖单，用于验证 T+1 锁定。"""
+
+    def __init__(self) -> None:
+        self._submitted = False
+        self._state = StrategyState.Idle
+
+    @property
+    def meta(self) -> StrategyMeta:
+        return StrategyMeta(
+            name="buy_and_sell_same_day", description="同日买入后卖出",
+            modes=[ResearchMode.Traditional], params=[], version="0.1.0",
+            kind=StrategyKind.Composite,
+        )
+
+    @property
+    def state(self) -> StrategyState:
+        return self._state
+
+    def init(self, context) -> None:
+        self._submitted = False
+        self._state = StrategyState.Running
+
+    def on_bars(self, bars: dict[str, Bar], context) -> None:
+        if self._submitted or "600000" not in bars:
+            return
+        context.submit_order(OrderRequest(
+            symbol="600000", side=OrderSide.Buy,
+            type=OrderType.Market, quantity=100,
+        ))
+        context.submit_order(OrderRequest(
+            symbol="600000", side=OrderSide.Sell,
+            type=OrderType.Market, quantity=100,
+        ))
+        self._submitted = True
+
+    def finish(self) -> StrategyResult:
+        self._state = StrategyState.Stopped
+        return StrategyResult(meta=self.meta)
+
+
+class BuyThenSellNextDay(CompositeStrategy):
+    """先买入，买入成交后的下一交易日卖出，用于验证 T+1 解锁。"""
+
+    def __init__(self) -> None:
+        self._step = 0
+        self._state = StrategyState.Idle
+
+    @property
+    def meta(self) -> StrategyMeta:
+        return StrategyMeta(
+            name="buy_then_sell_next_day", description="下一交易日卖出",
+            modes=[ResearchMode.Traditional], params=[], version="0.1.0",
+            kind=StrategyKind.Composite,
+        )
+
+    @property
+    def state(self) -> StrategyState:
+        return self._state
+
+    def init(self, context) -> None:
+        self._step = 0
+        self._state = StrategyState.Running
+
+    def on_bars(self, bars: dict[str, Bar], context) -> None:
+        if "600000" not in bars:
+            return
+        if self._step == 0:
+            context.submit_order(OrderRequest(
+                symbol="600000", side=OrderSide.Buy,
+                type=OrderType.Market, quantity=100,
+            ))
+        elif self._step == 1:
+            context.submit_order(OrderRequest(
+                symbol="600000", side=OrderSide.Sell,
+                type=OrderType.Market, quantity=100,
+            ))
+        self._step += 1
+
+    def finish(self) -> StrategyResult:
+        self._state = StrategyState.Stopped
+        return StrategyResult(meta=self.meta)
+
+
 def _make_bars(symbol: str, n: int, start_price: float = 10.0) -> list[Bar]:
     return [
         Bar(symbol=symbol, timeframe=TimeFrame.D1, timestamp=i,
@@ -144,3 +230,34 @@ def test_multi_runner_single_symbol():
 
     assert result.metrics.total_trades == 1
     assert len(result.equity_curve) == 3
+
+
+def test_multi_runner_enforces_t_plus_1_with_market_rules():
+    strategy = BuyAndSellSameDay()
+    bars = {"600000": _make_bars("600000", 2, 10.0)}
+
+    runner = MultiSymbolRunner(
+        strategy=strategy,
+        bars=bars,
+        initial_cash=100000,
+        market_rules=ASHARE_RULES,
+    )
+    result = runner.run()
+
+    assert [trade.side for trade in result.trades] == [OrderSide.Buy]
+    assert result.config.enable_market_rules is True
+
+
+def test_multi_runner_unlocks_t_plus_1_on_next_trading_day():
+    strategy = BuyThenSellNextDay()
+    bars = {"600000": _make_bars("600000", 4, 10.0)}
+
+    runner = MultiSymbolRunner(
+        strategy=strategy,
+        bars=bars,
+        initial_cash=100000,
+        market_rules=ASHARE_RULES,
+    )
+    result = runner.run()
+
+    assert [trade.side for trade in result.trades] == [OrderSide.Buy, OrderSide.Sell]

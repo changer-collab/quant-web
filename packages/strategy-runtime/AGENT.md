@@ -119,3 +119,5 @@ stdout: NDJSON 事件流（每行一个 JSON 事件）
 ```
 
 Worker（TS）通过 PythonBridge 调用 `python -m quantforge_strategy.cli`，不直接 import Python 包。
+
+Windows 中文环境下，CLI 子进程 stdout 已强制 UTF-8；测试中使用 `subprocess.run(..., text=True)` 时需显式传 `encoding="utf-8"`，避免系统默认 GBK 解码失败。

@@ -14,6 +14,7 @@ Started: 2026-06-26
 - eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
 - API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
 - worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
+- strategy-runtime CLI 子进程 stdout 强制 UTF-8，测试用 `subprocess.run(..., text=True)` 时也要显式 `encoding="utf-8"`，否则 Windows 中文环境会按 GBK 解码失败
 
 ---
 
@@ -53,3 +54,44 @@ Started: 2026-06-26
 ---
 
 ## ✅ ALL STORIES COMPLETE
+
+# Branch changed to ralph/pipeline-critical-fixes
+
+## [2026-06-27 16:12:32] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 7
+---
+
+## [2026-06-27 16:30:32] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 7
+- **Detected issues:**
+```
+vitest_fail
+```
+---
+
+## [2026-06-28 01:09:10] - story-1
+- 实现了回测 CLI 默认接入 A 股市场规则：`_run_single()` 和 `_run_composite()` 创建 runner 时传入 `ASHARE_RULES`
+- 修改 `MultiSymbolRunner`：新增 `market_rules` 参数，透传给 `Matcher`/`PortfolioManager`，交易日切换时调用 `unlock_t_plus_1()`，卖单撮合时传入 `available_qty`
+- 新增/更新测试覆盖：多标的 T+1 当日卖出拦截、下一交易日解锁、CLI 单标的/组合回测默认传入 `ASHARE_RULES`
+- 修复 Windows 中文环境下 CLI subprocess 测试解码问题：`test_cli.py` 的 `subprocess.run(..., text=True)` 显式 `encoding="utf-8"`
+- 修改了哪些文件：
+  - `packages/backtest-engine/quantforge_backtest/multi_runner.py`
+  - `packages/backtest-engine/tests/test_multi_runner.py`
+  - `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`
+  - `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
+  - `packages/strategy-runtime/tests/test_cli.py`
+  - `packages/strategy-runtime/AGENT.md`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `cd packages/backtest-engine && python -m pytest -v` → 68 passed
+  - `cd packages/strategy-runtime && python -m pytest -v` → 54 passed
+- **后续迭代注意事项：**
+  - 多标的 runner 的撮合发生在策略 `on_bars()` 之前，策略本步提交的订单会在下一时间点撮合；测试同日 T+1 锁定时要控制 bars 数量，避免挂起卖单在下一交易日自然解锁成交
+  - `strategy-runtime` 的 backtest 命令可延迟导入下游包，但测试里若 import 该命令模块，需要本地环境已能解析 `quantforge_backtest`/`quantforge_data`/`quantforge_strategies`
+  - Windows 中文环境下，CLI 已输出 UTF-8，父进程测试也必须按 UTF-8 解码
+---

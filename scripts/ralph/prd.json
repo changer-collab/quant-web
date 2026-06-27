@@ -22,7 +22,7 @@
       ],
       "agent": "backtest-agent",
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-2",

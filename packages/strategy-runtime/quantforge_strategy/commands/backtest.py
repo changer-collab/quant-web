@@ -6,6 +6,7 @@ import dataclasses
 from typing import Any, Callable
 
 from quantforge_backtest import BacktestRunner, MultiSymbolRunner, DefaultComposite
+from quantforge_backtest.market_rules import ASHARE_RULES
 from quantforge_strategies import get as get_strategy
 from quantforge_data import DataClient
 from quantforge_strategy import TimeFrame
@@ -77,6 +78,7 @@ def _run_single(
         strategy, bars,
         initial_cash=config.get("initialCash"),
         slippage=config.get("slippage"),
+        market_rules=ASHARE_RULES,
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
     return {"ok": True, "data": _result_to_dict(result)}
@@ -154,6 +156,7 @@ def _run_composite(
         strategy, bars_by_symbol,
         initial_cash=config.get("initialCash"),
         slippage=config.get("slippage"),
+        market_rules=ASHARE_RULES,
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
     return {"ok": True, "data": _result_to_dict(result)}
