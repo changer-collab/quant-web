@@ -17,6 +17,19 @@ class Bar:
     low: float
     close: float
     volume: float
+    limit_up: float | None = None
+    limit_down: float | None = None
+    is_suspended: bool = False
+
+    @property
+    def is_limit_up(self) -> bool:
+        """是否接近涨停价。"""
+        return self.limit_up is not None and self.close >= self.limit_up - 0.01
+
+    @property
+    def is_limit_down(self) -> bool:
+        """是否接近跌停价。"""
+        return self.limit_down is not None and self.close <= self.limit_down + 0.01
 
 
 @dataclass(frozen=True)

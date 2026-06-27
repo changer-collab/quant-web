@@ -53,6 +53,11 @@ class MarketRules:
     enable_transfer_fee: bool = True
     sh_symbols: tuple[str, ...] = ("60", "68", "90", "11", "13", "50", "51", "56", "58")
 
+    def calc_limit_prices(self, prev_close: float, symbol: str | None = None) -> tuple[float, float]:
+        """根据前收盘价计算涨跌停价。"""
+        limit_ratio = 0.20 if symbol is not None and symbol.startswith("68") else 0.10
+        return round(prev_close * (1 + limit_ratio), 2), round(prev_close * (1 - limit_ratio), 2)
+
     def is_sh_symbol(self, symbol: str) -> bool:
         """判断是否为沪市标的（需收过户费）"""
         return any(symbol.startswith(prefix) for prefix in self.sh_symbols)

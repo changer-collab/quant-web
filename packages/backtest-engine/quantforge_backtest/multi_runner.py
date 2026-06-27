@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Callable
 
 from quantforge_strategy import (
@@ -54,6 +55,24 @@ class MultiSymbolRunner:
 
         return [timestamp_to_bars[ts] for ts in sorted(timestamp_to_bars.keys())]
 
+    def _apply_limit_prices(
+        self,
+        bars_at_ts: dict[str, Bar],
+        prev_closes: dict[str, float],
+    ) -> dict[str, Bar]:
+        """用各标的前收盘价补充涨跌停价。"""
+        if self.market_rules is None:
+            return bars_at_ts
+        result: dict[str, Bar] = {}
+        for symbol, bar in bars_at_ts.items():
+            prev_close = prev_closes.get(symbol)
+            if prev_close is None:
+                result[symbol] = bar
+                continue
+            limit_up, limit_down = self.market_rules.calc_limit_prices(prev_close, symbol)
+            result[symbol] = replace(bar, limit_up=limit_up, limit_down=limit_down)
+        return result
+
     def run(self, on_progress: Callable[[int, int], None] | None = None) -> BacktestResult:
         matcher = Matcher(self.slippage, self.market_rules)
         portfolio = PortfolioManager(self.initial_cash, self.market_rules)
@@ -64,6 +83,7 @@ class MultiSymbolRunner:
         pending_orders: list[Order] = []
         order_id_seq = 0
         prev_date: int | None = None
+        prev_closes: dict[str, float] = {}
 
         # 策略上下文实现
         class _Context:
@@ -107,9 +127,10 @@ class MultiSymbolRunner:
         timeline = self._merge_bars()
         total_steps = len(timeline)
 
-        for step_index, bars_at_ts in enumerate(timeline):
+        for step_index, raw_bars_at_ts in enumerate(timeline):
             if on_progress is not None:
                 on_progress(step_index, total_steps)
+            bars_at_ts = self._apply_limit_prices(raw_bars_at_ts, prev_closes)
             current_ts = min(b.timestamp for b in bars_at_ts.values())
 
             # T+1 解锁：检测交易日切换（按当前时间点 timestamp 近似交易日）
@@ -173,6 +194,8 @@ class MultiSymbolRunner:
 
             # 推送给策略
             self.strategy.on_bars(bars_at_ts, context)
+            for symbol, bar in bars_at_ts.items():
+                prev_closes[symbol] = bar.close
 
         # 结束策略
         self.strategy.finish()

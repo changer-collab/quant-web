@@ -1,5 +1,6 @@
 """枚举类型测试"""
 
+from quantforge_strategy import Bar
 from quantforge_strategy.types import (
     OrderSide, OrderType, OrderStatus, StrategyState,
     ParamType, TimeFrame, ResearchMode, TaskStatus, TaskType,
@@ -76,3 +77,22 @@ def test_signal():
     assert Signal.Buy == "buy"
     assert Signal.Sell == "sell"
     assert Signal.Hold == "hold"
+
+
+def test_bar_has_optional_limit_and_suspension_fields():
+    legacy_bar = Bar(
+        symbol="600000", timeframe=TimeFrame.D1, timestamp=0,
+        open=10, high=11, low=9, close=10.5, volume=1000,
+    )
+    assert legacy_bar.limit_up is None
+    assert legacy_bar.limit_down is None
+    assert legacy_bar.is_suspended is False
+
+    halted_bar = Bar(
+        symbol="600000", timeframe=TimeFrame.D1, timestamp=1,
+        open=10, high=10, low=10, close=10, volume=0,
+        limit_up=11.0, limit_down=9.0, is_suspended=True,
+    )
+    assert halted_bar.limit_up == 11.0
+    assert halted_bar.limit_down == 9.0
+    assert halted_bar.is_suspended is True

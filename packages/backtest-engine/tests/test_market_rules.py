@@ -1,5 +1,7 @@
 """A 股市场规则测试"""
 
+from types import SimpleNamespace
+
 from quantforge_strategy import Bar, Order, OrderSide, OrderType, OrderStatus, TimeFrame
 from quantforge_backtest.matcher import Matcher
 from quantforge_backtest.portfolio import PortfolioManager
@@ -101,6 +103,16 @@ def test_no_rules_zero_cost():
     assert rules.calc_total_cost(10000, "600000", is_sell=True) == 0.0
 
 
+def test_calc_limit_prices_default_10_percent():
+    rules = MarketRules()
+    assert rules.calc_limit_prices(10.0) == (11.0, 9.0)
+
+
+def test_calc_limit_prices_star_market_20_percent():
+    rules = MarketRules()
+    assert rules.calc_limit_prices(10.0, symbol="688001") == (12.0, 8.0)
+
+
 # ===== Matcher 集成测试 =====
 
 def test_matcher_t_plus_1_blocks_sell():
@@ -157,6 +169,60 @@ def test_matcher_no_rules_backward_compatible():
     bar = _make_bar(10.0)
     trade = matcher.match(order, bar)
     assert trade is not None
+
+
+def test_matcher_blocks_buy_at_limit_up():
+    matcher = Matcher(slippage=0.0, market_rules=ASHARE_RULES)
+    order = Order(id="o1", symbol="600000", side=OrderSide.Buy,
+                  type=OrderType.Market, quantity=100)
+    bar = Bar(
+        symbol="600000", timeframe=TimeFrame.D1, timestamp=1000,
+        open=10.9, high=11.0, low=10.8, close=11.0, volume=1000,
+        limit_up=11.0, limit_down=9.0,
+    )
+
+    assert matcher.match(order, bar) is None
+
+
+def test_matcher_blocks_sell_at_limit_down():
+    matcher = Matcher(slippage=0.0, market_rules=ASHARE_RULES)
+    order = Order(id="o1", symbol="600000", side=OrderSide.Sell,
+                  type=OrderType.Market, quantity=100)
+    bar = Bar(
+        symbol="600000", timeframe=TimeFrame.D1, timestamp=1000,
+        open=9.1, high=9.2, low=9.0, close=9.0, volume=1000,
+        limit_up=11.0, limit_down=9.0,
+    )
+
+    assert matcher.match(order, bar, available_qty=100.0) is None
+
+
+def test_matcher_blocks_suspended_bar():
+    matcher = Matcher(slippage=0.0, market_rules=ASHARE_RULES)
+    buy = Order(id="o1", symbol="600000", side=OrderSide.Buy,
+                type=OrderType.Market, quantity=100)
+    sell = Order(id="o2", symbol="600000", side=OrderSide.Sell,
+                 type=OrderType.Market, quantity=100)
+    bar = Bar(
+        symbol="600000", timeframe=TimeFrame.D1, timestamp=1000,
+        open=10.0, high=10.0, low=10.0, close=10.0, volume=0,
+        is_suspended=True,
+    )
+
+    assert matcher.match(buy, bar) is None
+    assert matcher.match(sell, bar, available_qty=100.0) is None
+
+
+def test_matcher_accepts_legacy_bar_without_limit_fields():
+    matcher = Matcher(slippage=0.0, market_rules=ASHARE_RULES)
+    order = Order(id="o1", symbol="600000", side=OrderSide.Buy,
+                  type=OrderType.Market, quantity=100)
+    legacy_bar = SimpleNamespace(
+        symbol="600000", timeframe=TimeFrame.D1, timestamp=1000,
+        open=11.0, high=11.0, low=11.0, close=11.0, volume=1000,
+    )
+
+    assert matcher.match(order, legacy_bar) is not None
 
 
 # ===== PortfolioManager 集成测试 =====

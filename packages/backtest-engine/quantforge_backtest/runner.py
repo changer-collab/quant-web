@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Callable
 
 from quantforge_strategy import (
@@ -51,6 +52,13 @@ class BacktestRunner:
         self.slippage = slippage if slippage is not None else DEFAULT_SLIPPAGE
         self.market_rules = market_rules
 
+    def _apply_limit_prices(self, bar: Bar, prev_close: float | None) -> Bar:
+        """用前收盘价补充涨跌停价。"""
+        if self.market_rules is None or prev_close is None:
+            return bar
+        limit_up, limit_down = self.market_rules.calc_limit_prices(prev_close, bar.symbol)
+        return replace(bar, limit_up=limit_up, limit_down=limit_down)
+
     def run(self, on_progress: Callable[[int, int], None] | None = None) -> BacktestResult:
         matcher = Matcher(self.slippage, self.market_rules)
         portfolio = PortfolioManager(self.initial_cash, self.market_rules)
@@ -61,6 +69,7 @@ class BacktestRunner:
         pending_orders: list[Order] = []
         order_id_seq = 0
         prev_date: int | None = None
+        prev_close: float | None = None
 
         # 策略上下文实现
         class _Context:
@@ -101,9 +110,10 @@ class BacktestRunner:
 
         # 逐 bar 回放
         total_bars = len(self.bars)
-        for bar_index, bar in enumerate(self.bars):
+        for bar_index, raw_bar in enumerate(self.bars):
             if on_progress is not None:
                 on_progress(bar_index, total_bars)
+            bar = self._apply_limit_prices(raw_bar, prev_close)
 
             # T+1 解锁：检测交易日切换（按 bar.timestamp 的日期部分）
             if self.market_rules and self.market_rules.enable_t_plus_1:
@@ -169,6 +179,7 @@ class BacktestRunner:
 
             # 推送给策略
             self.strategy.on_bar(bar, context)
+            prev_close = bar.close
 
         # 结束策略
         self.strategy.finish()

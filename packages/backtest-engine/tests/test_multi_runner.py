@@ -83,6 +83,42 @@ class SmallQtySizer(PositionStrategy):
         return StrategyResult(meta=self.meta)
 
 
+class BuyOnSecondStep(CompositeStrategy):
+    """第二个时间点提交买单，用于验证多标的 runner 在撮合前补涨停价。"""
+
+    def __init__(self) -> None:
+        self._step = 0
+        self._state = StrategyState.Idle
+
+    @property
+    def meta(self) -> StrategyMeta:
+        return StrategyMeta(
+            name="buy_on_second_step", description="第二步买入",
+            modes=[ResearchMode.Traditional], params=[], version="0.1.0",
+            kind=StrategyKind.Composite,
+        )
+
+    @property
+    def state(self) -> StrategyState:
+        return self._state
+
+    def init(self, context) -> None:
+        self._step = 0
+        self._state = StrategyState.Running
+
+    def on_bars(self, bars: dict[str, Bar], context) -> None:
+        if self._step == 1 and "600000" in bars:
+            context.submit_order(OrderRequest(
+                symbol="600000", side=OrderSide.Buy,
+                type=OrderType.Market, quantity=100,
+            ))
+        self._step += 1
+
+    def finish(self) -> StrategyResult:
+        self._state = StrategyState.Stopped
+        return StrategyResult(meta=self.meta)
+
+
 class BuyAndSellSameDay(CompositeStrategy):
     """同一时间点同时提交买卖单，用于验证 T+1 锁定。"""
 
@@ -261,3 +297,32 @@ def test_multi_runner_unlocks_t_plus_1_on_next_trading_day():
     result = runner.run()
 
     assert [trade.side for trade in result.trades] == [OrderSide.Buy, OrderSide.Sell]
+
+
+def test_multi_runner_applies_limit_prices_before_matching_pending_order():
+    bars = {
+        "600000": [
+            Bar(
+                symbol="600000", timeframe=TimeFrame.D1, timestamp=0,
+                open=10.0, high=10.1, low=9.9, close=10.0, volume=1000,
+            ),
+            Bar(
+                symbol="600000", timeframe=TimeFrame.D1, timestamp=1,
+                open=10.0, high=10.1, low=9.9, close=10.0, volume=1000,
+            ),
+            Bar(
+                symbol="600000", timeframe=TimeFrame.D1, timestamp=2,
+                open=11.0, high=11.0, low=10.9, close=11.0, volume=1000,
+            ),
+        ],
+    }
+
+    runner = MultiSymbolRunner(
+        strategy=BuyOnSecondStep(),
+        bars=bars,
+        initial_cash=100000,
+        market_rules=ASHARE_RULES,
+    )
+    result = runner.run()
+
+    assert result.trades == []
