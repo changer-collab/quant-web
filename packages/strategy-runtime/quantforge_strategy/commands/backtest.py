@@ -122,6 +122,19 @@ def _run_composite(
     if not symbols:
         return {"ok": False, "error": {"code": "NO_SYMBOLS", "message": "组合策略需要 dataRange.symbols 数组"}}
 
+    client = DataClient(db_path)
+
+    # 存活偏差过滤：只让回测开始时间点已上市且未退市的标的参与
+    if start_ts is not None:
+        active = set(client.get_active_symbols(start_ts))
+        filtered = [s for s in symbols if s in active]
+        dropped = len(symbols) - len(filtered)
+        if dropped:
+            _emit("log", {"level": "info", "message": f"存活偏差过滤：排除了 {dropped} 个在回测开始时未上市/已退市的标的"})
+        symbols = filtered
+        if not symbols:
+            return {"ok": False, "error": {"code": "NO_ACTIVE_SYMBOLS", "message": "所有标的在回测开始时均未上市或已退市"}}
+
     components = config.get("components", {})
     selector_cfg = components.get("selector", {})
     timer_cfg = components.get("timer", {})
@@ -138,7 +151,6 @@ def _run_composite(
     # 加载多标的数据
     _emit("log", {"level": "info", "message": f"Loading data for {len(symbols)} symbols {timeframe.value}"})
 
-    client = DataClient(db_path)
     bars_by_symbol: dict[str, list] = {}
     for symbol in symbols:
         bars = client.query_bars(symbol, timeframe, start_ts=start_ts, end_ts=end_ts)
