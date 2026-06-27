@@ -3,6 +3,8 @@ Started: 2026-06-26
 ---
 
 ## Codebase Patterns
+- factor-lab 的 FormulaFactor 用受限 AST 手动递归求值，strategy-runtime 的 factorEval 只延迟导入并调用它，不在 runtime 内实现公式逻辑
+- strategy-runtime 的 CLI 命令必须延迟导入下游包；测试可用 importlib 加 __import__ guard 防止顶层导入 quantforge_factor/quantforge_data 等
 - backtest-engine 的 Trade 类来自 strategy-runtime 包（quantforge_strategy.order），不在 backtest-engine 内定义
 - 所有 runner（BacktestRunner、MultiSymbolRunner、MultiStrategyRunner）都用 calc_metrics + calc_trade_stats 构建 BacktestResult
 - _to_camel() 函数自动把 snake_case 字段转 camelCase，新增字段无需手动处理映射
@@ -94,4 +96,34 @@ vitest_fail
   - 多标的 runner 的撮合发生在策略 `on_bars()` 之前，策略本步提交的订单会在下一时间点撮合；测试同日 T+1 锁定时要控制 bars 数量，避免挂起卖单在下一交易日自然解锁成交
   - `strategy-runtime` 的 backtest 命令可延迟导入下游包，但测试里若 import 该命令模块，需要本地环境已能解析 `quantforge_backtest`/`quantforge_data`/`quantforge_strategies`
   - Windows 中文环境下，CLI 已输出 UTF-8，父进程测试也必须按 UTF-8 解码
+---
+
+## [2026-06-27 17:14:07] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 6
+---
+
+## [2026-06-28 02:13:56] - story-2
+- 实现了 factor-lab 的 `FormulaFactor`：基于受限 AST 手动递归求值，支持 open/high/low/close/volume/turnover 列、四则运算、括号、`pct_change`/`rolling_mean`/`rolling_std`/`shift`/`log`/`rank`
+- 修改 strategy-runtime 的 factorEval：`_make_factor()` 不再返回固定 close stub，改为构建 `FactorDefinition` 后返回 `FormulaFactor(definition)`；同时保持 quantforge_factor/quantforge_data 在命令执行路径内延迟导入
+- 新增测试覆盖：日内收益公式、pct_change、均线偏离、剩余安全函数、非法公式/属性调用/布尔常量/非字符串公式拒绝、显式序列函数不依赖 close、非正窗口和多余参数拒绝、factorEval 确认不再等于 df['close']、非法公式返回 `INVALID_FACTOR_FORMULA`
+- 代码审查反馈已处理：修复了 CLI 命令顶层导入下游包问题，修复了 `rolling_mean(volume, 2)`/`shift(turnover, 1)` 这类显式序列函数误读 `close` 的问题，补充安全边界测试，并把公式校验错误映射为稳定业务错误码
+- 修改了哪些文件：
+  - `packages/factor-lab/quantforge_factor/formula.py`
+  - `packages/factor-lab/quantforge_factor/__init__.py`
+  - `packages/factor-lab/tests/test_formula.py`
+  - `packages/strategy-runtime/quantforge_strategy/commands/factor_eval.py`
+  - `packages/strategy-runtime/tests/test_factor_eval_formula.py`
+  - `packages/strategy-runtime/README.md`
+  - `packages/strategy-runtime/AGENT.md`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `cd packages/factor-lab && python -m pytest -v` → 18 passed
+  - `cd packages/strategy-runtime && python -m pytest -v` → 57 passed
+- **后续迭代注意事项：**
+  - 新公式语法刻意禁止 pandas 属性调用（如 `close.shift(5)`），应使用白名单函数形式 `shift(close, 5)`；后续如要兼容历史公式，应显式新增安全转换或白名单 AST 节点
+  - `pct_change(N)`/`shift(N)` 默认作用于 close；也支持显式序列形式如 `pct_change(volume, 5)`/`shift(turnover, 1)`
+  - 公式窗口参数必须为正整数，避免 `shift(close, -1)` 引入未来函数/前视偏差
 ---

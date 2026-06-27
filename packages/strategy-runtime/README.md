@@ -48,6 +48,7 @@
 - **分层策略**：SelectorStrategy（选股）、TimingStrategy（择时）、PositionStrategy（仓位）、CompositeStrategy（组合），支持可组合的策略架构
 - **CLI 流式输出**：stdin 读取 JSON 请求，stdout 输出 NDJSON 事件流（progress/log/result/error），Worker 通过 PythonBridge 流式读取
 - **延迟导入**：CLI 命令通过延迟导入加载下游包（backtest-engine、factor-lab、ai-engine、strategies、data-client），strategy-runtime 本身不依赖它们
+- **因子公式委托**：factorEval 只做命令编排，公式解析和计算委托给 factor-lab 的 `FormulaFactor`
 - **类型 re-export**：re-export data-client 的行情类型（Bar、Tick、TimeFrame 等），供下游模块通过合法依赖链获取
 
 ## CLI 通信协议

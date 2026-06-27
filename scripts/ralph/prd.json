@@ -39,7 +39,7 @@
       ],
       "agent": "factor-lab-agent",
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-3",

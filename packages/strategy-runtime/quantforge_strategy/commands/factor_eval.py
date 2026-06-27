@@ -4,16 +4,18 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
-import pandas as pd
-
-from quantforge_factor import Factor, FactorDefinition, FactorEvaluator
-from quantforge_data import DataClient
 from quantforge_strategy import TimeFrame
+
+if TYPE_CHECKING:
+    from quantforge_factor import Factor
 
 
 def run_factor_eval(params: dict[str, Any], emit: Callable[[str, dict], None] | None = None) -> dict[str, Any]:
+    from quantforge_data import DataClient
+    from quantforge_factor import FactorEvaluator
+
     _emit = emit or (lambda *a, **kw: None)
 
     factor_info = params["factor"]
@@ -40,9 +42,15 @@ def run_factor_eval(params: dict[str, Any], emit: Callable[[str, dict], None] | 
     _emit("progress", {"percent": 60, "message": "Evaluating factor"})
 
     # 构建因子（简单方式：用公式名从注册表或直接计算）
-    factor = _make_factor(factor_info)
-    evaluator = FactorEvaluator()
-    result = evaluator.evaluate(factor, df, forward_returns)
+    try:
+        factor = _make_factor(factor_info)
+        evaluator = FactorEvaluator()
+        result = evaluator.evaluate(factor, df, forward_returns)
+    except ValueError as exc:
+        return {
+            "ok": False,
+            "error": {"code": "INVALID_FACTOR_FORMULA", "message": str(exc)},
+        }
 
     _emit("progress", {"percent": 100, "message": "Factor evaluation complete"})
 
@@ -50,7 +58,7 @@ def run_factor_eval(params: dict[str, Any], emit: Callable[[str, dict], None] | 
 
 
 def _make_factor(info: dict) -> Factor:
-    from quantforge_factor import Factor, FactorDefinition, FactorStatus
+    from quantforge_factor import FactorDefinition, FactorStatus, FormulaFactor
     from quantforge_strategy import ResearchMode
 
     definition = FactorDefinition(
@@ -63,15 +71,7 @@ def _make_factor(info: dict) -> Factor:
         status=FactorStatus.Active,
     )
 
-    class SimpleFactor(Factor):
-        @property
-        def definition(self):
-            return definition
-
-        def compute(self, df: pd.DataFrame) -> pd.Series:
-            return df["close"]
-
-    return SimpleFactor()
+    return FormulaFactor(definition)
 
 
 def _to_dict(obj):
