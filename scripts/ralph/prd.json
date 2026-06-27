@@ -1,118 +1,132 @@
 {
-  "feature": "full-loop-real-data-obsidian",
-  "branchName": "ralph/real-backtest-report",
-  "description": "拆件诊断修复回测全链路：每种故障隔离修复并验证后进入下一层。",
+  "feature": "pipeline-critical-fixes",
+  "branchName": "ralph/pipeline-critical-fixes",
+  "description": "修复 2026-06-27 审计发现的 3 个致命断线 + 4 个高影响缺失：市场规则未接入CLI、因子评估stub、AI训完就丢、涨跌停停牌拦截、存活偏差、子策略归因、端到端验证",
   "qualityChecks": {
     "js": "pnpm lint && pnpm test && pnpm build",
-    "python": "cd packages/backtest-engine && python -m pytest -v && cd packages/obsidian-sync && python -m pytest -v"
+    "python": "cd packages/backtest-engine && python -m pytest -v && cd ../strategy-runtime && python -m pytest -v && cd ../factor-lab && python -m pytest -v && cd ../ai-engine && python -m pytest -v && cd ../strategies && python -m pytest -v && cd ../data-client && python -m pytest -v"
   },
   "userStories": [
     {
       "id": "story-1",
-      "title": "先观测：在 Worker 和 API 添加关键日志埋点，跑一次回测收集实际故障证据",
-      "description": "当前不确定故障位置，不猜不修。先加诊断埋点，跑一次回测收集证据链。\n\n需埋点位置：\n1. `apps/worker/src/main.ts` processTask() 中：调用 handler.handle() 前后各加一行 console.log 打印传入 payload 和返回的 result key 集合\n2. `apps/worker/src/handlers/backtest-handler.ts`：handle() 中 Python CLI 调用成功后，console.log 打印 backtestData 的顶层 key 和 metrics 内容\n3. `apps/api/src/routes/task.ts` /complete 路由：收到请求后 console.log 打印 result 的顶层 key 和 backtestResult.metrics\n4. `apps/web/src/hooks/useResearchWorkflow.ts` handleRunResearch：SSE result 事件中 console.log 打印 event.data 的顶层 key\n\n验证方式：启动 API + Worker + 前端，提交一次 dual_ma 回测，查看各端控制台输出的日志。\n\n此 story 不改业务逻辑，只加日志。如果日志不足以定位，再加。",
+      "title": "回测 CLI 接入市场规则 — 让成本/T+1/手数限制在回测中生效",
+      "description": "当前 `market_rules.py` 的 A 股规则（佣金万2.5最低5元、印花税卖出0.05%、过户费沪市0.001%、T+1锁定、100股整数倍）实现完整，但回测 CLI 从未传入 `market_rules` 参数，导致所有回测都是零成本、无 T+1、无手数限制。\n\n需要修改的文件：\n1. `packages/backtest-engine/quantforge_backtest/multi_runner.py`：`MultiSymbolRunner.__init__` 新增 `market_rules: MarketRules | None = None` 参数，存入 `self.market_rules`；`run()` 中将 `self.market_rules` 传给 `Matcher` 和 `PortfolioManager`；`run()` 中在时间步循环里（撮合前）加 T+1 解锁逻辑（参考 `runner.py:108-115`，用 `prev_date` 检测交易日切换）\n2. `packages/backtest-engine/quantforge_backtest/multi_runner.py`：`run()` 中 `MultiSymbolRunner.run` 的 `Matcher.match()` 调用传入 `available_qty` 参数（当前 `matcher.match(order, bar)` 缺少第三个参数）\n3. `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`：`_run_single()` 的 `BacktestRunner(...)` 调用加 `market_rules=ASHARE_RULES`；`_run_composite()` 的 `MultiSymbolRunner(...)` 调用加 `market_rules=ASHARE_RULES`；文件顶部加 `from quantforge_backtest.market_rules import ASHARE_RULES`",
       "acceptanceCriteria": [
-        "日志覆盖 Worker 收到 payload → Python 回测结果 → API /complete → 前端 SSE result 的所有链路",
-        "提交 dual_ma 回测后，能从日志看到每一层的输出",
-        "无 TypeScript 构建错误（pnpm build 通过）"
+        "`BacktestRunner.__init__` 收到 `market_rules=ASHARE_RULES`（非 None）",
+        "`MultiSymbolRunner.__init__` 支持 `market_rules` 参数并透传至 Matcher 和 PortfolioManager",
+        "`MultiSymbolRunner.run()` 在交易日切换时调用 `portfolio.unlock_t_plus_1()`",
+        "`MultiSymbolRunner.run()` 在 `Matcher.match()` 时传入 `available_qty` 用于 T+1 卖出检查",
+        "`_run_single` 和 `_run_composite` 默认使用 `ASHARE_RULES`",
+        "aHR0cHM6Ly9naXRodWIuY29tL3NuYXJrdGFuay9yYWxwaA== cd packages/backtest-engine && python -m pytest -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 通过"
       ],
-      "agent": "fullstack-agent",
+      "agent": "backtest-agent",
       "priority": 1,
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-2",
-      "title": "修复 Worker 失败问题（依据 story-1 日志定位）",
-      "description": "依据 story-1 的日志分析 Worker 失败根因。可能是：\n- Python CLI 回测命令报错（如 dataRange.startTs 格式不对）\n- AI analyze 命令报错（如 LLM 调用失败导致异常未正确捕获）\n- Obsidian sync 命令报错（如 OBSIDIAN_API_URL 未设置时 Python 端抛异常而非优雅跳过）\n- PythonBridge 解析 NDJSON 失败\n- API /complete 接口不可达或返回非 2xx\n\n根据实际日志定位后修复（只修根因）。\n\n示例修复（根据实际情况选择）：\n- 如果 Python CLI 报错：修复 dataClient.query_bars 参数或 CLI 命令构建\n- 如果 AI analyze 报错：加强 try-catch 范围\n- 如果 sync 报错：加强 sync_backtest.py 的异常处理\n- 如果 API 不可达：检查 API_BASE_URL 配置或重试机制",
+      "title": "factor_eval 公式求值引擎 — 让因子评估评估真正的因子而非收盘价",
+      "description": "当前 `packages/strategy-runtime/quantforge_strategy/commands/factor_eval.py:66-73` 的 `_make_factor()` 创建了一个 `SimpleFactor`，其 `compute()` 方法永远返回 `df[\"close\"]`，完全忽略 `info[\"formula\"]`。这意味着所有因子评估实际评估的是收盘价本身，因子公式形同虚设。\n\n修复方案：\n1. 在 `packages/factor-lab/quantforge_factor/` 新增 `formula.py`，实现 `FormulaFactor` 类：\n   - `__init__(self, definition: FactorDefinition)` 解析 `definition.formula`\n   - `compute(self, df: pd.DataFrame) -> pd.Series` 执行公式求值\n   - 支持列引用：`close`、`open`、`high`、`low`、`volume`、`turnover`\n   - 支持运算：`+`、`-`、`*`、`/`、`()`\n   - 支持函数：`pct_change(N)`、`rolling_mean(N)`、`rolling_std(N)`、`shift(N)`、`log()`、`rank()`\n   - 用 AST 安全解析（禁止 `__`、`import`、`eval` 等危险调用），只用 `pd.eval()` 或受限 `ast.literal_eval` + 手动递归求值\n2. 修改 `factor_eval.py` 的 `_make_factor()`：改为 `from quantforge_factor.formula import FormulaFactor; return FormulaFactor(definition)`",
       "acceptanceCriteria": [
-        "回测任务能从 pending → running → completed 正常流转",
-        "Worker 控制台没有 ERROR 级别的输出",
-        "pnpm --filter @quant/api test 通过",
-        "pnpm build 通过"
+        "`FormulaFactor('close / open - 1').compute(df)` 返回正确的日内收益率序列",
+        "`FormulaFactor('pct_change(5)').compute(df)` 返回 5 日收益率序列",
+        "`FormulaFactor('close / rolling_mean(close, 20) - 1').compute(df)` 返回价格偏离均线比例",
+        "非法公式 `import os; os.system('ls')` 在 AST 解析阶段被拒绝（不执行）",
+        "`_make_factor({'formula': 'close/open'})` 返回的因子 compute() 结果 ≠ df['close']",
+        "cd packages/factor-lab && python -m pytest -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 通过"
       ],
-      "agent": "fullstack-agent",
+      "agent": "factor-lab-agent",
       "priority": 2,
-      "dependsOn": ["story-1"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-3",
-      "title": "修复前端 Job 列表名称显示异常（显示 '运行研究：backtest 草稿 #1'）",
-      "description": "当前 job 名称显示为 '运行研究：backtest 草稿 #1' 而非策略名（如 '运行研究：dual_ma'）。\n\n根因分析：`useResearchWorkflow.ts` 的 `handleRunResearch()` 中通过 `.then(taskId => ...)` 闭包访问的 `selectedStrategyForLanguage` 可能为 undefined（因为 .then 是异步的，闭包中捕获的是 render 时的引用，而 `selectedStrategyForLanguage` 是一个 useMemo 计算值）。\n\n修复：\n1. 在 `createResearchJob` 调用处，直接使用 `selectedStrategy`（同步变量）而非 `selectedStrategyForLanguage`（useMemo 值）来传入 strategy\n2. 或者确保 `.then()` 闭包中使用的变量是 stable ref（如通过 useRef 保存最新值）\n\n具体修改 `apps/web/src/hooks/useResearchWorkflow.ts` 的 `handleRunResearch`：\n- 在 .then() 之前将 strategy 信息存为局部变量\n- 在 createResearchJob 和 createResearchReport 时使用局部变量\n\n验证：提交 dual_ma 回测，job 列表显示 '运行研究：dual_ma' 而非 'backtest 草稿'。",
+      "title": "AI 模型持久化 + AI 预测策略 — 打通训完能用的断头路",
+      "description": "当前 AI 训练链路是断头路：`packages/ai-engine/quantforge_ai/model.py` 用 sklearn 训练了真实模型，但 `ModelTrainer` 的 `_model` 只在内存中——训完就丢；且没有任何策略类消费 `AIPredictor.predict()` 的输出。\n\n修复分两步：\n\n**步骤 A — 模型持久化**（`packages/ai-engine/quantforge_ai/model.py`）：\n- `ModelTrainer` 新增 `save(path)` 方法：用 joblib 序列化 `self._model` 到文件\n- `ModelTrainer` 新增静态方法 `load(path)`：用 joblib 反序列化返回 `ModelTrainer` 实例\n- `packages/strategy-runtime/quantforge_strategy/commands/ai_train.py` 的 `run_ai_train()` 训练完成后调用 `trainer.save()` 保存到 `data/models/<model_name>.joblib`\n\n**步骤 B — AI 预测策略**（`packages/strategies/quantforge_strategies/combined/ai_predictor.py`）：\n- 新建 `AIPredictorStrategy(TimingStrategy)`：\n  - `init()` 时加载模型文件 + 初始化 `FeatureExtractor`\n  - `on_bar()` 时提取特征 → 调 `predictor.predict()` → 返回 Buy(预测涨)/Sell(预测跌)/Hold\n- 在 `packages/strategies/quantforge_strategies/registry.py` 注册 `ai_predictor`",
       "acceptanceCriteria": [
-        "提交 dual_ma 回测后，job 列表显示 '运行研究：dual_ma'",
-        "提交 A 策略，job 列表显示 '运行研究：{A策略名}'",
-        "pnpm --filter @quant/web test 通过",
-        "pnpm build 通过"
+        "`trainer.save(path)` 生成 .joblib 文件，`ModelTrainer.load(path)` 能成功加载并预测",
+        "`run_ai_train()` 训练完成后在 `data/models/` 目录下生成模型文件",
+        "`AIPredictorStrategy` 在 `init()` 中加载模型，不抛异常",
+        "`AIPredictorStrategy.on_bar()` 每次调用 `predict()` 并返回 Buy/Sell/Hold（不抛异常）",
+        "`get_strategy('ai_predictor')` 返回 `AIPredictorStrategy` 类",
+        "cd packages/ai-engine && python -m pytest -v 通过",
+        "cd packages/strategies && python -m pytest -v 通过"
       ],
-      "agent": "frontend-agent",
+      "agent": "ai-agent",
       "priority": 3,
-      "dependsOn": ["story-2"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-4",
-      "title": "修复 SSE error 事件后前端仍跳转报告页的问题",
-      "description": "当前 Worker 失败后，前端 SSE 收到 error 事件，但 error 事件处理中只设置了 job 状态为 Failed，没有阻止跳转到报告页。`handleRunResearch` 中 submitBacktestTask 的 .then() 内先创建了 job（状态 Running），然后 submitAndStream 注册事件回调。如果 Worker 很快失败，SSE 可能在 .then() 完成时已发送了 status:failed → result:error，导致 createResearchReport 和 mapBacktestResultToReport 仍然执行。\n\n修复：\n1. `useResearchWorkflow.ts` 中，在 SSE error 事件处理中：清除已创建的 report（如果有）、并且不要跳转到报告页\n2. 或者更根本：只有在 SSE result 事件（而非 error 事件）时才创建 report 并 setActiveReportId\n3. SSE event 中增加 `data.error` 的兜底判断\n\n此外，如果任务失败但仍然想查看历史回测数据，应该在 report 页面显示「任务失败」的状态提示而非空页面。\n\n验证：提交一个必然会失败的回测（如不存在的策略名），确认不会跳转到报告页。",
+      "title": "涨跌停/停牌撮合拦截 — 极端行情下拒绝失真成交",
+      "description": "当前 `packages/backtest-engine/quantforge_backtest/matcher.py` 的 `match()` 方法不检查标的的涨跌停或停牌状态——锁死涨停板的股票仍然会在 close 价成交，停牌股票也能成交。这导致极端行情下回测结果失真。\n\n修复方案：\n1. `matcher.py` 的 `match()` 中增加两个检查（在填价逻辑之前）：\n   - **涨停买入拦截**：如果 `order.side == Buy` 且 `bar.is_limit_up`（新增 Bar 字段，或通过 `open==high==low==close` 检测一字板），拒绝成交（return None）\n   - **跌停卖出拦截**：同理\n   - **停牌拦截**：新增 `bar.is_suspended` 标识，若为 True 则拒绝所有成交\n2. `packages/strategy-runtime/quantforge_strategy/types.py` 或 `Bar` dataclass：新增 `limit_up: float | None = None` 和 `limit_down: float | None = None` 字段（可选字段，向后兼容）\n3. `packages/backtest-engine/quantforge_backtest/market_rules.py` 的 `MarketRules`：新增 `calc_limit_prices(prev_close: float) -> tuple[float, float]` 方法（默认 ±10%，科创板 ±20%）\n4. `runner.py` 和 `multi_runner.py`：在每 bar 处理前，如果有 market_rules 且 bar 有 prev_close 信息，计算涨跌停价格并设置到 bar 上\n\n注意：一字板检测用 `open==high==low`（无交易）不够精确——真正的一字板也可能有微小波动。先简化用 `bar.close >= limit_up - 0.01` 近似判断。",
       "acceptanceCriteria": [
-        "Worker 失败后前端不跳转到报告页",
-        "job 状态显示为 Failed（红色/错误状态）",
-        "pnpm --filter @quant/web test 通过",
-        "pnpm build 通过"
+        "涨停 bar 上的买入 Market 单被 `match()` 拒绝（返回 None）",
+        "跌停 bar 上的卖出 Market 单被 `match()` 拒绝（返回 None）",
+        "`MarketRules.calc_limit_prices(10.0)` 返回 `(11.0, 9.0)`（默认 ±10%）",
+        "停牌 bar 上所有订单被拒绝",
+        "没有 limit_up/limit_down 字段的 bar（旧数据）按无限制处理（向后兼容）",
+        "cd packages/backtest-engine && python -m pytest -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 通过"
       ],
-      "agent": "frontend-agent",
+      "agent": "backtest-agent",
       "priority": 4,
-      "dependsOn": ["story-3"],
-      "passes": true
+      "dependsOn": ["story-1"],
+      "passes": false
     },
     {
       "id": "story-5",
-      "title": "打通 Obsidian 同步链路并补齐同步内容",
-      "description": "更新 `packages/strategy-runtime/quantforge_strategy/commands/sync_backtest.py` 的 `_dict_to_backtest_result()`：补齐 sortino_ratio/calmar_ratio/annualized_volatility/max_drawdown_duration/profit_loss_ratio/avg_holding_days/max_single_profit/max_single_loss 字段以及 drawdownCurve/monthlyReturns/annualReturns 数组。\n\n更新 `packages/obsidian-sync/quantforge_obsidian/builders/backtest.py` 的 `build_backtest_report()`：在绩效表格中添加新指标，添加回撤曲线/月度收益/年度收益的 markdown 表格。\n\n同时修复 obsidian-sync 在不设置 OBSIDIAN_API_URL 时优雅跳过（当前已有该逻辑但验证是否正常）。",
+      "title": "存活偏差防护 — 回测时按时间点排除已退市/未上市标的",
+      "description": "当前回测将当前活跃的股票池用于历史回测，已退市/ST/并购的标的被自动排除，导致回测收益系统性虚高（survivorship bias）。\n\n修复方案（最小侵入）：\n1. `packages/data-client/quantforge_data/client.py` 的 `DataClient` 新增方法 `get_active_symbols(as_of_ts: int) -> list[str]`：查询 `instruments` 表，返回 `listDate <= as_of_ts` 且 `(delistDate IS NULL OR delistDate > as_of_ts)` 且 `status != 'delisted'` 的标的列表\n2. `packages/strategy-runtime/quantforge_strategy/commands/backtest.py` 的 `_run_composite()`：在加载数据前，用 `client.get_active_symbols(start_ts)` 过滤 `symbols` 列表，只在数据范围开始时间点活跃的标的参与回测\n3. 如果过滤后 symbols 为空，返回友好错误而非空回测",
       "acceptanceCriteria": [
-        "sync_backtest.py 的 _dict_to_backtest_result() 映射所有新指标字段和 equityData 数组",
-        "build_backtest_report() 包含 sortinoRatio/calmarRatio/annualizedVolatility/profitLossRatio/avgHoldingDays 和 equityData 表格",
-        "未设置 OBSIDIAN_API_URL 时不抛异常",
-        "cd packages/obsidian-sync && python -m pytest -v 通过",
-        "cd packages/backtest-engine && python -m pytest -v 通过"
+        "`DataClient.get_active_symbols(ts)` 返回该时间点已上市且未退市的标的列表",
+        "包含已在回测结束前退市的标的（因为它在回测开始时是活跃的）",
+        "排除在回测开始日期之后才上市的标的",
+        "过滤后 symbols 为空时返回 `{ok: false, error: {code: 'NO_ACTIVE_SYMBOLS'}}`",
+        "cd packages/data-client && python -m pytest -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 通过"
       ],
-      "agent": "obsidian-agent",
+      "agent": "data-client-agent",
       "priority": 5,
-      "dependsOn": ["story-2"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-6",
-      "title": "完善回测功能：前端 Workspace 面板添加数据范围选择器",
-      "description": "在 `apps/web/src/components/workspace.tsx` 的 WorkspaceMockup 中添加日期范围选择输入框：\n- 起始日期：`<input type=\"date\">`\n- 结束日期：`<input type=\"date\">`\n- 默认值回填 2023-01-01 ~ 2024-12-31\n- onChange 时将日期字符串转为毫秒时间戳更新 backtestConfig.startTs/endTs\n- 添加工具函数 tsToDate/dateToTs",
+      "title": "绩效归因基础 — 多标的/多策略权益曲线分解",
+      "description": "当前 `MultiSymbolRunner` 和 `MultiStrategyRunner` 在计算完各标的/子策略的权益后直接合并为一条总曲线，丢弃了每标的/子策略的独立权益数据。前端归因组件（`ReportAttribution`、`ReportSubStrategyAttribution`）无法展示分解信息。\n\n修复方案：\n1. `packages/backtest-engine/quantforge_backtest/types.py` 的 `BacktestResult` 新增可选字段 `sub_equity: dict[str, list[EquityPoint]] | None = None`（key 为标的 symbol 或子策略名，value 为权益曲线）\n2. `MultiSymbolRunner.run()`：为每个 symbol 维护独立的虚拟权益曲线（按该 symbol 的交易和价格变动计算 `per_symbol_equity`），在 `BacktestResult` 中填充 `sub_equity`\n3. `MultiStrategyRunner.run()`：同理，为每个子策略维护独立的虚拟权益曲线\n4. `commands/backtest.py` 的 `_result_to_dict()`：序列化 `sub_equity` 到输出 dict\n5. 按标的的归因：每次撮合后更新该 symbol 的权益 = symbol 持仓市值 + 分配给该 symbol 的现金份额（按 symbol 数量均分现金）",
       "acceptanceCriteria": [
-        "Workspace 面板显示起始日期和结束日期输入框（type=date）",
-        "选择日期后提交回测时 payload 包含正确的 startTs/endTs",
-        "pnpm --filter @quant/web test 通过",
-        "pnpm build 通过"
+        "多标的回测结果的 `sub_equity` 字段包含每个 symbol 的权益曲线列表",
+        "多策略回测结果的 `sub_equity` 字段包含每个子策略的权益曲线列表",
+        "所有 per-symbol 权益曲线之和 ≈ 总权益曲线（允许浮点舍入误差）",
+        "单标的回测不产生 `sub_equity`（字段为 None 或空，向后兼容）",
+        "`_result_to_dict()` 输出的 JSON 中包含 `subEquity: {symbol: [{timestamp, equity}...]}` 结构",
+        "cd packages/backtest-engine && python -m pytest -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 通过"
       ],
-      "agent": "frontend-agent",
+      "agent": "backtest-agent",
       "priority": 6,
-      "dependsOn": ["story-3"],
-      "passes": true
+      "dependsOn": ["story-1"],
+      "passes": false
     },
     {
       "id": "story-7",
-      "title": "端到端验证：回测全链路展示真实数据",
-      "description": "启动 API + Worker + 前端，跑一次 dual_ma 回测，验证：\n- SSE 正常推送（progress → status → result）\n- job 列表显示策略名称且状态为 Completed\n- 报告页权益曲线、回撤曲线、月度热力图、年度柱状图展示真实数据\n- 风险指标卡片展示非零真实值\n- 刷新页面后历史报告仍在\n- 控制台无 TypeScript 错误\n\n此 story 不改代码，只验证。",
+      "title": "端到端验证 — 确认 6 个修复全部生效且不引入回归",
+      "description": "不改代码。启动 API + Worker + 前端，依次验证所有修复：\n\n1. **市场规则生效**：提交 dual_ma 回测，检查报告中的收益率/指标与修复前相比有明显下降（因为有交易成本）\n2. **因子公式求值**：通过 API/CLI 提交 factor eval，formula='close/open-1'，确认返回的 metrics 不是来自 df['close']\n3. **AI 策略可用**：确认 `data/models/` 下有训练产物，`ai_predictor` 策略能在 CLI 回测中运行不报错\n4. **涨跌停拦截**：确认 matcher 在有涨跌停标记的 bar 上正确拒绝订单\n5. **存活偏差过滤**：确认包含已退市标的的回测请求中，退市标的被排除\n6. **子策略归因**：多标的回测的返回 JSON 中包含 `subEquity` 字段，各标的权益之和 ≈ 总权益\n7. **无回归**：全量 test 通过\n\n验证方式：\n- `pnpm lint && pnpm test && pnpm build` 全部通过\n- 所有 Python 包的 pytest 全部通过\n- （手动）启动服务端跑 dual_ma 回测，观察报告数据",
       "acceptanceCriteria": [
-        "前端报告页权益曲线/回撤曲线展示真实数据点",
-        "月度热力图展示非空月份数据",
-        "年度柱状图展示非空年度数据",
-        "风险指标卡片 sortinoRatio/calmarRatio 为非零值",
-        "交易统计卡片 profitLossRatio/avgHoldingDays 为非零值",
-        "刷新页面后历史报告仍展示数据",
-        "控制台无 TypeScript 类型错误"
+        "`pnpm lint && pnpm test && pnpm build` 全部通过",
+        "所有 6 个 Python 包的 pytest 全部通过：backtest-engine, strategy-runtime, factor-lab, ai-engine, strategies, data-client",
+        "dual_ma 回测报告的 metrics 包含了交易成本的影响（收益略低于修复前）",
+        "factor eval 对 formula='close/open-1' 返回的 IC ≠ 对 formula='close' 返回的 IC",
+        "`get_strategy('ai_predictor')` 可通过 CLI 执行回测不报错",
+        "多标的回测结果 JSON 中 `subEquity` 字段存在且各 symbol 权益之和 ≈ totalEquity",
+        "控制台无 TypeScript/JavaScript 运行时错误"
       ],
       "agent": "fullstack-agent",
       "priority": 7,
-      "dependsOn": ["story-4", "story-5", "story-6"],
-      "passes": true
+      "dependsOn": ["story-1", "story-2", "story-3", "story-4", "story-5", "story-6"],
+      "passes": false
     }
   ]
 }
