@@ -209,6 +209,15 @@ def _result_to_dict(result) -> dict[str, Any]:
     data["annualReturns"] = [
         {"year": a.year, "return_pct": a.return_pct} for a in annual
     ]
+
+    # 子权益归因序列化（subEquity → {symbol: [{timestamp, equity}...]})
+    sub_equity = getattr(result, "sub_equity", None)
+    if sub_equity:
+        data["subEquity"] = {
+            key: [{"timestamp": p.timestamp, "equity": p.equity} for p in pts]
+            for key, pts in sub_equity.items()
+        }
+
     return data
 
 

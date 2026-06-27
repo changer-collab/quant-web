@@ -2,7 +2,7 @@
 
 from quantforge_strategy import (
     SelectorStrategy, TimingStrategy, PositionStrategy, CompositeStrategy,
-    StrategyMeta, StrategyResult, Bar, TimeFrame, Signal,
+    Strategy, StrategyMeta, StrategyResult, Bar, TimeFrame, Signal,
     ResearchMode, StrategyKind, StrategyState, OrderSide, OrderType,
     OrderRequest,
 )
@@ -326,3 +326,63 @@ def test_multi_runner_applies_limit_prices_before_matching_pending_order():
     result = runner.run()
 
     assert result.trades == []
+
+
+def test_multi_runner_sub_equity_present():
+    """多标的回测结果包含 sub_equity 字段，且每个 symbol 都有权益曲线。"""
+    selector = BuyAllSelector()
+    timer = FirstBarBuyTimer()
+    sizer = SmallQtySizer()
+    composite = DefaultComposite(selector, timer, sizer)
+
+    bars = {
+        "600000": _make_bars("600000", 3, 10.0),
+        "600001": _make_bars("600001", 3, 20.0),
+    }
+
+    runner = MultiSymbolRunner(
+        strategy=composite, bars=bars, initial_cash=100000,
+    )
+    result = runner.run()
+
+    assert result.sub_equity is not None
+    assert "600000" in result.sub_equity
+    assert "600001" in result.sub_equity
+    # 每个 symbol 应有 3 个时间点
+    assert len(result.sub_equity["600000"]) == 3
+    assert len(result.sub_equity["600001"]) == 3
+
+
+def test_single_symbol_backtest_no_sub_equity():
+    """单标的回测结果 sub_equity 为 None（BacktestRunner 不产生 sub_equity）。"""
+    from quantforge_backtest import BacktestRunner
+
+    class SimpleStrategy(Strategy):
+        def __init__(self):
+            self._state = StrategyState.Idle
+
+        @property
+        def meta(self) -> StrategyMeta:
+            return StrategyMeta(
+                name="simple", description="simple",
+                modes=[ResearchMode.Traditional], params=[], version="0.1.0",
+            )
+
+        @property
+        def state(self) -> StrategyState:
+            return self._state
+
+        def init(self, context):
+            pass
+
+        def on_bar(self, bar, context):
+            pass
+
+        def finish(self):
+            return StrategyResult(meta=self.meta)
+
+    bars = _make_bars("600000", 3, 10.0)
+    runner = BacktestRunner(strategy=SimpleStrategy(), bars=bars)
+    result = runner.run()
+
+    assert result.sub_equity is None

@@ -61,4 +61,7 @@ class BacktestResult:
     profit_loss_ratio: float = 0.0  # 平均盈利/平均亏损
     avg_holding_days: float = 0.0  # 平均持仓天数
     max_single_profit: float = 0.0  # 单笔最大盈利
-    max_single_loss: float = 0.0  # 单笔最大亏损
+    max_single_loss: float = 0.0  # 单笔最大损失
+    # 子权益归因
+    # key 为标的 symbol 或子策略名，value 为该子权益曲线（用于前端归因展示）
+    sub_equity: dict[str, list[EquityPoint]] | None = None

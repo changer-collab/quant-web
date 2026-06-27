@@ -46,6 +46,8 @@ class MultiStrategyRunner:
         all_trades: list[Trade] = []
         all_equity_curves: list[list[EquityPoint]] = []
         strategy_names: list[str] = []
+        # 子策略归因：key 为子策略名，value 为该子策略的权益曲线
+        sub_equity: dict[str, list[EquityPoint]] = {}
 
         # 逐个子策略独立运行
         for strategy, weight in self.strategies:
@@ -61,6 +63,8 @@ class MultiStrategyRunner:
             all_trades.extend(sub_result.trades)
             all_equity_curves.append(sub_result.equity_curve)
             strategy_names.append(strategy.meta.name)
+            # 为每个子策略保留独立权益曲线
+            sub_equity[strategy.meta.name] = sub_result.equity_curve
 
         # 按时间戳合并权益曲线（各子策略权益相加）
         merged_equity = self._merge_equity_curves(all_equity_curves)
@@ -91,6 +95,7 @@ class MultiStrategyRunner:
             avg_holding_days=trade_stats["avg_holding_days"],
             max_single_profit=trade_stats["max_single_profit"],
             max_single_loss=trade_stats["max_single_loss"],
+            sub_equity=sub_equity if sub_equity else None,
         )
 
     def _merge_equity_curves(

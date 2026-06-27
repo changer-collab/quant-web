@@ -85,6 +85,11 @@ class MultiSymbolRunner:
         prev_date: int | None = None
         prev_closes: dict[str, float] = {}
 
+        # 多标的归因：为每个 symbol 追踪独立权益曲线
+        # per-symbol equity = 该 symbol 持仓市值 + 按股票数量均分的现金份额
+        per_symbol_equity: dict[str, list[EquityPoint]] = {}
+        total_positions_count: int = 0  # 所有 symbol 持仓股数之和，用于现金分配
+
         # 策略上下文实现
         class _Context:
             def submit_order(self, request: OrderRequest) -> None:
@@ -192,6 +197,34 @@ class MultiSymbolRunner:
             account = portfolio.get_account()
             equity_curve.append(EquityPoint(timestamp=current_ts, equity=account.equity))
 
+            # 更新 per-symbol 归因权益
+            positions = portfolio.get_all_positions()
+            total_qty = sum(p.quantity for p in positions)
+            cash_per_qty = account.cash / total_qty if total_qty > 0 else 0.0
+            # 跟踪哪些 symbol 在这个时间点有记录
+            recorded = set()
+            for p in positions:
+                if p.symbol not in per_symbol_equity:
+                    per_symbol_equity[p.symbol] = []
+                sym_equity = p.market_value + p.quantity * cash_per_qty
+                per_symbol_equity[p.symbol].append(
+                    EquityPoint(timestamp=current_ts, equity=sym_equity)
+                )
+                recorded.add(p.symbol)
+            # 无持仓的标的：在记录点补 0 权益点
+            for symbol in self.bars_by_symbol:
+                if symbol not in recorded:
+                    if symbol in per_symbol_equity:
+                        # 曾经有持仓现已清仓 → 补 0
+                        per_symbol_equity[symbol].append(
+                            EquityPoint(timestamp=current_ts, equity=0.0)
+                        )
+                    else:
+                        # 从未持仓 → 也补一个 0 点，保证曲线长度一致
+                        per_symbol_equity[symbol] = [
+                            EquityPoint(timestamp=current_ts, equity=0.0)
+                        ]
+
             # 推送给策略
             self.strategy.on_bars(bars_at_ts, context)
             for symbol, bar in bars_at_ts.items():
@@ -228,4 +261,5 @@ class MultiSymbolRunner:
             avg_holding_days=trade_stats["avg_holding_days"],
             max_single_profit=trade_stats["max_single_profit"],
             max_single_loss=trade_stats["max_single_loss"],
+            sub_equity=per_symbol_equity if per_symbol_equity else None,
         )
