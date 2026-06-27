@@ -79,7 +79,7 @@
       "agent": "obsidian-agent",
       "priority": 5,
       "dependsOn": ["story-2"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-6",
@@ -112,7 +112,7 @@
       "agent": "fullstack-agent",
       "priority": 7,
       "dependsOn": ["story-4", "story-5", "story-6"],
-      "passes": false
+      "passes": true
     }
   ]
 }
