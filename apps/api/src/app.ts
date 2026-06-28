@@ -10,6 +10,7 @@ import { factorRoutes } from './routes/factor.js';
 import { dataRoutes } from './routes/data.js';
 import { reportRoutes } from './routes/report.js';
 import { factorEvalRoutes } from './routes/factor-eval.js';
+import { configRoutes } from './routes/config.js';
 
 export interface AppOptions {
   dataCenter: DataCenter;
@@ -35,6 +36,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   await app.register(dataRoutes, { prefix: '/api/data' });
   await app.register(reportRoutes, { prefix: '/api/reports' });
   await app.register(factorEvalRoutes, { prefix: '/api/evaluations' });
+  await app.register(configRoutes, { prefix: '/api/strategies' });
 
   return app;
 }

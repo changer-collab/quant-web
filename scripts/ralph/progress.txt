@@ -205,3 +205,26 @@ pytest_fail
   - 三层架构的业务层（services/）不应 import Drizzle 或 sql.js 相关类型
   - declare module 'fastify' 的模块增强可在多个 service 文件中共存，TypeScript 会自动合并
 ---
+
+## [2026-06-28 20:02] - story-4
+- 实现了 Config CRUD 端点 GET/PUT /api/strategies/:name/config
+- 新建 1 个文件：
+  - `apps/api/src/routes/config.ts` — Fastify 插件，GET 返回最新配置（404 if null），PUT 接收 {config, hash} → 保存 → 201 {saved:true, hash}
+- 修改 1 个文件：
+  - `apps/api/src/app.ts` — 导入并注册 configRoutes（prefix: /api/strategies）
+- 验证：
+  - `cd apps/api && npx tsc --noEmit` → 通过
+  - `cd apps/api && pnpm lint` → 通过
+  - `cd apps/api && pnpm test` → 42 tests 全部通过
+  - `pnpm build` → 全包构建通过（5 successful, 4 cached）
+  - `pnpm test` → 10 包全部通过（api 42 + web 96 + data-center 47 + worker 26 + collector 22 = 269 tests）
+- **后续迭代注意事项：**
+  - 配置路由 GET/PUT /:name/config 注册在与 strategy 路由相同的前缀 `/api/strategies` 下，Fastify 可区分 `/:name` 和 `/:name/config`
+  - app.decorate('configService') 已在 story-3 完成，路由中直接用 app.configService
+---
+
+## [2026-06-28 12:00:50] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 10
+---

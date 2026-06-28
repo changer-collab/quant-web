@@ -72,7 +72,7 @@
       "agent": "api-agent",
       "priority": 4,
       "dependsOn": ["story-3"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-5",
