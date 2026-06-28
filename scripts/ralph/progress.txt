@@ -378,3 +378,28 @@ build_fail
   - 新 nav item 'strategy' 放在 'strategies' 和 'factor-lab' 之间
 ---
 
+
+---
+
+## [2026-06-28 20:52] - story-10
+- 实现了 ConfigPanel — 左侧动态配置表单
+- **新建文件：**
+  - `apps/web/src/components/config-panel.tsx` — 完整配置面板组件。一级/二级 Tab 切换 category/subcategory；动态渲染 strategy.params（number→滑块+数字框、select→下拉、boolean→复选框、string→文本框）；因子型专属区块（因子池多选芯片 + 预处理流水线 3步2组1单选）；非因子型专属区块（时序窗口参数 + 指标工具箱 MACD/RSI/布林带 + 按子类型动态参数区：高频→盘口深度、E2E→特征序列长度、事件→T-N区间）；过渡形态专属区块（数据源绑定 + 衰减半衰期 + 映射目标因子）；ui_constraints.disable_when 灰显；300ms debounce 调 fetchPreview → onPreviewUpdate callback；底部保存/预览/提交按钮
+  - `apps/web/src/styles/config-panel.module.css` — 配置面板完整样式
+- **修改文件：**
+  - `apps/web/src/data/types.ts` — UiCopy 追加 24 个 ConfigPanel 相关字段
+  - `apps/web/src/data/en.ts` — 添加英文 ConfigPanel 标签
+  - `apps/web/src/data/zh.ts` — 添加中文 ConfigPanel 标签
+  - `apps/web/src/components/strategy-page.tsx` — 用 ConfigPanel 替换占位文案，集成 preview data state
+- **验证：**
+  - `npx tsc --noEmit` → 编译通过
+  - `npx eslint ...` → 全绿（0 errors）
+  - `npx vitest run` → 96 passed
+  - `npx vite build` → 3.79s 成功
+- **后续迭代注意事项：**
+  - story-11 (KlineChart) 将通过 `onPreviewUpdate` 接收 preview 数据渲染 K 线图
+  - 因子池当前使用 MOCK_FACTOR_POOL 静态因子列表，story-12（Workspace 诊断）接入真实数据后可替换
+  - ui_constraints.require_when 当前仅在基础参数区显示红色星标，触发后强制勾选的联动逻辑需在 story-12 细化
+  - ConfigPanel 的 strategy-reset useEffect 必须在所有 useState 声明之后（React hooks 规则）
+  - 保存配置时同时保存 category 专属字段（factorPool/preprocessing/indicators 等）作为 config payload 的一部分
+---

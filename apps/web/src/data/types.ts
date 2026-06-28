@@ -499,6 +499,54 @@ export interface UiCopy {
   configPanelPlaceholder: string;
   /** KlineChart 占位文案 */
   klineChartPlaceholder: string;
+  /** ConfigPanel 分类 Tab */
+  configPanelCategoryTabs: Record<string, string>;
+  /** ConfigPanel 保存按钮 */
+  configPanelSave: string;
+  /** ConfigPanel 已保存 */
+  configPanelSaved: string;
+  /** ConfigPanel 保存中 */
+  configPanelSaving: string;
+  /** ConfigPanel 保存失败 */
+  configPanelSaveError: string;
+  /** ConfigPanel 基础参数区标题 */
+  configPanelBasicParams: string;
+  /** ConfigPanel 因子池标题 */
+  configPanelFactorPool: string;
+  /** ConfigPanel 因子池占位符 */
+  configPanelFactorPoolPlaceholder: string;
+  /** ConfigPanel 数据预处理标题 */
+  configPanelPreprocessing: string;
+  /** ConfigPanel 极值缩尾 */
+  configPanelWinsorization: string;
+  /** ConfigPanel 中性化 */
+  configPanelNeutralization: string;
+  /** ConfigPanel 标准化 */
+  configPanelStandardization: string;
+  /** ConfigPanel 时序窗口参数 */
+  configPanelWindowParams: string;
+  /** ConfigPanel 回看窗口 */
+  configPanelLookbackWindow: string;
+  /** ConfigPanel 持仓周期 */
+  configPanelHoldPeriod: string;
+  /** ConfigPanel 指标工具箱 */
+  configPanelIndicatorToolbox: string;
+  /** ConfigPanel 指标名称 */
+  configPanelMACD: string;
+  configPanelRSI: string;
+  configPanelBollinger: string;
+  /** ConfigPanel 动态参数区 */
+  configPanelDynamicParams: string;
+  /** ConfigPanel 数据源绑定 */
+  configPanelDataSource: string;
+  /** ConfigPanel 衰减半衰期 */
+  configPanelDecayHalfLife: string;
+  /** ConfigPanel 映射目标因子 */
+  configPanelMappingTarget: string;
+  /** ConfigPanel 预览按钮 */
+  configPanelPreview: string;
+  /** ConfigPanel 提交任务 */
+  configPanelSubmitTask: string;
 }
 
 export interface LanguageContent {
