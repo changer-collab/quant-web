@@ -14,130 +14,197 @@ export function mapBacktestResultToReport(
 ): BacktestReportFull {
   const metrics = result.metrics;
   const config = result.config as Record<string, unknown>;
+  const formatDate = (ts?: number) => {
+    if (!ts) return '';
+    const date = new Date(ts);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   return {
     id: `report-${Date.now()}`,
+    taskId: '',
+    strategyName: metadata.strategyName,
+    strategyVersion: String(config.version ?? '1.0.0'),
+    strategyDescription: String(config.description ?? ''),
     status: 'completed',
+    generatedAt: new Date().toLocaleString('zh-CN'),
+
     executiveSummary: {
       oneLineConclusion: '',
       recommendedForLive: false,
+      recommendationReason: '',
       keyMetrics: {
         annualizedReturn: metrics.annualizedReturn,
         maxDrawdown: metrics.maxDrawdown,
         sharpeRatio: metrics.sharpeRatio,
       },
-      riskPoints: [],
+      beatsBenchmark: false,
+      mainRisks: [],
+      strategyCategory: String(config.strategyKind ?? config.category ?? 'timing'),
     },
+
     overview: {
       name: metadata.strategyName,
       version: String(config.version ?? '1.0.0'),
       logic: String(config.logic ?? ''),
+      instruments: [metadata.symbol],
+      timeRange: {
+        start: formatDate(metadata.startTime),
+        end: formatDate(metadata.endTime),
+      },
+      frequency: metadata.timeframe,
+      benchmark: '',
       strategyCategory: String(config.strategyKind ?? config.category ?? 'timing'),
       suitableMarketRegime: [],
-      dataRange: {
-        symbol: metadata.symbol,
-        timeframe: metadata.timeframe,
-        startTime: metadata.startTime,
-        endTime: metadata.endTime,
-      },
-      costAssumptions: {
-        commission: Number(config.commission ?? 0.0003),
-        slippage: Number(config.slippage ?? 0.001),
-      },
+      coreLogic: '',
     },
+
     dataParams: {
-      symbol: metadata.symbol,
-      timeframe: metadata.timeframe,
-      startTime: metadata.startTime,
-      endTime: metadata.endTime,
-      initialCash: Number(config.initialCash ?? 1000000),
-      slippage: Number(config.slippage ?? 0.001),
+      dataSource: '',
+      adjustmentType: '',
+      fee: { commission: Number(config.commission ?? 0.0003), stampTax: 0.001 },
+      slippage: { model: 'fixed', value: Number(config.slippage ?? 0.001) },
+      capital: {
+        initialCash: Number(config.initialCash ?? 1000000),
+        maxLeverage: 1.0,
+        positionLimit: 0.95,
+      },
+      params: [],
     },
+
     returnMetrics: {
       cumulativeReturn: metrics.totalReturn,
+      totalReturn: metrics.totalReturn,
       annualizedReturn: metrics.annualizedReturn,
-      benchmarkReturn: 0,
       alpha: 0,
-      beta: 0,
-      trackingError: 0,
+      benchmarkReturn: 0,
     },
+
     riskMetrics: {
       maxDrawdown: metrics.maxDrawdown,
-      maxDrawdownDuration: null,
-      annualizedVolatility: null,
+      maxDrawdownDuration: metrics.maxDrawdownDuration ?? null,
+      annualizedVolatility: metrics.annualizedVolatility ?? null,
+      downsideVolatility: 0,
       var95: null,
-      var99: null,
       cvar95: null,
-      skewness: null,
-      kurtosis: null,
+      calmarRatio: metrics.calmarRatio ?? 0,
+      sortinoRatio: metrics.sortinoRatio ?? 0,
+      skewness: undefined,
+      kurtosis: undefined,
     },
+
     riskAdjMetrics: {
       sharpeRatio: metrics.sharpeRatio,
-      sortinoRatio: null,
-      calmarRatio: null,
-      informationRatio: null,
+      sortinoRatio: metrics.sortinoRatio ?? 0,
+      informationRatio: 0,
+      treynorRatio: 0,
     },
+
     tradeStats: {
       totalTrades: metrics.totalTrades,
+      winningTrades: 0,
+      losingTrades: 0,
       winRate: metrics.winRate,
-      profitLossRatio: null,
-      avgHoldingDays: null,
-      maxSingleProfit: null,
-      maxSingleLoss: null,
-      annualTurnover: null,
+      profitLossRatio: result.profitLossRatio ?? null,
+      avgHoldingDays: result.avgHoldingDays ?? null,
+      turnoverRate: 0,
+      maxSingleProfit: result.maxSingleProfit ?? null,
+      maxSingleLoss: result.maxSingleLoss ?? null,
+      pnlDistribution: [],
     },
+
     equityData: {
-      equityCurve: (result.equityCurve as Array<{ timestamp: number; equity: number }>).map(p => ({
+      equityCurve: result.equityCurve.map(p => ({
         timestamp: p.timestamp,
         equity: p.equity,
-        drawdown: 0,
       })),
-      monthlyReturns: Array.isArray((result as any).monthlyReturns)
-        ? (result as any).monthlyReturns : [],
-      annualReturns: Array.isArray((result as any).annualReturns)
-        ? (result as any).annualReturns : [],
-      drawdownSeries: Array.isArray((result as any).drawdownCurve)
-        ? (result as any).drawdownCurve : [],
+      benchmarkCurve: [],
+      monthlyReturns: result.monthlyReturns,
+      annualReturns: result.annualReturns,
+      drawdownCurve: result.drawdownCurve,
     },
+
     robustness: {
       paramSensitivity: [],
       rollingWindows: [],
       marketRegimes: [],
+      outOfSampleReturn: 0,
+      shuffledReturn: 0,
     },
+
     attribution: {
-      brinsonAttribution: [],
-      factorExposure: [],
+      industryExposures: [],
+      factorExposures: [],
+      timingSelection: { timing: 0, selection: 0, residual: 0 },
     },
-    issues: [],
+
+    issues: {
+      overfittingRisk: 'low',
+      survivorshipBias: false,
+      lookAheadBias: false,
+      enableMarketRules: false,
+      liquidityAssessment: '',
+      capacityEstimate: '',
+    },
+
     conclusion: {
-      strengths: [],
-      risks: [],
+      advantages: [],
+      potentialRisks: [],
       improvements: [],
-      liveSuggestions: [],
+      liveTradingAdvice: {
+        suggestedCapital: '',
+        suggestedInitialPosition: '',
+        riskControlRules: [],
+      },
+      suitableMarketRegime: [],
     },
+
     positionAnalysis: {
-      avgPosition: 0,
+      avgPositionLevel: 0,
       positionDistribution: [],
-      positionVolatilityCorrelation: 0,
-      positionChangeFrequency: 0,
+      volatilityRelation: '',
+      positionAdjustments: {
+        profitAddCount: 0,
+        lossAddCount: 0,
+        profitAddEffect: 0,
+        lossAddEffect: 0,
+      },
+      maxSinglePosition: 0,
+      adjustmentFrequency: 0,
+      positionCurve: [],
     },
+
     subStrategyAttribution: {
-      subStrategies: [],
-      correlationMatrix: [],
+      independentComparison: [],
+      marginalContributions: [],
+      timeSeriesAttribution: [],
+      interactionEffect: 0,
     },
+
     stressTest: {
       scenarios: [],
+      monteCarlo: null,
     },
+
     costSensitivity: {
-      costDrag: 0,
-      sensitivityRange: [],
+      costAssumption: { commission: 0.0003, stampTax: 0.001, slippage: 0.001, impactCost: 0 },
+      beforeAfterCost: [],
+      costDragRatio: 0,
+      slippageSensitivity: [],
+      annualTurnover: 0,
     },
+
     benchmarkComparison: {
-      benchmarkName: '',
-      comparisonMetrics: [],
+      rows: [],
     },
+
     riskWarnings: {
-      keyRisks: [],
+      limitations: [],
+      codeSnippets: [],
+      glossary: [],
       redLines: [],
     },
   };

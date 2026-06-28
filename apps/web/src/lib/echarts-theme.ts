@@ -1,8 +1,6 @@
 /**
  * ECharts 暗色主题，与项目 design tokens 对齐
  */
-import type { ComposeOption } from 'echarts/core';
-
 const quantDarkTheme = {
   color: [
     '#4df0a0', // --green

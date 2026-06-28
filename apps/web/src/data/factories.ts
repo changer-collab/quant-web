@@ -57,12 +57,14 @@ export function createResearchReport(input: CreateResearchReportInput, language?
     metrics[0] = { label: labels.mode, value: modeName, tone: 'info' };
   }
 
-  const diagnostics = getResearchMode(mode, language).sections.map((section) => ({
-    title: section.title,
-    items: [...section.items],
-  }));
+  const diagnostics = input.diagnosticSections?.length
+    ? input.diagnosticSections.map((section) => ({ title: section.title, items: [...section.items] }))
+    : getResearchMode(mode, language).sections.map((section) => ({
+        title: section.title,
+        items: [...section.items],
+      }));
 
-  if (input.configSummary?.length) {
+  if (input.configSummary?.length && !diagnostics.some((section) => section.title === content.ui.runConfigurationTitle)) {
     diagnostics.unshift({
       title: content.ui.runConfigurationTitle,
       items: [...input.configSummary],
@@ -96,8 +98,12 @@ interface PythonBacktestResult {
     slippage?: number;
     strategyKind?: string;
     params?: Record<string, unknown>;
+    logic?: string;
+    version?: string;
+    description?: string;
+    symbol?: string;
   };
-  trades?: unknown[];
+  trades?: unknown[] | Array<Record<string, unknown>>;
   equityCurve?: { timestamp: number; equity: number }[];
   drawdownCurve?: { timestamp: number; drawdown: number }[];
   monthlyReturns?: { year: number; month: number; return_pct: number }[];
@@ -109,13 +115,25 @@ interface PythonBacktestResult {
     maxDrawdown?: number;
     winRate?: number;
     totalTrades?: number;
+    sortinoRatio?: number;
+    calmarRatio?: number;
+    annualizedVolatility?: number;
+    maxDrawdownDuration?: number;
   };
+  profitLossRatio?: number;
+  avgHoldingDays?: number;
+  maxSingleProfit?: number;
+  maxSingleLoss?: number;
 }
 
 /** 时间戳转日期字符串 */
 function tsToDate(ts: number): string {
   if (!ts) return '';
-  return new Date(ts).toISOString().split('T')[0];
+  const date = new Date(ts);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /** 创建空白报告模板（不含 mock 数据，所有可选字段为空） */
@@ -340,45 +358,80 @@ export function mapBacktestResultToReport(
     strategyName: config.strategyName ?? source?.strategyName ?? '',
     overview: {
       name: config.strategyName ?? source?.overview?.name ?? '',
+      version: String(config.version ?? ''),
+      logic: String(config.logic ?? ''),
+      instruments: [String(config.instruments?.[0] ?? config.symbol ?? '')],
       timeRange: {
         start: tsToDate(config.startDate ?? 0) || source?.overview?.timeRange.start || '',
         end: tsToDate(config.endDate ?? 0) || source?.overview?.timeRange.end || '',
       },
       frequency: config.timeframe ?? source?.overview?.frequency ?? '',
+      benchmark: '',
       strategyCategory: config.strategyKind ?? source?.overview?.strategyCategory ?? 'timing',
     },
     dataParams: {
+      dataSource: source?.dataParams?.dataSource ?? '',
+      adjustmentType: source?.dataParams?.adjustmentType ?? '',
+      fee: source?.dataParams?.fee ?? { commission: 0, stampTax: 0 },
+      slippage: { model: source?.dataParams?.slippage.model ?? 'fixed', value: config.slippage ?? source?.dataParams?.slippage.value ?? 0 },
       capital: {
-        initialCash: config.initialCash ?? 0,
-        maxLeverage: 1.0,
-        positionLimit: 0.95,
+        initialCash: config.initialCash ?? source?.dataParams?.capital.initialCash ?? 0,
+        maxLeverage: source?.dataParams?.capital.maxLeverage ?? 1.0,
+        positionLimit: source?.dataParams?.capital.positionLimit ?? 0.95,
       },
-      slippage: { model: 'fixed', value: config.slippage ?? 0 },
+      params: source?.dataParams?.params ?? [],
     },
     returnMetrics: {
       cumulativeReturn: metrics.totalReturn ?? 0,
       totalReturn: metrics.totalReturn ?? 0,
       annualizedReturn: metrics.annualizedReturn ?? 0,
+      alpha: 0,
+      benchmarkReturn: 0,
     },
     riskMetrics: {
       maxDrawdown: metrics.maxDrawdown ?? 0,
+      maxDrawdownDuration: metrics.maxDrawdownDuration ?? 0,
+      annualizedVolatility: metrics.annualizedVolatility ?? 0,
+      calmarRatio: metrics.calmarRatio ?? 0,
+      sortinoRatio: metrics.sortinoRatio ?? undefined,
+      downsideVolatility: 0,
+      var95: 0,
+      cvar95: 0,
     },
     riskAdjMetrics: {
       sharpeRatio: metrics.sharpeRatio ?? 0,
+      sortinoRatio: metrics.sortinoRatio ?? 0,
+      informationRatio: 0,
+      treynorRatio: 0,
     },
     tradeStats: {
       totalTrades: metrics.totalTrades ?? 0,
+      winningTrades: 0,
+      losingTrades: 0,
       winRate: metrics.winRate ?? 0,
+      profitLossRatio: bt.profitLossRatio ?? 0,
+      avgHoldingDays: bt.avgHoldingDays ?? 0,
+      turnoverRate: 0,
+      maxSingleProfit: bt.maxSingleProfit ?? 0,
+      maxSingleLoss: bt.maxSingleLoss ?? 0,
+      pnlDistribution: [],
     },
     executiveSummary: {
+      oneLineConclusion: '',
+      recommendedForLive: false,
+      recommendationReason: '',
       keyMetrics: {
         annualizedReturn: metrics.annualizedReturn ?? 0,
         maxDrawdown: metrics.maxDrawdown ?? 0,
         sharpeRatio: metrics.sharpeRatio ?? 0,
       },
+      beatsBenchmark: false,
+      mainRisks: [],
+      strategyCategory: config.strategyKind ?? 'timing',
     },
     equityData: {
       equityCurve: (bt.equityCurve ?? []).map((p) => ({ timestamp: p.timestamp, equity: p.equity })),
+      benchmarkCurve: [],
       drawdownCurve: bt.drawdownCurve ?? [],
       monthlyReturns: bt.monthlyReturns ?? [],
       annualReturns: bt.annualReturns ?? [],
@@ -394,25 +447,43 @@ export function mapBacktestResultToReport(
         oneLineConclusion: (es.oneLineConclusion as string) || report.executiveSummary.oneLineConclusion,
         recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
         recommendationReason: (es.recommendationReason as string) || report.executiveSummary.recommendationReason,
-        mainRisks: (es.mainRisks as string[]) ?? report.executiveSummary.mainRisks,
+        mainRisks: (es.mainRisks as string[]) ?? (es.riskPoints as string[]) ?? report.executiveSummary.mainRisks,
       };
     }
     const ov = analysis.overview as Record<string, unknown> | undefined;
     if (ov) {
+      // 确保 suitableMarketRegime 为数组，兼容 LLM 可能输出字符串或单个值的情况
+      let regime = report.overview.suitableMarketRegime;
+      if (ov.suitableMarketRegime !== undefined) {
+        if (Array.isArray(ov.suitableMarketRegime)) {
+          regime = ov.suitableMarketRegime as string[];
+        } else if (typeof ov.suitableMarketRegime === 'string') {
+          regime = [ov.suitableMarketRegime as string];
+        }
+      }
       report.overview = {
         ...report.overview,
         logic: (ov.logic as string) || report.overview.logic,
         coreLogic: (ov.coreLogic as string) || report.overview.coreLogic,
-        suitableMarketRegime: (ov.suitableMarketRegime as string[]) ?? report.overview.suitableMarketRegime,
+        suitableMarketRegime: regime,
       };
     }
     const iss = analysis.issues as Record<string, unknown> | undefined;
     if (iss) {
+      const apiIssues = iss as Record<string, unknown>;
       report.issues = {
         ...report.issues,
-        overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
-        liquidityAssessment: (iss.liquidityAssessment as string) || report.issues.liquidityAssessment,
-        capacityEstimate: (iss.capacityEstimate as string) || report.issues.capacityEstimate,
+        overfittingRisk: (apiIssues.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+        survivorshipBias: (apiIssues.survivorshipBias as boolean) ?? report.issues.survivorshipBias,
+        lookAheadBias: (apiIssues.lookAheadBias as boolean) ?? report.issues.lookAheadBias,
+        liquidityAssessment: (apiIssues.liquidityAssessment as string) || report.issues.liquidityAssessment,
+        capacityEstimate: (apiIssues.capacityEstimate as string) || report.issues.capacityEstimate,
+        liquidityAssessmentItems: Array.isArray(apiIssues.liquidityAssessmentItems)
+          ? apiIssues.liquidityAssessmentItems as typeof report.issues.liquidityAssessmentItems
+          : report.issues.liquidityAssessmentItems,
+        capacityEstimateItems: Array.isArray(apiIssues.capacityEstimateItems)
+          ? apiIssues.capacityEstimateItems as typeof report.issues.capacityEstimateItems
+          : report.issues.capacityEstimateItems,
       };
     }
     const con = analysis.conclusion as Record<string, unknown> | undefined;

@@ -9,6 +9,18 @@ import hero from '../styles/hero.module.css';
 import buttons from '../styles/buttons.module.css';
 import infoPanelStyles from '../styles/info-panel.module.css';
 
+// 日期工具函数
+export function tsToDate(ts: number): string {
+  if (!ts || ts <= 0) return '2023-01-01';
+  const d = new Date(ts);
+  return d.toISOString().slice(0, 10);
+}
+
+export function dateToTs(dateStr: string): number {
+  if (!dateStr) return 0;
+  return new Date(dateStr + 'T00:00:00').getTime();
+}
+
 function WorkspaceMockup({
   configSummary,
   mode,
@@ -68,6 +80,24 @@ function WorkspaceMockup({
                 <option value="1w">周线</option>
                 <option value="1h">小时</option>
               </select>
+            </div>
+            <div className={workspace.configItem}>
+              <span className={workspace.configLabel}>起始日期</span>
+              <input
+                type="date"
+                value={tsToDate(backtestConfig.startTs)}
+                onChange={(e) => onConfigChange({ ...backtestConfig, startTs: dateToTs(e.target.value) })}
+                className={workspace.configInput}
+              />
+            </div>
+            <div className={workspace.configItem}>
+              <span className={workspace.configLabel}>结束日期</span>
+              <input
+                type="date"
+                value={tsToDate(backtestConfig.endTs)}
+                onChange={(e) => onConfigChange({ ...backtestConfig, endTs: dateToTs(e.target.value) })}
+                className={workspace.configInput}
+              />
             </div>
             <div className={workspace.configItem}>
               <span className={workspace.configLabel}>初始资金</span>

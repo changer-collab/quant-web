@@ -4,7 +4,6 @@
  * 使用 echarts-for-react 封装，统一注册必要组件，
  * 所有报告图表通过此 Hook 获取 chart 实例。
  */
-import { useRef, useEffect, useCallback } from 'react';
 import * as echarts from 'echarts/core';
 import { LineChart, BarChart, HeatmapChart, RadarChart, PieChart, GaugeChart, ScatterChart } from 'echarts/charts';
 import {

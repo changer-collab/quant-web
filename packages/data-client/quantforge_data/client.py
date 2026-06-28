@@ -97,3 +97,24 @@ class DataClient:
             return pd.read_sql_query("SELECT * FROM instruments", conn)
         finally:
             conn.close()
+
+    def get_active_symbols(self, as_of_ts: int) -> list[str]:
+        """返回指定时间点活跃的标的（已上市且未退市）。
+
+        从 instruments 表查询：
+        - list_date <= as_of_ts（已上市）
+        - (delist_date IS NULL OR delist_date > as_of_ts)（在 as_of_ts 时未退市）
+
+        注意：标的可以在此之后退市（如回测结束前退市），只要在 as_of_ts 时是活跃的就返回。
+        """
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                """SELECT symbol FROM instruments
+                   WHERE list_date <= ?
+                     AND (delist_date IS NULL OR delist_date > ?)""",
+                (as_of_ts, as_of_ts),
+            ).fetchall()
+            return [r[0] for r in rows]
+        finally:
+            conn.close()

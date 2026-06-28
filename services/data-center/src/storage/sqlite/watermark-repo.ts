@@ -1,5 +1,5 @@
 /**
- * 水位 Repository — SQLite (sql.js) 实现
+ * 水位 Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';

@@ -3,9 +3,9 @@ packages:
   - "packages/*"
   - "services/*"
 
-# Exclude better-sqlite3 (requires C++ build tools) from being installed as
-# drizzle-orm's optional dependency. sql.js (pure WASM) is used instead.
+# better-sqlite3 ships prebuilt binaries (no C++ build tools needed on Node 24).
+# pnpm 9.x gates postinstall scripts by default, so the prebuild-install step
+# that fetches the native binary must be explicitly allowed here.
 # NOTE: Keep comments in ASCII to avoid encoding issues on Windows.
-ignoredOptionalDependencies:
+onlyBuiltDependencies:
   - "better-sqlite3"
-  - "@types/better-sqlite3"

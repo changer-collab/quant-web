@@ -217,6 +217,7 @@ export interface ResearchJob extends JobItem {
   strategyId?: string;
   sequence?: number;
   configSummary?: ResearchRunConfigSummary;
+  errorMessage?: string;
 }
 
 export interface ResearchReport {
@@ -248,6 +249,7 @@ export interface CreateResearchJobInput {
 export interface CreateResearchReportInput extends CreateResearchJobInput {
   jobId: string;
   generatedAt: string;
+  diagnosticSections?: PageSection[];
 }
 
 /** 前端因子列表行（对应 @quant/factor-lab FactorRow，数值字段转为展示字符串） */
@@ -618,13 +620,22 @@ export interface ReportAttribution {
   };
 }
 
+export type KeywordTileCategory = 'assumption' | 'limitation' | 'risk' | 'observation';
+
+export interface KeywordTileItem {
+  text: string;
+  category?: KeywordTileCategory;
+}
+
 /** 潜在问题 */
 export interface ReportIssues {
   overfittingRisk: 'low' | 'medium' | 'high';
   survivorshipBias: boolean;
   lookAheadBias: boolean;
   liquidityAssessment: string;
+  liquidityAssessmentItems?: KeywordTileItem[];
   capacityEstimate: string;
+  capacityEstimateItems?: KeywordTileItem[];
 }
 
 // ─── 回测报告扩展模块（基于 5 个回测报告框架） ──────────────

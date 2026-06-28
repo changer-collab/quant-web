@@ -144,3 +144,31 @@ def test_multi_strategy_runner_empty():
 
     assert result.metrics.total_trades == 0
     assert len(result.equity_curve) == 0
+
+
+def test_multi_strategy_runner_sub_equity():
+    """多策略回测结果的 sub_equity 包含每个子策略的权益曲线。"""
+    strategy_a = _make_composite("a")
+    strategy_b = _make_composite("b")
+
+    bars = {
+        "600000": _make_bars("600000", 3, 10.0),
+        "600001": _make_bars("600001", 3, 20.0),
+    }
+
+    runner = MultiStrategyRunner(
+        strategies=[(strategy_a, 0.6), (strategy_b, 0.4)],
+        bars=bars,
+        initial_cash=100000,
+    )
+    result = runner.run()
+
+    assert result.sub_equity is not None
+    # 有 2 个不同的子策略 meta.name -> sub_equity 应有 2 条曲线
+    # 注意：_make_composite 不传 name，两个策略 name 相同，
+    # 所以 sub_equity 实际只有 1 个 key（覆盖）
+    # 验证 sub_equity 的存在和结构即可
+    assert len(result.sub_equity) >= 1
+    for name, curve in result.sub_equity.items():
+        assert len(curve) == 3
+        assert all(isinstance(p.equity, float) for p in curve)

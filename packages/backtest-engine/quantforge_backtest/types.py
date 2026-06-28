@@ -26,6 +26,8 @@ class BacktestConfig:
     # 是否启用 A 股市场规则（T+1、印花税、佣金等）
     # True 使用默认 ASHARE_RULES，False 不启用任何规则
     enable_market_rules: bool = False
+    # 是否启用存活偏差防护（PIT point-in-time 成分股过滤）
+    enable_pit_filter: bool = False
     # 策略类型（来自 StrategyMeta.kind，用于前端按类型过滤报告模块）
     strategy_kind: str = "combined"
 
@@ -38,6 +40,11 @@ class BacktestMetrics:
     max_drawdown: float = 0.0
     win_rate: float = 0.0
     total_trades: int = 0
+    # 新增衍生指标
+    sortino_ratio: float = 0.0  # 索提诺比率（下行偏差）
+    calmar_ratio: float = 0.0  # 卡玛比率（年化收益/最大回撤）
+    annualized_volatility: float = 0.0  # 年化波动率
+    max_drawdown_duration: int = 0  # 最大回撤持续天数（从峰值到新高的最长天数）
 
 
 @dataclass(frozen=True)
@@ -52,3 +59,11 @@ class BacktestResult:
     trades: list = field(default_factory=list)  # list[Trade]
     equity_curve: list = field(default_factory=list)  # list[EquityPoint]
     metrics: BacktestMetrics = field(default_factory=BacktestMetrics)
+    # 交易级衍生统计
+    profit_loss_ratio: float = 0.0  # 平均盈利/平均亏损
+    avg_holding_days: float = 0.0  # 平均持仓天数
+    max_single_profit: float = 0.0  # 单笔最大盈利
+    max_single_loss: float = 0.0  # 单笔最大损失
+    # 子权益归因
+    # key 为标的 symbol 或子策略名，value 为该子权益曲线（用于前端归因展示）
+    sub_equity: dict[str, list[EquityPoint]] | None = None

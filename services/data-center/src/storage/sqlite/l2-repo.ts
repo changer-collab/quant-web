@@ -1,5 +1,5 @@
 /**
- * L2 行情 Repository — SQLite (sql.js) 实现
+ * L2 行情 Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and, gte, lte, gt, desc } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
@@ -32,7 +32,7 @@ export class SqliteLevel2SnapshotRepository implements Level2SnapshotRepository 
   async save(input: Level2Snapshot[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const s of input) {
           const row = {
             symbol: s.symbol,
@@ -40,12 +40,13 @@ export class SqliteLevel2SnapshotRepository implements Level2SnapshotRepository 
             bids: JSON.stringify(s.bids),
             asks: JSON.stringify(s.asks),
           };
-          await tx.insert(l2Snapshots)
+          tx.insert(l2Snapshots)
             .values(row)
             .onConflictDoUpdate({
               target: [l2Snapshots.symbol, l2Snapshots.timestamp],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -129,9 +130,9 @@ export class SqliteTradeRecordRepository implements TradeRecordRepository {
   async save(input: TradeRecord[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const t of input) {
-          await tx.insert(tradeRecords)
+          tx.insert(tradeRecords)
             .values({
               symbol: t.symbol,
               timestamp: t.timestamp,
@@ -139,7 +140,8 @@ export class SqliteTradeRecordRepository implements TradeRecordRepository {
               volume: t.volume,
               side: t.side,
               tradeType: t.tradeType,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -208,9 +210,9 @@ export class SqliteOrderRecordRepository implements OrderRecordRepository {
   async save(input: OrderRecord[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const o of input) {
-          await tx.insert(orderRecords)
+          tx.insert(orderRecords)
             .values({
               symbol: o.symbol,
               timestamp: o.timestamp,
@@ -218,7 +220,8 @@ export class SqliteOrderRecordRepository implements OrderRecordRepository {
               volume: o.volume,
               action: o.action,
               orderType: o.orderType,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {

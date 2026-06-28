@@ -36,7 +36,7 @@ export function FactorEffectiveness({ report, ui }: Props) {
   );
 }
 
-function GroupBacktestView({ report, ui }: Props) {
+function GroupBacktestView({ report }: Props) {
   const gb = report.groupBacktest;
   const maxReturn = Math.max(...gb.groupAnnualReturns.map((g) => Math.abs(g.annualReturn)));
 

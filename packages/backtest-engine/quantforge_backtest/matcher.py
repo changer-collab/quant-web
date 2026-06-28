@@ -46,6 +46,16 @@ class Matcher:
         ):
             return None
 
+        # 停牌不成交
+        if getattr(bar, "is_suspended", False):
+            return None
+
+        # 涨跌停拦截：涨停不能买入，跌停不能卖出
+        if order.side == OrderSide.Buy and getattr(bar, "is_limit_up", False):
+            return None
+        if order.side == OrderSide.Sell and getattr(bar, "is_limit_down", False):
+            return None
+
         # 最小交易单位检查：买入数量须为 lot_size 整数倍
         if (
             self.rules

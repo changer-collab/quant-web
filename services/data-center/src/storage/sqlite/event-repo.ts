@@ -1,5 +1,5 @@
 /**
- * 资讯事件 Repository — SQLite (sql.js) 实现
+ * 资讯事件 Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
@@ -34,16 +34,17 @@ export class SqliteAnnouncementEventRepository implements AnnouncementEventRepos
   async save(input: AnnouncementEvent[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const e of input) {
           const row = {
             id: e.id, symbol: e.symbol, eventTime: e.eventTime,
             eventType: e.eventType, title: e.title,
             description: e.description ?? null, impact: e.impact,
           };
-          await tx.insert(announcementEvents)
+          tx.insert(announcementEvents)
             .values(row)
-            .onConflictDoUpdate({ target: announcementEvents.id, set: row });
+            .onConflictDoUpdate({ target: announcementEvents.id, set: row })
+            .run();
         }
       });
     } catch (err) {
@@ -79,7 +80,7 @@ export class SqliteNewsRepository implements NewsRepository {
   async save(input: NewsArticle[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const a of input) {
           const row = {
             id: a.id, publishTime: a.publishTime, title: a.title, source: a.source,
@@ -87,9 +88,10 @@ export class SqliteNewsRepository implements NewsRepository {
             sentimentScore: a.sentimentScore ?? null,
             tags: JSON.stringify(a.tags),
           };
-          await tx.insert(newsArticles)
+          tx.insert(newsArticles)
             .values(row)
-            .onConflictDoUpdate({ target: newsArticles.id, set: row });
+            .onConflictDoUpdate({ target: newsArticles.id, set: row })
+            .run();
         }
       });
     } catch (err) {
@@ -133,15 +135,16 @@ export class SqliteSentimentRepository implements SentimentRepository {
   async save(input: SentimentPoint[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const p of input) {
           const row = { symbol: p.symbol, timestamp: p.timestamp, score: p.score, sampleSize: p.sampleSize };
-          await tx.insert(sentimentPoints)
+          tx.insert(sentimentPoints)
             .values(row)
             .onConflictDoUpdate({
               target: [sentimentPoints.symbol, sentimentPoints.timestamp],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -174,12 +177,13 @@ export class SqliteMacroIndicatorRepository implements MacroIndicatorRepository 
   async saveDefinitions(defs: MacroIndicatorDef[]): Promise<void> {
     if (defs.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const d of defs) {
           const row = { id: d.id, name: d.name, unit: d.unit, frequency: d.frequency, source: d.source };
-          await tx.insert(macroIndicatorDefs)
+          tx.insert(macroIndicatorDefs)
             .values(row)
-            .onConflictDoUpdate({ target: macroIndicatorDefs.id, set: row });
+            .onConflictDoUpdate({ target: macroIndicatorDefs.id, set: row })
+            .run();
         }
       });
     } catch (err) {
@@ -202,15 +206,16 @@ export class SqliteMacroIndicatorRepository implements MacroIndicatorRepository 
   async savePoints(points: MacroPoint[]): Promise<void> {
     if (points.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const p of points) {
           const row = { indicatorId: p.indicatorId, timestamp: p.timestamp, value: p.value };
-          await tx.insert(macroPoints)
+          tx.insert(macroPoints)
             .values(row)
             .onConflictDoUpdate({
               target: [macroPoints.indicatorId, macroPoints.timestamp],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {

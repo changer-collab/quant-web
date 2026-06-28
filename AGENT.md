@@ -29,6 +29,8 @@
 - 前端组件保持小边界：状态协调放 `src/hooks/`，展示组件放 `src/components/`，App.tsx 只做组合渲染。
 - 新增前端 UI 文案必须进入 `src/data/en.ts`、`src/data/zh.ts` 或 `UiCopy`，组件不硬编码固定语言文案。
 - 不新增路由、状态库、后端、微服务，除非用户明确要求。
+- 所有密钥和环境变量统一管理：项目根目录一个 `.env`（gitignored）+ 一个 `.env.example`（提交到 git）。各子项目不单独维护 `.env` 文件。
+- Python 包纯读 `os.environ`，不引入 dotenv 依赖。由启动入口（Worker 子进程、CLI 等）负责加载 `.env` 注入环境变量。
 
 ## 工作流程
 

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { BacktestReportFull, ReportUiCopy } from '../../appData';
-import { ReactEChartsCore, echarts, CHART_DEFAULTS, fmtPct } from '../../lib/echarts-setup';
+import { ReactEChartsCore, echarts, CHART_DEFAULTS } from '../../lib/echarts-setup';
 import type { EChartsOption } from 'echarts';
 import styles from '@/styles/report-metrics.module.css';
 
@@ -13,24 +13,44 @@ function pct(v: number): string {
   return `${(v * 100).toFixed(1)}%`;
 }
 
+function safeNum(v: number | null | undefined, decimals = 2): string {
+  return v !== null && v !== undefined ? v.toFixed(decimals) : '--';
+}
+
+function safeDays(v: number | null | undefined): string {
+  return v !== null && v !== undefined && v > 0 ? `${v} 天` : '--';
+}
+
 /** 风险子弹图 — 最大回撤 / VaR / 波动率 */
 function RiskBullets({ report, ui }: Props) {
   const m = report.riskMetrics;
 
   const option = useMemo<EChartsOption>(() => {
     const dd = m.maxDrawdown * 100;
-    const varVal = Math.abs(m.var95) * 100;
-    const vol = m.annualizedVolatility * 100;
+    const varVal = m.var95 != null ? Math.abs(m.var95) * 100 : null;
+    const vol = m.annualizedVolatility != null ? m.annualizedVolatility * 100 : null;
+
+    // 只保留非 null 维度
+    const dims: { name: string; value: number }[] = [];
+    dims.push({ name: ui.chartLabels.maxDrawdown, value: dd });
+    if (varVal != null) dims.push({ name: ui.chartLabels.var95, value: varVal });
+    if (vol != null) dims.push({ name: ui.chartLabels.annualizedVolatility, value: vol });
+
+    if (dims.length === 0) return {};
 
     // 动态计算刻度上限：以实际值为锚点向上取整
     const ceil = (v: number, step: number) => Math.ceil(v / step) * step;
     const ddMax = Math.max(ceil(dd, 5), 10);
-    const varMax = Math.max(ceil(varVal, 2), 4);
-    const volMax = Math.max(ceil(vol, 5), 10);
+    const varMax = varVal != null ? Math.max(ceil(varVal, 2), 4) : 0;
+    const volMax = vol != null ? Math.max(ceil(vol, 5), 10) : 0;
 
-    const categories = [ui.chartLabels.maxDrawdown, ui.chartLabels.var95, ui.chartLabels.annualizedVolatility];
-    const values = [dd, varVal, vol];
-    const maxes = [ddMax, varMax, volMax];
+    const categories = dims.map((d) => d.name);
+    const values = dims.map((d) => d.value);
+    const maxes = dims.map((d) => {
+      if (d.name === ui.chartLabels.maxDrawdown) return ddMax;
+      if (d.name === ui.chartLabels.var95) return varMax;
+      return volMax;
+    });
 
     // 风险等级色：低<30% 绿 / 中30-60% 黄 / 高>60% 红
     const barColor = (v: number, max: number) => {
@@ -69,7 +89,7 @@ function RiskBullets({ report, ui }: Props) {
         {
           name: '参考区间',
           type: 'bar',
-          data: maxes.map((max, i) => ({
+          data: maxes.map((max) => ({
             value: max,
             itemStyle: {
               color: 'rgba(38, 54, 50, 0.35)',
@@ -239,15 +259,15 @@ export function ReportRiskMetrics({ report, ui }: Props) {
 
   const cards = [
     { label: labels.maxDrawdown, value: pct(m.maxDrawdown), tone: 'warn' },
-    { label: labels.drawdownDuration, value: `${m.maxDrawdownDuration} 天`, tone: m.maxDrawdownDuration > 60 ? 'warn' : 'info' },
-    { label: labels.annualizedVolatility, value: pct(m.annualizedVolatility), tone: 'info' },
-    { label: labels.downsideVolatility, value: pct(m.downsideVolatility), tone: 'info' },
-    { label: labels.var, value: pct(m.var95), tone: 'warn' },
-    { label: labels.cvar, value: pct(m.cvar95), tone: 'warn' },
-    { label: labels.calmar, value: m.calmarRatio.toFixed(2), tone: m.calmarRatio > 1 ? 'good' : 'warn' },
-    ...(m.sortinoRatio !== undefined ? [{ label: labels.sortino, value: m.sortinoRatio.toFixed(2), tone: m.sortinoRatio > 1 ? 'good' : 'warn' as const }] : []),
-    ...(m.skewness !== undefined ? [{ label: labels.skewness, value: m.skewness.toFixed(2), tone: m.skewness < 0 ? 'warn' : 'info' as const }] : []),
-    ...(m.kurtosis !== undefined ? [{ label: labels.kurtosis, value: m.kurtosis.toFixed(2), tone: m.kurtosis > 3 ? 'warn' : 'info' as const }] : []),
+    { label: labels.drawdownDuration, value: safeDays(m.maxDrawdownDuration), tone: m.maxDrawdownDuration != null && m.maxDrawdownDuration > 60 ? 'warn' : 'info' },
+    ...(m.annualizedVolatility != null ? [{ label: labels.annualizedVolatility, value: pct(m.annualizedVolatility), tone: 'info' as const }] : []),
+    ...(m.downsideVolatility != null ? [{ label: labels.downsideVolatility, value: pct(m.downsideVolatility), tone: 'info' as const }] : []),
+    ...(m.var95 != null ? [{ label: labels.var, value: pct(m.var95), tone: 'warn' as const }] : []),
+    ...(m.cvar95 != null ? [{ label: labels.cvar, value: pct(m.cvar95), tone: 'warn' as const }] : []),
+    { label: labels.calmar, value: safeNum(m.calmarRatio), tone: m.calmarRatio != null && m.calmarRatio > 1 ? 'good' : 'warn' },
+    ...(m.sortinoRatio != null ? [{ label: labels.sortino, value: m.sortinoRatio.toFixed(2), tone: m.sortinoRatio > 1 ? 'good' : 'warn' as const }] : []),
+    ...(m.skewness != null ? [{ label: labels.skewness, value: m.skewness.toFixed(2), tone: m.skewness < 0 ? 'warn' : 'info' as const }] : []),
+    ...(m.kurtosis != null ? [{ label: labels.kurtosis, value: m.kurtosis.toFixed(2), tone: m.kurtosis > 3 ? 'warn' : 'info' as const }] : []),
   ];
 
   return (

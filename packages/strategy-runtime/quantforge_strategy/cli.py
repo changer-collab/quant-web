@@ -19,6 +19,12 @@ import json
 import sys
 from typing import Any
 
+# 强制 stdout/stderr 使用 UTF-8，避免 Windows 中文环境下 pipe 乱码
+if sys.stdout.encoding is not None and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
+if sys.stderr.encoding is not None and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8")
+
 
 def emit(event: str, data: dict[str, Any]) -> None:
     """输出一行 NDJSON 事件到 stdout"""

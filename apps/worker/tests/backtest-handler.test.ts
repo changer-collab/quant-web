@@ -77,7 +77,7 @@ describe('BacktestHandler', () => {
     const queue = new TaskQueue();
     queue.registerHandler(handler);
 
-    const task = await queue.submit(TaskType.Backtest, {
+    const _task = await queue.submit(TaskType.Backtest, {
       strategy: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
@@ -87,7 +87,7 @@ describe('BacktestHandler', () => {
 
     // 验证 syncBacktest 被调用
     const calls = (bridge.call as ReturnType<typeof vi.fn>).mock.calls;
-    const syncCall = calls.find((c: Record<string, unknown>[]) => {
+    const syncCall = calls.find((c: unknown[]) => {
       const req = c[0] as Record<string, unknown>;
       return req?.command === 'syncBacktest';
     });
@@ -119,14 +119,15 @@ describe('BacktestHandler', () => {
     const queue = new TaskQueue();
     queue.registerHandler(handler);
 
-    const task = await queue.submit(TaskType.Backtest, {
+    const _task = await queue.submit(TaskType.Backtest, {
       strategy: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
     });
 
     await queue.processAll();
-    const completed = await queue.get(task.id);
+    const tasks = await queue.list();
+    const completed = tasks.find(t => t.status === TaskStatus.Completed);
     expect(completed!.status).toBe(TaskStatus.Completed);
     expect(completed!.result!.backtestResult).toBeDefined();
   });

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { useLanguage, usePageContent } from './hooks/useLanguage';
 import { useResearchWorkflow } from './hooks/useResearchWorkflow';
 import { useStrategies } from './hooks/useStrategies';
@@ -7,7 +7,7 @@ import { useFactors } from './hooks/useFactors';
 import { ErrorBoundary } from './components/error-boundary';
 import { MetricCard } from './components/common';
 import { ChartMockup } from './components/charts';
-import { ReportSummary, FullReport } from './components/report';
+import { ReportSummary } from './components/report-summary';
 import { LanguageSettings } from './components/settings';
 import { FactorLabContent } from './components/factor-lab';
 import { WorkspaceContent, WorkspaceModeTabs } from './components/workspace';
@@ -17,13 +17,15 @@ import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
 import { JobList } from './components/jobs';
-import type { ResearchJob, ResearchModeId } from './appData';
+import type { ResearchJob, ResearchModeId, JobTemplate } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
 import hero from './styles/hero.module.css';
 import buttons from './styles/buttons.module.css';
 import infoPanelStyles from './styles/info-panel.module.css';
 import './styles/tokens.css';
+
+const FullReport = lazy(() => import('./components/report').then((module) => ({ default: module.FullReport })));
 
 export default function App() {
   const { language, handleLanguageChange, navItems, ui, researchModes, factorEvalResults, reportUiCopy } = useLanguage();
@@ -56,17 +58,25 @@ export default function App() {
 
   // 将 API 任务映射为 ResearchJob 并与本地任务合并
   const allJobs = useMemo<ResearchJob[]>(() => {
-    const apiJobs: ResearchJob[] = apiTasks.map((task) => ({
-      id: task.id,
-      name: `${task.type} #${task.id}`,
-      kind: task.type,
-      state: task.status,
-      progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
-      strategyName: (task.payload.strategy as string) ?? '',
-      mode: 'traditional' as ResearchModeId,
-    }));
+    // 策略 id → 显示名映射（用于刷新后从 API 任务还原真实策略名）
+    const strategyNameById = new Map(strategies.map((s) => [s.id, s.name]));
+    const apiJobs: ResearchJob[] = apiTasks.map((task) => {
+      const strategyId = (task.payload.strategy as string) ?? '';
+      const strategyName = strategyNameById.get(strategyId) ?? strategyId;
+      return {
+        id: task.id,
+        name: strategyName || `${task.type} #${task.id}`,
+        kind: task.type,
+        state: task.status,
+        progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
+        strategyName,
+        errorMessage: task.error,
+        mode: 'traditional' as ResearchModeId,
+        template: task.type as JobTemplate,
+      };
+    });
     return [...localizedJobs, ...apiJobs];
-  }, [localizedJobs, apiTasks]);
+  }, [localizedJobs, apiTasks, strategies]);
 
   const isGeneratedReportPage = state.activePage === 'backtest' && Boolean(activeReport);
   const pageTitle =
@@ -77,12 +87,20 @@ export default function App() {
       : isGeneratedReportPage && activeReport
         ? activeReport.status
         : activePage.status;
-  const heroMetrics =
-    state.activePage === 'workspace'
-      ? researchMode.heroMetrics
-      : isGeneratedReportPage && activeReport
-        ? activeReport.metrics
-        : activePage.heroMetrics;
+  const heroMetrics = useMemo(() => {
+    if (state.activePage === 'workspace') return researchMode.heroMetrics;
+    if (isGeneratedReportPage && activeBacktestReport) {
+      const rm = activeBacktestReport.returnMetrics;
+      const rs = activeBacktestReport.riskAdjMetrics;
+      return [
+        { label: '年化收益', value: `${(rm.annualizedReturn * 100).toFixed(1)}%`, tone: rm.annualizedReturn > 0 ? 'good' as const : 'warn' as const },
+        { label: '最大回撤', value: `${(activeBacktestReport.riskMetrics.maxDrawdown * 100).toFixed(1)}%`, tone: 'warn' as const },
+        { label: '夏普比率', value: rs.sharpeRatio.toFixed(2), tone: rs.sharpeRatio > 1 ? 'good' as const : 'warn' as const },
+        { label: '交易次数', value: activeBacktestReport.tradeStats.totalTrades.toLocaleString(), tone: 'info' as const },
+      ];
+    }
+    return activePage.heroMetrics;
+  }, [state.activePage, isGeneratedReportPage, activeBacktestReport, researchMode.heroMetrics, activePage.heroMetrics]);
   const sections =
     state.activePage === 'workspace'
       ? researchMode.sections
@@ -150,7 +168,9 @@ export default function App() {
               <FactorLabContent factors={factors} factorEvalResults={factorEvalResults} ui={ui} language={language} />
             ) : isGeneratedReportPage && activeReport ? (
               activeBacktestReport ? (
-                <FullReport report={activeBacktestReport} ui={reportUiCopy} allReports={backtestReports} onSwitchReport={handleSwitchBacktestReport} />
+                <Suspense fallback={<ReportSummary report={activeReport} ui={ui} />}>
+                  <FullReport report={activeBacktestReport} ui={reportUiCopy} allReports={backtestReports} onSwitchReport={handleSwitchBacktestReport} />
+                </Suspense>
               ) : (
                 <>
                   <ReportSummary report={activeReport} ui={ui} />

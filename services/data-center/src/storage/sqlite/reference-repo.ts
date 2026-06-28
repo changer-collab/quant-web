@@ -1,5 +1,5 @@
 /**
- * 参考数据 Repository — SQLite (sql.js) 实现
+ * 参考数据 Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and, gte, lte } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
@@ -65,12 +65,13 @@ export class SqliteInstrumentRepository implements InstrumentRepository {
 
   async save(input: ExtendedInstrument[]): Promise<void> {
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const inst of input) {
           const row = instrumentToRow(inst);
-          await tx.insert(instruments)
+          tx.insert(instruments)
             .values(row)
-            .onConflictDoUpdate({ target: instruments.symbol, set: row });
+            .onConflictDoUpdate({ target: instruments.symbol, set: row })
+            .run();
         }
       });
     } catch (err) {
@@ -157,9 +158,9 @@ export class SqliteIndexCompositionRepository implements IndexCompositionReposit
 
   async save(composition: IndexComposition): Promise<void> {
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const c of composition.constituents) {
-          await tx.insert(indexConstituents)
+          tx.insert(indexConstituents)
             .values({
               indexSymbol: composition.indexSymbol,
               asOfDate: composition.asOfDate,
@@ -169,7 +170,8 @@ export class SqliteIndexCompositionRepository implements IndexCompositionReposit
             .onConflictDoUpdate({
               target: [indexConstituents.indexSymbol, indexConstituents.asOfDate, indexConstituents.symbol],
               set: { weight: c.weight },
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -200,15 +202,16 @@ export class SqliteAdjustmentFactorRepository implements AdjustmentFactorReposit
 
   async save(factors: AdjustmentFactor[]): Promise<void> {
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const f of factors) {
           const row = { symbol: f.symbol, date: f.date, factor: f.factor, type: f.type };
-          await tx.insert(adjustmentFactors)
+          tx.insert(adjustmentFactors)
             .values(row)
             .onConflictDoUpdate({
               target: [adjustmentFactors.symbol, adjustmentFactors.date],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
