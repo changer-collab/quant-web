@@ -7,7 +7,7 @@ from collections import deque
 from quantforge_strategy import (
     Strategy, StrategyMeta, StrategyResult, StrategyState,
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
-    StrategyKind, StrategyParamDef,
+    StrategyKind, StrategyParamDef, StrategyCategory, StrategySubcategory,
 )
 from ..indicators import sma, crossover, crossunder, last_valid
 
@@ -30,13 +30,15 @@ class DualMAStrategy(Strategy):
             params=[
                 StrategyParamDef(key="short_period", label="短均线周期",
                                  type=ParamType.Number, default=self._short_period,
-                                 min=2, max=50),
+                                 min=2, max=50, chart_relevant=True),
                 StrategyParamDef(key="long_period", label="长均线周期",
                                  type=ParamType.Number, default=self._long_period,
-                                 min=5, max=200),
+                                 min=5, max=200, chart_relevant=True),
             ],
             version="0.1.0",
             kind=StrategyKind.Timing,
+            category=StrategyCategory.NON_FACTOR,
+            subcategory=StrategySubcategory.TREND_CTA,
         )
 
     @property

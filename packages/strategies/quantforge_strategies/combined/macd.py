@@ -7,7 +7,7 @@ from collections import deque
 from quantforge_strategy import (
     Strategy, StrategyMeta, StrategyResult, StrategyState,
     Bar, OrderSide, OrderType, OrderRequest, ParamType, ResearchMode,
-    StrategyKind, StrategyParamDef,
+    StrategyKind, StrategyParamDef, StrategyCategory, StrategySubcategory,
 )
 from ..indicators import macd, last_valid
 
@@ -50,6 +50,8 @@ class MACDStrategy(Strategy):
             ],
             version="0.1.0",
             kind=StrategyKind.Timing,
+            category=StrategyCategory.NON_FACTOR,
+            subcategory=StrategySubcategory.TREND_CTA,
         )
 
     @property

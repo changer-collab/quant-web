@@ -15,7 +15,7 @@ from .portfolio import Position, Account
 
 # param
 from .types import ParamType
-from .meta import StrategyParamDef, StrategyMeta
+from .meta import StrategyParamDef, StrategyMeta, UIConstraint
 
 # task
 from .types import TaskStatus, TaskType
@@ -36,6 +36,9 @@ from .timers import TimingStrategy
 from .sizers import PositionStrategy
 from .composite import CompositeStrategy
 
+# 策略分类
+from .types import StrategyCategory, StrategySubcategory
+
 # serialization
 from .serialization import to_camel, to_snake, to_camel_dict, from_camel_dict
 
@@ -47,7 +50,7 @@ __all__ = [
     # 持仓
     "Position", "Account",
     # 参数
-    "ParamType", "StrategyParamDef", "StrategyMeta",
+    "ParamType", "StrategyParamDef", "StrategyMeta", "UIConstraint",
     # 任务
     "TaskStatus", "TaskType",
     # 错误
@@ -57,6 +60,8 @@ __all__ = [
     # 分层策略
     "StrategyKind", "Signal",
     "SelectorStrategy", "TimingStrategy", "PositionStrategy", "CompositeStrategy",
+    # 策略分类
+    "StrategyCategory", "StrategySubcategory",
     # 序列化
     "to_camel", "to_snake", "to_camel_dict", "from_camel_dict",
 ]

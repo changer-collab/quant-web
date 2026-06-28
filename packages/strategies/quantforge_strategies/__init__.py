@@ -7,6 +7,7 @@ from .combined.rsi import RSIStrategy
 from .combined.bollinger_band import BollingerBandStrategy
 from .combined.macd import MACDStrategy
 from .combined.kdj import KDJStrategy
+from .combined.ai_predictor import AIPredictorStrategy
 from .selectors.momentum import MomentumSelector
 from .timers.ma_crossover import MACrossoverTiming
 from .sizers.equal_weight import EqualWeightSizer
@@ -21,12 +22,13 @@ register("macd", MACDStrategy)
 register("kdj", KDJStrategy)
 register("momentum_selector", MomentumSelector)
 register("ma_crossover", MACrossoverTiming)
+register("ai_predictor", AIPredictorStrategy)
 register("equal_weight", EqualWeightSizer)
 register("fixed_fraction", FixedFractionSizer)
 
 __all__ = [
     "DualMAStrategy", "RSIStrategy", "BollingerBandStrategy",
-    "MACDStrategy", "KDJStrategy",
+    "MACDStrategy", "KDJStrategy", "AIPredictorStrategy",
     "MomentumSelector", "MACrossoverTiming",
     "EqualWeightSizer", "FixedFractionSizer",
     "register", "get", "list_all",

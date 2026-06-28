@@ -6,7 +6,7 @@ from quantforge_strategy import (
     SelectorStrategy, StrategyMeta, StrategyResult,
     Bar, ParamType, ResearchMode, StrategyKind,
 )
-from quantforge_strategy import StrategyParamDef
+from quantforge_strategy import StrategyParamDef, StrategyCategory, StrategySubcategory
 
 
 class MomentumSelector(SelectorStrategy):
@@ -37,6 +37,8 @@ class MomentumSelector(SelectorStrategy):
             ],
             version="0.1.0",
             kind=StrategyKind.Select,
+            category=StrategyCategory.FACTOR_BASED,
+            subcategory=StrategySubcategory.LINEAR_MULTI_FACTOR,
         )
 
     def init(self, context) -> None:
