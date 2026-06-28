@@ -672,6 +672,8 @@ ralph/<kebab-case-feature-name>
 | **Claude 改代码但忘记更新 prd.json 的 passes** | prd.json 状态落后于 git log，harness 认为零进展 | ralph-core.mjs 的 `updateProgress()` 增加 git diff 和 git log 交叉验证；Agent 提交前强制检查 prd.json 是否包含 passes 变更 |
 | **Story 说"打通同步链路"但只改 JSON mapper 没改 builder** | Obsidian 同步的 markdown 输出缺少新增字段 | 验收标准必须明确包含 builder 更新检查，PRD 中涉及同步管道的 story 必须列出 builder 的改动文件 |
 | **当前分支 ≠ PRD branchName 时 Agent 卡在 worktree 审批** | `--print` 非交互模式下 Agent 检测到分支不匹配，问"是否允许创建隔离 worktree"——无人回答，迭代空转 | **(1) PRD 生成后、启动 Ralph 前**，用户应手动 `git checkout -b ralph/<feature>` 切到目标分支。写进启动前的 checklist。**(2)** 如果必须在有未提交改动的分支上跑，先 `git stash` 或提交后再切。**(3) AGENT_PROMPT.md 的"不要问是否允许"规则**覆盖此场景。 |
+| **Ralph 写的测试只有"字段存在/长度正确"这类浅断言，跳过核心不变量** | 代码看起来合理、单测全绿，但核心的正确性条件从未被测。典型案例：story-6 的 sub_equity 测试验了"字段存在、每个 symbol 有 3 个点"，但没验"Σ 各标的权益 = 总权益"——代码实现错误（现金分配公式不可加性），却通过了全部浅测试 | **(1) PRD 验收标准必须点名要测的数学不变量**（守恒、单调、边界、求和），如"逐时间点验证 Σper_symbol_equity ≈ total_equity"。**(2) 用"如果测试全绿但核心逻辑是错的，哪条断言能抓住"的视角反查每个 story 的 acceptanceCriteria。**(3) 审查时的第一件事：grep 测试文件的 assert 语句，看是否有 `≈` / `sum` / `abs` / `all` 这类数学验证——如果只有 `is not None` / `== 长度` / `in`，通常覆盖不足。 |
+| **`--print` 单轮一次做完多个 story，上下文 compact 后丢关键细节** | 模型越强越倾向一次连做 2-3 个 story。但在 `--print` 模式下 Claude 会做上下文压缩(compact)，后面 story 的关键代码行、边界条件、依赖关系被压缩成摘要后丢失，导致"凭印象写代码"。故事件：换 gpt-5.5-plus 后一次做完 story-4/5/6，story-6 的 sub_equity 测试漏了核心不变量。 | **(1) AGENT_PROMPT.md 加硬规则"每次迭代只实现一个且仅一个 story"**。**(2) 若模型忽略此规则，Ralph 的 `--check-convergence` 会在同一轮无进展时自然收敛。**(3) 最重要的防线不是限制模型行为，而是**每次 Ralph 跑完后必须做独立审查**（换 session/agent、grep 断言、对照不变量清单）——story 完成度审查是固定流程，不是出问题后的补救。 |
 
 ---
 
@@ -795,6 +797,7 @@ rm scripts/ralph/ralph-v2.sh
 | v4.0 | 新增 Harness Engineering 6 原则：真实信号守卫、回归基线检测、结构化改动日志、一键回滚、Error Ledger 台账与自动升级建议、AGENT_PROMPT 加"只加不改"指令 | 2026-06-26 |
 | v4.1 | 新增"Story 完成度审查清单"章节 | 2026-06-27 |
 | v4.2 | 新增"--print 非交互模式问是否批准"+"分支不匹配卡住"反模式 + AGENT_PROMPT 硬规则 | 2026-06-28 |
+| v4.3 | 新增"测试只有浅断言跳过核心不变量"反模式 + "一次做完多 story 上下文 compact 丢细节"反模式 + 审查 grep 方法论 | 2026-06-28 |
 
 ### 未来方向
 
