@@ -5,7 +5,9 @@ import {
   createBacktestReportFull,
   mapBacktestResultToReport,
   getResearchMode,
+  getResearchModes,
   getStrategies,
+  DEFAULT_LANGUAGE,
   isPageId,
   localizeResearchJob,
   type AppState,
@@ -64,7 +66,7 @@ function createBacktestDiagnostics(
   if (language === 'zh') {
     return [
       { title: '运行配置', items: configSummary },
-      { title: '传统量化类型', items: [`策略类型: ${strategy?.type ?? String(bt?.config?.strategyKind ?? '传统量化')}`, `策略标识: ${strategy?.id ?? ''}`] },
+      { title: '策略类型', items: [`策略类型: ${strategy?.type ?? String(bt?.config?.strategyKind ?? '传统量化')}`, `策略标识: ${strategy?.id ?? ''}`] },
       { title: '研究配置', items: [`标的: ${config.symbol}`, `频率: ${config.timeframe}`, `参数: ${paramSummary || '默认参数'}`, `回测日期: ${formatDate(config.startTs)} ~ ${formatDate(config.endTs)}`] },
       { title: '诊断指标', items: [`总收益: ${(((metrics.totalReturn ?? 0) as number) * 100).toFixed(2)}%`, `最大回撤: ${(((metrics.maxDrawdown ?? 0) as number) * 100).toFixed(2)}%`, `夏普: ${((metrics.sharpeRatio ?? 0) as number).toFixed(2)}`, `胜率: ${(((metrics.winRate ?? 0) as number) * 100).toFixed(2)}%`, `交易次数: ${Math.round((metrics.totalTrades ?? 0) as number)}`] },
     ];
@@ -72,7 +74,7 @@ function createBacktestDiagnostics(
 
   return [
     { title: 'Run Configuration', items: configSummary },
-    { title: 'Traditional Quant Types', items: [`Strategy Type: ${strategy?.type ?? String(bt?.config?.strategyKind ?? 'Traditional Quant')}`, `Strategy ID: ${strategy?.id ?? ''}`] },
+    { title: 'Strategy Type', items: [`Strategy Type: ${strategy?.type ?? String(bt?.config?.strategyKind ?? 'Traditional Quant')}`, `Strategy ID: ${strategy?.id ?? ''}`] },
     { title: 'Research Setup', items: [`Symbol: ${config.symbol}`, `Frequency: ${config.timeframe}`, `Params: ${paramSummary || 'Default Params'}`, `Backtest Dates: ${formatDate(config.startTs)} ~ ${formatDate(config.endTs)}`] },
     { title: 'Diagnostics', items: [`Total Return: ${(((metrics.totalReturn ?? 0) as number) * 100).toFixed(2)}%`, `Max Drawdown: ${(((metrics.maxDrawdown ?? 0) as number) * 100).toFixed(2)}%`, `Sharpe: ${((metrics.sharpeRatio ?? 0) as number).toFixed(2)}`, `Win Rate: ${(((metrics.winRate ?? 0) as number) * 100).toFixed(2)}%`, `Trades: ${Math.round((metrics.totalTrades ?? 0) as number)}`] },
   ];
@@ -91,7 +93,8 @@ export interface BacktestConfig {
 
 export function useResearchWorkflow(language: LanguageCode) {
   const [state, setState] = useState<AppState>(() => ({ activePage: 'dashboard' }));
-  const [activeMode, setActiveMode] = useState<ResearchModeId>('traditional');
+  // 默认值从 researchModes 数组推导，避免在文件中硬编码 'traditional'/'hft'/'ai'
+  const [activeMode, setActiveMode] = useState<ResearchModeId>(() => getResearchModes(DEFAULT_LANGUAGE)[0].id);
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyRow | undefined>();
   const [jobs, setJobs] = useState<ResearchJob[]>([]);
   const [reports, setReports] = useState<ResearchReport[]>([]);

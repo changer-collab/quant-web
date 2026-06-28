@@ -12,7 +12,6 @@ import { LanguageSettings } from './components/settings';
 import { FactorLabContent } from './components/factor-lab';
 import { WorkspaceContent, WorkspaceModeTabs } from './components/workspace';
 import { ActivityFeed } from './components/activity-feed';
-import { StrategyGrid } from './components/strategy-grid';
 import { StrategyPage } from './components/strategy-page';
 import { WorkspacePage } from './components/workspace-page';
 import { BacktestHistory } from './components/backtest-history';
@@ -51,7 +50,6 @@ export default function App() {
     backtestConfig,
     setBacktestConfig,
     handleNavClick,
-    handleSelectStrategy,
     handleRunResearch,
     handleViewReport,
     handleSwitchBacktestReport,
@@ -74,7 +72,7 @@ export default function App() {
         progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
         strategyName,
         errorMessage: task.error,
-        mode: 'traditional' as ResearchModeId,
+        mode: 'non_factor' as ResearchModeId,
         template: task.type as JobTemplate,
       };
     });
@@ -207,14 +205,6 @@ export default function App() {
                 <ChartMockup ariaLabel={ui.chartAriaLabel} priceUp={reportUiCopy.chartLabels.priceUp} priceDown={reportUiCopy.chartLabels.priceDown} />
                 {state.activePage === 'dashboard' && (
                   <ActivityFeed jobs={allJobs} ui={ui} />
-                )}
-                {state.activePage === 'strategies' && (
-                  <StrategyGrid
-                    strategies={strategies}
-                    onSelectStrategy={handleSelectStrategy}
-                    selectedStrategyId={selectedStrategy?.id}
-                    ui={ui}
-                  />
                 )}
                 {state.activePage === 'strategy' && (
                   <StrategyPage

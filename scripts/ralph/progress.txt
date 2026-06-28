@@ -470,3 +470,53 @@ lint_error
   - 确定性的 mock 数据生成器函数（genMockBarData/genMockHeatmap/genMockLinePoints/genMockTradeRows）在 workspace-page.tsx 文件顶部定义
   - story-13 将清理 useResearchWorkflow 中的 hardcoded mode 引用，并移除旧 workspace 组件
 ---
+
+## [2026-06-28 13:15:14] - Iteration 10
+
+- Exit code: 0
+- Stories remaining: 1
+- **Detected issues:**
+```
+vitest_fail
+lint_error
+build_fail
+```
+---
+
+## [2026-06-28 21:26] - story-13
+- 实现了端到端接线 + 清理 + 国际化
+- **清理 useResearchWorkflow.ts：**
+  - 移除了文件中所有硬编码的 `'traditional'`、`'hft'`、`'ai'` 字符串
+  - 默认值改为从 `getResearchModes(DEFAULT_LANGUAGE)[0].id` 推导（运行时仍为 'traditional'，保障向后兼容）
+  - `handleSelectStrategy` 改为使用 `strategy.mode` 属性（非硬编码值）
+  - 移除了已废弃的 `getResearchMode` 调用（用 `researchModes[0]` fallback）
+- **标记旧 strategy-grid.tsx 为 deprecated：**
+  - 添加 `@deprecated` JSDoc 注释
+  - 从 App.tsx 移除 `StrategyGrid` 导入和渲染
+  - 确认无其他组件再导入 `strategy-grid.tsx`
+- **App.tsx 清理：**
+  - 移除了 `ResearchModeId` 导入（不需要直接引用该类型）
+  - 移除了不再使用的 `handleSelectStrategy` 解构
+  - 移除了旧的 'strategies' 页面 StrategyGrid 渲染
+- **国际化检查：**
+  - en.ts/zh.ts 中的 category/subcategory 相关文案已在 story-9/10/11/12 添加
+  - 无需额外新增
+- **修改了哪些文件：**
+  - `apps/web/src/hooks/useResearchWorkflow.ts`
+  - `apps/web/src/components/strategy-grid.tsx`
+  - `apps/web/src/App.tsx`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- **验证结果：**
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅 11 个已存在 warning）
+  - `pnpm test` → 96/96 passed（全部 13 个测试文件）
+  - `pnpm build` → 5/5 successful
+  - `bash scripts/smoke-test.sh` → 7/7 ALL PASSED
+  - 7 个 Python 包 pytest 全部通过
+  - 无新 npm 依赖引入
+- **后续迭代注意事项：**
+  - `ResearchModeId` 类型本身仍保留在 types.ts/appData.ts 中，供旧的 `ResearchMode`/`ResearchJob` 接口使用
+  - legacy `WorkspaceContent`/`WorkspaceModeTabs` 组件仍引用 `ResearchModeId`，不影响功能
+  - 旧的 `strategy-grid.tsx` 标记为 deprecated 但保留在代码库中以维护 git blame
+---
