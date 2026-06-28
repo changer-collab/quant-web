@@ -1,0 +1,177 @@
+# Ralph Progress Log
+Started: 2026-06-26
+---
+
+## Codebase Patterns
+- factor-lab 的 FormulaFactor 用受限 AST 手动递归求值，strategy-runtime 的 factorEval 只延迟导入并调用它，不在 runtime 内实现公式逻辑
+- strategy-runtime 的 CLI 命令必须延迟导入下游包；测试可用 importlib 加 __import__ guard 防止顶层导入 quantforge_factor/quantforge_data 等
+- backtest-engine 的 Trade 类来自 strategy-runtime 包（quantforge_strategy.order），不在 backtest-engine 内定义
+- 所有 runner（BacktestRunner、MultiSymbolRunner、MultiStrategyRunner）都用 calc_metrics + calc_trade_stats 构建 BacktestResult
+- _to_camel() 函数自动把 snake_case 字段转 camelCase，新增字段无需手动处理映射
+- Windows 环境下时间戳用秒级（10位）测试，毫秒级（13位）在 equity_stats 模块有专门处理
+- SSE 事件 data 字段：API `/complete` 路由中 `event.data = result`，result = `{ backtestResult, analysis }`
+- 前端 `mapBacktestResultToReport()` 接收 `{ backtestResult: PythonBacktestResult, analysis }` 格式
+- Obsidian sync 通过 Python CLI `syncBacktest` 命令由 Worker 在回测完成后触发
+- Worker 的 BacktestHandler 已在第 89-100 行包含 Obsidian 同步 try-catch
+- eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
+- API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
+- worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
+- strategy-runtime CLI 子进程 stdout 强制 UTF-8，测试用 `subprocess.run(..., text=True)` 时也要显式 `encoding="utf-8"`，否则 Windows 中文环境会按 GBK 解码失败
+- strategy-runtime 的 `commands/__init__.py` 也必须保持函数内延迟导入，避免导入单个命令时加载 sibling 命令的下游包依赖
+- AI 预测策略复用 `AIPredictor` 时至少需要 21 根 bar 才有非空特征；组合择时器要按 symbol 隔离历史窗口，避免多标的 rolling 特征混用
+
+---
+
+## [2026-06-27 13:00] - story-7
+- 端到端验证：story-7 不直接改代码，但修复了 build 阻塞问题以验证全链路
+- **修复**: worker 的 python-bridge.ts 中 `stdout` 变量未声明（`let stdout = ""`），导致 lint 报 `no-undef`
+- **修复**: worker 的 backtest-agent.ts 中 `request.params as BacktestParams` 需要 `as unknown as` 双转换（`Record<string, unknown>` 与 `BacktestParams` 不重叠）
+- **修复**: worker 的 python-agent.ts 中 `onEvent` 回调类型从 `{ event: string; [key: string]: unknown }` 改为 `StreamEvent`，需要导入 `StreamEvent` 类型
+- **修复**: API 的 task.ts 引用了 web 端的 `ReportRiskWarnings` 类型，改为 inline 类型
+- **修复**: eslint.config.mjs 添加 `setInterval`/`clearTimeout`/`clearInterval`/`AbortController`/`TextDecoder` 全局变量
+- 全链路 build/tests/lint 通过
+- **后续迭代注意事项：**
+  - eslint.config.mjs 是所有包的全局 eslint 配置，缺少的 Node.js 运行时全局变量（setTimeout 等）应往这里加
+  - API 的 types.ts 有独立于 web 端的类型定义，不要在 API 代码中引用 web 端类型
+  - worker 的 PythonBridge 有同步和流式两种调用模式，`call()` 方法中 `let stdout = ""` 漏掉变量声明
+- 所有 story (1-7) 均已完成
+---
+- eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
+- API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
+- worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
+
+---
+
+## [2026-06-26] - PRD 重置 v2
+根本原因复盘：上一版 prd.json 犯的错误：
+1. **先入为主定位** — 没做诊断就直接锁定了"Worker→前端通信 bug"，实际上完全不知道故障在哪
+2. **猜修复不猜诊断** — story-1 直接写了一堆"检查点 X、检查点 Y"，相当于猜了 6 个可能的位置去修，不是去观测
+3. **跳过了第一性** — 不确定故障位置时，第一步永远是加日志观测，而不是猜修复
+
+本次更新（v2）改为"先观测后修复"模式：
+- story-1: 只加日志埋点，不修任何业务逻辑
+- story-2: 根据 story-1 日志定位根因后精确修复
+- story-3/4: 前端显示异常修复（job 名称、失败跳转）
+- story-5: Obsidian 同步补齐
+- story-6: 数据范围选择器
+- story-7: 端到端验证
+---
+
+## ✅ ALL STORIES COMPLETE
+
+# Branch changed to ralph/pipeline-critical-fixes
+
+## [2026-06-27 16:12:32] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 7
+---
+
+## [2026-06-27 16:30:32] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 7
+- **Detected issues:**
+```
+vitest_fail
+```
+---
+
+## [2026-06-28 01:09:10] - story-1
+- 实现了回测 CLI 默认接入 A 股市场规则：`_run_single()` 和 `_run_composite()` 创建 runner 时传入 `ASHARE_RULES`
+- 修改 `MultiSymbolRunner`：新增 `market_rules` 参数，透传给 `Matcher`/`PortfolioManager`，交易日切换时调用 `unlock_t_plus_1()`，卖单撮合时传入 `available_qty`
+- 新增/更新测试覆盖：多标的 T+1 当日卖出拦截、下一交易日解锁、CLI 单标的/组合回测默认传入 `ASHARE_RULES`
+- 修复 Windows 中文环境下 CLI subprocess 测试解码问题：`test_cli.py` 的 `subprocess.run(..., text=True)` 显式 `encoding="utf-8"`
+- 修改了哪些文件：
+  - `packages/backtest-engine/quantforge_backtest/multi_runner.py`
+  - `packages/backtest-engine/tests/test_multi_runner.py`
+  - `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`
+  - `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
+  - `packages/strategy-runtime/tests/test_cli.py`
+  - `packages/strategy-runtime/AGENT.md`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `cd packages/backtest-engine && python -m pytest -v` → 68 passed
+  - `cd packages/strategy-runtime && python -m pytest -v` → 54 passed
+- **后续迭代注意事项：**
+  - 多标的 runner 的撮合发生在策略 `on_bars()` 之前，策略本步提交的订单会在下一时间点撮合；测试同日 T+1 锁定时要控制 bars 数量，避免挂起卖单在下一交易日自然解锁成交
+  - `strategy-runtime` 的 backtest 命令可延迟导入下游包，但测试里若 import 该命令模块，需要本地环境已能解析 `quantforge_backtest`/`quantforge_data`/`quantforge_strategies`
+  - Windows 中文环境下，CLI 已输出 UTF-8，父进程测试也必须按 UTF-8 解码
+---
+
+## [2026-06-27 17:14:07] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 6
+---
+
+## [2026-06-28 02:13:56] - story-2
+- 实现了 factor-lab 的 `FormulaFactor`：基于受限 AST 手动递归求值，支持 open/high/low/close/volume/turnover 列、四则运算、括号、`pct_change`/`rolling_mean`/`rolling_std`/`shift`/`log`/`rank`
+- 修改 strategy-runtime 的 factorEval：`_make_factor()` 不再返回固定 close stub，改为构建 `FactorDefinition` 后返回 `FormulaFactor(definition)`；同时保持 quantforge_factor/quantforge_data 在命令执行路径内延迟导入
+- 新增测试覆盖：日内收益公式、pct_change、均线偏离、剩余安全函数、非法公式/属性调用/布尔常量/非字符串公式拒绝、显式序列函数不依赖 close、非正窗口和多余参数拒绝、factorEval 确认不再等于 df['close']、非法公式返回 `INVALID_FACTOR_FORMULA`、缺失 formula 被拒绝
+- 代码审查反馈已处理：修复了 CLI 命令顶层导入下游包问题，修复了 `rolling_mean(volume, 2)`/`shift(turnover, 1)` 这类显式序列函数误读 `close` 的问题，补充安全边界测试，把公式校验错误映射为稳定业务错误码，并禁止缺失 `factor.formula` 静默退回 close
+- 修改了哪些文件：
+  - `packages/factor-lab/quantforge_factor/formula.py`
+  - `packages/factor-lab/quantforge_factor/__init__.py`
+  - `packages/factor-lab/tests/test_formula.py`
+  - `packages/strategy-runtime/quantforge_strategy/commands/factor_eval.py`
+  - `packages/strategy-runtime/tests/test_factor_eval_formula.py`
+  - `packages/strategy-runtime/README.md`
+  - `packages/strategy-runtime/AGENT.md`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `cd packages/factor-lab && python -m pytest -v` → 18 passed
+  - `cd packages/strategy-runtime && python -m pytest -v` → 58 passed
+- **后续迭代注意事项：**
+  - 新公式语法刻意禁止 pandas 属性调用（如 `close.shift(5)`），应使用白名单函数形式 `shift(close, 5)`；后续如要兼容历史公式，应显式新增安全转换或白名单 AST 节点
+  - `pct_change(N)`/`shift(N)` 默认作用于 close；也支持显式序列形式如 `pct_change(volume, 5)`/`shift(turnover, 1)`
+  - 公式窗口参数必须为正整数，避免 `shift(close, -1)` 引入未来函数/前视偏差
+---
+
+
+## [2026-06-28 03:20:00] - story-3
+- 实现了 AI 模型持久化：`ModelTrainer.save()`/`ModelTrainer.load()` 用 joblib 保存和恢复已训练模型，并在 `AIPredictor` 上暴露 `save()`/`load()` 统一入口
+- 修改 `aiTrain` 命令：训练完成后默认保存到 `data/models/randomForest.joblib`（可通过 `modelPath`/`outputPath`/`modelName` 覆盖），返回兼容旧指标字段且新增 `metrics` 与 `modelPath`；命令包入口改为函数内延迟导入，避免 sibling 命令提前加载下游依赖
+- 新增 `AIPredictorStrategy`：初始化时加载模型，按 symbol 维护历史 bar，特征窗口不足 21 根时 Hold，预测后映射为 Buy/Sell/Hold，并注册为 `ai_predictor`
+- 处理代码审查反馈：修复 forward return 最后一行 NaN 被转成负样本、空特征窗口调用 sklearn、单类别 `predict_proba`、默认训练/策略路径不一致、camelCase `modelPath` 参数、组合多标的历史混用、`modelName` 路径逃逸、策略包 AI 依赖声明
+- 修改了哪些文件：
+  - `AGENTS.md`
+  - `packages/ai-engine/pyproject.toml`
+  - `packages/ai-engine/quantforge_ai/model.py`
+  - `packages/ai-engine/quantforge_ai/predictor.py`
+  - `packages/ai-engine/tests/report_analysis/test_llm_client.py`
+  - `packages/ai-engine/tests/test_model.py`
+  - `packages/ai-engine/tests/test_predictor.py`
+  - `packages/strategy-runtime/AGENT.md`
+  - `packages/strategy-runtime/quantforge_strategy/commands/__init__.py`
+  - `packages/strategy-runtime/quantforge_strategy/commands/ai_train.py`
+  - `packages/strategy-runtime/tests/test_ai_train_command.py`
+  - `packages/strategies/pyproject.toml`
+  - `packages/strategies/quantforge_strategies/__init__.py`
+  - `packages/strategies/quantforge_strategies/combined/ai_predictor.py`
+  - `packages/strategies/tests/test_ai_predictor_strategy.py`
+  - `packages/strategies/tests/test_registry.py`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `cd packages/ai-engine && python -m pytest -v` → 32 passed
+  - `cd packages/strategy-runtime && python -m pytest -v` → 62 passed
+  - `cd packages/strategies && python -m pytest -v` → 73 passed
+- **后续迭代注意事项：**
+  - `AIPredictor.predict()` 的 `FeatureExtractor.extract_all(...).dropna()` 可能为空；调用 sklearn 前要返回空 PredictionResult，策略侧也要 Hold
+  - 二分类标签必须先按特征 index 对齐并 `dropna()`，再 `(forward_returns > 0).astype(int)`，否则最后一根未知未来收益会被当成 0 类
+  - `commands/__init__.py` 顶层 re-export 会破坏单命令延迟导入，下游依赖要留在具体函数内部
+  - `ai_predictor` 作为组合择时器时同一个实例会被多个 symbol 复用，所有 rolling/历史窗口状态必须按 symbol 分桶
+---
+
+## [2026-06-27 22:22:23] - Iteration 3
+
+- Exit code: 0
+- Stories remaining: 4
+- **Detected issues:**
+```
+pytest_fail
+```
+---
