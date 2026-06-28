@@ -13,6 +13,7 @@ import { FactorLabContent } from './components/factor-lab';
 import { WorkspaceContent, WorkspaceModeTabs } from './components/workspace';
 import { ActivityFeed } from './components/activity-feed';
 import { StrategyGrid } from './components/strategy-grid';
+import { StrategyPage } from './components/strategy-page';
 import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
@@ -201,6 +202,16 @@ export default function App() {
                     onSelectStrategy={handleSelectStrategy}
                     selectedStrategyId={selectedStrategy?.id}
                     ui={ui}
+                  />
+                )}
+                {state.activePage === 'strategy' && (
+                  <StrategyPage
+                    strategies={strategies}
+                    onEnterWorkspace={(strategy) => {
+                      handleSelectStrategy(strategy);
+                    }}
+                    ui={ui}
+                    language={language}
                   />
                 )}
                 {state.activePage === 'backtest' && !activeReport && (

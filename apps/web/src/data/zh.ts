@@ -6,6 +6,7 @@ export const zhContent: LanguageContent = {
     navItems: [
       { id: 'dashboard', label: '研究总览', eyebrow: '' },
       { id: 'strategies', label: '策略中心', eyebrow: '' },
+      { id: 'strategy', label: '策略总览', eyebrow: '' },
       { id: 'factor-lab', label: '因子工坊', eyebrow: '' },
       { id: 'workspace', label: '策略研究台', eyebrow: '' },
       { id: 'backtest', label: '回测报告', eyebrow: '' },
@@ -120,6 +121,21 @@ export const zhContent: LanguageContent = {
         sections: [
           { title: '策略分类', items: ['传统量化策略', '高频策略', 'AI 量化策略'] },
           { title: '管理动作', items: ['标签与状态', '收益 / 回撤 / 夏普', '复制策略', '进入策略研究台'] },
+        ],
+      },
+      strategy: {
+        title: '策略总览',
+        subtitle: '按分类和子分类浏览所有策略。',
+        status: '所有策略已就绪',
+        heroMetrics: [
+          { label: '因子型', value: '2', tone: 'info' },
+          { label: '非因子型', value: '10', tone: 'good' },
+          { label: '过渡形态', value: '1', tone: 'warn' },
+          { label: '工作流就绪', value: '12', tone: 'good' },
+        ],
+        sections: [
+          { title: '策略分类', items: ['因子型策略', '非因子型策略', '过渡形态策略'] },
+          { title: '操作', items: ['选中策略查看配置', '进入研究台完整分析', '查看 K 线预览'] },
         ],
       },
       'factor-lab': {
@@ -242,6 +258,9 @@ export const zhContent: LanguageContent = {
         description: '双均线策略：短均线上穿长均线买入，下穿卖出',
         version: '0.1.0',
         kind: 'combined',
+        category: 'non_factor',
+        subcategory: 'trend_cta',
+        workflowReady: true,
         params: [
           { key: 'short_period', label: '短均线周期', type: 'number', default: 5, min: 2, max: 50 },
           { key: 'long_period', label: '长均线周期', type: 'number', default: 20, min: 5, max: 200 },
@@ -259,6 +278,9 @@ export const zhContent: LanguageContent = {
         description: 'RSI 策略：RSI 低于超卖线买入，高于超买线卖出',
         version: '0.1.0',
         kind: 'combined',
+        category: 'non_factor',
+        subcategory: 'mean_reversion',
+        workflowReady: true,
         params: [
           { key: 'period', label: 'RSI 周期', type: 'number', default: 14, min: 2, max: 50 },
           { key: 'oversold', label: '超卖阈值', type: 'number', default: 30, min: 10, max: 50 },
@@ -277,6 +299,9 @@ export const zhContent: LanguageContent = {
         description: '布林带策略：价格跌破下轨买入，突破上轨卖出',
         version: '0.1.0',
         kind: 'combined',
+        category: 'non_factor',
+        subcategory: 'mean_reversion',
+        workflowReady: true,
         params: [
           { key: 'period', label: '周期', type: 'number', default: 20, min: 5, max: 100 },
           { key: 'num_std', label: '标准差倍数', type: 'number', default: 2.0, min: 0.5, max: 4.0 },
@@ -294,6 +319,9 @@ export const zhContent: LanguageContent = {
         description: 'MACD 策略：DIF 上穿 DEA 买入，下穿卖出',
         version: '0.1.0',
         kind: 'combined',
+        category: 'non_factor',
+        subcategory: 'trend_cta',
+        workflowReady: true,
         params: [
           { key: 'fast_period', label: '快线周期', type: 'number', default: 12, min: 2, max: 100 },
           { key: 'slow_period', label: '慢线周期', type: 'number', default: 26, min: 5, max: 200 },
@@ -312,6 +340,9 @@ export const zhContent: LanguageContent = {
         description: 'KDJ 策略：K 线在超卖区上穿 D 线买入，在超买区下穿卖出',
         version: '0.1.0',
         kind: 'combined',
+        category: 'non_factor',
+        subcategory: 'mean_reversion',
+        workflowReady: true,
         params: [
           { key: 'period', label: 'KDJ 周期', type: 'number', default: 9, min: 2, max: 100 },
           { key: 'oversold', label: '超卖阈值', type: 'number', default: 20, min: 5, max: 40 },
@@ -327,6 +358,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-9.2%',
         sharpe: '2.18',
         status: '研究中',
+        category: 'non_factor',
+        subcategory: 'high_frequency',
+        workflowReady: true,
       },
       {
         id: 'strategy-ai-micro-alpha',
@@ -337,6 +371,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-7.8%',
         sharpe: '1.94',
         status: '训练中',
+        category: 'non_factor',
+        subcategory: 'e2e_ai_timeseries',
+        workflowReady: true,
       },
       {
         id: 'strategy-quality-rotation',
@@ -347,6 +384,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-5.2%',
         sharpe: '1.45',
         status: '运行中',
+        category: 'factor_based',
+        subcategory: 'linear_multi_factor',
+        workflowReady: true,
       },
       {
         id: 'strategy-stat-arb',
@@ -357,6 +397,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-11.8%',
         sharpe: '1.12',
         status: '研究中',
+        category: 'non_factor',
+        subcategory: 'arbitrage',
+        workflowReady: true,
       },
       {
         id: 'strategy-mean-rev',
@@ -367,6 +410,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-14.3%',
         sharpe: '0.89',
         status: '草稿',
+        category: 'non_factor',
+        subcategory: 'mean_reversion',
+        workflowReady: false,
       },
       {
         id: 'strategy-order-imbalance',
@@ -377,6 +423,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-6.8%',
         sharpe: '2.05',
         status: '稳定',
+        category: 'non_factor',
+        subcategory: 'high_frequency',
+        workflowReady: true,
       },
       {
         id: 'strategy-micro-reversion',
@@ -387,6 +436,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-8.5%',
         sharpe: '1.78',
         status: '研究中',
+        category: 'non_factor',
+        subcategory: 'high_frequency',
+        workflowReady: true,
       },
       {
         id: 'strategy-cancel-spike',
@@ -397,6 +449,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-10.2%',
         sharpe: '1.51',
         status: '草稿',
+        category: 'non_factor',
+        subcategory: 'arbitrage',
+        workflowReady: false,
       },
       {
         id: 'strategy-transformer-alpha',
@@ -407,6 +462,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-6.1%',
         sharpe: '2.32',
         status: '训练中',
+        category: 'factor_based',
+        subcategory: 'nonlinear_ml',
+        workflowReady: true,
       },
       {
         id: 'strategy-garch-vol',
@@ -417,6 +475,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-9.5%',
         sharpe: '1.63',
         status: '稳定',
+        category: 'non_factor',
+        subcategory: 'macro_quant',
+        workflowReady: true,
       },
       {
         id: 'strategy-sentiment-factor',
@@ -427,6 +488,9 @@ export const zhContent: LanguageContent = {
         drawdown: '-12.1%',
         sharpe: '1.08',
         status: '草稿',
+        category: 'transitional',
+        subcategory: 'event_driven',
+        workflowReady: true,
       },
     ],
     marketTicks: [
@@ -655,6 +719,26 @@ export const zhContent: LanguageContent = {
         hft: '高频策略',
         ai: 'AI 量化',
       },
+      backToOverview: '← 策略总览',
+      strategyCategoryLabels: {
+        factor_based: '因子型',
+        non_factor: '非因子型',
+        transitional: '过渡形态',
+      },
+      strategySubcategoryLabels: {
+        linear_multi_factor: '线性多因子',
+        nonlinear_ml: '非线性 ML',
+        trend_cta: '趋势 / CTA',
+        mean_reversion: '均值回归',
+        arbitrage: '套利',
+        high_frequency: '高频',
+        macro_quant: '宏观量化',
+        event_driven: '事件驱动',
+        e2e_ai_timeseries: 'E2E AI 时序',
+        tail_risk_hedging: '尾部风险对冲',
+      },
+      configPanelPlaceholder: '配置面板 — 将在下一轮迭代中实现',
+      klineChartPlaceholder: 'K 线图 — 将在下一轮迭代中实现',
     },
     runningState: '运行中',
     completedState: '已完成',

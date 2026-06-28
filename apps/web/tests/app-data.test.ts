@@ -34,6 +34,7 @@ it('navigation is centered on the main research workflow', () => {
   assert.deepEqual(navIds, [
     'dashboard',
     'strategies',
+    'strategy',
     'factor-lab',
     'workspace',
     'backtest',
@@ -50,12 +51,12 @@ it('navigation is centered on the main research workflow', () => {
 it('page names support English default and readable Chinese switching', () => {
   assert.deepEqual(
     getNavItems('en').map((item) => item.label),
-    ['Dashboard', 'Strategy Center', 'Factor Lab', 'Research Workspace', 'Backtest Report', 'Experiments', 'Data Center', 'Jobs', 'Settings'],
+    ['Dashboard', 'Strategy Center', 'Strategy', 'Factor Lab', 'Research Workspace', 'Backtest Report', 'Experiments', 'Data Center', 'Jobs', 'Settings'],
   );
 
   assert.deepEqual(
     getNavItems('zh').map((item) => item.label),
-    ['研究总览', '策略中心', '因子工坊', '策略研究台', '回测报告', '实验对比', '数据中心', '任务中心', '系统设置'],
+    ['研究总览', '策略中心', '策略总览', '因子工坊', '策略研究台', '回测报告', '实验对比', '数据中心', '任务中心', '系统设置'],
   );
 
   assert.deepEqual(

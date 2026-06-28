@@ -103,6 +103,7 @@ export enum L2OrderType {
 export type PageId =
   | 'dashboard'
   | 'strategies'
+  | 'strategy'
   | 'factor-lab'
   | 'workspace'
   | 'backtest'
@@ -473,6 +474,31 @@ export interface UiCopy {
     hft: string;
     ai: string;
   };
+  /** 策略总览返回按钮 */
+  backToOverview: string;
+  /** 策略分类标签 */
+  strategyCategoryLabels: {
+    factor_based: string;
+    non_factor: string;
+    transitional: string;
+  };
+  /** 策略子分类标签 */
+  strategySubcategoryLabels: {
+    linear_multi_factor: string;
+    nonlinear_ml: string;
+    trend_cta: string;
+    mean_reversion: string;
+    arbitrage: string;
+    high_frequency: string;
+    macro_quant: string;
+    event_driven: string;
+    e2e_ai_timeseries: string;
+    tail_risk_hedging: string;
+  };
+  /** ConfigPanel 占位文案 */
+  configPanelPlaceholder: string;
+  /** KlineChart 占位文案 */
+  klineChartPlaceholder: string;
 }
 
 export interface LanguageContent {
