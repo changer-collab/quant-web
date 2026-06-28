@@ -123,6 +123,9 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $Prompt = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--build-prompt", "$i")
     $Prompt | Out-File -FilePath $PromptFile -Encoding utf8
 
+    # 3d. 记录迭代前 HEAD（用于 Guardian DENY 时的硬重置）
+    $PreIterationHead = git rev-parse HEAD 2>$null
+
     # 4. 执行 claude CLI（流式输出 — 实时显示进度）
     $OutputFile = Join-Path $ScriptDir ".last-output.txt"
     node "$ScriptDir/ralph-run.mjs" "$PromptFile" "$OutputFile"
@@ -139,8 +142,15 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     if ($Validation -match "^DENY:") {
         Write-Host ""
         Write-Host "⛔ GUARDIAN REJECTED: $($Validation -replace '^DENY: ', '')" -ForegroundColor Red
-        Write-Host "   → 回滚 prd.json 到迭代前状态"
-        git checkout -- "$ScriptDir/prd.json" 2>$null
+        # 硬重置到迭代前 HEAD → 防止 progressive attack（测试改动在多次 DENY 间累积）
+        if ($PreIterationHead) {
+            Write-Host "   → 硬重置到迭代前 $($PreIterationHead.Substring(0,7))"
+            git reset --hard $PreIterationHead 2>$null
+            git clean -fd -- scripts/ralph/ 2>$null  # 清理未跟踪的 harness 备份
+        } else {
+            Write-Host "   → 回滚 prd.json 到迭代前状态"
+            git checkout -- "$ScriptDir/prd.json" 2>$null
+        }
         $RemainingNowStr = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--remaining")
         $RemainingNow = if ($RemainingNowStr) { [int]($RemainingNowStr.Trim()) } else { $Remaining }
     } else {

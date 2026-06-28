@@ -84,8 +84,8 @@ const DEFAULT_STATE = {
 // Guardian 常量
 // ═══════════════════════════════════════════════════════════════════
 
-/** 代码文件的扩展名（Rule 2 和 Rule 3 共享） */
-const CODE_EXTENSIONS = [".ts", ".tsx", ".py", ".js", ".mjs"];
+/** 代码文件的扩展名（Rule 2 和 Rule 3 共享。覆盖 vitest 默认 glob 的所有 JS/TS 变体） */
+const CODE_EXTENSIONS = [".ts", ".tsx", ".py", ".js", ".mjs", ".cjs"];
 
 /** 排除目录——这些目录的变更不计入实现 */
 const EXCLUDED_PREFIXES = ["scripts/ralph/", ".claude/", ".superpowers/", "data/", ".skills/"];
@@ -100,8 +100,8 @@ const AGENT_DIR_MAP = {
   "fullstack-agent": null, // null = 不限制目录
 };
 
-/** 测试文件命名模式 */
-const TEST_PATTERNS = [/test.*\.(ts|tsx|py|js|mjs)$/, /\.(test|spec)\.(ts|tsx|py|js|mjs)$/];
+/** 测试文件命名模式（对齐 vitest 默认 glob: **\/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}） */
+const TEST_PATTERNS = [/test.*\.(ts|tsx|py|js|mjs|cjs)$/, /\.(test|spec)\.(ts|tsx|py|js|mjs|cjs)$/];
 
 function isExcluded(filePath) {
   return EXCLUDED_PREFIXES.some((p) => filePath.startsWith(p));
