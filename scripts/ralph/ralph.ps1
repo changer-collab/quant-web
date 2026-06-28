@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # Ralph - 自治 AI Agent 循环脚本（PowerShell 包装层）
 # 用法: ./ralph.ps1 [--Tool claude] [-MaxIterations 50] [-MaxFailures 5] [-MaxAttempts 5]
 # 依赖: claude CLI, git, node
