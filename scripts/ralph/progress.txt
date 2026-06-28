@@ -206,25 +206,42 @@ pytest_fail
   - declare module 'fastify' 的模块增强可在多个 service 文件中共存，TypeScript 会自动合并
 ---
 
-## [2026-06-28 20:02] - story-4
-- 实现了 Config CRUD 端点 GET/PUT /api/strategies/:name/config
-- 新建 1 个文件：
-  - `apps/api/src/routes/config.ts` — Fastify 插件，GET 返回最新配置（404 if null），PUT 接收 {config, hash} → 保存 → 201 {saved:true, hash}
-- 修改 1 个文件：
-  - `apps/api/src/app.ts` — 导入并注册 configRoutes（prefix: /api/strategies）
+## [2026-06-28 20:12] - story-5
+- 实现了策略列表扩展 + Preview 端点
+- **5a. 策略列表扩展：**
+  - 修改 `apps/api/src/services/strategy-sync.ts`：扩展 PythonStrategyMeta 接口（category/subcategory/扩展 params），更新嵌入的 Python 脚本提取 chart_relevant/ui_constraints/category/subcategory
+  - 修改 `apps/api/src/routes/strategy.ts`：响应映射新增 category/subcategory/workflowReady/params.chartRelevant+uiConstraints，向后兼容默认值
+- **5b. Preview 端点：**
+  - 新建 `apps/api/src/services/preview-service.ts`：PreviewService 类，纯 TypeScript 实现 SMA/EMA/RSI/MACD + 金叉死叉/超买超卖信号检测，fingerprint = sha256(JSON(params) + last 10 close prices)
+  - 新建 `apps/api/src/routes/preview.ts`：POST /:name/preview，接受 {symbol, timeframe, cursor, limit, preview_params}，从 dataCenter.repos.bars 加载 K 线，反向分页（cursor=null 返回最近 limit 根），返回 bars/overlays/signals/pagination/fingerprint/engine_version
+  - 修改 `apps/api/src/app.ts`：注册 previewRoutes
+- 修改了哪些文件：
+  - `apps/api/src/services/strategy-sync.ts`
+  - `apps/api/src/routes/strategy.ts`
+  - `apps/api/src/services/preview-service.ts`（新建）
+  - `apps/api/src/routes/preview.ts`（新建）
+  - `apps/api/src/app.ts`
 - 验证：
   - `cd apps/api && npx tsc --noEmit` → 通过
-  - `cd apps/api && pnpm lint` → 通过
-  - `cd apps/api && pnpm test` → 42 tests 全部通过
-  - `pnpm build` → 全包构建通过（5 successful, 4 cached）
-  - `pnpm test` → 10 包全部通过（api 42 + web 96 + data-center 47 + worker 26 + collector 22 = 269 tests）
+  - `pnpm build` → 5/5 successful
+  - `pnpm lint` → 全绿（0 errors）
+  - `pnpm test` → 全部 269 tests passed
 - **后续迭代注意事项：**
-  - 配置路由 GET/PUT /:name/config 注册在与 strategy 路由相同的前缀 `/api/strategies` 下，Fastify 可区分 `/:name` 和 `/:name/config`
-  - app.decorate('configService') 已在 story-3 完成，路由中直接用 app.configService
+  - 反向分页（cursor=null → 最近 limit 根）通过 BarRepository.queryPaged + slice(-limit) 实现，MAX_INITIAL_BATCH=10000 适用于大部分预览场景
+  - PreviewService 的 computeEMA 支持输入含前导 NaN，用于 MACD 信号线计算
+  - RSI 使用 Wilder 平滑法，与常见交易软件结果一致
+  - fingerprint 使用 Node.js crypto 内置模块，无需额外依赖
+  - data-center 的 RepoSet.bars 可通过 `app.dataCenter.repos.bars` 直接访问
 ---
 
 ## [2026-06-28 12:00:50] - Iteration 1
 
 - Exit code: 0
 - Stories remaining: 10
+---
+
+## [2026-06-28 12:03:22] - Iteration 2
+
+- Exit code: 0
+- Stories remaining: 9
 ---

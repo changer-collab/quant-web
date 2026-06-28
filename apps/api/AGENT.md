@@ -28,6 +28,9 @@
 - DiagnosticRepository：诊断结果 CRUD + 过期清理
 - StrategyConfigService / DiagnosticService：业务逻辑层，依赖 Repository 接口
 - 路由通过 Fastify 装饰器（app.configService / app.diagnosticService）访问 Service
+- 策略列表扩展：返回 category/subcategory/workflowReady + 扩展 params（chart_relevant/ui_constraints）
+- Preview 端点（POST /api/strategies/:name/preview）：加载 K 线 → PreviewService 计算 SMA/EMA/RSI/MACD 叠加层 + 信号标注 → 返回 bars/overlays/signals/pagination/fingerprint
+- PreviewService：纯 TypeScript 预览引擎，不依赖外部数学库，支持反向分页（cursor 翻页）
 
 ## 边界
 

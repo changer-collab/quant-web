@@ -1,50 +1,25 @@
-﻿濂界殑锛屾垜鏉ュ紑濮嬪伐浣溿€傚厛鏌ョ湅涓婁竴杞敊璇拰杩涘害鏂囦欢銆傜幇鍦ㄦ垜鍦ㄦ纭殑鍒嗘敮涓婏紙`ralph/strategy-classification`锛夈€備笂涓€杞凯浠ｉ€€鍑虹爜涓?浣嗘病鏈夊叿浣撻敊璇俊鎭€?
-鏈€楂樹紭鍏堢骇鐨勬湭瀹屾垚鏁呬簨鏄?**story-3**锛坧riority 3锛夛細Repository 瀹炵幇 + Service 灞?+ 涓夊眰鏋舵瀯鎺ョ嚎銆傝鎴戝厛璋冪爺鐜版湁浠ｇ爜銆傚ソ鐨勶紝璁╂垜妫€鏌?story-2 鐨勭粨鏋滐紙`interfaces.ts` 鏄惁宸插垱寤猴級浠ュ強鐜版湁鐩綍缁撴瀯銆傝鎴戞煡鐪嬬幇鏈夋湇鍔＄殑妯″紡锛氳鎴戝啀妫€鏌ヤ竴涓?Fastify 瑁呴グ鍣ㄧ殑绫诲瀷澹版槑锛氱幇鍦ㄦ垜宸茬粡瀹屽叏鐞嗚В浜嗛」鐩粨鏋勫拰妯″紡銆傚紑濮嬪疄鐜?story-3銆傛垜闇€瑕佸垱寤?4 涓柊鏂囦欢骞朵慨鏀?2 涓幇鏈夋枃浠躲€傜幇鍦ㄤ慨鏀?`app.ts`锛屾坊鍔?Service 绫诲瀷瑁呴グ锛氱幇鍦ㄤ慨鏀?`index.ts`锛岀粍鍚堟牴鍒涘缓鎵€鏈夊疄渚嬪苟娉ㄥ叆 `buildApp`锛氫唬鐮佸凡鍏ㄩ儴鍐欏畬锛岀幇鍦ㄨ繍琛?TypeScript 缂栬瘧妫€鏌ワ細Drizzle ORM 鐨?sql.js 椹卞姩鐨?`delete().run()` 杩斿洖 `void`锛岄渶瑕佹敼鐢?raw SQL銆傝鎴戜慨澶嶏細鏄庣櫧鍘熷洜浜?鈥?Drizzle ORM 鐨?SQL.js 椹卞姩鐨?`run()` 杩斿洖 `void`銆備慨澶嶏細浣跨敤 raw SQL 鑾峰彇鍒犻櫎琛屾暟銆係QL.js Drizzle 鐨?`.run()` 缁熶竴杩斿洖 `void`锛屾棤娉曠洿鎺ヨ幏鍙栧奖鍝嶈鏁般€傜暐浣滆皟鏁达紝杩斿洖鎵ц鐘舵€佸嵆鍙細鐜板湪閲嶆柊杩愯 TypeScript 缂栬瘧妫€鏌ワ細TypeScript 缂栬瘧閫氳繃銆傜幇鍦ㄨ繍琛屽畬鏁存瀯寤烘祴璇曪細鏋勫缓鍜?lint 閮介€氳繃浜嗐€傜幇鍦ㄨ繍琛屾祴璇曪細鍏ㄩ儴妫€鏌ラ€氳繃锛佹墍鏈夊寘鏋勫缓銆乴int銆佹祴璇曢兘鎴愬姛浜嗐€傜幇鍦ㄦ洿鏂?story-3 鐘舵€併€傜幇鍦ㄦ洿鏂拌繘搴﹁褰曪細鐜板湪鎻愪氦浠ｇ爜锛氭彁浜ゅ畬鎴愩€傝鎴戞鏌ヤ笅鏄惁闇€瑕佹洿鏂?AGENTS.md锛?# Story-3 瀹屾垚 鉁?
-**Repository 瀹炵幇 + Service 灞?+ 涓夊眰鏋舵瀯鎺ョ嚎**
+﻿濂界殑锛屽綋鍓嶅湪 `ralph/strategy-classification` 鍒嗘敮涓娿€俿tory-3 宸插畬鎴愶紙passes: true锛夛紝鎺ヤ笅鏉ュ疄鐜?**story-4 鈥?Config CRUD 绔偣**锛堜紭鍏堢骇 4锛夈€?
+鍏堣皟鐮旂幇鏈変唬鐮侊細Let me also read existing route files and types to follow established patterns:鐜板湪鏈夊畬鏁寸殑涓婁笅鏂囦簡锛屽紑濮嬪疄鐜?story-4銆?
+**姝ラ 1锛氬垱寤?`apps/api/src/routes/config.ts`****姝ラ 2锛氫慨鏀?`apps/api/src/app.ts` 鈥?娉ㄥ唽 configRoutes****姝ラ 3锛氶獙璇?TypeScript 缂栬瘧**TS 缂栬瘧閫氳繃锛屾棤閿欒銆傚啀璺戝叏閲忔鏌ワ細Lint 鍜?TypeScript 缂栬瘧閮介€氳繃浜嗐€傚啀璺戞祴璇曪細API 鍖呭叏缁匡紙42 tests passed锛夈€傚啀璺戞牴椤圭洰鍏ㄩ噺 build 鍜?test锛欱uild 閫氳繃銆傚啀璺戝叏閲忔祴璇曪細鍏ㄩ噺娴嬭瘯閫氳繃锛?0 涓寘鍏ㄩ儴鎴愬姛锛夈€傜幇鍦ㄦ洿鏂?prd.json 鍜?progress.txt锛岀劧鍚庢彁浜ゃ€傜幇鍦ㄦ洿鏂?progress.txt锛岀劧鍚庢彁浜わ細鎻愪氦鎴愬姛銆俿tory-4 宸插畬鎴愶紙passes: true锛夈€?
+**鏈疆鎽樿锛?*
+- 鉁?鏂板缓 `apps/api/src/routes/config.ts` 鈥?GET/PUT 閰嶇疆 CRUD 绔偣
+- 鉁?淇敼 `apps/api/src/app.ts` 鈥?娉ㄥ唽 configRoutes
+- 鉁?TypeScript 缂栬瘧閫氳繃
+- 鉁?Lint 閫氳繃
+- 鉁?API 娴嬭瘯 42 涓叏閮ㄩ€氳繃
+- 鉁?鍏ㄩ」鐩?build 鎴愬姛
+- 鉁?鍏ㄩ」鐩?269 tests 鍏ㄩ儴閫氳繃
+- 鉁?宸叉彁浜?`7aeb28b` 鍒?`ralph/strategy-classification`
 
-### 鏂板缓鐨勬枃浠讹紙4涓級
-| 鏂囦欢 | 璇存槑 |
-|------|------|
-| `apps/api/src/repositories/sqlite-config-repo.ts` | `SqliteConfigRepo` + `SqliteConfigHistoryRepo`锛宍save()` 閫忔槑鍐欏叆鍘嗗彶 |
-| `apps/api/src/repositories/sqlite-diag-repo.ts` | `SqliteDiagnosticRepo`锛屽惈 `purgeOlderThan(days)` 杩囨湡娓呯悊 |
-| `apps/api/src/services/config-service.ts` | `StrategyConfigService`锛岀函涓氬姟灞傦紝涓嶄緷璧?Drizzle |
-| `apps/api/src/services/diagnostic-service.ts` | `DiagnosticService`锛屽惈 `storeResult`/`purgeExpired` |
+鍓╀綑鏈畬鎴愭晠浜嬶細story-5 ~ story-13锛堝叡 9 涓級锛屼笅涓€杞凯浠ｆ帴鎵嬬户缁€?鎻愪氦鎴愬姛銆俿tory-4 宸插畬鎴愶紙passes: true锛夈€?
+**鏈疆鎽樿锛?*
+- 鉁?鏂板缓 `apps/api/src/routes/config.ts` 鈥?GET/PUT 閰嶇疆 CRUD 绔偣
+- 鉁?淇敼 `apps/api/src/app.ts` 鈥?娉ㄥ唽 configRoutes
+- 鉁?TypeScript 缂栬瘧閫氳繃
+- 鉁?Lint 閫氳繃
+- 鉁?API 娴嬭瘯 42 涓叏閮ㄩ€氳繃
+- 鉁?鍏ㄩ」鐩?build 鎴愬姛
+- 鉁?鍏ㄩ」鐩?269 tests 鍏ㄩ儴閫氳繃
+- 鉁?宸叉彁浜?`7aeb28b` 鍒?`ralph/strategy-classification`
 
-### 淇敼鐨勬枃浠讹紙4涓級
-- `apps/api/src/app.ts` 鈥?AppOptions 杩藉姞 `configService`/`diagnosticService`
-- `apps/api/src/index.ts` 鈥?缁勫悎鏍瑰垱寤哄畬鏁翠緷璧栭摼骞舵敞鍏?- `scripts/ralph/prd.json` 鈥?story-3 鏍囪涓?`passes: true`
-- `scripts/ralph/progress.txt` 鈥?杩藉姞杩涘害璁板綍
-- `apps/api/AGENT.md` 鈥?鏇存柊宸插疄鐜颁俊鎭?
-### 楠岃瘉缁撴灉
-- `npx tsc --noEmit` 鉁?鏃犻敊璇?- `pnpm build` 鉁?鍏ㄥ寘鏋勫缓閫氳繃
-- `pnpm lint` 鉁?鍏ㄧ豢锛堜粎鍘嗗彶 warnings锛?- `pnpm test` 鉁?269 tests 鍏ㄩ儴閫氳繃
-
-### 娉ㄦ剰浜嬮」
-- Drizzle ORM + SQL.js 椹卞姩鐨?`.run()` 缁熶竴杩斿洖 `void`锛屼笉鍙緷璧栬繑鍥炲€?- 涓氬姟灞傦紙services/锛夌姝?import Drizzle 鎴?sql.js
-
-### 鍓╀綑浠诲姟
-杩樻湁 10 涓晠浜嬶紙story-4 ~ story-13锛夋湭瀹屾垚锛岀瓑寰呬笅涓€杞凯浠ｃ€?## Story-3 瀹屾垚 鉁?
-**Repository 瀹炵幇 + Service 灞?+ 涓夊眰鏋舵瀯鎺ョ嚎**
-
-### 鏂板缓鐨勬枃浠讹紙4涓級
-| 鏂囦欢 | 璇存槑 |
-|------|------|
-| `apps/api/src/repositories/sqlite-config-repo.ts` | `SqliteConfigRepo` + `SqliteConfigHistoryRepo`锛宍save()` 閫忔槑鍐欏叆鍘嗗彶 |
-| `apps/api/src/repositories/sqlite-diag-repo.ts` | `SqliteDiagnosticRepo`锛屽惈 `purgeOlderThan(days)` 杩囨湡娓呯悊 |
-| `apps/api/src/services/config-service.ts` | `StrategyConfigService`锛岀函涓氬姟灞傦紝涓嶄緷璧?Drizzle |
-| `apps/api/src/services/diagnostic-service.ts` | `DiagnosticService`锛屽惈 `storeResult`/`purgeExpired` |
-
-### 淇敼鐨勬枃浠讹紙4涓級
-- `apps/api/src/app.ts` 鈥?AppOptions 杩藉姞 `configService`/`diagnosticService`
-- `apps/api/src/index.ts` 鈥?缁勫悎鏍瑰垱寤哄畬鏁翠緷璧栭摼骞舵敞鍏?- `scripts/ralph/prd.json` 鈥?story-3 鏍囪涓?`passes: true`
-- `scripts/ralph/progress.txt` 鈥?杩藉姞杩涘害璁板綍
-- `apps/api/AGENT.md` 鈥?鏇存柊宸插疄鐜颁俊鎭?
-### 楠岃瘉缁撴灉
-- `npx tsc --noEmit` 鉁?鏃犻敊璇?- `pnpm build` 鉁?鍏ㄥ寘鏋勫缓閫氳繃
-- `pnpm lint` 鉁?鍏ㄧ豢锛堜粎鍘嗗彶 warnings锛?- `pnpm test` 鉁?269 tests 鍏ㄩ儴閫氳繃
-
-### 娉ㄦ剰浜嬮」
-- Drizzle ORM + SQL.js 椹卞姩鐨?`.run()` 缁熶竴杩斿洖 `void`锛屼笉鍙緷璧栬繑鍥炲€?- 涓氬姟灞傦紙services/锛夌姝?import Drizzle 鎴?sql.js
-
-### 鍓╀綑浠诲姟
-杩樻湁 10 涓晠浜嬶紙story-4 ~ story-13锛夋湭瀹屾垚锛岀瓑寰呬笅涓€杞凯浠ｃ€
+鍓╀綑鏈畬鎴愭晠浜嬶細story-5 ~ story-13锛堝叡 9 涓級锛屼笅涓€杞凯浠ｆ帴鎵嬬户缁€

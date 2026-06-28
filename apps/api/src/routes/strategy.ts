@@ -7,10 +7,23 @@ export async function strategyRoutes(app: FastifyInstance) {
     return strategies.map((m) => ({
       name: m.name,
       description: m.description,
-      params: m.params,
+      params: m.params.map((p) => ({
+        key: p.key,
+        label: p.label,
+        type: p.type,
+        default: p.default,
+        min: p.min,
+        max: p.max,
+        options: p.options,
+        chart_relevant: p.chart_relevant ?? false,
+        ui_constraints: p.ui_constraints ?? [],
+      })),
       version: m.version,
       kind: m.kind,
       backtestable: m.backtestable,
+      category: m.category ?? 'non_factor',
+      subcategory: m.subcategory ?? null,
+      workflowReady: m.subcategory !== null && m.subcategory !== undefined,
     }));
   });
 
@@ -21,11 +34,24 @@ export async function strategyRoutes(app: FastifyInstance) {
     return {
       name: meta.name,
       description: meta.description,
-      params: meta.params,
+      params: meta.params.map((p) => ({
+        key: p.key,
+        label: p.label,
+        type: p.type,
+        default: p.default,
+        min: p.min,
+        max: p.max,
+        options: p.options,
+        chart_relevant: p.chart_relevant ?? false,
+        ui_constraints: p.ui_constraints ?? [],
+      })),
       version: meta.version,
       modes: meta.modes,
       kind: meta.kind,
       backtestable: meta.backtestable,
+      category: meta.category ?? 'non_factor',
+      subcategory: meta.subcategory ?? null,
+      workflowReady: meta.subcategory !== null && meta.subcategory !== undefined,
     };
   });
 }

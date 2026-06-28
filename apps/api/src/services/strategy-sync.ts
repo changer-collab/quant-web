@@ -21,12 +21,23 @@ export interface PythonStrategyMeta {
     min?: number;
     max?: number;
     options?: string[];
+    chart_relevant?: boolean;
+    ui_constraints?: Array<{
+      kind: string;
+      target_field: string;
+      target_value: unknown;
+      action_value?: unknown;
+    }>;
   }>;
   version: string;
   modes: string[];
   kind: string;
   /** 是否可独立回测（组件策略如选股器/择时器/仓位器不实现 on_bar，不可独立回测） */
   backtestable: boolean;
+  /** 策略分类（默认 non_factor，向后兼容） */
+  category?: string;
+  /** 策略子分类（null 表示未分类） */
+  subcategory?: string | null;
 }
 
 class StrategySyncService {
@@ -63,14 +74,26 @@ for name, cls in list_all().items():
                 'default': p.default,
                 'min': p.min,
                 'max': p.max,
-                'options': p.options
+                'options': p.options,
+                'chart_relevant': p.chart_relevant,
+                'ui_constraints': [
+                    {
+                        'kind': c.kind,
+                        'target_field': c.target_field,
+                        'target_value': c.target_value,
+                        'action_value': c.action_value,
+                    }
+                    for c in (p.ui_constraints or [])
+                ] if p.ui_constraints else None,
             }
             for p in meta.params
         ],
         'version': meta.version,
         'modes': [m.value for m in meta.modes],
         'kind': meta.kind.value,
-        'backtestable': backtestable
+        'backtestable': backtestable,
+        'category': meta.category.value if meta.category else 'non_factor',
+        'subcategory': meta.subcategory.value if meta.subcategory else None,
     })
 
 print(json.dumps(strategies))
