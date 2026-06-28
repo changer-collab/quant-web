@@ -73,6 +73,8 @@ const DEFAULT_STATE = {
   lastGitHead: "",
   /** 单轮完成多个 story 的累计警告次数 */
   multiStoryWarnings: 0,
+  /** 每轮迭代前 prd.json 的 passes 快照（用于验证单轮完成数） */
+  passesSnapshot: [],
 };
 
 export function initState() {
@@ -440,6 +442,122 @@ export function detectMultiStory(remainingBefore, remainingAfter) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// Guardian 确定性预检 — snapshot + validate（不费 token）
+// ═══════════════════════════════════════════════════════════════════
+
+/** 快照当前 prd.json 的 passes 状态到 state.passesSnapshot */
+export function snapshotPasses() {
+  const prd = readPrd();
+  const passedIds = prd.userStories.filter((s) => s.passes).map((s) => s.id);
+  updateState({ passesSnapshot: passedIds });
+  return passedIds;
+}
+
+/**
+ * 确定性验证（不需要 AI）：
+ *   1. 检查单轮完成的 story 数 ≤ 1
+ *   2. 检查是否有代码变更支撑 passes 变更
+ *   3. 检查是否只改了测试文件没改实现
+ *
+ * @returns {{ valid: boolean, reason: string, details: object }}
+ */
+export function validateIteration() {
+  const state = readState();
+  const prd = readPrd();
+  const snapshot = state.passesSnapshot || [];
+
+  // 首轮迭代无基线 → 跳过验证
+  if (snapshot.length === 0) {
+    const nowPassed = prd.userStories.filter((s) => s.passes).map((s) => s.id);
+    return { valid: true, reason: "first-run-no-baseline", newlyCompleted: nowPassed };
+  }
+
+  const nowPassed = new Set(prd.userStories.filter((s) => s.passes).map((s) => s.id));
+  const newlyCompleted = [...nowPassed].filter((id) => !snapshot.includes(id));
+
+  // ── 规则 1: 单轮不能完成超过 1 个 story ──
+  if (newlyCompleted.length > 1) {
+    return {
+      valid: false,
+      reason: `单轮完成 ${newlyCompleted.length} 个 story，超过上限 1。` +
+        `已完成: ${newlyCompleted.join(", ")}。` +
+        `只允许单轮完成恰好 1 个或 0 个 story。prd.json 将被回滚。`,
+      rule: "max-one-story-per-iteration",
+      newlyCompleted,
+    };
+  }
+
+  // ── 规则 2: 如果有 newlyCompleted story，必须至少有 1 个代码文件变更 ──
+  if (newlyCompleted.length === 1) {
+    try {
+      const lastHead = state.lastGitHead;
+      // 如果有 lastGitHead 用精确 diff；否则用 HEAD~1 近似
+      const diffRange = lastHead ? `${lastHead}..HEAD` : "HEAD~1";
+      const diffFiles = execSync(
+        `git diff --name-only ${diffRange}`,
+        { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 5000 }
+      ).trim().split("\n").filter(Boolean);
+
+      const codeFiles = diffFiles.filter((f) =>
+        !f.startsWith("scripts/ralph/") &&
+        !f.startsWith(".claude/") &&
+        !f.startsWith(".superpowers/") &&
+        !f.startsWith("data/") &&
+        (f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".py") ||
+         f.endsWith(".js") || f.endsWith(".mjs") || f.endsWith(".css"))
+      );
+
+      if (codeFiles.length === 0) {
+        return {
+          valid: false,
+          reason: `story ${newlyCompleted[0]} 标记为完成但没有任何代码文件变更。` +
+            `prd.json 将被回滚。`,
+          rule: "no-code-changes-for-completion",
+          newlyCompleted,
+          diffFiles,
+        };
+      }
+    } catch {
+      // git 不可用，跳过此检查
+    }
+  }
+
+  // ── 规则 3: 检查测试文件是否被单独修改（无对应实现变更） ──
+  try {
+    const diffFiles = execSync(
+      "git diff HEAD~1 --name-only",
+      { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 5000 }
+    ).trim().split("\n").filter(Boolean);
+
+    const testPatterns = [/test.*\.(ts|tsx|py|js)$/, /\.(test|spec)\.(ts|tsx|py|js)$/];
+    const testFiles = diffFiles.filter((f) =>
+      testPatterns.some((p) => p.test(f))
+    );
+    const implFiles = diffFiles.filter((f) =>
+      !testFiles.includes(f) &&
+      !f.startsWith("scripts/ralph/") &&
+      !f.startsWith(".claude/") &&
+      !f.startsWith(".superpowers/") &&
+      (f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".py") || f.endsWith(".js"))
+    );
+
+    if (testFiles.length > 0 && implFiles.length === 0) {
+      return {
+        valid: false,
+        reason: `只修改了 ${testFiles.length} 个测试文件但没有对应的实现文件变更。这是绕过验证的危险信号。prd.json 将被回滚。`,
+        rule: "test-files-only-no-impl",
+        testFiles,
+        implFiles,
+      };
+    }
+  } catch {
+    // git 不可用，跳过此检查
+  }
+
+  return { valid: true, reason: "all-checks-passed", newlyCompleted };
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // Git 变更检测
 // ═══════════════════════════════════════════════════════════════════
 
@@ -643,6 +761,29 @@ function cli() {
         console.log("NONE");
       } else {
         console.log(storyId);
+      }
+      break;
+    }
+
+    case "--snapshot-passes": {
+      const ids = snapshotPasses();
+      console.log(`Snapshotted passes: ${ids.length} stories (${ids.join(", ") || "none"})`);
+      break;
+    }
+
+    case "--validate-iteration": {
+      const result = validateIteration();
+      if (result.valid) {
+        console.log("ALLOW");
+      } else {
+        console.error("");
+        console.error("┌─────────────────────────────────────────────────┐");
+        console.error("│ ⛔ Guardian 验证失败                               │");
+        console.error(`│ 规则: ${result.rule}`);
+        console.error(`│ ${result.reason.substring(0, 60)}`);
+        console.error("└─────────────────────────────────────────────────┘");
+        console.error("");
+        console.log(`DENY: ${result.reason}`);
       }
       break;
     }
