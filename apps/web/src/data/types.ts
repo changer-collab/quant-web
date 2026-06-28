@@ -578,6 +578,42 @@ export interface UiCopy {
   klineChartReason: string;
   /** 因子快照 */
   klineChartFactorSnapshot: string;
+  /** ─── WorkspacePage ─── */
+  workspaceStep1Label: string;
+  workspaceStep2Label: string;
+  workspaceBackButton: string;
+  workspaceRunDiagnostics: string;
+  workspaceDiagnosticsRunning: string;
+  workspaceDiagnosticsFailed: string;
+  workspaceDiagnosticExpired: string;
+  workspaceRecalculate: string;
+  workspaceConfirmStep2: string;
+  workspaceConfigSummary: string;
+  workspaceSubmitBacktest: string;
+  workspaceBacktestRunning: string;
+  workspaceBacktestFailed: string;
+  workspaceICSeries: string;
+  workspaceLayeredReturns: string;
+  workspaceCorrelationHeatmap: string;
+  workspaceParamSensitivity: string;
+  workspaceSignalDist: string;
+  workspaceSlippageStress: string;
+  workspaceMacroCorrelation: string;
+  workspaceEconomicCycle: string;
+  workspaceCARChart: string;
+  workspaceEventSamples: string;
+  workspaceSHAPImportance: string;
+  workspaceLossCurves: string;
+  workspacePerformanceTitle: string;
+  workspaceEquityCurve: string;
+  workspaceTradeDetails: string;
+  workspaceStep1Desc: string;
+  workspaceStep2Desc: string;
+  workspaceDiagnosticsLabel: string;
+  workspaceBacktestLabel: string;
+  workspaceSignalMetrics: string;
+  workspaceReturnMetrics: string;
+  workspaceRiskMetrics: string;
 }
 
 export interface LanguageContent {

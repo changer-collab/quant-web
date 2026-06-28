@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type {
   PreviewResponse,
   UiCopy,
@@ -596,7 +596,7 @@ export function KlineChart({
     return idx;
   }, [previewData]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const idx = getBarIndexFromX(e.clientX);
     if (idx == null || !previewData) {
       setTooltip(null);
@@ -632,7 +632,7 @@ export function KlineChart({
 
   // ── 时间轴拖拽 / 滚轮加载更多 ──────────────────────────
 
-  const handleWheel = useCallback((e: WheelEvent) => {
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     // 滚动到左边界触发加载更多
     if (onLoadMore && e.deltaX < 0 && previewData?.pagination?.next_cursor) {
       onLoadMore(previewData.pagination.next_cursor);
@@ -641,7 +641,7 @@ export function KlineChart({
 
   // ── 搜索 ────────────────────────────────────────────────
 
-  const handleSearchKeyDown = useCallback((e: KeyboardEvent) => {
+  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchValue.trim() && onSymbolChange) {
       onSymbolChange(searchValue.trim().toUpperCase());
     }

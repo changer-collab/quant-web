@@ -427,3 +427,46 @@ lint_error
   - `eslint.config.mjs` — 新增 Canvas API 浏览器全局变量
 - **Canvas 图层：** K 线 + MA 均线 + 成交量 + 策略副图(subcategory 动态切换) + 信号箭头 + tooltip
 - **验证：** tsc 通过 | ESLint 0 errors | 96 tests passed | build 3.63s
+
+## [2026-06-28 13:00:05] - Iteration 9
+
+- Exit code: 0
+- Stories remaining: 2
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-28 21:14] - story-12
+- 实现了 WorkspacePage — 水平两步步骤条 + 动态诊断
+- **新建文件：**
+  - `apps/web/src/components/workspace-page.tsx` — 完整 Workspace 页面组件
+  - `apps/web/src/styles/workspace-page.module.css` — Workspace 页面样式
+- **修改文件：**
+  - `apps/web/src/data/types.ts` — UiCopy 接口新增 30 个 WorkspacePage 相关字段
+  - `apps/web/src/data/en.ts` — 新增英文 WorkspacePage 标签
+  - `apps/web/src/data/zh.ts` — 新增中文 WorkspacePage 标签
+  - `apps/web/src/App.tsx` — 导入 WorkspacePage，添加 workspaceEntryStrategy 状态，条件渲染新 workspace
+  - `apps/web/src/components/kline-chart.tsx` — 修复 event handler 类型（React SyntheticEvent）
+  - `scripts/ralph/prd.json` — story-12 标记为完成
+  - `scripts/ralph/progress.txt`
+- **功能实现：**
+  - 水平两步步骤条（步骤1: 诊断与研究 / 步骤2: 回测与绩效），数字圆圈+连接线
+  - 步骤1 按 subcategory 动态渲染诊断内容（因子型→IC/分层收益/热力图；非因子型→参数敏感性/信号分布/滑点压力；宏观→互相关/经济周期；事件→CAR/样本统计；E2E AI→SHAP/Loss曲线）
+  - 诊断数据通过 SSE 实时推送进度（POST /api/tasks diagnostics → streamTask）
+  - 步骤1→步骤2 确认按钮（诊断完成后可用）
+  - 步骤2 回测配置摘要（只读展示）+ 提交回测 → SSE 进度 + 绩效指标卡 + 权益曲线 + 交易明细表格
+  - F5 刷新恢复（URL ?diagnosticId=xxx → fetchDiagnostic → 恢复步骤1）
+  - 确定性的 mock 数据生成器（使用 det() 函数，无 Math.random）
+- **验证：**
+  - `pnpm lint` → 0 errors（仅 11 个已存在 warning）
+  - `pnpm test` → 全部 10 包测试通过
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - WorkspacePage 在 App.tsx 中通过 workspaceEntryStrategy 状态条件渲染，仅从 StrategyPage 进入时使用新 workspace
+  - SSE progress 类型在 handleRunDiagnostics 中正确解析 result.resultId + result.data
+  - mock 数据使用 det() 确定性伪随机函数，避免 React compiler 对 Math.random 的 warning
+  - 确定性的 mock 数据生成器函数（genMockBarData/genMockHeatmap/genMockLinePoints/genMockTradeRows）在 workspace-page.tsx 文件顶部定义
+  - story-13 将清理 useResearchWorkflow 中的 hardcoded mode 引用，并移除旧 workspace 组件
+---

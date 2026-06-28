@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from 'react';
+import { Suspense, lazy, useState, useMemo } from 'react';
 import { useLanguage, usePageContent } from './hooks/useLanguage';
 import { useResearchWorkflow } from './hooks/useResearchWorkflow';
 import { useStrategies } from './hooks/useStrategies';
@@ -14,11 +14,12 @@ import { WorkspaceContent, WorkspaceModeTabs } from './components/workspace';
 import { ActivityFeed } from './components/activity-feed';
 import { StrategyGrid } from './components/strategy-grid';
 import { StrategyPage } from './components/strategy-page';
+import { WorkspacePage } from './components/workspace-page';
 import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
 import { JobList } from './components/jobs';
-import type { ResearchJob, ResearchModeId, JobTemplate } from './appData';
+import type { ResearchJob, ResearchModeId, JobTemplate, StrategyRow } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
 import hero from './styles/hero.module.css';
@@ -55,6 +56,7 @@ export default function App() {
     handleViewReport,
     handleSwitchBacktestReport,
   } = useResearchWorkflow(language);
+  const [workspaceEntryStrategy, setWorkspaceEntryStrategy] = useState<StrategyRow | null>(null);
   const { activePage } = usePageContent(state.activePage, language);
 
   // 将 API 任务映射为 ResearchJob 并与本地任务合并
@@ -178,6 +180,16 @@ export default function App() {
                   <ChartMockup ariaLabel={ui.chartAriaLabel} priceUp={reportUiCopy.chartLabels.priceUp} priceDown={reportUiCopy.chartLabels.priceDown} />
                 </>
               )
+            ) : state.activePage === 'workspace' && workspaceEntryStrategy ? (
+              <WorkspacePage
+                strategy={workspaceEntryStrategy}
+                onBack={() => {
+                  setWorkspaceEntryStrategy(null);
+                  handleNavClick('strategy');
+                }}
+                language={language}
+                ui={ui}
+              />
             ) : state.activePage === 'workspace' ? (
               <WorkspaceContent
                 mode={researchMode}
@@ -208,7 +220,8 @@ export default function App() {
                   <StrategyPage
                     strategies={strategies}
                     onEnterWorkspace={(strategy) => {
-                      handleSelectStrategy(strategy);
+                      setWorkspaceEntryStrategy(strategy);
+                      handleNavClick('workspace');
                     }}
                     ui={ui}
                     language={language}
