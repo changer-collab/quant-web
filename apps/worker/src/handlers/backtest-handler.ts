@@ -15,6 +15,7 @@ export interface BacktestPayload {
   startTs?: number;
   endTs?: number;
   params?: Record<string, unknown>;
+  configSnapshot?: { strategy: string; params: Record<string, unknown> };
   dbPath?: string;
 }
 
@@ -41,7 +42,7 @@ export class BacktestHandler implements TaskHandler {
       config: {
         initialCash: payload.initialCash,
         slippage: payload.slippage,
-        strategyParams: payload.params ?? {},
+        strategyParams: payload.configSnapshot?.params ?? payload.params ?? {},
       },
       dataRange: {
         dbPath: payload.dbPath ?? resolveDbPath(),

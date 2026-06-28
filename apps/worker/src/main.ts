@@ -9,6 +9,7 @@
 
 import { BacktestHandler } from './handlers/backtest-handler.js';
 import { CollectHandler } from './handlers/collect-handler.js';
+import { DiagnosticsHandler } from './handlers/diagnostics-handler.js';
 import { PythonBridge } from './python-bridge.js';
 import { TaskStatus, type StreamEvent } from './types.js';
 import type { TaskRecord, TaskHandler } from './queue.js';
@@ -22,6 +23,10 @@ function createHandler(taskType: string): TaskHandler | null {
     }
     case 'collect': {
       return new CollectHandler();
+    }
+    case 'diagnostics': {
+      const bridge = new PythonBridge({ timeout: 120_000 });
+      return new DiagnosticsHandler(bridge);
     }
     default:
       return null;

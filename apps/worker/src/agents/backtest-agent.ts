@@ -18,6 +18,7 @@ export interface BacktestParams {
   startTs?: number;
   endTs?: number;
   params?: Record<string, unknown>;
+  configSnapshot?: { strategy: string; params: Record<string, unknown> };
 }
 
 export class BacktestAgent implements AgentExecutor {
@@ -35,7 +36,7 @@ export class BacktestAgent implements AgentExecutor {
       config: {
         initialCash: params.initialCash,
         slippage: params.slippage,
-        strategyParams: params.params ?? {},
+        strategyParams: params.configSnapshot?.params ?? params.params ?? {},
       },
       dataRange: {
         symbol: params.symbol,

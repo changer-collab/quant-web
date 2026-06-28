@@ -245,3 +245,53 @@ pytest_fail
 - Exit code: 0
 - Stories remaining: 9
 ---
+
+## [2026-06-28 12:14:17] - Iteration 3
+
+- Exit code: 0
+- Stories remaining: 8
+- **Detected issues:**
+```
+lint_error
+build_fail
+```
+---
+
+## [2026-06-28 20:20] - story-6
+- 实现了 POST /api/tasks 的 configSnapshot 改造 + Diagnostics 端点
+- **6a. Task 改造：**
+  - `apps/worker/src/types.ts` — TaskType 追加 Diagnostics='diagnostics'
+  - `apps/worker/src/handlers/backtest-handler.ts` — BacktestPayload 新增 configSnapshot 字段，strategyParams 优先从 configSnapshot.params 提取（向后兼容 params 降级）
+  - `apps/worker/src/agents/backtest-agent.ts` — BacktestParams 新增 configSnapshot 字段，同样优先使用 configSnapshot.params
+- **6b. Diagnostics 端点：**
+  - 新建 `apps/worker/src/handlers/diagnostics-handler.ts` — DiagnosticsHandler，通过 PythonBridge 调用 diagnostics CLI（未实现时回显输入）
+  - 修改 `apps/worker/src/main.ts` — createHandler 新增 diagnostics 分支
+  - 修改 `apps/worker/src/index.ts` — 导出 DiagnosticsHandler
+  - 新建 `apps/api/src/routes/diagnostics.ts` — GET /:resultId 和 GET /?strategy=xxx 两个端点
+  - 修改 `apps/api/src/app.ts` — 注册 diagnosticRoutes
+  - 修改 `apps/api/src/routes/task.ts` — complete handler 中对 diagnostics 类型任务调用 diagnosticService.storeResult()，SSE 事件附加 resultId+resultType，使用 randomUUID()
+- 修改了哪些文件：
+  - `apps/worker/src/types.ts`
+  - `apps/worker/src/handlers/backtest-handler.ts`
+  - `apps/worker/src/agents/backtest-agent.ts`
+  - `apps/worker/src/handlers/diagnostics-handler.ts`（新建）
+  - `apps/worker/src/main.ts`
+  - `apps/worker/src/index.ts`
+  - `apps/api/src/routes/diagnostics.ts`（新建）
+  - `apps/api/src/app.ts`
+  - `apps/api/src/routes/task.ts`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `cd apps/api && npx tsc --noEmit` → 编译通过
+  - `cd apps/worker && npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 全绿（仅已存在 warning）
+  - `pnpm test` → API 42 passed + Worker 26 passed + 前端全部通过 = 269+
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - DiagnosticsHandler 当前为占位实现，桥接到 Python CLI 的 diagnostics 命令；Python 侧未实现时回显输入。story-12 的实现可能需要升级此 handler
+  - randomUUID() 来自 node:crypto，在 Node 14.17+ 可用
+  - diagnostics 的完整数据流：客户端 POST 创建 diagnostics 任务 → Worker 轮询执行 → 调用 /:id/complete → API 存储结果 → 客户端通过 GET /api/diagnostics/:resultId 查询
+  - 前端 SSE stream 中 result 事件的 data.resultId 和 data.resultType 字段由 complete handler 注入，非 worker 返回
+  - backtest-handler 中 strategyParams 提取改为 `payload.configSnapshot?.params ?? payload.params ?? {}`，保持向后兼容
+---

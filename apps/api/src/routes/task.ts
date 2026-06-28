@@ -2,7 +2,8 @@ import { TaskType, TaskStatus } from '../types.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ReportRepository } from '../storage/report-repo.js';
 import { mapBacktestResultToReport } from '../services/report-mapper.js';
-import type { BacktestResult, BacktestReportFull } from '../types.js';
+import type { BacktestResult, BacktestReportFull, ConfigSnapshot, DiagnosticResult } from '../types.js';
+import { randomUUID } from 'node:crypto';
 
 export async function taskRoutes(app: FastifyInstance) {
   app.post('/', async (req, reply) => {
@@ -113,12 +114,33 @@ export async function internalTaskRoutes(app: FastifyInstance) {
     const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     const { result } = req.body as { result: Record<string, unknown> };
+
+    // 对于 diagnostics 类型任务，先存储诊断结果再发送 SSE 事件（确保 resultId 可用）
+    let enrichedResult = result;
+    if (task.type === TaskType.Diagnostics) {
+      try {
+        const payload = task.payload as Record<string, unknown>;
+        const diagnosticResult: DiagnosticResult = {
+          id: randomUUID(),
+          taskId: task.id,
+          strategy: (payload.strategy as string) || 'unknown',
+          configSnapshot: (payload.configSnapshot as ConfigSnapshot) ?? { strategy: (payload.strategy as string) || 'unknown', params: {} },
+          dataJson: result,
+          createdAt: Date.now(),
+        };
+        await app.diagnosticService.storeResult(diagnosticResult);
+        enrichedResult = { ...result, resultId: diagnosticResult.id, resultType: 'diagnostics' };
+      } catch (err) {
+        console.error('[api] Failed to store diagnostic result:', err);
+      }
+    }
+
     await app.taskService.updateTask(req.params.id, {
       status: TaskStatus.Completed,
-      result,
+      result: enrichedResult,
       completedAt: Date.now(),
       progress: 100,
-    }, { type: 'result', taskId: req.params.id, data: result });
+    }, { type: 'result', taskId: req.params.id, data: enrichedResult });
 
     // 如果是回测任务，自动保存报告
     if (task.type === TaskType.Backtest) {

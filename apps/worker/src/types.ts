@@ -13,6 +13,7 @@ export enum TaskType {
   FactorEval = 'factor_eval',
   AITrain = 'ai_train',
   Collect = 'collect',
+  Diagnostics = 'diagnostics',
 }
 
 /** 任务状态 */
