@@ -90,3 +90,46 @@ def test_list_instruments(db_path):
     df = client.list_instruments()
     assert len(df) == 1
     assert df.iloc[0]["name"] == "平安银行"
+
+
+def test_get_active_symbols_returns_active(db_path):
+    client = DataClient(db_path)
+    symbols = client.get_active_symbols(20000102)
+    assert "000001.SZ" in symbols
+
+
+def test_get_active_symbols_excludes_delisted_before_as_of(db_path):
+    """测试：如果标的在 as_of_ts 之前已退市，不返回"""
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        "INSERT INTO instruments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("600000.SH", "退市股票", "SSE", 100, 0.01, "其他", "其他", 19900101, 19950101, "delisted", None),
+    )
+    conn.commit()
+    conn.close()
+
+    client = DataClient(db_path)
+    symbols = client.get_active_symbols(20000101)
+    assert "600000.SH" not in symbols
+
+
+def test_get_active_symbols_includes_delisted_after_as_of(db_path):
+    """测试：已在回测结束前退市的标的，如果在回测开始时是活跃的，应包含"""
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        "INSERT INTO instruments VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ("600001.SH", "已退市A", "SSE", 100, 0.01, "其他", "其他", 19900101, 20050101, "delisted", None),
+    )
+    conn.commit()
+    conn.close()
+
+    client = DataClient(db_path)
+    symbols = client.get_active_symbols(20000101)
+    assert "600001.SH" in symbols
+
+
+def test_get_active_symbols_excludes_not_listed_yet(db_path):
+    """测试：as_of_ts 之后才上市的标的，不返回"""
+    client = DataClient(db_path)
+    symbols = client.get_active_symbols(1000)
+    assert "000001.SZ" not in symbols

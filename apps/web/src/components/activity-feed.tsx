@@ -59,6 +59,11 @@ export function ActivityFeed({
                   </span>
                   <span>{job.progress}%</span>
                 </div>
+                {job.state === 'Failed' && job.errorMessage && (
+                  <div className={s.errorMsg}>
+                    {job.errorMessage}
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -1,5 +1,5 @@
 /**
- * Tick Repository — SQLite (sql.js) 实现
+ * Tick Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and, gte, lte, gt, desc } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
@@ -44,15 +44,16 @@ export class SqliteTickRepository implements TickRepository {
   async save(input: ExtendedTick[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const tick of input) {
           const row = toRow(tick);
-          await tx.insert(ticks)
+          tx.insert(ticks)
             .values(row)
             .onConflictDoUpdate({
               target: [ticks.symbol, ticks.timestamp],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {

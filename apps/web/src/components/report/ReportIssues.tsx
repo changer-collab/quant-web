@@ -1,5 +1,6 @@
 import type { BacktestReportFull, ReportUiCopy } from '../../appData';
 import styles from '@/styles/report-tables.module.css';
+import { KeywordTileGrid } from './KeywordTileGrid';
 
 interface Props {
   report: BacktestReportFull;
@@ -22,14 +23,14 @@ export function ReportIssues({ report, ui }: Props) {
 
   return (
     <div className={styles.issuesPanel}>
-      <div className={`${styles.issuesGrid} ${styles.issuesGridFull}`}>
-        <article className={styles.issueCard}>
+      <div className={`${styles.issuesGrid} ${styles.issuesGridFull} ${styles.issueStatusTiles}`}>
+        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.overfitting}</span>
             <RiskIndicator level={issues.overfittingRisk} ui={labels} />
           </div>
         </article>
-        <article className={styles.issueCard}>
+        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.survivorshipBias}</span>
             <span className={issues.survivorshipBias ? styles.issueBadWarn : styles.issueBadGood}>
@@ -37,7 +38,7 @@ export function ReportIssues({ report, ui }: Props) {
             </span>
           </div>
         </article>
-        <article className={styles.issueCard}>
+        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.lookAheadBias}</span>
             <span className={issues.lookAheadBias ? styles.issueBadWarn : styles.issueBadGood}>
@@ -47,15 +48,17 @@ export function ReportIssues({ report, ui }: Props) {
         </article>
       </div>
 
-      <div className={styles.assessCard}>
-        <h4 className={styles.assessTitle}>{labels.liquidity}</h4>
-        <p className={styles.assessText}>{issues.liquidityAssessment}</p>
-      </div>
+      <KeywordTileGrid
+        title={labels.liquidity}
+        items={issues.liquidityAssessmentItems}
+        fallbackText={issues.liquidityAssessment}
+      />
 
-      <div className={styles.assessCard}>
-        <h4 className={styles.assessTitle}>{labels.capacity}</h4>
-        <p className={styles.assessText}>{issues.capacityEstimate}</p>
-      </div>
+      <KeywordTileGrid
+        title={labels.capacity}
+        items={issues.capacityEstimateItems}
+        fallbackText={issues.capacityEstimate}
+      />
     </div>
   );
 }

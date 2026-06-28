@@ -1,12 +1,18 @@
 """策略注册表测试"""
 
-from quantforge_strategies import register, get, list_all, DualMAStrategy, RSIStrategy
+from quantforge_strategies import register, get, list_all, DualMAStrategy, RSIStrategy, AIPredictorStrategy
 
 
 def test_builtin_registered():
     all_strategies = list_all()
     assert "dual_ma" in all_strategies
     assert "rsi" in all_strategies
+    assert "ai_predictor" in all_strategies
+
+
+def test_get_ai_predictor():
+    cls = get("ai_predictor")
+    assert cls is AIPredictorStrategy
 
 
 def test_get():

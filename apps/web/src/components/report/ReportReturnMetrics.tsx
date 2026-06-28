@@ -22,8 +22,12 @@ function ReturnChart({ report, ui }: Props) {
     const items = [
       { name: labels.cumulativeReturn, value: m.cumulativeReturn * 100 },
       { name: labels.annualizedReturn, value: m.annualizedReturn * 100 },
-      { name: 'Alpha', value: m.alpha * 100 },
     ];
+
+    // alpha 为 null 或 0 时不显示
+    if (m.alpha != null && m.alpha !== 0) {
+      items.push({ name: 'Alpha', value: m.alpha * 100 });
+    }
 
     return {
       tooltip: {
@@ -99,27 +103,53 @@ function RiskAdjustedRadar({ report, ui }: Props) {
   const labels = ui.chartLabels;
 
   const option = useMemo<EChartsOption>(() => {
-    // 归一化各指标到 0~100 分
-    const sharpeScore = Math.min(Math.max(ram.sharpeRatio / 3 * 100, 0), 100);
-    const sortinoScore = Math.min(Math.max(ram.sortinoRatio / 4 * 100, 0), 100);
-    const calmarScore = Math.min(Math.max(rkm.calmarRatio / 3 * 100, 0), 100);
-    const infoScore = Math.min(Math.max(ram.informationRatio / 2 * 100, 0), 100);
-    const treynorScore = Math.min(Math.max(ram.treynorRatio / 1 * 100, 0), 100);
-    const alphaScore = Math.min(Math.max(rm.alpha / 0.2 * 100, 0), 100);
+    // 只纳入非 null 维度
+    const indicators: { name: string; max: number }[] = [];
+
+    // sharpe
+    indicators.push({ name: labels.sharpe, max: 100 });
+    const scores: number[] = [];
+    scores.push(Math.min(Math.max(ram.sharpeRatio / 3 * 100, 0), 100));
+
+    // sortino
+    if (ram.sortinoRatio != null) {
+      indicators.push({ name: 'Sortino', max: 100 });
+      scores.push(Math.min(Math.max(ram.sortinoRatio / 4 * 100, 0), 100));
+    }
+
+    // calmar
+    if (rkm.calmarRatio != null) {
+      indicators.push({ name: 'Calmar', max: 100 });
+      scores.push(Math.min(Math.max(rkm.calmarRatio / 3 * 100, 0), 100));
+    }
+
+    // infoRatio
+    if (ram.informationRatio != null) {
+      indicators.push({ name: 'Info', max: 100 });
+      scores.push(Math.min(Math.max(ram.informationRatio / 2 * 100, 0), 100));
+    }
+
+    // treynor
+    if (ram.treynorRatio != null) {
+      indicators.push({ name: 'Treynor', max: 100 });
+      scores.push(Math.min(Math.max(ram.treynorRatio / 1 * 100, 0), 100));
+    }
+
+    // alpha
+    if (rm.alpha != null) {
+      indicators.push({ name: 'Alpha', max: 100 });
+      scores.push(Math.min(Math.max(rm.alpha / 0.2 * 100, 0), 100));
+    }
+
+    // 如果维度不足 3 个，雷达图会塌缩，返回空
+    if (indicators.length < 3) return {};
 
     return {
       tooltip: {
         ...CHART_DEFAULTS.tooltip,
       },
       radar: {
-        indicator: [
-          { name: labels.sharpe, max: 100 },
-          { name: 'Sortino', max: 100 },
-          { name: 'Calmar', max: 100 },
-          { name: 'Info', max: 100 },
-          { name: 'Treynor', max: 100 },
-          { name: 'Alpha', max: 100 },
-        ],
+        indicator: indicators,
         shape: 'polygon',
         splitNumber: 4,
         axisName: { color: '#8fa29b', fontSize: 10 },
@@ -132,7 +162,7 @@ function RiskAdjustedRadar({ report, ui }: Props) {
           type: 'radar',
           data: [
             {
-              value: [sharpeScore, sortinoScore, calmarScore, infoScore, treynorScore, alphaScore],
+              value: scores,
               name: labels.strategy,
               lineStyle: { color: '#4df0a0', width: 2 },
               itemStyle: { color: '#4df0a0' },
@@ -167,7 +197,9 @@ export function ReportReturnMetrics({ report, ui }: Props) {
     { label: labels.cumulativeReturn, value: pct(m.cumulativeReturn), tone: m.cumulativeReturn > 0 ? 'good' : 'warn' },
     { label: labels.totalReturn, value: pct(m.totalReturn), tone: m.totalReturn > 0 ? 'good' : 'warn' },
     { label: labels.annualizedReturn, value: pct(m.annualizedReturn), tone: m.annualizedReturn > 0 ? 'good' : 'warn' },
-    { label: labels.alpha, value: pct(m.alpha), tone: m.alpha > 0 ? 'good' : 'warn' },
+    ...(m.alpha != null && m.alpha !== 0
+      ? [{ label: labels.alpha, value: pct(m.alpha), tone: (m.alpha > 0 ? 'good' : 'warn') as 'good' | 'warn' }]
+      : []),
   ];
 
   return (

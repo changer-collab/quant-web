@@ -30,7 +30,9 @@ description: "一句话描述：做什么 + 何时触发"
 
 | 名称 | 用途 |
 |------|------|
-| `quantforge-code-review` | 量化策略代码审查，覆盖架构合规、策略安全、因子正确性等 |
+| `quantforge-code-review` | 量化领域专属审查：策略安全、回测配置、架构边界合规。**通用代码审查请用系统 `/code-review`** |
+| `ralph-harness` | Ralph 自治循环 harness 工程规范：结构化错误记录、跨迭代反馈、收敛检测 |
+| `fix-python-encoding` | 修复 Windows 中文环境下 Python 子进程 pipe 输出编码乱码（GBK → UTF-8）|
 
 ## 跨工具使用
 

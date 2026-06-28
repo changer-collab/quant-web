@@ -117,6 +117,7 @@ packages/factor-lab -> packages/strategy-runtime
 packages/factor-lab -> packages/data-client
 packages/ai-engine -> packages/data-client
 packages/strategies -> packages/strategy-runtime
+packages/strategies -> packages/ai-engine（仅 AI 预测策略消费已训练模型/预测器）
 packages/obsidian-sync -> packages/data-client
 packages/obsidian-sync -> packages/strategy-runtime
 packages/obsidian-sync -> packages/backtest-engine
@@ -126,6 +127,7 @@ services/data-collector -> services/data-center
 ```
 
 TS 层内部通信：
+
 - API 与 Worker 不共享进程状态，Worker 通过 HTTP 轮询 API 的 `/api/internal/tasks/*` 端点领取、上报任务。
 - 前端通过 SSE `/api/tasks/:id/stream` 接收任务事件（progress/log/result/error）。
 
@@ -145,7 +147,7 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - AI 引擎 Agent：不做回测撮合，不做实盘执行；特征提取可被因子挖掘复用，但因子评估指标的计算不是 AI 引擎的职责。报告分析文本生成放在 `report_analysis/` 子模块，接口设计为"输入 dict，输出文本"，不依赖 BacktestResult 等业务类型，避免跨包类型耦合。当前用规则引擎+模板生成，预留 LLM 接口。
 - 策略运行时 Agent：接口优先稳定，避免过度抽象；策略运行时可 re-export 数据客户端的行情类型（Bar、Tick、TimeFrame 等），供下游模块通过合法依赖链获取；CLI 入口是 Worker 子进程调用的唯一入口。
 - 因子工坊 Agent：因子定义和计算接口优先稳定；因子评估指标的计算不在此实现，委托给回测引擎。
-- 策略库 Agent：策略不直接依赖网站后端。
+- 策略库 Agent：策略不直接依赖网站后端；AI 预测策略可依赖 AI 引擎加载已训练模型并生成信号，但不在策略库内训练模型。
 - 循环引擎 Agent：当前阶段只定义类型骨架（LoopType/LoopStatus/IterationStatus/LoopConfig/IterationRecord/LoopRecord/LoopCondition/LoopSummary），不实现调度引擎、不实现状态持久化、不自带进程入口；循环调度始终由 Worker 负责，循环状态持久化始终由 Worker 通过 API 任务表实现；迭代结果只存引用和摘要，不内联其他引擎的完整结果类型；单次闭环（backtest → obsidian-sync、backtest → web 报告展示）打通后才进入循环引擎的实现阶段。
 
 ## 全局硬性规则
@@ -157,21 +159,37 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 不为了记录过程创建额外文档；用户明确要求时除外。
 - 当前不做真实下单、券商连接、实盘低延迟交易、权限系统、策略市场。
 - 未来实盘执行层必须单独设计，不允许把普通 API 和任务队列放进低延迟下单路径。
+- 所有密钥和环境变量统一管理：项目根目录一个 `.env`（gitignored）+ 一个 `.env.example`（提交到 git）。各子项目不单独维护 `.env` 文件。Python 包纯读 `os.environ`，不引入 dotenv 依赖，由启动入口负责加载。
+- **Git 分支与提交约定**：
+  - 本地开发统一使用 `changer` 分支，不要无缘无故创建新的分支。#这里changer可以改成共同开发者自己的分支
+  - 开发完成后在 `changer` 分支提交。
+  - 推送时使用 `git push origin changer`，不要直接向 `main` 分支推送。
+  - 推送完成后，使用 `gh pr create` 创建从 `changer` 到 `main` 的 Pull Request（若已有同名 PR 则跳过）。
 
 ## 子项目规则引用
 
 操作任何子项目前，**必须先读取**该子项目的 `AGENT.md`，以其规则为准。以下为完整引用清单：
 
 <!-- @include: apps/web/AGENT.md -->
+
 <!-- @include: apps/api/AGENT.md -->
+
 <!-- @include: apps/worker/AGENT.md -->
+
 <!-- @include: services/data-center/AGENT.md -->
+
 <!-- @include: services/data-collector/AGENT.md -->
+
 <!-- @include: packages/backtest-engine/AGENT.md -->
+
 <!-- @include: packages/ai-engine/AGENT.md -->
+
 <!-- @include: packages/strategy-runtime/AGENT.md -->
+
 <!-- @include: packages/factor-lab/AGENT.md -->
+
 <!-- @include: packages/strategies/AGENT.md -->
+
 <!-- @include: packages/loop-engine/AGENT.md -->
 
 **执行规则**：当任务涉及上述某个子项目时，Agent 必须先用 Read 工具读取对应的 `AGENT.md`，然后以该文件的规则为约束执行任务。如果子项目 AGENT.md 与根级 AGENTS.md 冲突，以根级为准。

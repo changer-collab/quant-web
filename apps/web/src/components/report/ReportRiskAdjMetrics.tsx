@@ -19,9 +19,15 @@ export function ReportRiskAdjMetrics({ report, ui }: Props) {
 
   const cards = [
     { label: labels.sharpe, value: m.sharpeRatio.toFixed(2), ...rating(m.sharpeRatio, labels) },
-    { label: labels.sortino, value: m.sortinoRatio.toFixed(2), ...rating(m.sortinoRatio, labels) },
-    { label: labels.infoRatio, value: m.informationRatio.toFixed(2), ...rating(m.informationRatio, labels) },
-    { label: labels.treynor, value: m.treynorRatio.toFixed(2), ratingLabel: '', tone: 'info' },
+    ...(m.sortinoRatio != null && m.sortinoRatio !== 0
+      ? [{ label: labels.sortino, value: m.sortinoRatio.toFixed(2), ...rating(m.sortinoRatio, labels) }]
+      : []),
+    ...(m.informationRatio != null && m.informationRatio !== 0
+      ? [{ label: labels.infoRatio, value: m.informationRatio.toFixed(2), ...rating(m.informationRatio, labels) }]
+      : []),
+    ...(m.treynorRatio != null && m.treynorRatio !== 0
+      ? [{ label: labels.treynor, value: m.treynorRatio.toFixed(2), ratingLabel: '', tone: 'info' as const }]
+      : []),
   ];
 
   return (

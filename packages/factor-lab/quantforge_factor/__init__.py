@@ -7,10 +7,11 @@ from .types import (
     FactorEvaluationResult, FactorRow,
 )
 from .factor import Factor
+from .formula import FormulaFactor
 from .evaluator import FactorEvaluator
 
 __all__ = [
     "FactorEvalTab", "FactorStatus", "FactorDefinition", "FactorMetrics",
     "FactorEvaluationResult", "FactorRow",
-    "Factor", "FactorEvaluator",
+    "Factor", "FormulaFactor", "FactorEvaluator",
 ]

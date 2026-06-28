@@ -138,9 +138,9 @@ export function ReportCostSensitivity({ report, ui }: Props) {
       {/* 成本拖累 */}
       <div className={styles.dragBlock}>
         <span className={styles.dragLabel}>{labels.costDragRatio}</span>
-        <strong className={styles.dragValue}>{pct(c.costDragRatio)}</strong>
+        <strong className={styles.dragValue}>{c.costDragRatio != null ? pct(c.costDragRatio) : '--'}</strong>
         <span className={styles.dragLabel}>{labels.annualTurnover}</span>
-        <strong className={styles.dragValue}>{c.annualTurnover}x</strong>
+        <strong className={styles.dragValue}>{c.annualTurnover != null ? `${c.annualTurnover}x` : '--'}</strong>
       </div>
 
       {/* 滑点敏感性 */}

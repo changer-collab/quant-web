@@ -62,7 +62,7 @@ class BollingerBandStrategy(Strategy):
         if bar.close <= lower_val and not self._bought:
             # 跌破下轨买入
             account = context.get_account()
-            qty = int(account.cash / bar.close)
+            qty = int(account.cash / bar.close / 100) * 100
             if qty > 0:
                 context.submit_order(OrderRequest(
                     symbol=bar.symbol, side=OrderSide.Buy,

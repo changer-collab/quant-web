@@ -84,6 +84,14 @@ def _dict_to_backtest_result(data: dict[str, Any]) -> Any:
         max_drawdown=metrics_data.get("maxDrawdown", 0),
         win_rate=metrics_data.get("winRate", 0),
         total_trades=metrics_data.get("totalTrades", 0),
+        sortino_ratio=metrics_data.get("sortinoRatio"),
+        calmar_ratio=metrics_data.get("calmarRatio"),
+        annualized_volatility=metrics_data.get("annualizedVolatility"),
+        max_drawdown_duration=metrics_data.get("maxDrawdownDuration", 0),
+        profit_loss_ratio=metrics_data.get("profitLossRatio"),
+        avg_holding_days=metrics_data.get("avgHoldingDays"),
+        max_single_profit=metrics_data.get("maxSingleProfit"),
+        max_single_loss=metrics_data.get("maxSingleLoss"),
     )
 
     equity_curve = [

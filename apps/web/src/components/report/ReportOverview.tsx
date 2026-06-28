@@ -29,7 +29,7 @@ export function ReportOverview({ report, ui }: Props) {
       </div>
 
       {/* 策略类型与适用市场 */}
-      {(o.strategyCategory || (o.suitableMarketRegime && o.suitableMarketRegime.length > 0)) && (
+      {(o.strategyCategory || (o.suitableMarketRegime && Array.isArray(o.suitableMarketRegime) && o.suitableMarketRegime.length > 0)) && (
         <div className={overview.metaGrid}>
           {o.strategyCategory && (
             <div className={overview.metaItem}>
@@ -37,7 +37,7 @@ export function ReportOverview({ report, ui }: Props) {
               <span className={overview.metaValue}>{o.strategyCategory}</span>
             </div>
           )}
-          {o.suitableMarketRegime && o.suitableMarketRegime.length > 0 && (
+          {o.suitableMarketRegime && Array.isArray(o.suitableMarketRegime) && o.suitableMarketRegime.length > 0 && (
             <div className={overview.metaItem}>
               <span className={overview.metaLabel}>{labels.suitableMarketRegime}</span>
               <div className={overview.chipRow}>

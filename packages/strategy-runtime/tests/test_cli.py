@@ -25,7 +25,7 @@ def test_cli_unknown_command():
     result = subprocess.run(
         [sys.executable, "-m", "quantforge_strategy"],
         input='{"command": "unknown"}',
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")
@@ -37,7 +37,7 @@ def test_cli_invalid_json():
     result = subprocess.run(
         [sys.executable, "-m", "quantforge_strategy"],
         input="not json",
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")
@@ -53,7 +53,7 @@ def test_cli_backtest_no_data():
             "strategy": "dual_ma",
             "dataRange": {"dbPath": "/nonexistent/db.sqlite", "symbol": "000001.SZ"},
         }),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     # 应该有 log 事件和最终的 error 事件
@@ -67,7 +67,7 @@ def test_cli_empty_input():
     result = subprocess.run(
         [sys.executable, "-m", "quantforge_strategy"],
         input="",
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")
@@ -84,7 +84,7 @@ def test_cli_backtest_unknown_strategy():
             "strategy": "nonexistent_strategy",
             "dataRange": {"dbPath": "data/quant.db", "symbol": "600519"},
         }),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")
@@ -97,7 +97,7 @@ def test_cli_emit_format():
     result = subprocess.run(
         [sys.executable, "-m", "quantforge_strategy"],
         input='{"command": "unknown"}',
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     assert len(events) >= 1
@@ -122,7 +122,7 @@ def test_cli_composite_no_symbols():
             },
             "dataRange": {"dbPath": "data/quant.db"},
         }),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")
@@ -139,7 +139,7 @@ def test_cli_composite_missing_components():
             "strategy": "composite",
             "dataRange": {"dbPath": "data/quant.db", "symbols": ["600519"]},
         }),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")
@@ -159,7 +159,7 @@ def test_cli_multi_symbol_traditional_unsupported():
                 "symbols": ["600519", "000001"],
             },
         }),
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     events = _parse_ndjson(result.stdout)
     error_event = _find_event(events, "error")

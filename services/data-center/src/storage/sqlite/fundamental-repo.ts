@@ -1,5 +1,5 @@
 /**
- * 基本面 Repository — SQLite (sql.js) 实现
+ * 基本面 Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
@@ -84,15 +84,16 @@ export class SqliteFinancialReportRepository implements FinancialReportRepositor
   async save(input: FinancialReport[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const r of input) {
           const row = reportToRow(r);
-          await tx.insert(financialReports)
+          tx.insert(financialReports)
             .values(row)
             .onConflictDoUpdate({
               target: [financialReports.symbol, financialReports.reportDate],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -137,7 +138,7 @@ export class SqliteFinancialRatioRepository implements FinancialRatioRepository 
   async save(input: FinancialRatio[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const r of input) {
           const row = {
             symbol: r.symbol, asOfDate: r.asOfDate,
@@ -145,12 +146,13 @@ export class SqliteFinancialRatioRepository implements FinancialRatioRepository 
             debtToEquity: r.debtToEquity, currentRatio: r.currentRatio,
             grossMargin: r.grossMargin, netMargin: r.netMargin,
           };
-          await tx.insert(financialRatios)
+          tx.insert(financialRatios)
             .values(row)
             .onConflictDoUpdate({
               target: [financialRatios.symbol, financialRatios.asOfDate],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -189,7 +191,7 @@ export class SqliteShareholderMetricsRepository implements ShareholderMetricsRep
   async save(input: ShareholderMetrics[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const m of input) {
           const row = {
             symbol: m.symbol,
@@ -200,12 +202,13 @@ export class SqliteShareholderMetricsRepository implements ShareholderMetricsRep
             avgHoldingAmount: m.avgHoldingAmount,
             changeRatio: m.changeRatio ?? null,
           };
-          await tx.insert(shareholderMetrics)
+          tx.insert(shareholderMetrics)
             .values(row)
             .onConflictDoUpdate({
               target: [shareholderMetrics.symbol, shareholderMetrics.announceDate],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {
@@ -265,7 +268,7 @@ export class SqliteValuationRepository implements ValuationRepository {
   async save(input: ValuationPoint[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const v of input) {
           const row = {
             symbol: v.symbol, timestamp: v.timestamp,
@@ -273,12 +276,13 @@ export class SqliteValuationRepository implements ValuationRepository {
             psTTM: v.psTTM, dividendYield: v.dividendYield,
             turnoverRate: v.turnoverRate, floatShares: v.floatShares,
           };
-          await tx.insert(valuations)
+          tx.insert(valuations)
             .values(row)
             .onConflictDoUpdate({
               target: [valuations.symbol, valuations.timestamp],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {

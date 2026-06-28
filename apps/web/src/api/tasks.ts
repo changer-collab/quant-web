@@ -61,17 +61,27 @@ export function streamTask(
   onError?: (err: Event) => void,
 ): () => void {
   const es = new EventSource(`/api/tasks/${taskId}/stream`);
+  let terminalEventReceived = false;
+
   es.onmessage = (e) => {
     try {
       const event = JSON.parse(e.data) as TaskStreamEvent;
+      if (event.type === 'result' || event.type === 'error') {
+        terminalEventReceived = true;
+      }
       onEvent(event);
+      if (terminalEventReceived) {
+        es.close();
+      }
     } catch {
       // 忽略解析错误
     }
   };
   es.onerror = () => {
     es.close();
-    onError?.(new Event('error'));
+    if (!terminalEventReceived) {
+      onError?.(new Event('error'));
+    }
   };
   return () => es.close();
 }

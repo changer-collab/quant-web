@@ -25,6 +25,8 @@ export interface PythonStrategyMeta {
   version: string;
   modes: string[];
   kind: string;
+  /** 是否可独立回测（组件策略如选股器/择时器/仓位器不实现 on_bar，不可独立回测） */
+  backtestable: boolean;
 }
 
 class StrategySyncService {
@@ -48,6 +50,8 @@ strategies = []
 for name, cls in list_all().items():
     instance = cls()
     meta = instance.meta
+    # 组件策略（选股器/择时器/仓位器）不实现 on_bar，不能独立回测
+    backtestable = callable(getattr(instance, 'on_bar', None))
     strategies.append({
         'name': meta.name,
         'description': meta.description,
@@ -65,7 +69,8 @@ for name, cls in list_all().items():
         ],
         'version': meta.version,
         'modes': [m.value for m in meta.modes],
-        'kind': meta.kind.value
+        'kind': meta.kind.value,
+        'backtestable': backtestable
     })
 
 print(json.dumps(strategies))

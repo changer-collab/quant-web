@@ -84,7 +84,7 @@ HTTP API
 
 ```text
 drizzle-orm — ORM（SQLite / PostgreSQL 双驱动）
-sql.js      — SQLite WASM 驱动（零编译，本地开发用）
+better-sqlite3 — SQLite 原生驱动（预编译二进制，零本地编译；WAL 模式，写入即落盘）
 ```
 
 data-center 是独立项目，不依赖任何 @quant 包。所有数据类型（Instrument, Bar, Tick, TimeFrame, MarketEvent, ResearchMode 等）由 data-center 自行定义并导出，供上层消费。

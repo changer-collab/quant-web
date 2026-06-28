@@ -1,0 +1,58 @@
+{
+  "feature": "factor-lab-v1",
+  "branchName": "ralph/factor-lab-v1",
+  "description": "实现因子工坊 v1：因子定义、计算接口、评估指标集成",
+  "qualityChecks": {
+    "js": "pnpm lint && pnpm test && pnpm build",
+    "python": "cd packages/factor-lab && python -m pytest -v"
+  },
+  "userStories": [
+    {
+      "id": "story-1",
+      "title": "因子定义类型与接口",
+      "description": "在 packages/factor-lab/quantforge_factor/types.py 中实现 FactorDefinition、FactorStatus、FactorEvalTab 类型。在 factor.py 中实现 FactorComputer 抽象接口。",
+      "acceptanceCriteria": [
+        "FactorDefinition 包含 id, name, description, status, category, params 字段",
+        "FactorStatus 支持 draft/testing/active/deprecated 四种状态",
+        "FactorComputer 定义 compute(data) -> Series 抽象接口",
+        "所有类型有完整 type hints",
+        "pytest tests/test_factor.py 全部通过"
+      ],
+      "agent": "factor-lab-agent",
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "story-2",
+      "title": "因子评估器基础框架",
+      "description": "在 packages/factor-lab/quantforge_factor/evaluator.py 中实现 FactorEvaluator 基础框架，定义评估流程接口。",
+      "acceptanceCriteria": [
+        "FactorEvaluator 接受 FactorDefinition + 数据作为输入",
+        "定义 evaluate() 方法返回 FactorEvaluationResult",
+        "评估指标（IC、分组收益）委托给回测引擎计算",
+        "pytest tests/test_evaluator.py 全部通过"
+      ],
+      "dependsOn": ["story-1"],
+      "agent": "factor-lab-agent",
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "story-3",
+      "title": "因子工坊 API 入口",
+      "description": "在 apps/api/src/routes/factor.ts 中添加因子 CRUD 的 HTTP 入口。API 层只做 HTTP 入口，因子计算逻辑委托给 Worker。",
+      "acceptanceCriteria": [
+        "GET /api/factors — 获取因子列表",
+        "POST /api/factors — 创建因子定义",
+        "GET /api/factors/:id — 获取单个因子",
+        "DELETE /api/factors/:id — 删除因子",
+        "API 层不包含任何因子计算逻辑",
+        "vitest tests/routes/factor.test.ts 全部通过"
+      ],
+      "dependsOn": ["story-1"],
+      "agent": "api-agent",
+      "priority": 3,
+      "passes": false
+    }
+  ]
+}

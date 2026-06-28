@@ -78,7 +78,7 @@ export function ReportConclusion({ report, ui }: Props) {
       <div className={styles.block}>
         <h4 className={styles.blockTitle}>{labels.suitableMarketRegime}</h4>
         <div className={styles.regimeList}>
-          {c.suitableMarketRegime.map((regime, i) => (
+          {Array.isArray(c.suitableMarketRegime) && c.suitableMarketRegime.map((regime, i) => (
             <span key={i} className={styles.regimeChip}>{regime}</span>
           ))}
         </div>

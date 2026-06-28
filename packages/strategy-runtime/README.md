@@ -40,14 +40,15 @@
 | 序列化 | `serialization.py` | camelCase/snake_case 互转 |
 | 错误 | `error.py` | QuantError |
 | CLI | `cli.py` `__main__.py` | stdin JSON → stdout NDJSON 事件流 |
-| 命令 | `commands/backtest.py` `commands/factor_eval.py` `commands/ai_train.py` | 命令实现（延迟导入下游包） |
+| 命令 | `commands/backtest.py` `commands/factor_eval.py` `commands/ai_train.py` | 命令实现（含 `commands/__init__.py` 函数内延迟导入下游包） |
 
 ## 核心设计
 
 - **接口优先稳定**：Strategy ABC 是所有策略的基类，init/on_bar/finish 为抽象方法，on_tick/on_order 有默认实现
 - **分层策略**：SelectorStrategy（选股）、TimingStrategy（择时）、PositionStrategy（仓位）、CompositeStrategy（组合），支持可组合的策略架构
 - **CLI 流式输出**：stdin 读取 JSON 请求，stdout 输出 NDJSON 事件流（progress/log/result/error），Worker 通过 PythonBridge 流式读取
-- **延迟导入**：CLI 命令通过延迟导入加载下游包（backtest-engine、factor-lab、ai-engine、strategies、data-client），strategy-runtime 本身不依赖它们
+- **延迟导入**：CLI 命令通过延迟导入加载下游包（backtest-engine、factor-lab、ai-engine、strategies、data-client），strategy-runtime 本身不依赖它们；`commands/__init__.py` 也必须使用函数内导入，避免导入单个命令时加载 sibling 命令依赖
+- **因子公式委托**：factorEval 只做命令编排，公式解析和计算委托给 factor-lab 的 `FormulaFactor`
 - **类型 re-export**：re-export data-client 的行情类型（Bar、Tick、TimeFrame 等），供下游模块通过合法依赖链获取
 
 ## CLI 通信协议

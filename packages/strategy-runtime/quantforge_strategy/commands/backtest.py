@@ -6,6 +6,7 @@ import dataclasses
 from typing import Any, Callable
 
 from quantforge_backtest import BacktestRunner, MultiSymbolRunner, DefaultComposite
+from quantforge_backtest.market_rules import ASHARE_RULES
 from quantforge_strategies import get as get_strategy
 from quantforge_data import DataClient
 from quantforge_strategy import TimeFrame
@@ -77,9 +78,14 @@ def _run_single(
         strategy, bars,
         initial_cash=config.get("initialCash"),
         slippage=config.get("slippage"),
+        market_rules=ASHARE_RULES,
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
-    return {"ok": True, "data": _result_to_dict(result)}
+    data = _result_to_dict(result)
+    # 单标的回测暂不启用存活偏差过滤
+    if "config" in data:
+        data["config"]["enablePitFilter"] = False
+    return {"ok": True, "data": data}
 
 
 def _run_multi_symbol(
@@ -120,6 +126,19 @@ def _run_composite(
     if not symbols:
         return {"ok": False, "error": {"code": "NO_SYMBOLS", "message": "组合策略需要 dataRange.symbols 数组"}}
 
+    client = DataClient(db_path)
+
+    # 存活偏差过滤：只让回测开始时间点已上市且未退市的标的参与
+    if start_ts is not None:
+        active = set(client.get_active_symbols(start_ts))
+        filtered = [s for s in symbols if s in active]
+        dropped = len(symbols) - len(filtered)
+        if dropped:
+            _emit("log", {"level": "info", "message": f"存活偏差过滤：排除了 {dropped} 个在回测开始时未上市/已退市的标的"})
+        symbols = filtered
+        if not symbols:
+            return {"ok": False, "error": {"code": "NO_ACTIVE_SYMBOLS", "message": "所有标的在回测开始时均未上市或已退市"}}
+
     components = config.get("components", {})
     selector_cfg = components.get("selector", {})
     timer_cfg = components.get("timer", {})
@@ -136,7 +155,6 @@ def _run_composite(
     # 加载多标的数据
     _emit("log", {"level": "info", "message": f"Loading data for {len(symbols)} symbols {timeframe.value}"})
 
-    client = DataClient(db_path)
     bars_by_symbol: dict[str, list] = {}
     for symbol in symbols:
         bars = client.query_bars(symbol, timeframe, start_ts=start_ts, end_ts=end_ts)
@@ -154,9 +172,13 @@ def _run_composite(
         strategy, bars_by_symbol,
         initial_cash=config.get("initialCash"),
         slippage=config.get("slippage"),
+        market_rules=ASHARE_RULES,
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
-    return {"ok": True, "data": _result_to_dict(result)}
+    data = _result_to_dict(result)
+    if "config" in data:
+        data["config"]["enablePitFilter"] = (start_ts is not None)
+    return {"ok": True, "data": data}
 
 
 def _emit_progress(emit: Callable[[str, dict], None], index: int, total: int) -> None:
@@ -194,6 +216,15 @@ def _result_to_dict(result) -> dict[str, Any]:
     data["annualReturns"] = [
         {"year": a.year, "return_pct": a.return_pct} for a in annual
     ]
+
+    # 子权益归因序列化（subEquity → {symbol: [{timestamp, equity}...]})
+    sub_equity = getattr(result, "sub_equity", None)
+    if sub_equity:
+        data["subEquity"] = {
+            key: [{"timestamp": p.timestamp, "equity": p.equity} for p in pts]
+            for key, pts in sub_equity.items()
+        }
+
     return data
 
 

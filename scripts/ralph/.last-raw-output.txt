@@ -1,0 +1,64 @@
+﻿鎴戜細鍏堟寜瑙勫垯璇诲彇澶辫触淇℃伅銆佷换鍔℃竻鍗曚笌椤圭洰杈圭晫锛屽苟骞惰璋冪爺 story-3 鐩稿叧瀹炵幇鐐癸紱闅忓悗鎸?TDD 鍏堣ˉ澶辫触娴嬭瘯鍐嶅疄鐜般€傚凡纭鏍瑰洜/鑼冨洿锛氫笂涓€杞け璐ユ憳瑕佸睘浜?story-2 鐨勫洜瀛愬厓鏁版嵁闂锛屽綋鍓?PRD 涓渶楂樹紭鍏堢骇鏈畬鎴愰」鏄?story-3锛涘垎鏀凡缁忔槸 `ralph/pipeline-critical-fixes`銆傛帴涓嬫潵鍙仛 story-3锛屽苟鍏堝啓 RED 娴嬭瘯銆傛寜鐓р€滆兘鍔犲氨涓嶆敼锛屾敼鍒欒鏄庣悊鐢扁€濈害鏉燂紝鎺ヤ笅鏉ラ渶瑕佷慨鏀?鏂板鐨勭悊鐢卞涓嬶細  
+- 淇敼 `model.py`锛歚ModelTrainer` 鏄綋鍓嶈缁冩ā鍨嬬殑鎵€鏈夎€咃紝淇濆瓨/鍔犺浇鑳藉姏蹇呴』鏀惧湪杩欓噷锛岄伩鍏?CLI/绛栫暐澶嶅埗搴忓垪鍖栬鍒欍€? 
+- 淇敼 `ai_train.py`锛氳缁冨懡浠ゆ槸 Worker 璋冪敤鍏ュ彛锛屽彧鏈夎繖閲岃兘鍦ㄨ缁冨畬鎴愭椂鎶婃ā鍨嬭惤鐩樺埌 `data/models/`銆? 
+- 淇敼绛栫暐鍖呮敞鍐屽叆鍙ｏ細鏂板 `ai_predictor` 鍚庡繀椤绘敞鍐岋紝鍚﹀垯 `get("ai_predictor")` 鏃犳硶鎵惧埌銆? 
+- 鏂板娴嬭瘯涓庣瓥鐣ユ枃浠讹細瑕嗙洊 story-3 楠屾敹鏉′欢锛屽苟鎶?AI 淇″彿绛栫暐浣滀负鐙珛瀹炵幇鍔犲叆銆傚眬閮?RED/GREEN 宸插畬鎴愶紱鍦ㄨ繘鍏モ€滃畬鎴?鎻愪氦鈥濆墠锛屾垜浼氭寜 verification gate 璺戠浉鍏?Python 鍖呭畬鏁存祴璇曪紝涔嬪悗鍐嶆牴鎹粨鏋滄洿鏂?PRD/progress銆傚畬鏁撮獙璇佸湪 `packages/ai-engine` 鏆撮湶浜?2 涓幇鏈?LLM client 娴嬭瘯澶辫触锛坰tory-3 鏂板鎸佷箙鍖栨祴璇曞凡閫氳繃锛夈€傛垜浼氬厛瀹氫綅杩欎袱涓け璐ョ殑鏍瑰洜锛屼笉鐩存帴鐚滀慨銆傛牴鍥犲畾浣嶏細`llm_client.py` 褰撳墠涓哄鐞?Windows/LLM 闈炴硶 surrogate锛屾敼涓鸿鍙?`resp.text` 鍚庢竻娲楀啀 `json.loads`锛涗絾鐜版湁涓や釜娴嬭瘯鍙缃簡 `mock_resp.json.return_value`锛屾病鏈夎缃?`mock_resp.text`锛屽鑷?`resp.text` 鏄?`MagicMock` 鑰岄潪瀛楃涓层€備篃灏辨槸璇村け璐ュ彂鐢熷湪娴嬭瘯鏇胯韩涓庡綋鍓嶈В鏋愯矾寰勪笉涓€鑷达紝鑰屼笉鏄?story-3 鏂颁唬鐮併€傛帴涓嬫潵鎴戜細鏈€灏忎慨姝ｈ繖涓や釜娴嬭瘯鐨?mock 鍝嶅簲鏂囨湰锛屽啀閲嶈窇楠岃瘉銆傜洰鍓嶄笁濂楃浉鍏?pytest 宸茬粡閲嶆柊閫氳繃锛歚ai-engine 29 passed`銆乣strategy-runtime 60 passed`銆乣strategies 71 passed`銆傚湪鏇存柊 PRD/progress 鍓嶏紝鎴戜細鍐嶅仛涓€娆″疄鐜板樊寮傚鏌ワ紝纭繚 story-3 楠屾敹缁嗚妭锛堢壒鍒槸 AI 绛栫暐榛樿 on_bar 璋冪敤涓庝緷璧栬竟鐣岋級娌℃湁閬楁紡銆傚凡閫氳繃鐩稿叧鍖呮祴璇曪紱鎸夋祦绋嬫彁浜ゅ墠鎴戜細璇锋眰涓€娆＄嫭绔嬩唬鐮佸鏌ワ紝閲嶇偣鐪?story-3 楠屾敹銆佸吋瀹规€у拰渚濊禆杈圭晫銆侫PI Error: Request rejected (429) 路 Too many pending requests, please retry laterAPI Error: 400 The 'gpt-5.3-codex' model is not supported when using Codex with a ChatGPT account.API Error: Request rejected (429) 路 Too many pending requests, please retry laterAPI Error: Request rejected (429) 路 Too many pending requests, please retry laterAPI Error: Request rejected (429) 路 Too many pending requests, please retry later瀹℃煡鍙嶉閫愭潯鏍稿疄鍚庣殑澶勭悊鏂瑰悜锛? 
+- 鐪熷疄闂锛氱壒寰?warmup 绌烘牱鏈€乣commands/__init__.py` 椤跺眰瀵煎叆鐮村潖寤惰繜瀵煎叆銆侀粯璁ゆā鍨嬭矾寰勪笉涓€鑷淬€乧amelCase 绛栫暐鍙傛暟鍏煎銆佸鏍囩殑鍘嗗彶娣风敤銆佺瓥鐣ュ寘缂哄皯 AI 渚濊禆澹版槑銆乫orward return 鏈€鍚庝竴琛?NaN 琚綋浣?0銆乣predict_proba` 鍗曞垪鏈繚鎶ゃ€? 
+- 涓嶉噰绾?闄嶇骇锛歚data.accuracy + data.metrics.accuracy` 鐨勫弻褰㈢姸鏄负鍏煎鏃ц皟鐢ㄦ柟锛屾殏淇濈暀锛沗modelName` 璺緞鐗囨浼氶檺鍒朵负鏂囦欢鍚嶃€? 
+鎴戜細鎸?TDD 涓鸿繖浜涗慨姝ｅ厛琛ラ拡瀵规€ф祴璇曪紝鍐嶆渶灏忓疄鐜般€傞拡瀵瑰鏌ュ弽棣堢殑鍥炲綊娴嬭瘯宸茶ˉ涓婏紱鐜板湪鍏堣窇杩欎簺鏂版祴璇曠‘璁?RED锛屽啀鍋氭渶灏忓疄鐜般€傝繖浜涘洖褰掓祴璇曠幇鍦ㄦ寜棰勬湡澶辫触锛? 
+- `ai-engine` 3 涓け璐ヨ鐩?NaN 鏍囩銆佺┖鐗瑰緛銆佸崟鍒?`predict_proba`銆? 
+- `strategy-runtime` 3 涓け璐ヨ鐩?commands 鍖?eager import銆侀粯璁や繚瀛樿矾寰勩€乣modelName` 璺緞閫冮€搞€? 
+- `strategies` 4 涓け璐ヨ鐩?warmup銆乧amelCase 鍙傛暟銆佸鏍囩殑鍘嗗彶闅旂銆? 
+鎺ヤ笅鏉ュ疄鐜拌繖浜涢拡瀵规€т慨姝ｃ€傚疄鐜板凡鎸夊け璐ョ偣鏈€灏忚皟鏁达紱鎺ヤ笅鏉ラ噸璺戝垰鎵嶅け璐ョ殑閽堝鎬ф祴璇曪紝纭杩欎簺鍥炲綊椤硅浆缁裤€俙ai-engine` 涓?`strategy-runtime` 鐨勬柊澧炲洖褰掗」宸茶浆缁匡紱鍒氭墠 `strategies` 鍥炲綊鍛戒护灏戜簡 `cd packages/strategies`锛岃繖涓嶆槸娴嬭瘯澶辫触銆傛垜浼氱敤姝ｇ‘鐩綍閲嶈窇銆傚鏌ュ弽棣堢殑閽堝鎬у洖褰掗」宸茬粡杞豢銆傜幇鍦ㄦ墽琛屽畬鏁寸浉鍏冲寘娴嬭瘯锛屽彧鏈夊畬鏁存祴璇曢€氳繃鍚庢墠鏇存柊 PRD/progress 骞舵彁浜ゃ€傚畬鏁寸浉鍏冲寘楠岃瘉宸查€氳繃锛歚ai-engine 32 passed`銆乣strategy-runtime 62 passed`銆乣strategies 73 passed`銆傜幇鍦ㄦ洿鏂?`prd.json`銆乣progress.txt` 鍜屽彲澶嶇敤瑙勫垯锛岀劧鍚庡彧鎻愪氦鏈晠浜嬬浉鍏虫枃浠躲€傝繕闇€瑕佸悓姝ユ灦鏋勮竟鐣屾枃妗ｏ細鏈晠浜嬭 `packages/strategies` 鏂板瀵?`quantforge-ai` 鐨勫悎娉曚緷璧栵紝鍥犳蹇呴』鏇存柊鏍?`AGENTS.md` 鐨勪緷璧栫櫧鍚嶅崟锛涘悓鏃舵妸 `commands/__init__.py` 涔熷繀椤诲欢杩熷鍏ョ殑妯″紡璁板綍鍒?`strategy-runtime/AGENT.md` 鍜?progress銆傛帴涓嬫潵浼氬彧鏇存柊 Ralph 瑕佹眰鐨?`progress.txt`锛堝惈椤堕儴鍙鐢ㄦā寮忥級骞舵鏌ユ殏瀛樿寖鍥达紝閬垮厤鎶?`.last-*` 杩愯浜х墿璇彁浜ゃ€傚垰鎵嶈拷鍔?progress 鐨勮剼鏈矾寰勭敤浜?POSIX `/d/...`锛屼絾褰撳墠 Python 鏄?Windows Python锛屾妸瀹冨綋鎴?`\d\...` 瀵艰嚧鏈啓鍏ャ€傛垜浼氱敤 Windows 璺緞閲嶈瘯銆傝繘搴︽棩蹇楀凡杩藉姞銆傛彁浜ゅ墠鎴戣繕浼氭鏌ユ槸鍚︽湁鐩綍 README/AGENT 闇€瑕佸悓姝ワ紝浠ュ強纭鍙殏瀛?story-3 鐩稿叧鏂囦欢銆佷笉甯﹀叆 `.last-*` 杩愯浜х墿銆俙strategy-runtime/AGENT.md` 宸插洜寤惰繜瀵煎叆瑙勫垯鏇存柊锛涘悓鐩綍瀛樺湪 `README.md`锛岄渶瑕佸悓姝ュ悓涓€鏉″彲澶嶇敤绾︽潫銆傞殢鍚庢垜浼氬彧鏆傚瓨 story-3 鏂囦欢銆傛帴涓嬫潵鎵ц鎻愪氦鍓嶇殑鑼冨洿妫€鏌ワ細`git diff --check` 鐪嬬┖鐧?鍐茬獊鏍囪锛岀劧鍚庡彧鏆傚瓨 story-3 鐩稿叧鏂囦欢锛堜笉鏆傚瓨 `.last-*`/`.prd.state` 杩愯浜х墿锛夈€俙diff --check` 娌℃湁鎶ョ┖鐧介敊璇紙鍙湁 CRLF 鎻愮ず锛夈€傜幇鍦ㄦ殏瀛?story-3 鐩稿叧鏂囦欢骞舵鏌?staged/unstaged 鍒嗙銆傛殏瀛樺尯鍙寘鍚?story-3 涓庢枃妗?PRD/progress锛宍.last-*` 杩愯浜х墿浠嶆湭鏆傚瓨銆傛彁浜ゅ墠鍐嶆鏌?staged diff 鎽樿涓庢湭瀹屾垚 story 鏁伴噺锛岀劧鍚庢彁浜ゃ€傚墿浣欐湭瀹屾垚鏁呬簨涓?story-4/5/6/7锛屽洜姝ゆ湰杞畬鎴?story-3 鍚庝笉浼氳緭鍑?COMPLETE銆傜幇鍦ㄦ墽琛屾彁浜ゃ€傛彁浜ゅ凡鐢熸垚銆傛渶鍚庢鏌ュ伐浣滃尯锛岀‘璁ゅ彧鍓?Ralph 杩愯浜х墿鏈彁浜わ紝鐒跺悗缁撴潫鏈疆銆傚凡瀹屾垚骞舵彁浜?story-3銆?
+- 鎻愪氦锛歚de3bff0 feat: story-3 - AI 妯″瀷鎸佷箙鍖栧拰棰勬祴绛栫暐`
+- 宸插疄鐜帮細
+  - `ModelTrainer.save/load` joblib 鎸佷箙鍖?  - `AIPredictor.save/load`
+  - `aiTrain` 璁粌鍚庝繚瀛樻ā鍨嬪埌 `data/models/randomForest.joblib`锛屽苟杩斿洖 `modelPath`
+  - 鏂板骞舵敞鍐?`AIPredictorStrategy`
+  - 淇瀹℃煡鍙戠幇鐨?warmup銆佺┖鐗瑰緛銆丯aN 鏍囩銆佸崟鍒?`predict_proba`銆佸欢杩熷鍏ャ€佸鏍囩殑鍘嗗彶娣风敤绛夐棶棰?  - 鏇存柊 `prd.json`锛歚story-3.passes = true`
+  - 杩藉姞 `progress.txt`
+  - 鏇存柊鐩稿叧 AGENTS/README 瑙勫垯
+
+楠岃瘉宸查€氳繃锛?
+```text
+cd packages/ai-engine && python -m pytest -v          鈫?32 passed
+cd packages/strategy-runtime && python -m pytest -v   鈫?62 passed
+cd packages/strategies && python -m pytest -v         鈫?73 passed
+```
+
+褰撳墠鏈彁浜ゅ伐浣滃尯鍙墿 Ralph 杩愯浜х墿锛?
+```text
+scripts/ralph/.current-prompt.md
+scripts/ralph/.last-error.json
+scripts/ralph/.last-output.txt
+scripts/ralph/.last-raw-output.txt
+scripts/ralph/.prd.state.json
+```
+
+PRD 涓粛鏈夋湭瀹屾垚鏁呬簨锛歚story-4`, `story-5`, `story-6`, `story-7`銆?宸插畬鎴愬苟鎻愪氦 story-3銆?
+- 鎻愪氦锛歚de3bff0 feat: story-3 - AI 妯″瀷鎸佷箙鍖栧拰棰勬祴绛栫暐`
+- 宸插疄鐜帮細
+  - `ModelTrainer.save/load` joblib 鎸佷箙鍖?  - `AIPredictor.save/load`
+  - `aiTrain` 璁粌鍚庝繚瀛樻ā鍨嬪埌 `data/models/randomForest.joblib`锛屽苟杩斿洖 `modelPath`
+  - 鏂板骞舵敞鍐?`AIPredictorStrategy`
+  - 淇瀹℃煡鍙戠幇鐨?warmup銆佺┖鐗瑰緛銆丯aN 鏍囩銆佸崟鍒?`predict_proba`銆佸欢杩熷鍏ャ€佸鏍囩殑鍘嗗彶娣风敤绛夐棶棰?  - 鏇存柊 `prd.json`锛歚story-3.passes = true`
+  - 杩藉姞 `progress.txt`
+  - 鏇存柊鐩稿叧 AGENTS/README 瑙勫垯
+
+楠岃瘉宸查€氳繃锛?
+```text
+cd packages/ai-engine && python -m pytest -v          鈫?32 passed
+cd packages/strategy-runtime && python -m pytest -v   鈫?62 passed
+cd packages/strategies && python -m pytest -v         鈫?73 passed
+```
+
+褰撳墠鏈彁浜ゅ伐浣滃尯鍙墿 Ralph 杩愯浜х墿锛?
+```text
+scripts/ralph/.current-prompt.md
+scripts/ralph/.last-error.json
+scripts/ralph/.last-output.txt
+scripts/ralph/.last-raw-output.txt
+scripts/ralph/.prd.state.json
+```
+
+PRD 涓粛鏈夋湭瀹屾垚鏁呬簨锛歚story-4`, `story-5`, `story-6`, `story-7`銆

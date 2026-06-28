@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ReportSummary } from '../src/components/report';
+import { ReportSummary } from '../src/components/report-summary';
 import { createResearchReport, getStrategies, getUiCopy } from '../src/appData';
 
 const ui = getUiCopy('en');

@@ -10,6 +10,7 @@ export async function strategyRoutes(app: FastifyInstance) {
       params: m.params,
       version: m.version,
       kind: m.kind,
+      backtestable: m.backtestable,
     }));
   });
 
@@ -24,6 +25,7 @@ export async function strategyRoutes(app: FastifyInstance) {
       version: meta.version,
       modes: meta.modes,
       kind: meta.kind,
+      backtestable: meta.backtestable,
     };
   });
 }

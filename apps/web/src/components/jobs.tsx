@@ -1,4 +1,4 @@
-import { FileText } from 'lucide-react';
+import { FileText, AlertCircle } from 'lucide-react';
 import type { ResearchJob, UiCopy } from '../appData';
 import jobs from '../styles/jobs.module.css';
 import infoPanelStyles from '../styles/info-panel.module.css';
@@ -25,6 +25,12 @@ export function JobList({
             <span>{job.kind}</span>
             <strong>{job.name}</strong>
             <small>{job.state}</small>
+            {job.errorMessage && (
+              <div className={jobs.errorDetail}>
+                <AlertCircle aria-hidden="true" size={12} />
+                <span>{job.errorMessage}</span>
+              </div>
+            )}
           </div>
           {job.configSummary?.length ? (
             <div className={jobs.jobConfigSummary}>

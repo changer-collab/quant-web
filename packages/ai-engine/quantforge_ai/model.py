@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -58,6 +61,20 @@ class ModelTrainer:
             pass
 
         return metrics
+
+    def save(self, path: str | Path) -> None:
+        if self._model is None:
+            raise RuntimeError("Model not trained yet")
+        model_path = Path(path)
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump({"model": self._model, "config": self.config}, model_path)
+
+    @staticmethod
+    def load(path: str | Path) -> "ModelTrainer":
+        payload = joblib.load(Path(path))
+        trainer = ModelTrainer(payload["config"])
+        trainer._model = payload["model"]
+        return trainer
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         if self._model is None:
