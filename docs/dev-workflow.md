@@ -18,7 +18,7 @@
 git clone <repo-url> quant-web
 cd quant-web
 
-# 2. 安装 JS 依赖（零 native 编译）
+# 2. 安装 JS 依赖（better-sqlite3 预编译二进制，零本地编译）
 pnpm install
 
 # 3. 安装 Python 包（可编辑模式，按依赖顺序自动解析）
@@ -232,7 +232,7 @@ CI 配置位于 `.github/workflows/ci.yml`，包含两个并行 Job：
 
 ### js Job
 
-1. `pnpm install --frozen-lockfile` — 安装依赖（零 native 编译）
+1. `pnpm install --frozen-lockfile` — 安装依赖（better-sqlite3 预编译二进制，零本地编译）
 2. `pnpm lint` — ESLint 检查
 3. `pnpm test` — Vitest 测试（含前端 fetch mock）
 4. `pnpm build` — TypeScript 编译 + Vite 构建
