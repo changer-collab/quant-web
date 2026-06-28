@@ -403,3 +403,27 @@ build_fail
   - ConfigPanel 的 strategy-reset useEffect 必须在所有 useState 声明之后（React hooks 规则）
   - 保存配置时同时保存 category 专属字段（factorPool/preprocessing/indicators 等）作为 config payload 的一部分
 ---
+
+## [2026-06-28 12:51:49] - Iteration 8
+
+- Exit code: 0
+- Stories remaining: 3
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-28 20:58] - story-11
+- 实现了 KlineChart — 右侧 Canvas K 线图 + Preview 引擎集成
+- **新建文件：**
+  - `apps/web/src/components/kline-chart.tsx` — Canvas 渲染完整 K 线图组件
+  - `apps/web/src/styles/kline-chart.module.css` — K 线面板完整样式
+- **修改文件：**
+  - `apps/web/src/data/types.ts` — UiCopy 接口新增 13 个 KlineChart 字段
+  - `apps/web/src/data/en.ts` — 添加英文 KlineChart 标签
+  - `apps/web/src/data/zh.ts` — 添加中文 KlineChart 标签
+  - `apps/web/src/components/strategy-page.tsx` — 用 <KlineChart> 替换占位
+  - `eslint.config.mjs` — 新增 Canvas API 浏览器全局变量
+- **Canvas 图层：** K 线 + MA 均线 + 成交量 + 策略副图(subcategory 动态切换) + 信号箭头 + tooltip
+- **验证：** tsc 通过 | ESLint 0 errors | 96 tests passed | build 3.63s

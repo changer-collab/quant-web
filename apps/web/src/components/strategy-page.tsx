@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { StrategyRow, UiCopy, LanguageCode, PreviewResponse } from '../appData';
 import { StrategyGridNew } from './strategy-grid-new';
 import { ConfigPanel } from './config-panel';
+import { KlineChart } from './kline-chart';
+import { fetchPreview } from '../api/preview';
 import s from '../styles/strategy-page.module.css';
 
 type ViewMode = 'grid' | 'config';
@@ -22,6 +24,8 @@ export function StrategyPage({
   const [view, setView] = useState<ViewMode>('grid');
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyRow | null>(null);
   const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
+  const [symbol, setSymbol] = useState('600519');
+  const [klineLoading, setKlineLoading] = useState(false);
 
   function handleSelectStrategy(strategy: StrategyRow) {
     setSelectedStrategy(strategy);
@@ -37,6 +41,49 @@ export function StrategyPage({
   function handlePreviewUpdate(data: PreviewResponse | null) {
     setPreviewData(data);
   }
+
+  const handleSymbolChange = useCallback(async (newSymbol: string) => {
+    if (!selectedStrategy) return;
+    setSymbol(newSymbol);
+    setKlineLoading(true);
+    try {
+      const data = await fetchPreview(selectedStrategy.name, {
+        symbol: newSymbol,
+        timeframe: '1d',
+        limit: 100,
+        preview_params: {},
+      });
+      setPreviewData(data);
+    } catch {
+      // 静默失败，保持现有数据
+    } finally {
+      setKlineLoading(false);
+    }
+  }, [selectedStrategy]);
+
+  const handleLoadMore = useCallback(async (cursor: number) => {
+    if (!selectedStrategy || !previewData) return;
+    setKlineLoading(true);
+    try {
+      const data = await fetchPreview(selectedStrategy.name, {
+        symbol,
+        timeframe: '1d',
+        cursor,
+        limit: 50,
+        preview_params: {},
+      });
+      if (data.bars.length > 0) {
+        setPreviewData({
+          ...data,
+          bars: [...data.bars, ...previewData.bars],
+        });
+      }
+    } catch {
+      // 静默失败
+    } finally {
+      setKlineLoading(false);
+    }
+  }, [selectedStrategy, symbol, previewData]);
 
   if (view === 'config' && selectedStrategy) {
     return (
@@ -73,17 +120,15 @@ export function StrategyPage({
             <div className={s.panelHeader}>
               {language === 'zh' ? 'K 线图' : 'K-Line Chart'}
             </div>
-            <div className={s.placeholderContent}>
-              {previewData ? (
-                <p style={{ color: 'var(--green)', fontSize: 'var(--text-sm)' }}>
-                  {language === 'zh'
-                    ? `✓ 已加载 ${previewData.bars.length} 根 K 线`
-                    : `✓ Loaded ${previewData.bars.length} bars`}
-                </p>
-              ) : (
-                <p>{ui.klineChartPlaceholder}</p>
-              )}
-            </div>
+            <KlineChart
+              previewData={previewData}
+              subcategory={selectedStrategy.subcategory}
+              ui={ui}
+              language={language}
+              onSymbolChange={handleSymbolChange}
+              onLoadMore={handleLoadMore}
+              loading={klineLoading}
+            />
           </div>
         </div>
       </div>

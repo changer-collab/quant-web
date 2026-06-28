@@ -768,6 +768,25 @@ export const zhContent: LanguageContent = {
       configPanelMappingTarget: '映射目标因子',
       configPanelPreview: '预览',
       configPanelSubmitTask: '提交任务',
+      // ─── KlineChart ───
+      klineChartPreviewEngine: '[预览引擎]',
+      klineChartPreviewEngineTooltip:
+        '信号由轻量预览引擎实时生成，用于参数灵敏度调节。' +
+        '精确绩效请以完整回测报告为准。',
+      klineChartSymbolSearch: '搜索标的…',
+      klineChartFingerprintChanged:
+        '预览信号算法已更新，请刷新页面加载新版本。',
+      klineChartLoading: '加载中…',
+      klineChartVolume: '成交量',
+      klineChartRSI: 'RSI',
+      klineChartIC: 'IC 序列',
+      klineChartSpread: '价差',
+      klineChartSentiment: '情感得分',
+      klineChartOHLC: 'OHLC',
+      klineChartBuy: '买入',
+      klineChartSell: '卖出',
+      klineChartReason: '原因',
+      klineChartFactorSnapshot: '快照',
     },
     runningState: '运行中',
     completedState: '已完成',

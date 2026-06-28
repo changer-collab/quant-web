@@ -547,6 +547,37 @@ export interface UiCopy {
   configPanelPreview: string;
   /** ConfigPanel 提交任务 */
   configPanelSubmitTask: string;
+  /** ─── KlineChart ─── */
+  /** [预览引擎] 标签 */
+  klineChartPreviewEngine: string;
+  /** 预览引擎 hover 提示 */
+  klineChartPreviewEngineTooltip: string;
+  /** 品种搜索占位符 */
+  klineChartSymbolSearch: string;
+  /** fingerprint 变更 toast */
+  klineChartFingerprintChanged: string;
+  /** 加载提示 */
+  klineChartLoading: string;
+  /** 成交量标签 */
+  klineChartVolume: string;
+  /** 策略专属副图 — RSI */
+  klineChartRSI: string;
+  /** 策略专属副图 — IC 序列 */
+  klineChartIC: string;
+  /** 策略专属副图 — 价差 */
+  klineChartSpread: string;
+  /** 策略专属副图 — 情感得分 */
+  klineChartSentiment: string;
+  /** open/high/low/close 标签前缀 */
+  klineChartOHLC: string;
+  /** 买入信号 */
+  klineChartBuy: string;
+  /** 卖出信号 */
+  klineChartSell: string;
+  /** 信号原因 */
+  klineChartReason: string;
+  /** 因子快照 */
+  klineChartFactorSnapshot: string;
 }
 
 export interface LanguageContent {
