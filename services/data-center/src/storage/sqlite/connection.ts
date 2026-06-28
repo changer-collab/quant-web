@@ -1,59 +1,33 @@
 /**
- * SQLite 连接管理 — sql.js 实现（纯 WASM，零编译）
+ * SQLite 连接管理 — better-sqlite3 实现（原生预编译二进制，零本地编译）
  *
  * 默认路径：项目根目录 data/quant.db
  * 可通过环境变量 QUANT_DB_PATH 覆盖。
  *
- * 注意：sql.js 是内存数据库，需要手动 load/save 到文件实现持久化。
+ * 与 sql.js 的差异：
+ * - better-sqlite3 直接读写磁盘文件，写入即持久化，无需手动 export/save。
+ * - 启用 WAL 模式提升并发读写性能；flush 时做 wal_checkpoint 确保数据
+ *   落入主库文件，供跨进程读取方（如 Python DataClient）看到最新数据。
+ * - 同步驱动：Drizzle 查询仍可 await（thenable 包装），但事务回调必须是
+ *   同步函数，不能返回 Promise。
  */
-import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
-import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js';
+import Database from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../schema.js';
 import path from 'node:path';
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { WriteError, DataCenterError } from '../../errors.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/** better-sqlite3 数据库实例类型 */
+type SqliteDatabase = Database.Database;
 
 /** Drizzle ORM 数据库实例类型（含 Schema 映射） */
-export type DrizzleDb = SQLJsDatabase<typeof schema>;
+export type DrizzleDb = BetterSQLite3Database<typeof schema>;
 
-/** 获取 sql.js 包目录下的 wasm 文件路径 */
-function resolveWasmPath(file: string): string {
-  // 尝试从当前包 node_modules 定位（兼容 pnpm workspace）
-  const fromPackage = path.resolve(__dirname, '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', file);
-  if (fs.existsSync(fromPackage)) return fromPackage;
-
-  // 尝试从 process.cwd() 向上逐层查找（用 path.dirname 避免 Windows 驱动器相对路径问题）
-  let dir = process.cwd();
-  while (true) {
-    const candidate = path.join(dir, 'node_modules', 'sql.js', 'dist', file);
-    if (fs.existsSync(candidate)) return candidate;
-    const parent = path.dirname(dir);
-    if (parent === dir) break; // 到达根目录
-    dir = parent;
-  }
-
-  // 最后尝试：从 sql.js 包自身位置定位
-  try {
-    const resolved = import.meta.resolve('sql.js/dist/' + file);
-    if (resolved.startsWith('file://')) {
-      return fileURLToPath(resolved);
-    }
-  } catch {
-    // ignore resolve failure
-  }
-
-  // 全部失败，返回默认路径（sql.js 会抛出明确错误）
-  return path.resolve(process.cwd(), 'node_modules', 'sql.js', 'dist', file);
-}
-
-/** SQLite 连接上下文 — 包含 Drizzle 实例和底层 sql.js 实例 */
+/** SQLite 连接上下文 — 包含 Drizzle 实例和底层 better-sqlite3 实例 */
 export interface SqliteContext {
   db: DrizzleDb;
-  raw: SqlJsDatabase;
+  raw: SqliteDatabase;
   dbPath: string;
 }
 
@@ -65,45 +39,24 @@ export function resolveDbPath(override?: string): string {
   return path.resolve(process.cwd(), 'data', 'quant.db');
 }
 
-/** sql.js WASM 文件路径（从 npm 包加载） */
-function _getWasmPath(): string {
-  // sql.js 的 wasm 文件在 node_modules/sql.js/dist/ 下
-  // 从当前文件目录向上找（兼容 pnpm hoist 和独立安装）
-  const possiblePaths = [
-    path.resolve(__dirname, '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
-    path.resolve(process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
-    path.resolve(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
-    path.resolve(process.cwd(), '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
-  ];
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) return p;
+/** 打开 better-sqlite3 连接并应用通用 PRAGMA */
+function openDatabase(resolvedPath: string): SqliteDatabase {
+  const dir = path.dirname(resolvedPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-  // 回退：让 sql.js 自己找
-  return undefined as unknown as string;
+  const sqlite = new Database(resolvedPath);
+  // WAL 模式：并发读写更友好；外键约束与原 sql.js 实现保持一致
+  sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = ON');
+  return sqlite;
 }
 
-/** 创建 SQLite 连接上下文（包含 Drizzle + 原始 sql.js 实例） */
+/** 创建 SQLite 连接上下文（包含 Drizzle + 原始 better-sqlite3 实例） */
 export async function createSqliteContext(dbPath?: string): Promise<SqliteContext> {
   try {
     const resolvedPath = resolveDbPath(dbPath);
-    const dir = path.dirname(resolvedPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    const SQL = await initSqlJs({
-      locateFile: (file: string) => resolveWasmPath(file),
-    });
-
-    let sqlite: SqlJsDatabase;
-    if (fs.existsSync(resolvedPath)) {
-      const buf = fs.readFileSync(resolvedPath);
-      sqlite = new SQL.Database(buf);
-    } else {
-      sqlite = new SQL.Database();
-    }
-
-    sqlite.run('PRAGMA foreign_keys = ON');
+    const sqlite = openDatabase(resolvedPath);
     runMigrations(sqlite);
 
     return {
@@ -120,7 +73,7 @@ export async function createSqliteContext(dbPath?: string): Promise<SqliteContex
   }
 }
 
-/** 创建 sql.js 连接并初始化 Drizzle（向后兼容） */
+/** 创建 better-sqlite3 连接并初始化 Drizzle（向后兼容） */
 export async function createSqliteConnection(dbPath?: string): Promise<DrizzleDb> {
   const ctx = await createSqliteContext(dbPath);
   return ctx.db;
@@ -309,8 +262,8 @@ CREATE TABLE IF NOT EXISTS tasks (
 `;
 
 /** 执行建表迁移 + 增量 ALTER TABLE（兼容已有库） */
-function runMigrations(db: SqlJsDatabase): void {
-  db.run(DDL);
+function runMigrations(db: SqliteDatabase): void {
+  db.exec(DDL);
   // 增量迁移：为已有表添加新列
   // SQLite 不支持 IF NOT EXISTS for ALTER TABLE，用 try/catch 处理列已存在的情况
   const alterStatements = [
@@ -319,51 +272,29 @@ function runMigrations(db: SqlJsDatabase): void {
   ];
   for (const sql of alterStatements) {
     try {
-      db.run(sql);
+      db.exec(sql);
     } catch {
       // 列已存在，忽略错误（SQLite 会抛出 "duplicate column name"）
     }
   }
 }
 
-/** 获取底层 sql.js Database 实例 */
-export async function createRawSqlJs(dbPath?: string): Promise<SqlJsDatabase> {
+/** 获取底层 better-sqlite3 Database 实例 */
+export async function createRawSqlJs(dbPath?: string): Promise<SqliteDatabase> {
   const resolvedPath = resolveDbPath(dbPath);
-  const dir = path.dirname(resolvedPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  const SQL = await initSqlJs({
-    locateFile: (file: string) => {
-      const wasmPath = path.resolve(process.cwd(), 'node_modules', 'sql.js', 'dist', file);
-      if (fs.existsSync(wasmPath)) return wasmPath;
-      const parentPath = path.resolve(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', file);
-      if (fs.existsSync(parentPath)) return parentPath;
-      return `https://sql.js.org/dist/${file}`;
-    },
-  });
-
-  if (fs.existsSync(resolvedPath)) {
-    const buf = fs.readFileSync(resolvedPath);
-    return new SQL.Database(buf);
-  }
-  return new SQL.Database();
+  return openDatabase(resolvedPath);
 }
 
-/** 将内存数据库持久化到文件 */
-export function saveDbToFile(db: SqlJsDatabase, dbPath?: string): void {
-  const resolvedPath = resolveDbPath(dbPath);
-  const dir = path.dirname(resolvedPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+/**
+ * 持久化 / 检查点 — better-sqlite3 写入即落盘，此处做 WAL 检查点，
+ * 确保 WAL 中的数据合并入主库文件，供跨进程读取方看到最新数据。
+ */
+export function saveDbToFile(db: SqliteDatabase, dbPath?: string): void {
   try {
-    const data = db.export();
-    fs.writeFileSync(resolvedPath, Buffer.from(data));
+    db.pragma('wal_checkpoint(TRUNCATE)');
   } catch (err) {
     throw new WriteError(
-      `持久化数据库到文件失败: ${resolvedPath}`,
+      `WAL 检查点失败: ${resolveDbPath(dbPath)}`,
       err,
     );
   }

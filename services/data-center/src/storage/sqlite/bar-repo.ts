@@ -1,5 +1,5 @@
 /**
- * K 线 Repository — SQLite (sql.js) 实现
+ * K 线 Repository — SQLite (better-sqlite3) 实现
  */
 import { eq, and, gte, lte, gt, desc, sql } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
@@ -47,15 +47,16 @@ export class SqliteBarRepository implements BarRepository {
   async save(input: ExtendedBar[]): Promise<void> {
     if (input.length === 0) return;
     try {
-      await this.db.transaction(async (tx) => {
+      this.db.transaction((tx) => {
         for (const bar of input) {
           const row = toRow(bar);
-          await tx.insert(bars)
+          tx.insert(bars)
             .values(row)
             .onConflictDoUpdate({
               target: [bars.symbol, bars.timeframe, bars.timestamp],
               set: row,
-            });
+            })
+            .run();
         }
       });
     } catch (err) {

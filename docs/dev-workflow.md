@@ -9,7 +9,7 @@
 | Python | 3.11+ | 回测引擎、策略运行时 |
 | Git | 2.30+ | 支持长路径 |
 
-> 本项目已从 `better-sqlite3`（需 C++ 编译）迁移到 `sql.js`（纯 WASM），**无需 Visual Studio Build Tools**。
+> 本项目使用 `better-sqlite3`（SQLite 原生驱动）。它随包提供 **预编译二进制**，Node 20/24 + Windows x64 **无需 Visual Studio Build Tools**。pnpm 9.x 默认拦截依赖的构建脚本，已在 `pnpm-workspace.yaml` 的 `onlyBuiltDependencies` 中放行 `better-sqlite3` 以允许其下载预编译二进制。
 
 ## 初始安装
 
@@ -143,27 +143,28 @@ git config --global core.longpaths true
 - 项目目录：`D:\quant-web`
 - pnpm store：运行 `pnpm store path` 查看路径（通常在 `D:\.pnpm-store` 或 `%LOCALAPPDATA%\pnpm\store`）
 
-### WASM 加载失败
+### better-sqlite3 原生二进制缺失
 
-**症状**：API 启动时报 `Cannot find module 'sql.js'` 或 WASM 文件加载失败。
+**症状**：API/Worker/data-center 启动时报 `Could not locate the bindings file` 或 `Cannot find module 'better-sqlite3'`，或 `pnpm install` 输出 `ERR_PNPM_IGNORED_BUILDS`。
 
 **排查**：
 
 ```powershell
-# 检查 sql.js 是否安装
-Test-Path node_modules/sql.js/dist/sql-wasm.wasm
+# 检查原生二进制是否就位
+Get-ChildItem node_modules/.pnpm/better-sqlite3*/node_modules/better-sqlite3/build/Release/*.node
 
-# 如果不存在，重新安装
+# 如果不存在，多半是 pnpm 拦截了构建脚本，重新安装并放行
 pnpm install
+pnpm approve-builds   # 交互式确认 better-sqlite3
 ```
 
-`sql.js` 的 WASM 文件位于 `node_modules/sql.js/dist/sql-wasm.wasm`。`connection.ts` 中的 `resolveWasmPath` 函数会从包目录、`process.cwd()` 向上逐层查找此文件，兼容 pnpm workspace 的各种链接结构。
+`better-sqlite3` 通过 `prebuild-install` 在 postinstall 阶段下载与当前 Node ABI 匹配的预编译二进制（如 `node-v137-win32-x64`），无需本地编译。
 
-> **注意**：`pnpm-workspace.yaml` 中设置了 `ignoredOptionalDependencies: [better-sqlite3, @types/better-sqlite3]`，阻止 pnpm 安装 `drizzle-orm` 的可选依赖 `better-sqlite3`（需 C++ 编译）。`sql.js` 作为显式依赖仍正常安装。`autoInstallPeers` 保持默认值 `true`，确保 `@testing-library/dom` 等正常 peer dependency 被自动安装。
+> **注意**：`pnpm-workspace.yaml` 中设置了 `onlyBuiltDependencies: [better-sqlite3]`，允许 pnpm 运行其 postinstall 脚本下载预编译二进制。pnpm 9.x 默认拦截所有依赖的构建脚本（安全策略），缺少此配置时二进制不会下载，加载即报 `Could not locate the bindings file`。CI（ubuntu）上同样依赖此配置。
 
 ### pnpm-workspace.yaml 编码损坏
 
-**症状**：`pnpm config get ignoredOptionalDependencies` 返回 `undefined`，配置不生效；`pnpm-workspace.yaml` 中的中文注释在 `type` 命令下显示为乱码（如 `绂佹 pnpm 鑷姩`）。
+**症状**：`pnpm config get onlyBuiltDependencies` 返回 `undefined`，配置不生效；`pnpm-workspace.yaml` 中的中文注释在 `type` 命令下显示为乱码（如 `绂佹 pnpm 鑷姩`）。
 
 **原因**：Windows PowerShell 默认使用 GBK 编码，中文注释在写入/读取时可能被损坏，导致 YAML 解析失败，pnpm 无法读取配置。
 
@@ -176,17 +177,16 @@ packages:
   - "services/*"
 
 # Keep comments in ASCII to avoid encoding issues on Windows.
-ignoredOptionalDependencies:
+onlyBuiltDependencies:
   - "better-sqlite3"
-  - "@types/better-sqlite3"
 ```
 
 验证配置生效：
 
 ```powershell
-pnpm install --lockfile-only
-# 检查 lock file 不含 better-sqlite3
-Select-String -Path pnpm-lock.yaml -Pattern "better-sqlite3"  # 应无输出
+pnpm install
+# 检查原生二进制已下载
+Get-ChildItem node_modules/.pnpm/better-sqlite3*/node_modules/better-sqlite3/build/Release/*.node  # 应存在
 ```
 
 ### Junction 缓存导致 UNKNOWN 错误
@@ -216,7 +216,7 @@ pnpm install --frozen-lockfile --config.package-import-method=copy
 
 ### Node.js 版本不匹配
 
-**症状**：`sql.js` 初始化失败或 `Response` 构造函数未定义。
+**症状**：`better-sqlite3` 二进制 ABI 不匹配（`NODE_MODULE_VERSION` 报错）或 `Response` 构造函数未定义。
 
 **修复**：确保 Node.js 版本 ≥ 20（`Response`、`Request`、`Headers` 是 Node 18+ 的全局 API）：
 
@@ -261,12 +261,13 @@ CI 配置位于 `.github/workflows/ci.yml`，包含两个并行 Job：
 
 ### 数据库驱动
 
-全项目统一使用 `sql.js`（纯 WASM SQLite），零 native 编译依赖：
+全项目统一使用 `better-sqlite3`（SQLite 原生驱动，预编译二进制），零本地编译依赖：
 
-- `services/data-center` — `createSqliteContext()` 加载 WASM，内存数据库 + 文件持久化
-- `apps/api` — `initApiDb()` 同样使用 sql.js，`closeApiDb(persist=true)` 关闭时持久化
+- `services/data-center` — `createSqliteContext()` 打开磁盘库（WAL 模式），写入即落盘；`flush()` 做 WAL 检查点
+- `apps/api` — `initApiDb()` 同样使用 better-sqlite3，`closeApiDb(persist=true)` 关闭前做 WAL 检查点
+- `apps/worker` — `TaskQueue` 使用 better-sqlite3 的 `prepare/get/all/run` API
 
-两个模块共享 `drizzle-orm` 的通用 API（`insert`/`select`/`delete`），repo 层代码对驱动切换透明。
+三个模块共享 `drizzle-orm` 的通用 API（`insert`/`select`/`delete`），repo 查询层对驱动切换透明。**注意**：better-sqlite3 是同步驱动，Drizzle 事务回调必须是同步函数（`db.transaction((tx) => {...})`），且事务内的写语句必须显式 `.run()`，否则静默不执行。
 
 ### 前端测试 Mock
 

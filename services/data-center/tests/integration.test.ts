@@ -13,6 +13,32 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 
+/**
+ * 健壮删除临时目录 — 容忍 Windows 文件锁。
+ *
+ * better-sqlite3 持有真实文件句柄；当测试故意不 close()（或 close 被钩子阻止）
+ * 时，句柄可能在 rmSync 时尚未被 OS 释放，Windows 抛 EPERM。
+ * sql.js 是纯内存库无此问题。这里重试几次给 OS 释放句柄的时间。
+ */
+function rmDirRobust(dir: string): void {
+  for (let i = 0; i < 5; i++) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      return;
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code !== 'EPERM' && code !== 'EBUSY' && code !== 'ENOTEMPTY') throw err;
+      // 短暂同步等待后重试，给 OS 释放文件句柄的时间
+      const until = Date.now() + 50;
+      while (Date.now() < until) { /* spin */ }
+    }
+  }
+  // 最后一次尝试，失败则不阻断测试（临时目录会被 OS 定期清理）
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch { /* 临时目录残留无害，留给 OS 清理 */ }
+}
+
 describe('DataCenter 集成测试', () => {
   let dc: DataCenter;
   let tmpDir: string;
@@ -24,7 +50,7 @@ describe('DataCenter 集成测试', () => {
 
   afterEach(async () => {
     await dc.close();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    rmDirRobust(tmpDir);
   });
 
   describe('K 线存储与查询', () => {
@@ -222,18 +248,22 @@ describe('DataCenter 集成测试', () => {
       await dc2.close();
     });
 
-    it('未调用 close() 数据丢失', async () => {
+    it('写入即落盘（better-sqlite3 即时持久化，无需 close）', async () => {
+      // 语义变更：sql.js 是内存库，不 export 不落盘，旧测试断言"未 close 则数据丢失"。
+      // better-sqlite3 直接写磁盘，.run() 执行即持久化，即使不 close 也不丢。
+      // 对量化数据平台而言，写入即持久是更强的保证。
       const dbPath = path.join(tmpDir, 'no-close-test.db');
       const dc1 = await createDataCenter({ dbPath });
       await dc1.repos.bars.save([
         { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
       ]);
-      // 不调用 close()，直接丢弃引用
-
+      // 不调用 close()，直接用新连接读取
       const dc2 = await createDataCenter({ dbPath });
       const bars = await dc2.repos.bars.query('CSI500', TimeFrame.D1);
-      expect(bars).toHaveLength(0);
+      expect(bars).toHaveLength(1);
+      expect(bars[0].close).toBe(5050);
       await dc2.close();
+      await dc1.close();
     });
 
     it('重复 close() 不报错', async () => {
@@ -390,7 +420,7 @@ describe('DataCenter 集成测试', () => {
 
     it('closeTimeout 超时抛错', async () => {
       // closeTimeout=0 表示不超时，这里用极小值模拟
-      // 由于 sql.js close 是同步的，实际很难触发超时
+      // better-sqlite3 close 是同步的，实际很难触发超时
       // 此测试验证 closeTimeout 配置能正常传入
       const dcLocal = await createDataCenter({
         dbPath: path.join(tmpDir, 'timeout-test.db'),

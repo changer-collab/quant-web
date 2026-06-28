@@ -181,7 +181,7 @@ export function createProviders(repos: RepositorySet): DataCenter['providers'] {
 }
 
 /**
- * 创建数据中心 — 主入口（异步，因为 sql.js 需要加载 WASM）
+ * 创建数据中心 — 主入口（异步签名保留，兼容旧调用方）
  *
  * 用法：
  * ```ts
@@ -267,7 +267,7 @@ export async function createDataCenter(config?: DataCenterConfig): Promise<DataC
           clearInterval(flushTimer);
           flushTimer = undefined;
         }
-        // 带超时的同步关闭操作（doFlush + sql.js close）
+        // 带超时的同步关闭操作（doFlush + better-sqlite3 close）
         await withTimeout(() => {
           doFlush();
           ctx.raw.close();

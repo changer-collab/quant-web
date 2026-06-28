@@ -17,9 +17,12 @@ pnpm-debug.log*
 
 # local data (SQLite, CSV, etc.)
 data/*.db
-data/*.db-journal
-data/*.db-wal
 data/*.csv
+
+# SQLite WAL/journal sidecar files (better-sqlite3 WAL mode) anywhere in tree
+*.db-journal
+*.db-wal
+*.db-shm
 
 # Python
 __pycache__/

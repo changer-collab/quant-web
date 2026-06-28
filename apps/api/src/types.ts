@@ -167,6 +167,7 @@ export interface BacktestReportFull {
     overfittingRisk: 'low' | 'medium' | 'high';
     survivorshipBias: boolean;
     lookAheadBias: boolean;
+    enableMarketRules: boolean;
     liquidityAssessment: string;
     capacityEstimate: string;
   };

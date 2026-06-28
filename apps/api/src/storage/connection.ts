@@ -1,59 +1,24 @@
 /**
- * SQLite 连接管理 — sql.js 实现（纯 WASM，零编译）
+ * SQLite 连接管理 — better-sqlite3 实现（原生预编译二进制，零本地编译）
  *
- * 与 services/data-center 保持一致的 sql.js 驱动方案，
- * 消除全项目对 better-sqlite3 native 模块的依赖。
+ * 与 services/data-center 保持一致的 better-sqlite3 驱动方案。
  *
  * 默认路径：项目根目录 data/api.db
  * 可通过参数覆盖。
  *
- * 注意：sql.js 是内存数据库，close 时需手动 export 到文件实现持久化。
+ * 注意：better-sqlite3 直接读写磁盘，写入即持久化；close() 释放文件句柄。
  */
-import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
-import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js';
+import Database from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema.js';
 import { resolve, dirname } from 'path';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { fileURLToPath } from 'node:url';
+import { existsSync, mkdirSync } from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-export type ApiDb = SQLJsDatabase<typeof schema>;
+export type ApiDb = BetterSQLite3Database<typeof schema>;
 
 let db: ApiDb | null = null;
-let sqlite: SqlJsDatabase | null = null;
+let sqlite: Database.Database | null = null;
 let currentDbPath: string | null = null;
-
-/** 获取 sql.js 包目录下的 wasm 文件路径（兼容 pnpm workspace） */
-function resolveWasmPath(file: string): string {
-  // 尝试从当前包 node_modules 定位
-  const fromPackage = resolve(__dirname, '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', file);
-  if (existsSync(fromPackage)) return fromPackage;
-
-  // 尝试从 process.cwd() 向上逐层查找
-  let dir = process.cwd();
-  while (true) {
-    const candidate = resolve(dir, 'node_modules', 'sql.js', 'dist', file);
-    if (existsSync(candidate)) return candidate;
-    const parent = dirname(dir);
-    if (parent === dir) break; // 到达根目录
-    dir = parent;
-  }
-
-  // 最后尝试：从 sql.js 包自身位置定位
-  try {
-    const resolved = import.meta.resolve('sql.js/dist/' + file);
-    if (resolved.startsWith('file://')) {
-      return fileURLToPath(resolved);
-    }
-  } catch {
-    // ignore resolve failure
-  }
-
-  // 全部失败，返回默认路径（sql.js 会抛出明确错误）
-  return resolve(process.cwd(), 'node_modules', 'sql.js', 'dist', file);
-}
 
 export async function initApiDb(dbPath?: string): Promise<ApiDb> {
   if (db) return db;
@@ -65,21 +30,13 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
     mkdirSync(dir, { recursive: true });
   }
 
-  const SQL = await initSqlJs({
-    locateFile: (file: string) => resolveWasmPath(file),
-  });
-
-  if (existsSync(resolvedPath)) {
-    const buf = readFileSync(resolvedPath);
-    sqlite = new SQL.Database(buf);
-  } else {
-    sqlite = new SQL.Database();
-  }
-
+  sqlite = new Database(resolvedPath);
+  sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = ON');
   currentDbPath = resolvedPath;
 
   // 创建表
-  sqlite.run(`
+  sqlite.exec(`
     CREATE TABLE IF NOT EXISTS backtest_reports (
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL,
@@ -132,14 +89,18 @@ export function getApiDb(): ApiDb {
 
 /**
  * 关闭数据库连接。
- * @param persist 是否将内存数据库持久化到文件（默认 true）。
- *                测试场景传 false 跳过持久化。
+ * @param persist 是否在关闭前做 WAL 检查点（默认 true）。
+ *                better-sqlite3 写入即落盘，此参数仅控制是否合并 WAL；
+ *                保留签名以兼容测试调用（closeApiDb(false)）。
  */
 export function closeApiDb(persist = true): void {
   if (sqlite) {
     if (persist && currentDbPath) {
-      const data = sqlite.export();
-      writeFileSync(currentDbPath, Buffer.from(data));
+      try {
+        sqlite.pragma('wal_checkpoint(TRUNCATE)');
+      } catch {
+        // 检查点失败不阻断关闭
+      }
     }
     sqlite.close();
     sqlite = null;
