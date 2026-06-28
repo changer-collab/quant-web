@@ -295,3 +295,27 @@ build_fail
   - 前端 SSE stream 中 result 事件的 data.resultId 和 data.resultType 字段由 complete handler 注入，非 worker 返回
   - backtest-handler 中 strategyParams 提取改为 `payload.configSnapshot?.params ?? payload.params ?? {}`，保持向后兼容
 ---
+
+## [2026-06-28 20:25] - story-7
+- 扩展了 smoke-test.sh：添加 Test 4 (GET /api/strategies 含 category 字段检查)、Test 5 (PUT+GET config 读写验证)、Test 6 (GET diagnostics 空数组检查)
+- 全量验证全部通过：
+  - pnpm lint → 全绿（0 errors）
+  - pnpm test → API 42 + Worker 26 + Web 96 + Data-center 47 + Data-collector 58 = 269 passed
+  - pnpm build → 5/5 successful
+  - strategy-runtime → 75 passed
+  - strategies → 73 passed
+  - backtest-engine → 80 passed
+  - factor-lab → 18 passed
+  - ai-engine → 32 passed
+  - data-client → 11 passed
+  - obsidian-sync → 7 passed
+  - bash scripts/smoke-test.sh → 7/7 ALL PASSED
+- 修改了哪些文件：
+  - scripts/smoke-test.sh（扩展为 6 个端点 + 响应体内容检查）
+  - scripts/ralph/prd.json（story-7 → passes: true）
+  - scripts/ralph/progress.txt
+- **后续迭代注意事项：**
+  - smoke-test.sh 用 grep -qF 做文字匹配避免正则转义问题
+  - EADDRINUSE 是 server 已运行时的正常行为，不影响测试执行
+  - 测试新端点时注意区分 `curl -s`（静默/不报错）和 `curl -sf`（HTTP 错误时退出码非零）
+---
