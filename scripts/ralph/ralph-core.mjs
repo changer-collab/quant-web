@@ -18,6 +18,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync, appendFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join, dirname, basename } from "node:path";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -75,7 +76,44 @@ const DEFAULT_STATE = {
   multiStoryWarnings: 0,
   /** 每轮迭代前 prd.json 的 passes 快照（用于验证单轮完成数） */
   passesSnapshot: [],
+  /** passesSnapshot 的 SHA256 前 16 位（防篡改） */
+  passesSnapshotHash: "",
 };
+
+// ═══════════════════════════════════════════════════════════════════
+// Guardian 常量
+// ═══════════════════════════════════════════════════════════════════
+
+/** 代码文件的扩展名（Rule 2 和 Rule 3 共享。覆盖 vitest 默认 glob 的所有 JS/TS 变体） */
+const CODE_EXTENSIONS = [".ts", ".tsx", ".py", ".js", ".mjs", ".cjs"];
+
+/** 排除目录——这些目录的变更不计入实现 */
+const EXCLUDED_PREFIXES = ["scripts/ralph/", ".claude/", ".superpowers/", "data/", ".skills/"];
+
+/** Agent 类型 → 应修改的目录（用于 story-文件关联校验） */
+const AGENT_DIR_MAP = {
+  "api-agent": ["apps/api/"],
+  "frontend-agent": ["apps/web/"],
+  "strategy-agent": ["packages/strategy-runtime/", "packages/strategies/"],
+  "python-agent": ["packages/"],
+  "worker-agent": ["apps/worker/"],
+  "fullstack-agent": null, // null = 不限制目录
+};
+
+/** 测试文件命名模式（对齐 vitest 默认 glob: **\/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}） */
+const TEST_PATTERNS = [/test.*\.(ts|tsx|py|js|mjs|cjs)$/, /\.(test|spec)\.(ts|tsx|py|js|mjs|cjs)$/];
+
+function isExcluded(filePath) {
+  return EXCLUDED_PREFIXES.some((p) => filePath.startsWith(p));
+}
+
+function isCodeFile(filePath) {
+  return CODE_EXTENSIONS.some((ext) => filePath.endsWith(ext));
+}
+
+function isTestFile(filePath) {
+  return TEST_PATTERNS.some((p) => p.test(filePath));
+}
 
 export function initState() {
   if (!existsSync(FILES.state)) {
@@ -449,7 +487,8 @@ export function detectMultiStory(remainingBefore, remainingAfter) {
 export function snapshotPasses() {
   const prd = readPrd();
   const passedIds = prd.userStories.filter((s) => s.passes).map((s) => s.id);
-  updateState({ passesSnapshot: passedIds });
+  const hash = createHash("sha256").update(JSON.stringify(passedIds)).digest("hex").substring(0, 16);
+  updateState({ passesSnapshot: passedIds, passesSnapshotHash: hash });
   return passedIds;
 }
 
@@ -458,6 +497,7 @@ export function snapshotPasses() {
  *   1. 检查单轮完成的 story 数 ≤ 1
  *   2. 检查是否有代码变更支撑 passes 变更
  *   3. 检查是否只改了测试文件没改实现
+ *   4. 检查变更文件是否在 story 的 agent 目录范围内
  *
  * @returns {{ valid: boolean, reason: string, details: object }}
  */
@@ -465,6 +505,18 @@ export function validateIteration() {
   const state = readState();
   const prd = readPrd();
   const snapshot = state.passesSnapshot || [];
+  const snapshotHash = state.passesSnapshotHash || "";
+
+  // 完整性校验：snapshot 是否被篡改
+  if (snapshot.length > 0 && snapshotHash) {
+    const recomputed = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex").substring(0, 16);
+    if (recomputed !== snapshotHash) {
+      // snapshot 被篡改 → 当作无基线处理（首轮放行，损失一次迭代保护但避免拒绝合法变更）
+      console.error("WARNING: passesSnapshot integrity check failed. Treating as first-run.");
+      const nowPassed = prd.userStories.filter((s) => s.passes).map((s) => s.id);
+      return { valid: true, reason: "snapshot-tampered-fallback-to-first-run", newlyCompleted: nowPassed };
+    }
+  }
 
   // 首轮迭代无基线 → 跳过验证
   if (snapshot.length === 0) {
@@ -487,71 +539,76 @@ export function validateIteration() {
     };
   }
 
+  // —— 统一的 diff 范围计算（Rule 2 和 Rule 3 共用） ——
+  const lastHead = state.lastGitHead;
+  const diffRange = lastHead ? `${lastHead}..HEAD` : "HEAD~1";
+
+  let diffFiles = [];
+  try {
+    diffFiles = execSync(
+      `git diff --name-only ${diffRange}`,
+      { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 5000 }
+    ).trim().split("\n").filter(Boolean);
+  } catch {
+    // git 不可用，跳过所有文件级检查
+    return { valid: true, reason: "git-unavailable", newlyCompleted };
+  }
+
+  // —— 分类文件 ——
+  const codeFiles = diffFiles.filter((f) => !isExcluded(f) && isCodeFile(f));
+  const testFiles = diffFiles.filter((f) => !isExcluded(f) && isTestFile(f));
+  const implFiles = codeFiles.filter((f) => !isTestFile(f));
+
   // ── 规则 2: 如果有 newlyCompleted story，必须至少有 1 个代码文件变更 ──
   if (newlyCompleted.length === 1) {
-    try {
-      const lastHead = state.lastGitHead;
-      // 如果有 lastGitHead 用精确 diff；否则用 HEAD~1 近似
-      const diffRange = lastHead ? `${lastHead}..HEAD` : "HEAD~1";
-      const diffFiles = execSync(
-        `git diff --name-only ${diffRange}`,
-        { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 5000 }
-      ).trim().split("\n").filter(Boolean);
-
-      const codeFiles = diffFiles.filter((f) =>
-        !f.startsWith("scripts/ralph/") &&
-        !f.startsWith(".claude/") &&
-        !f.startsWith(".superpowers/") &&
-        !f.startsWith("data/") &&
-        (f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".py") ||
-         f.endsWith(".js") || f.endsWith(".mjs") || f.endsWith(".css"))
-      );
-
-      if (codeFiles.length === 0) {
-        return {
-          valid: false,
-          reason: `story ${newlyCompleted[0]} 标记为完成但没有任何代码文件变更。` +
-            `prd.json 将被回滚。`,
-          rule: "no-code-changes-for-completion",
-          newlyCompleted,
-          diffFiles,
-        };
-      }
-    } catch {
-      // git 不可用，跳过此检查
+    if (codeFiles.length === 0) {
+      return {
+        valid: false,
+        reason: `story ${newlyCompleted[0]} 标记为完成但没有任何代码文件变更。` +
+          `变更文件: ${diffFiles.join(", ") || "(无)"}。prd.json 将被回滚。`,
+        rule: "no-code-changes-for-completion",
+        newlyCompleted,
+        diffFiles,
+      };
     }
   }
 
   // ── 规则 3: 检查测试文件是否被单独修改（无对应实现变更） ──
-  try {
-    const diffFiles = execSync(
-      "git diff HEAD~1 --name-only",
-      { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 5000 }
-    ).trim().split("\n").filter(Boolean);
+  if (testFiles.length > 0 && implFiles.length === 0) {
+    return {
+      valid: false,
+      reason: `只修改了 ${testFiles.length} 个测试文件但没有对应的实现文件变更。` +
+        `这是绕过验证的危险信号。prd.json 将被回滚。`,
+      rule: "test-files-only-no-impl",
+      testFiles,
+      implFiles,
+    };
+  }
 
-    const testPatterns = [/test.*\.(ts|tsx|py|js)$/, /\.(test|spec)\.(ts|tsx|py|js)$/];
-    const testFiles = diffFiles.filter((f) =>
-      testPatterns.some((p) => p.test(f))
-    );
-    const implFiles = diffFiles.filter((f) =>
-      !testFiles.includes(f) &&
-      !f.startsWith("scripts/ralph/") &&
-      !f.startsWith(".claude/") &&
-      !f.startsWith(".superpowers/") &&
-      (f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".py") || f.endsWith(".js"))
-    );
-
-    if (testFiles.length > 0 && implFiles.length === 0) {
-      return {
-        valid: false,
-        reason: `只修改了 ${testFiles.length} 个测试文件但没有对应的实现文件变更。这是绕过验证的危险信号。prd.json 将被回滚。`,
-        rule: "test-files-only-no-impl",
-        testFiles,
-        implFiles,
-      };
+  // ── 规则 4: story-agent 目录关联校验 ──
+  if (newlyCompleted.length === 1 && implFiles.length > 0) {
+    const story = prd.userStories.find((s) => s.id === newlyCompleted[0]);
+    if (story) {
+      const agentDirs = AGENT_DIR_MAP[story.agent];
+      // agentDirs === null 表示不限制（fullstack-agent）
+      if (agentDirs !== null && agentDirs !== undefined) {
+        const relevantFiles = implFiles.filter((f) =>
+          agentDirs.some((dir) => f.startsWith(dir))
+        );
+        if (relevantFiles.length === 0) {
+          return {
+            valid: false,
+            reason: `story ${newlyCompleted[0]} (agent=${story.agent}) 的实现文件` +
+              `都不在预期的目录范围内（${agentDirs.join(", ")}）。` +
+              `实际变更: ${implFiles.join(", ")}。prd.json 将被回滚。`,
+            rule: "impl-files-outside-agent-scope",
+            newlyCompleted,
+            implFiles,
+            expectedDirs: agentDirs,
+          };
+        }
+      }
     }
-  } catch {
-    // git 不可用，跳过此检查
   }
 
   return { valid: true, reason: "all-checks-passed", newlyCompleted };

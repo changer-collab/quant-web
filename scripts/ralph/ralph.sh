@@ -67,6 +67,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
 
   # 执行 claude CLI
   ENHANCED_PROMPT=$($CORE --build-prompt "$i" 2>/dev/null)
+  PRE_ITERATION_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "")
   OUTPUT=$(echo "$ENHANCED_PROMPT" | claude --dangerously-skip-permissions --print 2>&1) || true
   CLAUDE_EXIT=$?
 
@@ -81,10 +82,15 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   if echo "$VALIDATION" | grep -q "^DENY:"; then
     echo ""
     echo "⛔ GUARDIAN REJECTED: $(echo "$VALIDATION" | sed 's/^DENY: //')"
-    echo "   → 回滚 prd.json 到迭代前状态"
-    git checkout -- "$SCRIPT_DIR/prd.json" 2>/dev/null || true
+    if [ -n "$PRE_ITERATION_HEAD" ]; then
+      echo "   → 硬重置到迭代前 $(echo "$PRE_ITERATION_HEAD" | cut -c1-7)"
+      git reset --hard "$PRE_ITERATION_HEAD" 2>/dev/null || true
+      git clean -fd -- "$SCRIPT_DIR/" 2>/dev/null || true
+    else
+      echo "   → 回滚 prd.json 到迭代前状态"
+      git checkout -- "$SCRIPT_DIR/prd.json" 2>/dev/null || true
+    fi
     REMAINING_NOW=$($CORE --remaining 2>/dev/null || echo "$REMAINING")
-    # 若 passes 被篡改但无实际代码，计为无进展
   else
     REMAINING_NOW=$($CORE --remaining 2>/dev/null || echo 0)
   fi

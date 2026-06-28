@@ -28,7 +28,6 @@
    - `detectedFailures` 告诉你了哪类检查失败（test_fail / lint_error / build_fail 等）
    - `summary` 是错误摘要
    - 不要重复同样的错误
-2. **`scripts/ralph/.prd.state.json`** — 如果存在，读取 `storyAttempts` 了解哪些故事已经尝试过
 
 ## 你的任务
 
