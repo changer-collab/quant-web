@@ -155,7 +155,7 @@
       "agent": "frontend-agent",
       "priority": 8,
       "dependsOn": ["story-7"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-9",

@@ -116,6 +116,30 @@ export type MetricTone = 'good' | 'info' | 'warn';
 export type LanguageCode = 'en' | 'zh';
 export type JobTemplate = 'backtest' | 'train' | 'experiment' | 'run';
 
+/** 策略分类（与 Python StrategyCategory 值对齐） */
+export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
+
+/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+export type StrategySubcategory =
+  | 'linear_multi_factor'
+  | 'nonlinear_ml'
+  | 'trend_cta'
+  | 'mean_reversion'
+  | 'arbitrage'
+  | 'high_frequency'
+  | 'macro_quant'
+  | 'event_driven'
+  | 'e2e_ai_timeseries'
+  | 'tail_risk_hedging';
+
+/** UI 约束条件（与 Python UIConstraint 对齐） */
+export interface UIConstraint {
+  kind: 'disable_when' | 'require_when' | 'set_default_when' | 'range_when';
+  target_field: string;
+  target_value: unknown;
+  action_value?: unknown;
+}
+
 export interface NavItem {
   id: PageId;
   label: string;
@@ -165,6 +189,10 @@ export interface StrategyParam {
   min?: number;
   max?: number;
   options?: string[];
+  /** 是否在 K 线预览中显示（与 Python chart_relevant 对齐） */
+  chartRelevant?: boolean;
+  /** UI 约束条件列表（与 Python UIConstraint 对齐） */
+  uiConstraints?: UIConstraint[];
 }
 
 export interface StrategyRow {
@@ -184,6 +212,72 @@ export interface StrategyRow {
   kind?: string;
   /** 可调参数定义（与 Python StrategyMeta.params 对齐） */
   params?: StrategyParam[];
+  /** 策略分类（与 Python StrategyCategory 对齐） */
+  category?: string;
+  /** 策略子分类（与 Python StrategySubcategory 对齐） */
+  subcategory?: string | null;
+  /** 是否可进入工作流 */
+  workflowReady?: boolean;
+  /** 策略摘要 */
+  summary?: string;
+}
+
+// ─── 预览引擎类型 ────────────────────────────────────────────
+
+/** K 线数据点 */
+export interface BarData {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+/** 图表叠加层（MA 均线） */
+export interface ChartOverlay {
+  type: 'sma' | 'ema';
+  period: number;
+  values: (number | null)[];
+}
+
+/** 预览信号 */
+export interface PreviewSignal {
+  bar_index: number;
+  side: 'buy' | 'sell';
+  type: string;
+  reason: string;
+  factor_snapshot?: Record<string, number>;
+}
+
+/** 分页参数 */
+export interface Pagination {
+  has_more: boolean;
+  next_cursor: number | null;
+}
+
+/** 预览 API 响应 */
+export interface PreviewResponse {
+  symbol: string;
+  bars: BarData[];
+  overlays: ChartOverlay[];
+  signals: PreviewSignal[];
+  pagination: Pagination;
+  fingerprint: string;
+  engine_version: string;
+}
+
+/** 诊断结果 */
+export interface DiagnosticResult {
+  id: string;
+  taskId: string;
+  strategy: string;
+  configSnapshot: {
+    strategy: string;
+    params: Record<string, unknown>;
+  };
+  dataJson: Record<string, unknown>;
+  createdAt: number;
 }
 
 export interface MarketTick {

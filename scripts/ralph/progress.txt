@@ -319,3 +319,37 @@ build_fail
   - EADDRINUSE 是 server 已运行时的正常行为，不影响测试执行
   - 测试新端点时注意区分 `curl -s`（静默/不报错）和 `curl -sf`（HTTP 错误时退出码非零）
 ---
+
+## [2026-06-28 12:27:44] - Iteration 5
+
+- Exit code: 0
+- Stories remaining: 6
+---
+
+## [2026-06-28 20:31] - story-8
+- 实现了前端类型同步 + API 客户端层
+- **修改 `apps/web/src/data/types.ts`**：
+  - 新增 StrategyCategory / StrategySubcategory 类型别名（与 Python 枚举值对齐）
+  - 新增 UIConstraint 接口（kind/target_field/target_value/action_value）
+  - 扩展 StrategyParam：新增 chartRelevant / uiConstraints 可选字段
+  - 扩展 StrategyRow：新增 category / subcategory / workflowReady / summary 可选字段
+  - 新增 PreviewResponse / BarData / ChartOverlay / PreviewSignal / Pagination / DiagnosticResult 预览和诊断类型
+- **修改 `apps/web/src/api/strategies.ts`**：
+  - ApiStrategy 新增 category / subcategory / workflowReady / summary
+  - ApiStrategyParam 新增 chart_relevant / ui_constraints
+- **新建 `apps/web/src/api/strategies-config.ts`** — fetchStrategyConfig + saveStrategyConfig
+- **新建 `apps/web/src/api/preview.ts`** — fetchPreview
+- **新建 `apps/web/src/api/diagnostics.ts`** — fetchDiagnostic + fetchDiagnosticsByStrategy
+- **修改 `apps/web/src/hooks/useStrategies.ts`** — 移除 hardcoded mode='traditional'，改用 API category；type 改用 API subcategory；添加 category/subcategory/workflowReady/summary 字段映射
+- **修改 `apps/web/tests/setup.ts`** — mock 覆盖 GET config(→null)、PUT config(→{saved:true})、POST preview(→preview空响应)、GET diagnostics(→[])
+- **修改 `apps/web/src/appData.ts`** — 新增 StrategyCategory / StrategySubcategory / UIConstraint / BarData / ChartOverlay / PreviewSignal / Pagination / PreviewResponse / DiagnosticResult 类型导出
+- 验证：
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 全绿（0 errors，仅已存在 warning）
+  - `pnpm test` (web) → 96 passed
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - setup.ts 的 mock fetch 新增了 /config / /preview / /diagnostics 路由匹配，注意顺序：先检查 POST/PUT 再检查 GET
+  - useStrategies 的 mapStrategy 中 mode 字段现在使用 api.category 并 cast 为 ResearchModeId。story-13 将清理 ResearchModeId 类型
+  - ui_constraints 通过 `as StrategyParam['uiConstraints']` 直接传给前端，类型对齐在 API 层
+---

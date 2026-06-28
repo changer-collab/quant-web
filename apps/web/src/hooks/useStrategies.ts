@@ -13,6 +13,8 @@ function mapParam(api: ApiStrategyParam): StrategyParam {
     min: api.min,
     max: api.max,
     options: api.options,
+    chartRelevant: api.chart_relevant,
+    uiConstraints: api.ui_constraints as StrategyParam['uiConstraints'],
   };
 }
 
@@ -20,9 +22,9 @@ function mapParam(api: ApiStrategyParam): StrategyParam {
 function mapStrategy(api: ApiStrategy): StrategyRow {
   return {
     id: api.name,
-    mode: 'traditional' as ResearchModeId,
+    mode: (api.category ?? 'non_factor') as ResearchModeId,
     name: api.description || api.name,
-    type: 'Trend',
+    type: api.subcategory ?? 'Trend',
     return: '—',
     drawdown: '—',
     sharpe: '—',
@@ -31,6 +33,10 @@ function mapStrategy(api: ApiStrategy): StrategyRow {
     version: api.version,
     kind: api.kind,
     params: (api.params ?? []).map(mapParam),
+    category: api.category,
+    subcategory: api.subcategory,
+    workflowReady: api.workflowReady,
+    summary: api.summary,
   };
 }
 
