@@ -72,7 +72,7 @@
       "agent": "api-agent",
       "priority": 4,
       "dependsOn": ["story-3"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-5",
@@ -93,7 +93,7 @@
       "agent": "api-agent",
       "priority": 5,
       "dependsOn": ["story-4"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-6",
@@ -111,7 +111,7 @@
       "agent": "api-agent",
       "priority": 6,
       "dependsOn": ["story-5"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-7",
@@ -128,7 +128,7 @@
       "agent": "fullstack-agent",
       "priority": 7,
       "dependsOn": ["story-6"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-8",
@@ -147,7 +147,7 @@
       "agent": "frontend-agent",
       "priority": 8,
       "dependsOn": ["story-7"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-9",
@@ -166,7 +166,7 @@
       "agent": "frontend-agent",
       "priority": 9,
       "dependsOn": ["story-8"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-10",
@@ -190,7 +190,7 @@
       "agent": "frontend-agent",
       "priority": 10,
       "dependsOn": ["story-9"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-11",
@@ -212,7 +212,7 @@
       "agent": "frontend-agent",
       "priority": 11,
       "dependsOn": ["story-10"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-12",
@@ -235,7 +235,7 @@
       "agent": "frontend-agent",
       "priority": 12,
       "dependsOn": ["story-11"],
-      "passes": true
+      "passes": false
     },
     {
       "id": "story-13",

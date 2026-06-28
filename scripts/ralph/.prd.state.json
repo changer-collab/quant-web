@@ -1,25 +1,21 @@
 {
-  "iterations": 1,
-  "lastExitCode": 1,
-  "lastError": {
-    "iteration": 1,
-    "exitCode": 1,
-    "timestamp": "2026-06-28T09:47:42.175Z",
-    "detectedFailures": [],
-    "summary": ""
-  },
+  "iterations": 0,
+  "lastExitCode": 0,
+  "lastError": null,
   "storyAttempts": {
-    "story-1": {
-      "attempts": 1
-    },
-    "story-2": {
+    "story-3": {
       "attempts": 1
     }
   },
-  "lastChanges": " scripts/ralph/.prd.state.json      |  26 ++-  scripts/ralph/prd.json             | 293 +++++++++++++++++++++---------  scripts/ralph/progress.txt         |   2 +  scripts/ralph/ralph.ps1            |   2 +-  10 files changed, 501 insertions(+), 258 deletions(-)",
-  "consecutiveNoProgress": 1,
+  "lastChanges": "",
+  "consecutiveNoProgress": 0,
   "feature": "strategy-classification-refactor",
   "version": 1,
-  "lastGitHead": "627ea57bd079ce3d3310e0fc4ebdf48ab98039bb",
-  "multiStoryWarnings": 0
+  "lastGitHead": "576cb7187eec0917cd201c65aa9647fd24543ad1",
+  "multiStoryWarnings": 0,
+  "passesSnapshot": [
+    "story-1",
+    "story-2"
+  ],
+  "passesSnapshotHash": "ee2f9ff9fc42cc43"
 }

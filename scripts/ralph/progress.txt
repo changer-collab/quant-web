@@ -183,3 +183,25 @@ pytest_fail
 - Exit code: 1
 - Stories remaining: 13
 ---
+
+## [2026-06-28 19:58] - story-3
+- 实现了 Repository 层 + Service 层 + 三层架构接线
+- 新建 4 个文件：
+  - `apps/api/src/repositories/sqlite-config-repo.ts` — SqliteConfigRepo (implements IConfigRepo, save() 内透明调用 historyRepo.append()) + SqliteConfigHistoryRepo (implements IConfigHistoryRepo)
+  - `apps/api/src/repositories/sqlite-diag-repo.ts` — SqliteDiagnosticRepo (implements IDiagnosticRepo, purgeOlderThan 执行 DELETE WHERE)
+  - `apps/api/src/services/config-service.ts` — StrategyConfigService（纯业务逻辑，只依赖 IConfigRepo 接口）
+  - `apps/api/src/services/diagnostic-service.ts` — DiagnosticService（纯业务逻辑，只依赖 IDiagnosticRepo 接口）
+- 修改 2 个文件：
+  - `apps/api/src/app.ts` — AppOptions 追加 configService/diagnosticService，buildApp 内 app.decorate
+  - `apps/api/src/index.ts` — 组合根创建 configHistoryRepo → configRepo → diagRepo → configService → diagnosticService → 注入 buildApp
+- 注意：SQL.js 驱动下 Drizzle ORM 的 `.run()` 统一返回 `void`，无法获取 DELETE 影响行数，返回值暂设为0
+- 验证：
+  - `cd apps/api && npx tsc --noEmit` → 通过
+  - `pnpm build` → 全包构建通过
+  - `pnpm lint` → 全绿（仅已存在的 warning）
+  - `pnpm test` → 全部 269 tests passed
+- **后续迭代注意事项：**
+  - Drizzle ORM + SQL.js 驱动的 `.run()` 全部返回 `void`，不要在 service/repo 层依赖返回值
+  - 三层架构的业务层（services/）不应 import Drizzle 或 sql.js 相关类型
+  - declare module 'fastify' 的模块增强可在多个 service 文件中共存，TypeScript 会自动合并
+---
