@@ -51,6 +51,17 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Story 尝试次数检测
   $CORE --check-limits "$MAX_STORY_ATTEMPTS" 2>&1 || { [ $? -eq 9 ] && exit 9; true; }
 
+  # 记录本轮开始前的 git HEAD（用于事后交叉验证）
+  $CORE --record-git-head 2>/dev/null || true
+
+  # 获取下一个应执行的 story 并递增其尝试计数
+  NEXT_STORY=$($CORE --get-next-story 2>/dev/null || echo "NONE")
+  echo "  → Next story: $NEXT_STORY"
+  if [ "$NEXT_STORY" != "NONE" ] && [ "${NEXT_STORY#BLOCKED:}" = "$NEXT_STORY" ]; then
+    ATTEMPT_NUM=$($CORE --increment-story-attempt "$NEXT_STORY" 2>/dev/null || echo "?")
+    echo "  → Attempt #$ATTEMPT_NUM for $NEXT_STORY"
+  fi
+
   # 执行 claude CLI
   ENHANCED_PROMPT=$($CORE --build-prompt "$i" 2>/dev/null)
   OUTPUT=$(echo "$ENHANCED_PROMPT" | claude --dangerously-skip-permissions --print 2>&1) || true
@@ -72,6 +83,16 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # 检测进展
   REMAINING_NOW=$($CORE --remaining 2>/dev/null || echo 0)
   $CORE --update-progress "$REMAINING" "$REMAINING_NOW" 2>/dev/null || true
+
+  # Git 进度交叉验证（代码改了但 passes 没更新 → 自动纠正）
+  $CORE --check-git-progress 2>/dev/null || true
+
+  # 多 story 完成检测（一轮完成 >1 个 → 醒目告警）
+  COMPLETED_COUNT=$($CORE --detect-multi-story "$REMAINING" "$REMAINING_NOW" 2>/dev/null || echo "0")
+  if [ "$COMPLETED_COUNT" -gt 1 ] 2>/dev/null; then
+    echo "⚠️  单轮完成 $COMPLETED_COUNT 个 story（预期每次 1 个），请检查上下文是否压缩丢失细节。"
+  fi
+
   REMAINING=$REMAINING_NOW
 
   # 记录变更和日志

@@ -104,7 +104,18 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
         exit 9
     }
 
-    # 3. 构建增强 Prompt 并写入文件
+    # 3a. 记录本轮开始前的 git HEAD（用于事后交叉验证）
+    $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--record-git-head")
+
+    # 3b. 获取下一个应执行的 story 并递增其尝试计数
+    $NextStory = (Invoke-Core @("$ScriptDir/ralph-core.mjs", "--get-next-story")).Trim()
+    Write-Host "  → Next story: $NextStory"
+    if ($NextStory -and $NextStory -ne "NONE" -and -not $NextStory.StartsWith("BLOCKED:")) {
+        $AttemptNum = (Invoke-Core @("$ScriptDir/ralph-core.mjs", "--increment-story-attempt", "$NextStory")).Trim()
+        Write-Host "  → Attempt #$AttemptNum for $NextStory"
+    }
+
+    # 3c. 构建增强 Prompt 并写入文件
     $PromptFile = Join-Path $ScriptDir ".current-prompt.md"
     $Prompt = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--build-prompt", "$i")
     $Prompt | Out-File -FilePath $PromptFile -Encoding utf8
@@ -134,6 +145,19 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $RemainingNow = if ($RemainingNowStr) { [int]($RemainingNowStr.Trim()) } else { $Remaining }
 
     $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--update-progress", "$Remaining", "$RemainingNow")
+
+    # 7b. Git 进度交叉验证（代码改了但 passes 没更新 → 自动纠正）
+    $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--check-git-progress")
+
+    # 7c. 多 story 完成检测（一轮完成 >1 个 → 醒目告警）
+    $CompletedCountStr = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--detect-multi-story", "$Remaining", "$RemainingNow")
+    $CompletedCount = if ($CompletedCountStr) { try { [int]($CompletedCountStr.Trim()) } catch { 0 } } else { 0 }
+    if ($CompletedCount -gt 1) {
+        Write-Host ""
+        Write-Warning "单轮完成 $CompletedCount 个 story（预期每次 1 个），请检查上下文是否压缩丢失细节。"
+        Write-Host ""
+    }
+
     $Remaining = $RemainingNow
 
     # 8. 记录 git 变更

@@ -69,6 +69,10 @@ const DEFAULT_STATE = {
   feature: "",
   /** 状态文件自身的版本，用于后续结构升级 */
   version: 1,
+  /** 上一轮迭代开始前的 HEAD commit hash，用于 git 进度交叉验证 */
+  lastGitHead: "",
+  /** 单轮完成多个 story 的累计警告次数 */
+  multiStoryWarnings: 0,
 };
 
 export function initState() {
@@ -312,6 +316,130 @@ export function incrementStoryAttempt(storyId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// Git HEAD 快照 — 用于区分"写了代码但没更新 passes"和"真卡死"
+// ═══════════════════════════════════════════════════════════════════
+
+export function recordGitHead() {
+  try {
+    const head = execSync("git rev-parse HEAD", {
+      cwd: PROJECT_ROOT,
+      encoding: "utf-8",
+      timeout: 5000,
+    }).trim();
+    updateState({ lastGitHead: head });
+    return head;
+  } catch {
+    // 不在 git 仓库中，记录空字符串
+    updateState({ lastGitHead: "" });
+    return "";
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 下一个待执行 story 选择（考虑 dependsOn DAG）
+// ═══════════════════════════════════════════════════════════════════
+
+export function getNextStory(prd) {
+  const active = getActiveStories(prd);
+  if (active.length === 0) return { storyId: null, blocked: false, reason: "no-remaining" };
+
+  const passedIds = new Set(
+    prd.userStories.filter((s) => s.passes).map((s) => s.id)
+  );
+
+  // 筛选所有依赖已满足的 story
+  const ready = active.filter((s) => {
+    if (!s.dependsOn || s.dependsOn.length === 0) return true;
+    return s.dependsOn.every((depId) => passedIds.has(depId));
+  });
+
+  if (ready.length === 0) {
+    return {
+      storyId: null,
+      blocked: true,
+      reason: `all-${active.length}-remaining-have-unsatisfied-deps`,
+    };
+  }
+
+  // 按 priority 升序（priority 越小越优先），同 priority 按 id 排序（稳定）
+  ready.sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
+  return { storyId: ready[0].id, blocked: false, reason: "ready" };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Git 进度交叉验证 — 区分"代码写了但 passes 没更新"和"真无进展"
+// ═══════════════════════════════════════════════════════════════════
+
+export function checkGitProgress() {
+  const state = readState();
+  const lastHead = state.lastGitHead || "";
+
+  if (!lastHead) {
+    // 未记录基线，无法判断
+    return { hasGitProgress: false, reason: "no-baseline" };
+  }
+
+  try {
+    const currentHead = execSync("git rev-parse HEAD", {
+      cwd: PROJECT_ROOT,
+      encoding: "utf-8",
+      timeout: 5000,
+    }).trim();
+
+    if (currentHead === lastHead) {
+      return { hasGitProgress: false, reason: "head-unchanged" };
+    }
+
+    // HEAD 变了，检查是否有实质改动
+    const diffStat = execSync(
+      `git diff --stat ${lastHead}..${currentHead}`,
+      { cwd: PROJECT_ROOT, encoding: "utf-8", timeout: 5000 }
+    ).trim();
+
+    if (diffStat) {
+      // 有实质代码改动 — 重置无进展计数器（代码写了对的，只是 passes 可能没更新）
+      state.consecutiveNoProgress = 0;
+      writeJson(FILES.state, state);
+      return {
+        hasGitProgress: true,
+        reason: "code-changed-but-passes-may-be-stale",
+        diffStat: diffStat.split("\n").slice(-3).join("; "),
+      };
+    }
+
+    return { hasGitProgress: false, reason: "head-changed-no-diff" };
+  } catch {
+    return { hasGitProgress: false, reason: "git-error" };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 多 story 完成检测 — 防止模型一轮做多个 story 而不被发现
+// ═══════════════════════════════════════════════════════════════════
+
+export function detectMultiStory(remainingBefore, remainingAfter) {
+  const completed = remainingBefore - remainingAfter;
+
+  if (completed > 1) {
+    const state = readState();
+    state.multiStoryWarnings = (state.multiStoryWarnings || 0) + 1;
+    writeJson(FILES.state, state);
+
+    return {
+      isMultiStory: true,
+      completedCount: completed,
+      totalWarnings: state.multiStoryWarnings,
+      warning:
+        `⚠️  单轮完成了 ${completed} 个 story！AGENT_PROMPT.md 要求每次只做 1 个。` +
+        `累计警告 ${state.multiStoryWarnings} 次。` +
+        `多 story 执行可能导致上下文压缩丢失细节。`,
+    };
+  }
+
+  return { isMultiStory: false, completedCount: completed };
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // Git 变更检测
 // ═══════════════════════════════════════════════════════════════════
 
@@ -488,6 +616,66 @@ function cli() {
         console.error(`All remaining stories exceeded max attempts (${maxAttempts}).`);
         process.exit(9);
       }
+      break;
+    }
+
+    case "--increment-story-attempt": {
+      const storyId = args[1];
+      if (!storyId) {
+        console.error("Usage: --increment-story-attempt <storyId>");
+        process.exit(1);
+      }
+      const newCount = incrementStoryAttempt(storyId);
+      console.log(newCount);
+      break;
+    }
+
+    case "--record-git-head":
+      recordGitHead();
+      break;
+
+    case "--get-next-story": {
+      const prd = readPrd();
+      const { storyId, blocked, reason } = getNextStory(prd);
+      if (blocked) {
+        console.log(`BLOCKED:${reason}`);
+      } else if (!storyId) {
+        console.log("NONE");
+      } else {
+        console.log(storyId);
+      }
+      break;
+    }
+
+    case "--check-git-progress": {
+      const { hasGitProgress, reason, diffStat } = checkGitProgress();
+      if (hasGitProgress) {
+        console.error(
+          `⚠️  Git 检测到代码改动但 passes 计数未变 — 自动重置无进展计数器。` +
+          `改动: ${diffStat || reason}`
+        );
+      }
+      // 始终 exit 0（这是信息性检查，不阻止迭代）
+      break;
+    }
+
+    case "--detect-multi-story": {
+      const before = parseInt(args[1] || "0", 10);
+      const after = parseInt(args[2] || "0", 10);
+      const { isMultiStory, completedCount, totalWarnings, warning } =
+        detectMultiStory(before, after);
+      if (isMultiStory) {
+        console.error("");
+        console.error("┌─────────────────────────────────────────────────┐");
+        console.error(`│ ⚠️  多 Story 完成警告 (#${totalWarnings})                           │`);
+        console.error(`│ 单轮完成 ${completedCount} 个 story（要求每次只做 1 个）              │`);
+        console.error(`│ 累计警告: ${totalWarnings} 次                                     │`);
+        console.error("│ 多 story 并发可能导致上下文压缩丢失细节              │");
+        console.error("└─────────────────────────────────────────────────┘");
+        console.error("");
+      }
+      // 输出计数供 shell 判断
+      console.log(completedCount);
       break;
     }
 
