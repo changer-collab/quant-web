@@ -54,6 +54,9 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # 记录本轮开始前的 git HEAD（用于事后交叉验证）
   $CORE --record-git-head 2>/dev/null || true
 
+  # 快照 prd.json passes 状态（用于 Guardian 验证单轮完成数）
+  $CORE --snapshot-passes 2>/dev/null || true
+
   # 获取下一个应执行的 story 并递增其尝试计数
   NEXT_STORY=$($CORE --get-next-story 2>/dev/null || echo "NONE")
   echo "  → Next story: $NEXT_STORY"
@@ -73,6 +76,19 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # 记录错误（不传 output 参数，让 core 从文件读取）
   $CORE --record-error "$i" "$CLAUDE_EXIT" 2>/dev/null || true
 
+  # Guardian 验证（在更新进度之前——防止假完成）
+  VALIDATION=$($CORE --validate-iteration 2>/dev/null || echo "ALLOW")
+  if echo "$VALIDATION" | grep -q "^DENY:"; then
+    echo ""
+    echo "⛔ GUARDIAN REJECTED: $(echo "$VALIDATION" | sed 's/^DENY: //')"
+    echo "   → 回滚 prd.json 到迭代前状态"
+    git checkout -- "$SCRIPT_DIR/prd.json" 2>/dev/null || true
+    REMAINING_NOW=$($CORE --remaining 2>/dev/null || echo "$REMAINING")
+    # 若 passes 被篡改但无实际代码，计为无进展
+  else
+    REMAINING_NOW=$($CORE --remaining 2>/dev/null || echo 0)
+  fi
+
   # 完成信号
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
     echo ""; echo "Ralph completed all tasks at iteration $i!"
@@ -81,7 +97,6 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   fi
 
   # 检测进展
-  REMAINING_NOW=$($CORE --remaining 2>/dev/null || echo 0)
   $CORE --update-progress "$REMAINING" "$REMAINING_NOW" 2>/dev/null || true
 
   # Git 进度交叉验证（代码改了但 passes 没更新 → 自动纠正）

@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # Ralph - 自治 AI Agent 循环脚本（PowerShell 包装层）
 # 用法: ./ralph.ps1 [--Tool claude] [-MaxIterations 50] [-MaxFailures 5] [-MaxAttempts 5]
 # 依赖: claude CLI, git, node
@@ -107,6 +107,9 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     # 3a. 记录本轮开始前的 git HEAD（用于事后交叉验证）
     $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--record-git-head")
 
+    # 3a2. 快照 prd.json passes 状态（用于 Guardian 验证单轮完成数）
+    $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--snapshot-passes")
+
     # 3b. 获取下一个应执行的 story 并递增其尝试计数
     $NextStory = (Invoke-Core @("$ScriptDir/ralph-core.mjs", "--get-next-story")).Trim()
     Write-Host "  → Next story: $NextStory"
@@ -131,6 +134,20 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $Output | Out-File -FilePath (Join-Path $ScriptDir ".last-raw-output.txt") -Encoding utf8
     $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--record-error", "$i", "$ClaudeExit")
 
+    # 5b. Guardian 验证（在更新进度之前——防止假完成）
+    $Validation = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--validate-iteration")
+    if ($Validation -match "^DENY:") {
+        Write-Host ""
+        Write-Host "⛔ GUARDIAN REJECTED: $($Validation -replace '^DENY: ', '')" -ForegroundColor Red
+        Write-Host "   → 回滚 prd.json 到迭代前状态"
+        git checkout -- "$ScriptDir/prd.json" 2>$null
+        $RemainingNowStr = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--remaining")
+        $RemainingNow = if ($RemainingNowStr) { [int]($RemainingNowStr.Trim()) } else { $Remaining }
+    } else {
+        $RemainingNowStr = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--remaining")
+        $RemainingNow = if ($RemainingNowStr) { [int]($RemainingNowStr.Trim()) } else { $Remaining }
+    }
+
     # 6. 检查完成信号
     if ($Output -match "<promise>COMPLETE</promise>") {
         Write-Host ""
@@ -141,9 +158,6 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     }
 
     # 7. 检测进展
-    $RemainingNowStr = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--remaining")
-    $RemainingNow = if ($RemainingNowStr) { [int]($RemainingNowStr.Trim()) } else { $Remaining }
-
     $null = Invoke-Core @("$ScriptDir/ralph-core.mjs", "--update-progress", "$Remaining", "$RemainingNow")
 
     # 7b. Git 进度交叉验证（代码改了但 passes 没更新 → 自动纠正）

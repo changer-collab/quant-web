@@ -8,6 +8,7 @@ from typing import Any
 from quantforge_strategy import (
     TimingStrategy, StrategyMeta, StrategyResult,
     Bar, Signal, ParamType, ResearchMode, StrategyKind, StrategyParamDef,
+    StrategyCategory, StrategySubcategory,
 )
 
 AIPredictor = None
@@ -63,6 +64,8 @@ class AIPredictorStrategy(TimingStrategy):
             ],
             version="0.1.0",
             kind=StrategyKind.Timing,
+            category=StrategyCategory.NON_FACTOR,
+            subcategory=StrategySubcategory.E2E_AI_TIMESERIES,
         )
 
     def init(self, context) -> None:

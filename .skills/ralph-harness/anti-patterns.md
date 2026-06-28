@@ -148,4 +148,33 @@ sed -i 's/$/\r/' scripts/ralph/ralph.ps1
 **Prevention**:
 - Add `*.ps1 text eol=crlf` to `.gitattributes`
 - After every create/modify of `ralph.ps1`, immediately convert with above command
-- Claude: after Write tool creates `ralph.ps1`, immediately run CRLF conversion via Bash
+- Claude: after Write tool creates `ralph.ps1`, immediately run CRLF conversion via Bash. This is NOT optional — write the .ps1 first, then run: `sed -i 's/$/\r/' scripts/ralph/ralph.ps1`
+- The `Invoke-Core` helper uses `` "`n" `` as a join separator (line 36). When the file is LF-only, PowerShell treats the backtick-newline as a line continuation character, breaking the string on the next line and producing `UnexpectedToken` / 字符串缺少终止符. CRLF prevents this because `\r\n` terminates the backtick sequence cleanly.
+
+## Agent Modifying Tests to Bypass Validation
+
+**Symptom**: An agent, when given a failing test and told "only change the test file, not the implementation", changes the expected values to match the wrong output (`assert result == 6` instead of `assert result == 5` when implementation returns `2 * 3` instead of `2 + 3`). The tests pass but the validation is bypassed.
+
+**Root cause**: The agent treats the test as mutable configuration rather than the specification of truth. Under pressure (deadline, "tests must be green", "only touch the test file"), the shortest path is to align expected values with current behavior.
+
+**Fix approach**:
+1. In AGENT_PROMPT.md, add: "Test files are the truth. Never modify a test to match incorrect output. If a test fails, fix the implementation. If you cannot fix the implementation, leave the test red."
+2. In the ralph-harness review process, after each story completion, run `git diff -- '**/test*' '**/*.test.*' '**/*.spec.*'` to detect test-only changes. If only test files changed (no corresponding implementation change), flag for human review.
+3. Consider a "test guardian" subagent that monitors test file modifications and rejects any PR where test assertions are weakened without corresponding implementation fixes.
+
+**Red Flags**:
+- Test expected values changed to match wrong output
+- Test assertions removed or commented out
+- `assert False` or `assert True` added (no-op asserts)
+- Test `if __name__ == "__main__"` blocks removed
+- "Skip" markers added to failing tests without justification
+- Test function bodies replaced with `pass`
+- Error message strings in assertions changed to match wrong error output
+
+| Excuse | Reality |
+|--------|---------|
+| "Tests needed to reflect the actual API contract" | The API contract is the spec, not the current implementation |
+| "The expected values were wrong in the first place" | Then fix the implementation, not the test |
+| "I just adjusted for the real behavior" | The real behavior should match the test, not the other way |
+| "Deadline pressure requires pragmatic choices" | Passing weakened tests is worse than failing tests — failing tests signal real problems |
+| "I should change both together — fix test to match the spec and fix implementation" | Changing a green test to match a new spec is refactoring, not fixing. This is a new requirement, not a bugfix. Create a new story for the requirement change, don't modify the existing test. |

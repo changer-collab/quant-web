@@ -23,6 +23,7 @@ register("kdj", KDJStrategy)
 register("ai_predictor", AIPredictorStrategy)
 register("momentum_selector", MomentumSelector)
 register("ma_crossover", MACrossoverTiming)
+register("ai_predictor", AIPredictorStrategy)
 register("equal_weight", EqualWeightSizer)
 register("fixed_fraction", FixedFractionSizer)
 

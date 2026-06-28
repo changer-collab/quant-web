@@ -1,0 +1,178 @@
+diff --git a/apps/web/src/components/report/ReportIssues.tsx b/apps/web/src/components/report/ReportIssues.tsx
+index 87e842b..b70f8d1 100644
+--- a/apps/web/src/components/report/ReportIssues.tsx
++++ b/apps/web/src/components/report/ReportIssues.tsx
+@@ -1,5 +1,6 @@
+ import type { BacktestReportFull, ReportUiCopy } from '../../appData';
+ import styles from '@/styles/report-tables.module.css';
++import { KeywordTileGrid } from './KeywordTileGrid';
+ 
+ interface Props {
+   report: BacktestReportFull;
+@@ -22,14 +23,14 @@ export function ReportIssues({ report, ui }: Props) {
+ 
+   return (
+     <div className={styles.issuesPanel}>
+-      <div className={`${styles.issuesGrid} ${styles.issuesGridFull}`}>
+-        <article className={styles.issueCard}>
++      <div className={`${styles.issuesGrid} ${styles.issuesGridFull} ${styles.issueStatusTiles}`}>
++        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
+           <div className={styles.issueHeader}>
+             <span className={styles.issueLabel}>{labels.overfitting}</span>
+             <RiskIndicator level={issues.overfittingRisk} ui={labels} />
+           </div>
+         </article>
+-        <article className={styles.issueCard}>
++        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
+           <div className={styles.issueHeader}>
+             <span className={styles.issueLabel}>{labels.survivorshipBias}</span>
+             <span className={issues.survivorshipBias ? styles.issueBadWarn : styles.issueBadGood}>
+@@ -37,7 +38,7 @@ export function ReportIssues({ report, ui }: Props) {
+             </span>
+           </div>
+         </article>
+-        <article className={styles.issueCard}>
++        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
+           <div className={styles.issueHeader}>
+             <span className={styles.issueLabel}>{labels.lookAheadBias}</span>
+             <span className={issues.lookAheadBias ? styles.issueBadWarn : styles.issueBadGood}>
+@@ -47,15 +48,17 @@ export function ReportIssues({ report, ui }: Props) {
+         </article>
+       </div>
+ 
+-      <div className={styles.assessCard}>
+-        <h4 className={styles.assessTitle}>{labels.liquidity}</h4>
+-        <p className={styles.assessText}>{issues.liquidityAssessment}</p>
+-      </div>
++      <KeywordTileGrid
++        title={labels.liquidity}
++        items={issues.liquidityAssessmentItems}
++        fallbackText={issues.liquidityAssessment}
++      />
+ 
+-      <div className={styles.assessCard}>
+-        <h4 className={styles.assessTitle}>{labels.capacity}</h4>
+-        <p className={styles.assessText}>{issues.capacityEstimate}</p>
+-      </div>
++      <KeywordTileGrid
++        title={labels.capacity}
++        items={issues.capacityEstimateItems}
++        fallbackText={issues.capacityEstimate}
++      />
+     </div>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/apps/web/src/styles/report-tables.module.css b/apps/web/src/styles/report-tables.module.css
+index d6afe28..88eae81 100644
+--- a/apps/web/src/styles/report-tables.module.css
++++ b/apps/web/src/styles/report-tables.module.css
+@@ -15,7 +15,7 @@
+ 
+ .issuesPanel {
+   display: grid;
+-  grid-template-columns: repeat(2, 1fr);
++  grid-template-columns: 1fr;
+   gap: var(--space-lg);
+ }
+ 
+@@ -444,6 +444,15 @@
+   gap: var(--space-md);
+ }
+ 
++.issueStatusTiles {
++  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
++}
++
++.issueStatusTile {
++  min-height: 82px;
++  background: rgba(8, 16, 15, 0.4);
++}
++
+ @media (max-width: 640px) {
+   .issuesGrid {
+     grid-template-columns: 1fr;
+@@ -533,4 +542,81 @@
+   font-size: var(--text-sm);
+   line-height: var(--leading-relaxed);
+   color: var(--muted);
++}
++
++.keywordTileSection {
++  display: grid;
++  gap: var(--space-md);
++}
++
++.keywordTileGrid {
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
++  gap: var(--space-sm);
++}
++
++.keywordTile {
++  display: grid;
++  gap: 6px;
++  min-height: 82px;
++  padding: var(--space-md);
++  border: 1px solid var(--line);
++  background: rgba(8, 16, 15, 0.4);
++  border-radius: var(--radius-sm);
++}
++
++.keywordTileCategory {
++  width: fit-content;
++  padding: 2px 8px;
++  border-radius: 999px;
++  font-size: var(--text-xs);
++  font-weight: 800;
++  letter-spacing: var(--tracking-wide);
++}
++
++.keywordTileText {
++  align-self: end;
++  color: var(--text);
++  font-size: var(--text-sm);
++  line-height: var(--leading-relaxed);
++}
++
++.keywordTileAssumption {
++  border-color: rgba(98, 216, 255, 0.24);
++  background: rgba(98, 216, 255, 0.06);
++}
++
++.keywordTileAssumption .keywordTileCategory {
++  color: var(--cyan);
++  background: rgba(98, 216, 255, 0.12);
++}
++
++.keywordTileLimitation {
++  border-color: rgba(255, 203, 107, 0.28);
++  background: rgba(255, 203, 107, 0.07);
++}
++
++.keywordTileLimitation .keywordTileCategory {
++  color: #ffcb6b;
++  background: rgba(255, 203, 107, 0.14);
++}
++
++.keywordTileRisk {
++  border-color: rgba(255, 107, 107, 0.28);
++  background: rgba(255, 107, 107, 0.07);
++}
++
++.keywordTileRisk .keywordTileCategory {
++  color: var(--red, #ff6b6b);
++  background: rgba(255, 107, 107, 0.14);
++}
++
++.keywordTileObservation {
++  border-color: rgba(77, 240, 160, 0.2);
++  background: rgba(77, 240, 160, 0.05);
++}
++
++.keywordTileObservation .keywordTileCategory {
++  color: var(--green);
++  background: rgba(77, 240, 160, 0.12);
+ }
+\ No newline at end of file
