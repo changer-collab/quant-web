@@ -474,6 +474,8 @@ export function mapBacktestResultToReport(
       report.issues = {
         ...report.issues,
         overfittingRisk: (apiIssues.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+        survivorshipBias: (apiIssues.survivorshipBias as boolean) ?? report.issues.survivorshipBias,
+        lookAheadBias: (apiIssues.lookAheadBias as boolean) ?? report.issues.lookAheadBias,
         liquidityAssessment: (apiIssues.liquidityAssessment as string) || report.issues.liquidityAssessment,
         capacityEstimate: (apiIssues.capacityEstimate as string) || report.issues.capacityEstimate,
         liquidityAssessmentItems: Array.isArray(apiIssues.liquidityAssessmentItems)

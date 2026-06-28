@@ -81,7 +81,11 @@ def _run_single(
         market_rules=ASHARE_RULES,
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
-    return {"ok": True, "data": _result_to_dict(result)}
+    data = _result_to_dict(result)
+    # 单标的回测暂不启用存活偏差过滤
+    if "config" in data:
+        data["config"]["enablePitFilter"] = False
+    return {"ok": True, "data": data}
 
 
 def _run_multi_symbol(
@@ -171,7 +175,10 @@ def _run_composite(
         market_rules=ASHARE_RULES,
     )
     result = runner.run(on_progress=lambda i, t: _emit_progress(_emit, i, t))
-    return {"ok": True, "data": _result_to_dict(result)}
+    data = _result_to_dict(result)
+    if "config" in data:
+        data["config"]["enablePitFilter"] = (start_ts is not None)
+    return {"ok": True, "data": data}
 
 
 def _emit_progress(emit: Callable[[str, dict], None], index: int, total: int) -> None:

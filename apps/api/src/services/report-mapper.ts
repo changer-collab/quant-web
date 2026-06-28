@@ -145,6 +145,7 @@ export function mapBacktestResultToReport(
       overfittingRisk: 'low',
       survivorshipBias: false,
       lookAheadBias: false,
+      enableMarketRules: false,
       liquidityAssessment: '',
       capacityEstimate: '',
     },

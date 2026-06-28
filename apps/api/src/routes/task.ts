@@ -192,6 +192,9 @@ export async function internalTaskRoutes(app: FastifyInstance) {
             report.issues = {
               ...report.issues,
               overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+              survivorshipBias: (iss.survivorshipBias as boolean) ?? report.issues.survivorshipBias,
+              lookAheadBias: (iss.lookAheadBias as boolean) ?? report.issues.lookAheadBias,
+              enableMarketRules: (iss.enableMarketRules as boolean) ?? report.issues.enableMarketRules,
               liquidityAssessment: cleanStr(iss.liquidityAssessment) || report.issues.liquidityAssessment,
               capacityEstimate: cleanStr(iss.capacityEstimate) || report.issues.capacityEstimate,
             };

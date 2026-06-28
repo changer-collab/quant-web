@@ -150,7 +150,7 @@ class ReportAnalyzer:
 
     def _analyze_issues(self, metrics: dict, config: dict) -> dict:
         total_trades = metrics.get("totalTrades", 0)
-        timeframe = config.get("timeframe", "")
+        timeframe = config.get("timeframe", "1d")
 
         if total_trades < 10:
             overfitting = "high"
@@ -159,10 +159,33 @@ class ReportAnalyzer:
         else:
             overfitting = "low"
 
+        # 存活偏差：检查是否启用了 PIT 过滤
+        pit_enabled = config.get("enablePitFilter", False)
+        market_rules_enabled = config.get("enableMarketRules", False)
+
+        # 流动性评估：给出有结论的分析
+        if total_trades >= 20:
+            liquidity = f"{timeframe} 频率下共 {total_trades} 笔交易，频次充分，流动性风险可控"
+        elif total_trades >= 5:
+            liquidity = f"{timeframe} 频率下共 {total_trades} 笔交易，频次偏低，流动性需结合标的日均成交量验证"
+        else:
+            liquidity = f"{timeframe} 频率下仅 {total_trades} 笔交易，交易稀疏，存在流动性不足风险"
+
+        # 容量估算：给出量化建议
+        if total_trades >= 30:
+            capacity = f"策略交易 {total_trades} 次，交易频次正常，单次交易容量取决于标的流动性"
+        elif total_trades >= 10:
+            capacity = f"策略交易 {total_trades} 次，建议限制单次交易金额不超过标的日均成交额的 5%"
+        else:
+            capacity = f"策略仅 {total_trades} 次交易，容量极有限，暂不建议扩大资金规模"
+
         return {
             "overfittingRisk": overfitting,
-            "liquidityAssessment": f"基于 {timeframe} 频率回测，流动性假设需根据实际标的评估",
-            "capacityEstimate": f"策略交易 {total_trades} 次，容量需根据标的日均成交量评估",
+            "survivorshipBias": not pit_enabled,
+            "lookAheadBias": False,
+            "enableMarketRules": market_rules_enabled,
+            "liquidityAssessment": liquidity,
+            "capacityEstimate": capacity,
         }
 
     def _analyze_conclusion(self, metrics: dict) -> dict:
