@@ -79,6 +79,9 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
   currentDbPath = resolvedPath;
 
   // 创建表
+  sqlite.run('PRAGMA journal_mode=WAL;');
+  sqlite.run('PRAGMA foreign_keys=ON;');
+  sqlite.run('PRAGMA busy_timeout=5000;');
   sqlite.run(`
     CREATE TABLE IF NOT EXISTS backtest_reports (
       id TEXT PRIMARY KEY,
@@ -117,6 +120,33 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
     );
     CREATE INDEX IF NOT EXISTS idx_evals_factor ON factor_evaluations(factor_id);
     CREATE INDEX IF NOT EXISTS idx_evals_created ON factor_evaluations(created_at);
+
+    CREATE TABLE IF NOT EXISTS strategy_configs (
+      strategy TEXT PRIMARY KEY,
+      config_json TEXT NOT NULL,
+      hash TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS config_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      strategy TEXT NOT NULL,
+      config_json TEXT NOT NULL,
+      hash TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_cfg_hist_strategy ON config_history(strategy);
+
+    CREATE TABLE IF NOT EXISTS diagnostic_results (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      strategy TEXT NOT NULL,
+      config_snapshot TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_diag_strategy ON diagnostic_results(strategy);
+    CREATE INDEX IF NOT EXISTS idx_diag_created ON diagnostic_results(created_at);
   `);
 
   db = drizzle(sqlite, { schema });

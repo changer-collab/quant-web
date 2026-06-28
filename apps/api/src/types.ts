@@ -10,6 +10,7 @@ export enum TaskType {
   FactorEval = 'factor_eval',
   AITrain = 'ai_train',
   Collect = 'collect',
+  Diagnostics = 'diagnostics',
 }
 
 /** 任务状态 */
@@ -226,6 +227,58 @@ export interface FactorEvaluation extends FactorEvaluationSummary {
   evalData: Record<string, unknown>;
 }
 
+// ─── 策略分类类型 ─────────────────────────────────────────────────────
+
+/** 策略分类（与 Python StrategyCategory 值对齐） */
+export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
+
+/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+export type StrategySubcategory =
+  | 'linear_multi_factor'
+  | 'nonlinear_ml'
+  | 'trend_cta'
+  | 'mean_reversion'
+  | 'arbitrage'
+  | 'high_frequency'
+  | 'macro_quant'
+  | 'event_driven'
+  | 'e2e_ai_timeseries'
+  | 'tail_risk_hedging';
+
+/** 约束条件 */
+export interface UIConstraint {
+  kind: 'disable_when' | 'require_when' | 'set_default_when' | 'range_when';
+  target_field: string;
+  target_value: unknown;
+  action_value?: unknown;
+}
+
+/** 策略参数定义 */
+export interface StrategyParamDef {
+  key: string;
+  label: string;
+  type: string;
+  default: number | string | boolean;
+  min?: number;
+  max?: number;
+  options?: string[];
+  chart_relevant?: boolean;
+  ui_constraints?: UIConstraint[];
+}
+
+/** 策略配置快照 */
+export interface ConfigSnapshot {
+  strategy: string;
+  params: Record<string, unknown>;
+}
+
+/** 策略配置 */
+export interface StrategyConfig {
+  config_json: Record<string, unknown>;
+  hash: string;
+  updated_at: number;
+}
+
 // ─── 回测结果类型（Worker 返回的原始结果） ──────────────────────────
 
 export interface BacktestResult {
@@ -240,4 +293,15 @@ export interface BacktestResult {
     winRate: number;
     totalTrades: number;
   };
+}
+
+// ─── 诊断结果类型 ─────────────────────────────────────────────────────
+
+export interface DiagnosticResult {
+  id: string;
+  taskId: string;
+  strategy: string;
+  configSnapshot: ConfigSnapshot;
+  dataJson: Record<string, unknown>;
+  createdAt: number;
 }

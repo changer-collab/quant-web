@@ -1,0 +1,271 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" SessionStart",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH=\"$env:USERPROFILE\\.bun\\bin;$env:PATH\"; & \"$env:USERPROFILE\\.bun\\bin\\bun.exe\" \"C:\\Users\\37588\\.claude\\plugins\\cache\\thedotmack-claude-mem\\claude-mem\\13.8.1\\scripts\\worker-service.cjs\" start",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH=\"$env:USERPROFILE\\.bun\\bin;$env:PATH\"; & \"$env:USERPROFILE\\.bun\\bin\\bun.exe\" \"C:\\Users\\37588\\.claude\\plugins\\cache\\thedotmack-claude-mem\\claude-mem\\13.8.1\\scripts\\worker-service.cjs\" hook claude-code context",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" SessionEnd",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" UserPromptSubmit",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH=\"$env:USERPROFILE\\.bun\\bin;$env:PATH\"; & \"$env:USERPROFILE\\.bun\\bin\\bun.exe\" \"C:\\Users\\37588\\.claude\\plugins\\cache\\thedotmack-claude-mem\\claude-mem\\13.8.1\\scripts\\worker-service.cjs\" hook claude-code session-init",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" PreToolUse",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH=\"$env:USERPROFILE\\.bun\\bin;$env:PATH\"; & \"$env:USERPROFILE\\.bun\\bin\\bun.exe\" \"C:\\Users\\37588\\.claude\\plugins\\cache\\thedotmack-claude-mem\\claude-mem\\13.8.1\\scripts\\worker-service.cjs\" hook claude-code file-context",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" PostToolUse",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH=\"$env:USERPROFILE\\.bun\\bin;$env:PATH\"; & \"$env:USERPROFILE\\.bun\\bin\\bun.exe\" \"C:\\Users\\37588\\.claude\\plugins\\cache\\thedotmack-claude-mem\\claude-mem\\13.8.1\\scripts\\worker-service.cjs\" hook claude-code observation",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" PostToolUseFailure",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" Stop",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH=\"$env:USERPROFILE\\.bun\\bin;$env:PATH\"; & \"$env:USERPROFILE\\.bun\\bin\\bun.exe\" \"C:\\Users\\37588\\.claude\\plugins\\cache\\thedotmack-claude-mem\\claude-mem\\13.8.1\\scripts\\worker-service.cjs\" hook claude-code summarize",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" SubagentStart",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" SubagentStop",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" Notification",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Elicitation": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" Elicitation",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" PreCompact",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" PostCompact",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "& \"D:\\node_js_condition\\node.exe\" \"C:/Users/37588/clawd-on-desk/hooks/clawd-hook.js\" StopFailure",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://127.0.0.1:23333/permission",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

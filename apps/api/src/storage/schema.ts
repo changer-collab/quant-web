@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 
 /** 回测报告表 */
 export const backtestReports = sqliteTable('backtest_reports', {
@@ -39,3 +39,36 @@ export const factorEvaluations = sqliteTable('factor_evaluations', {
   // 完整评估数据（JSON 序列化）
   evalData: text('eval_data').notNull(),
 });
+
+/** 策略配置表 */
+export const strategyConfigs = sqliteTable('strategy_configs', {
+  strategy: text('strategy').primaryKey(),
+  configJson: text('config_json').notNull(),
+  hash: text('hash').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+/** 策略配置历史表 */
+export const configHistory = sqliteTable('config_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  strategy: text('strategy').notNull(),
+  configJson: text('config_json').notNull(),
+  hash: text('hash').notNull(),
+  createdAt: integer('created_at').notNull(),
+});
+
+/** 诊断结果表 */
+export const diagnosticResults = sqliteTable('diagnostic_results', {
+  id: text('id').primaryKey(),
+  taskId: text('task_id').notNull(),
+  strategy: text('strategy').notNull(),
+  configSnapshot: text('config_snapshot').notNull(),
+  dataJson: text('data_json').notNull(),
+  createdAt: integer('created_at').notNull(),
+});
+
+// ─── 索引 ─────────────────────────────────────────────────────────────
+
+export const configHistoryIdx = index('idx_cfg_hist_strategy').on(configHistory.strategy);
+export const diagnosticStrategyIdx = index('idx_diag_strategy').on(diagnosticResults.strategy);
+export const diagnosticCreatedIdx = index('idx_diag_created').on(diagnosticResults.createdAt);

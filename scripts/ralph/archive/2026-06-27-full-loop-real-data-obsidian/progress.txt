@@ -1,0 +1,55 @@
+# Ralph Progress Log
+Started: 2026-06-26
+---
+
+## Codebase Patterns
+- backtest-engine 的 Trade 类来自 strategy-runtime 包（quantforge_strategy.order），不在 backtest-engine 内定义
+- 所有 runner（BacktestRunner、MultiSymbolRunner、MultiStrategyRunner）都用 calc_metrics + calc_trade_stats 构建 BacktestResult
+- _to_camel() 函数自动把 snake_case 字段转 camelCase，新增字段无需手动处理映射
+- Windows 环境下时间戳用秒级（10位）测试，毫秒级（13位）在 equity_stats 模块有专门处理
+- SSE 事件 data 字段：API `/complete` 路由中 `event.data = result`，result = `{ backtestResult, analysis }`
+- 前端 `mapBacktestResultToReport()` 接收 `{ backtestResult: PythonBacktestResult, analysis }` 格式
+- Obsidian sync 通过 Python CLI `syncBacktest` 命令由 Worker 在回测完成后触发
+- Worker 的 BacktestHandler 已在第 89-100 行包含 Obsidian 同步 try-catch
+- eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
+- API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
+- worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
+
+---
+
+## [2026-06-27 13:00] - story-7
+- 端到端验证：story-7 不直接改代码，但修复了 build 阻塞问题以验证全链路
+- **修复**: worker 的 python-bridge.ts 中 `stdout` 变量未声明（`let stdout = ""`），导致 lint 报 `no-undef`
+- **修复**: worker 的 backtest-agent.ts 中 `request.params as BacktestParams` 需要 `as unknown as` 双转换（`Record<string, unknown>` 与 `BacktestParams` 不重叠）
+- **修复**: worker 的 python-agent.ts 中 `onEvent` 回调类型从 `{ event: string; [key: string]: unknown }` 改为 `StreamEvent`，需要导入 `StreamEvent` 类型
+- **修复**: API 的 task.ts 引用了 web 端的 `ReportRiskWarnings` 类型，改为 inline 类型
+- **修复**: eslint.config.mjs 添加 `setInterval`/`clearTimeout`/`clearInterval`/`AbortController`/`TextDecoder` 全局变量
+- 全链路 build/tests/lint 通过
+- **后续迭代注意事项：**
+  - eslint.config.mjs 是所有包的全局 eslint 配置，缺少的 Node.js 运行时全局变量（setTimeout 等）应往这里加
+  - API 的 types.ts 有独立于 web 端的类型定义，不要在 API 代码中引用 web 端类型
+  - worker 的 PythonBridge 有同步和流式两种调用模式，`call()` 方法中 `let stdout = ""` 漏掉变量声明
+- 所有 story (1-7) 均已完成
+---
+- eslint 全局配置在根 `eslint.config.mjs`，需要 Node.js 运行时变量（`setTimeout`/`setInterval`/`clearTimeout`/`AbortController` 等）必须显式添加 globals
+- API 路由 `task.ts` 引用了 web 端的 `ReportRiskWarnings` 类型，但该类型只在 web 包定义；API 有自己独立的 types.ts
+- worker 包有三个独立的 Agent executor，构成了 "wrapper → converter → bridge" 调用链
+
+---
+
+## [2026-06-26] - PRD 重置 v2
+根本原因复盘：上一版 prd.json 犯的错误：
+1. **先入为主定位** — 没做诊断就直接锁定了"Worker→前端通信 bug"，实际上完全不知道故障在哪
+2. **猜修复不猜诊断** — story-1 直接写了一堆"检查点 X、检查点 Y"，相当于猜了 6 个可能的位置去修，不是去观测
+3. **跳过了第一性** — 不确定故障位置时，第一步永远是加日志观测，而不是猜修复
+
+本次更新（v2）改为"先观测后修复"模式：
+- story-1: 只加日志埋点，不修任何业务逻辑
+- story-2: 根据 story-1 日志定位根因后精确修复
+- story-3/4: 前端显示异常修复（job 名称、失败跳转）
+- story-5: Obsidian 同步补齐
+- story-6: 数据范围选择器
+- story-7: 端到端验证
+---
+
+## ✅ ALL STORIES COMPLETE
