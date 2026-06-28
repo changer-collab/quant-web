@@ -22,7 +22,12 @@
 - 内部任务路由（GET/POST /api/internal/tasks/*），供 Worker 轮询领取、上报任务状态/结果/失败
 - 因子 CRUD + 评估触发 + 批量计算（/api/factors）
 - 数据摘要查询（/api/data/instruments|bars|coverage|quality）
-- 任务服务通过 TaskService 接口解耦 Worker，当前使用 InMemoryTaskService
+- 任务服务通过 TaskService 接口解耦 Worker（SqliteTaskService 持久化实现）
+- 三层架构：Repository（Drizzle+SQL.js）→ Service（纯 TS，不依赖 Drizzle）→ Route（Fastify）
+- StrategyConfigRepository：策略配置 CRUD + 透明配置历史记录
+- DiagnosticRepository：诊断结果 CRUD + 过期清理
+- StrategyConfigService / DiagnosticService：业务逻辑层，依赖 Repository 接口
+- 路由通过 Fastify 装饰器（app.configService / app.diagnosticService）访问 Service
 
 ## 边界
 
