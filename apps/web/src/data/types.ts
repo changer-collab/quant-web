@@ -597,6 +597,13 @@ export interface UiCopy {
   workspaceSignalMetrics: string;
   workspaceReturnMetrics: string;
   workspaceRiskMetrics: string;
+  /** 回测参数表单标签 */
+  workspaceBacktestSymbol: string;
+  workspaceBacktestTimeframe: string;
+  workspaceBacktestInitialCapital: string;
+  workspaceBacktestStartDate: string;
+  workspaceBacktestEndDate: string;
+  workspaceBacktestConfigTitle: string;
 }
 
 export interface LanguageContent {

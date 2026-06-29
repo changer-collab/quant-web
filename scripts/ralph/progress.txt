@@ -870,3 +870,41 @@ lint_error
   - `parseFactorDiagnostics` 将 `layered_returns` 各组的最终值（`last - 1 * 100`）转为 HBarChart 可用的百分比格式
   - `parseNonFactorDiagnostics` 将 `param_sensitivity.sharpe` 二维数组转为 HeatmapChart 可用的 `number[][]` 格式
 ---
+
+## [2026-06-29 17:20:02] - Iteration 9
+
+- Exit code: 0
+- Stories remaining: 1
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-30 09:25] - story-22
+- 实现了 WorkspacePage Step2 回测参数表单（symbol / timeframe / 资金 / 日期）
+- **修改的文件：**
+  - `apps/web/src/data/types.ts` — UiCopy 接口新增 6 个回测表单字段（workspaceBacktestSymbol/Timeframe/InitialCapital/StartDate/EndDate/ConfigTitle）
+  - `apps/web/src/data/en.ts` — 添加英文表单标签
+  - `apps/web/src/data/zh.ts` — 添加中文表单标签
+  - `apps/web/src/components/workspace-page.tsx`：
+    - 新增表单 state（backtestSymbol, backtestTimeframe, backtestInitialCapital, backtestStartDate, backtestEndDate）— 默认值：当前日期-1年~今天
+    - 新增 useEffect：configSnapshot 加载后自动注入表单默认值（symbol/timeframe/initialCapital），通过 useRef 确保仅执行一次
+    - 重写 renderBacktestContent()：提交前显示可编辑表单（symbol 输入框、timeframe 下拉 1d/1h/30m、资金 number、起始/结束 date input），提交后显示只读摘要
+    - handleRunBacktest() 使用表单 state 值替代硬编码常量
+    - 新增 `useRef` import
+  - `apps/web/src/styles/workspace-page.module.css` — 新增表单样式（backtestForm/formRow/formLabel/formInput/formSelect）
+  - `scripts/ralph/prd.json` — story-22 → passes: true
+  - `scripts/ralph/progress.txt`
+- **Doc Sync**: no docs update needed because this is a pure frontend UI enhancement (backtest parameter form fields) within the existing WorkspacePage component — no API schema, DB schema, architectural boundary, or behavioral contract changes. The submitBacktest API contract (startTs/endTs as top-level fields) is unchanged.
+- **验证：**
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅 11 个预存在 warning）
+  - `pnpm test` → 10/10 包全部通过（web 90/90）
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - 表单默认值优先级：configSnapshot.params > 硬编码默认。当前因 configSnapshot 异步加载，使用 `configDefaultsApplied` ref 确保仅注入一次
+  - date 输入使用 HTML5 `<input type="date">`，`backtestStartDate` 默认 = today - 1年，`backtestEndDate` 默认 = today
+  - handleRunBacktest 的 dependency array 已包含全部 5 个表单字段（需保持同步）
+  - 回测参数表单使用 config 热力图类似的 `.formInput`/`.formSelect` 样式，与 Panel 组件视觉一致
+  - 提交后表单字段消失，改为显示只读摘要（configSummary 复用），性能指标保留 mock 数据等待后续真实数据接入

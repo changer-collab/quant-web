@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot } from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
@@ -206,6 +206,20 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   const [backtestResult, setBacktestResult] = useState<Record<string, unknown> | null>(null);
   const [backtestSubmitted, setBacktestSubmitted] = useState(false);
 
+  // ── Backtest parameter form state (step 2) ──
+  const [backtestSymbol, setBacktestSymbol] = useState('600519');
+  const [backtestTimeframe, setBacktestTimeframe] = useState('1d');
+  const [backtestInitialCapital, setBacktestInitialCapital] = useState(1_000_000);
+  const [backtestStartDate, setBacktestStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [backtestEndDate, setBacktestEndDate] = useState(() => {
+    return new Date().toISOString().slice(0, 10);
+  });
+  const configDefaultsApplied = useRef(false);
+
   const category = strategy.category ?? 'non_factor';
 
   // ── Backtest static mock data (used only until real backtest data flows in) ──
@@ -246,6 +260,19 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         console.warn('Failed to fetch strategy config:', err);
       });
   }, [strategy.name]);
+
+  // ── Set backtest form defaults from configSnapshot when it loads ──
+  useEffect(() => {
+    if (configSnapshot?.params && !configDefaultsApplied.current) {
+      configDefaultsApplied.current = true;
+      const p = configSnapshot.params;
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (typeof p.symbol === 'string') setBacktestSymbol(p.symbol);
+      if (typeof p.timeframe === 'string') setBacktestTimeframe(p.timeframe);
+      if (typeof p.initialCapital === 'number') setBacktestInitialCapital(p.initialCapital);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [configSnapshot]);
 
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {
@@ -306,12 +333,12 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     try {
       const { id: taskId } = await submitBacktest({
         strategy: strategy.name,
-        symbol: '600519',
-        timeframe: '1d',
-        initialCash: 1_000_000,
+        symbol: backtestSymbol,
+        timeframe: backtestTimeframe,
+        initialCash: backtestInitialCapital,
         configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
-        startTs: 1672675200000,
-        endTs: 1735574400000,
+        startTs: new Date(backtestStartDate).getTime(),
+        endTs: new Date(backtestEndDate).getTime(),
       });
 
       const close = streamBacktestTask(
@@ -341,7 +368,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setBacktestLoading(false);
     }
-  }, [strategy.name, configSnapshot, language, ui.workspaceBacktestFailed]);
+  }, [strategy.name, configSnapshot, language, ui.workspaceBacktestFailed, backtestSymbol, backtestTimeframe, backtestInitialCapital, backtestStartDate, backtestEndDate]);
 
   // ── Helpers: parse real diagnostic data for chart rendering ──
   function parseFactorDiagnostics(data: Record<string, unknown>) {
@@ -485,33 +512,69 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   function renderBacktestContent() {
     return (
       <>
-        {/* Config Summary */}
-        <div className={s.configSummary}>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '策略' : 'Strategy'}</span>
-            <span className={s.configItemValue}>{strategy.name}</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '标的' : 'Symbol'}</span>
-            <span className={s.configItemValue}>600519</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '时间周期' : 'Timeframe'}</span>
-            <span className={s.configItemValue}>1d</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '初始资金' : 'Initial Cash'}</span>
-            <span className={s.configItemValue}>¥1,000,000</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '回测区间' : 'Backtest Range'}</span>
-            <span className={s.configItemValue}>2023-01-01 ~ 2024-12-31</span>
-          </div>
-        </div>
-
-        {/* Action button */}
+        {/* Editable backtest parameter form (shown before submission) */}
         {!backtestSubmitted && (
-          <div style={{ marginBottom: 16 }}>
+          <>
+            <div className={s.chartCardTitle}>{ui.workspaceBacktestConfigTitle}</div>
+            <div className={s.backtestForm}>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestSymbol}</label>
+                <input
+                  className={s.formInput}
+                  value={backtestSymbol}
+                  onChange={(e) => setBacktestSymbol(e.target.value)}
+                  placeholder="e.g. 600519"
+                  disabled={backtestLoading}
+                />
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestTimeframe}</label>
+                <select
+                  className={s.formSelect}
+                  value={backtestTimeframe}
+                  onChange={(e) => setBacktestTimeframe(e.target.value)}
+                  disabled={backtestLoading}
+                >
+                  <option value="1d">1d</option>
+                  <option value="1h">1h</option>
+                  <option value="30m">30m</option>
+                </select>
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestInitialCapital}</label>
+                <input
+                  className={s.formInput}
+                  type="number"
+                  min={1000}
+                  step={100000}
+                  value={backtestInitialCapital}
+                  onChange={(e) => setBacktestInitialCapital(Number(e.target.value))}
+                  disabled={backtestLoading}
+                />
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestStartDate}</label>
+                <input
+                  className={s.formInput}
+                  type="date"
+                  value={backtestStartDate}
+                  onChange={(e) => setBacktestStartDate(e.target.value)}
+                  disabled={backtestLoading}
+                />
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestEndDate}</label>
+                <input
+                  className={s.formInput}
+                  type="date"
+                  value={backtestEndDate}
+                  onChange={(e) => setBacktestEndDate(e.target.value)}
+                  disabled={backtestLoading}
+                />
+              </div>
+            </div>
+
+            {/* Action button */}
             <button
               className={s.primaryButton}
               onClick={handleRunBacktest}
@@ -520,6 +583,32 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             >
               {backtestLoading ? ui.workspaceBacktestRunning : ui.workspaceSubmitBacktest}
             </button>
+          </>
+        )}
+
+        {/* Read-only summary after submission */}
+        {backtestSubmitted && (
+          <div className={s.configSummary}>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestSymbol}</span>
+              <span className={s.configItemValue}>{backtestSymbol}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestTimeframe}</span>
+              <span className={s.configItemValue}>{backtestTimeframe}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestInitialCapital}</span>
+              <span className={s.configItemValue}>¥{backtestInitialCapital.toLocaleString()}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestStartDate}</span>
+              <span className={s.configItemValue}>{backtestStartDate}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestEndDate}</span>
+              <span className={s.configItemValue}>{backtestEndDate}</span>
+            </div>
           </div>
         )}
 
@@ -597,7 +686,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
         {!backtestSubmitted && !backtestLoading && !backtestResult && (
           <div className={s.emptyState}>
-            <span>{language === 'zh' ? '点击「提交回测」开始运行' : 'Click "Submit Backtest" to run'}</span>
+            <span>{language === 'zh' ? '填写上方参数后点击「提交回测」' : 'Fill in the parameters and click "Submit Backtest"'}</span>
           </div>
         )}
       </>

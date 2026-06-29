@@ -184,7 +184,7 @@
       "agent": "frontend-agent",
       "priority": 22,
       "dependsOn": ["story-21"],
-      "passes": false
+      "passes": true
     }
   ]
 }
