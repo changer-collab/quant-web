@@ -268,15 +268,18 @@ export interface PreviewResponse {
   engine_version: string;
 }
 
+/** 策略配置快照 */
+export interface ConfigSnapshot {
+  strategy: string;
+  params: Record<string, unknown>;
+}
+
 /** 诊断结果 */
 export interface DiagnosticResult {
   id: string;
   taskId: string;
   strategy: string;
-  configSnapshot: {
-    strategy: string;
-    params: Record<string, unknown>;
-  };
+  configSnapshot: ConfigSnapshot;
   dataJson: Record<string, unknown>;
   createdAt: number;
 }

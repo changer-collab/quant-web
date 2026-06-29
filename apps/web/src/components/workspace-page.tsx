@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { StrategyRow, UiCopy, LanguageCode } from '../appData';
+import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot } from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
 import { fetchDiagnostic } from '../api/diagnostics';
 import { submitBacktest, streamTask as streamBacktestTask } from '../api/tasks';
+import { fetchStrategyConfig } from '../api/strategies-config';
 import s from '../styles/workspace-page.module.css';
 
 // ── Types ────────────────────────────────────────────────────
@@ -227,6 +228,8 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void 
 
 export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageProps) {
   const [step, setStep] = useState<1 | 2>(1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- story-15 will wire this into payloads
+  const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
   const [diagnosticData, setDiagnosticData] = useState<Record<string, unknown> | null>(null);
   const [diagnosticLoading, setDiagnosticLoading] = useState(false);
   const [diagnosticProgress, setDiagnosticProgress] = useState<ProgressState>(null);
@@ -315,6 +318,19 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         .finally(() => setDiagnosticLoading(false));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Fetch strategy config on mount / strategy change ──
+  useEffect(() => {
+    fetchStrategyConfig(strategy.name)
+      .then((res) => {
+        if (res) {
+          setConfigSnapshot({ strategy: strategy.name, params: res.config_json });
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch strategy config:', err);
+      });
+  }, [strategy.name]);
 
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {

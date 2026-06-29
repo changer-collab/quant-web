@@ -522,3 +522,21 @@ build_fail
 ---
 
 ## ✅ ALL STORIES COMPLETE
+
+## [2026-06-30 00:25] - story-14
+- 实现了 ConfigSnapshot 类型导出 + WorkspacePage 配置读取挂载
+- **修改的文件：**
+  - `apps/web/src/data/types.ts` — 新增 ConfigSnapshot 接口 `{ strategy: string; params: Record<string, unknown> }`；更新 DiagnosticResult.configSnapshot 使用该接口
+  - `apps/web/src/appData.ts` — 重新导出 ConfigSnapshot 类型
+  - `apps/web/src/components/workspace-page.tsx` — 新增 configSnapshot state（初始 null）；新增 useEffect(deps: [strategy.name]) 调用 fetchStrategyConfig(strategy.name)；GET config null/失败时 console.warn 不阻塞页面
+- **Doc Sync**: no docs update needed because this story only adds internal type + data fetching hookup, no API schema, architectural, or behavioral changes
+- **验证：**
+  - `npx tsc --noEmit` → 编译通过
+  - `npx eslint` → 0 errors（仅已存在 11 个 warning）
+  - `npx vitest run` → 96/96 passed
+  - `pnpm build` → 5/5 successful
+  - `bash scripts/smoke-test.sh` → 7/7 ALL PASSED
+- **后续迭代注意事项：**
+  - configSnapshot state 当前 eslint-disable unused-vars（story-15 将把它接入 payload 消除此 warning）
+  - setup.ts mock fetch 中 GET /config → null 已覆盖「无配置」场景，测试不会崩溃
+---

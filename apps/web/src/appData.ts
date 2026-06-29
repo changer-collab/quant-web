@@ -25,6 +25,7 @@ export type {
   StrategyParam,
   StrategyCategory,
   StrategySubcategory,
+  ConfigSnapshot,
   UIConstraint,
   BarData,
   ChartOverlay,

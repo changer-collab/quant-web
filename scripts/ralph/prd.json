@@ -22,7 +22,7 @@
       ],
       "agent": "frontend-agent",
       "priority": 14,
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-15",
