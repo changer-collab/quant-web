@@ -122,16 +122,6 @@ ralph.sh 循环:
 ## 6. 验证方式
 
 1. 故意在 `prd.json` 中设置一个会失败的故事
-2. 运行 `ralph-v2.sh`，观察：
-   - `.last-error.json` 是否正确记录错误
-   - 下一轮 Claude 是否读取并分析了错误
-   - `progress.txt` 是否包含错误摘要
-3. 验证收敛检测：连续 5 轮无进展后是否自动退出
-4. 验证分支切换：progress.txt 是否保留历史
-
-## 6. 验证方式
-
-1. 故意在 `prd.json` 中设置一个会失败的故事
 2. 运行 `./ralph.ps1`（PowerShell）或 `./ralph.sh`（Bash），观察：
    - `.last-error.json` 是否正确记录错误
    - 下一轮 Claude 是否读取并分析了错误

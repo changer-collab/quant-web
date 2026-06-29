@@ -22,7 +22,15 @@
 - 内部任务路由（GET/POST /api/internal/tasks/*），供 Worker 轮询领取、上报任务状态/结果/失败
 - 因子 CRUD + 评估触发 + 批量计算（/api/factors）
 - 数据摘要查询（/api/data/instruments|bars|coverage|quality）
-- 任务服务通过 TaskService 接口解耦 Worker，当前使用 InMemoryTaskService
+- 任务服务通过 TaskService 接口解耦 Worker（SqliteTaskService 持久化实现）
+- 三层架构：Repository（Drizzle+SQL.js）→ Service（纯 TS，不依赖 Drizzle）→ Route（Fastify）
+- StrategyConfigRepository：策略配置 CRUD + 透明配置历史记录
+- DiagnosticRepository：诊断结果 CRUD + 过期清理
+- StrategyConfigService / DiagnosticService：业务逻辑层，依赖 Repository 接口
+- 路由通过 Fastify 装饰器（app.configService / app.diagnosticService）访问 Service
+- 策略列表扩展：返回 category/subcategory/workflowReady + 扩展 params（chart_relevant/ui_constraints）
+- Preview 端点（POST /api/strategies/:name/preview）：加载 K 线 → PreviewService 计算 SMA/EMA/RSI/MACD 叠加层 + 信号标注 → 返回 bars/overlays/signals/pagination/fingerprint
+- PreviewService：纯 TypeScript 预览引擎，不依赖外部数学库，支持反向分页（cursor 翻页）
 
 ## 边界
 

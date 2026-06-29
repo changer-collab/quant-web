@@ -1,25 +1,55 @@
 {
-  "iterations": 1,
-  "lastExitCode": 1,
+  "iterations": 11,
+  "lastExitCode": 0,
   "lastError": {
-    "iteration": 1,
-    "exitCode": 1,
-    "timestamp": "2026-06-28T09:47:42.175Z",
-    "detectedFailures": [],
-    "summary": ""
+    "iteration": 11,
+    "exitCode": 0,
+    "timestamp": "2026-06-28T13:26:50.294Z",
+    "detectedFailures": [
+      "lint_error",
+      "build_fail"
+    ],
+    "summary": "棣栧厛锛岃鎴戝垹闄?`strategy-grid.tsx` 鐨勫鍏ュ拰娓叉煋锛堝凡琚?`StrategyGridNew` 鍙栦唬锛夛紝骞舵爣璁颁负 deprecated銆侼ow let me update `useResearchWorkflow.ts` 鈥?remove `ResearchModeId`, rename `activeMode` 鈫?`activeCategory`, and remove hardcoded old mode values.Now let me update `App.tsx` 鈥?remove `ResearchModeId` and `StrategyGrid` imports, update destructuring, and remove `StrategyGrid` rendering.Now update the `WorkspaceModeTabs` props in App.tsx to use the new names:Now let me verify the consistency of all changes by r"
   },
   "storyAttempts": {
-    "story-1": {
+    "story-8": {
       "attempts": 1
     },
-    "story-2": {
+    "story-9": {
+      "attempts": 1
+    },
+    "story-10": {
+      "attempts": 1
+    },
+    "story-11": {
+      "attempts": 1
+    },
+    "story-12": {
+      "attempts": 1
+    },
+    "story-13": {
       "attempts": 1
     }
   },
-  "lastChanges": " scripts/ralph/.prd.state.json      |  26 ++-  scripts/ralph/prd.json             | 293 +++++++++++++++++++++---------  scripts/ralph/progress.txt         |   2 +  scripts/ralph/ralph.ps1            |   2 +-  10 files changed, 501 insertions(+), 258 deletions(-)",
-  "consecutiveNoProgress": 1,
-  "feature": "strategy-classification-refactor",
+  "lastChanges": "scripts/ralph/.last-error.json     |  10 ++--  scripts/ralph/.last-raw-output.txt | 105 +++++++++++++++++++------------------  scripts/ralph/.prd.state.json      |  12 +++--  3 files changed, 66 insertions(+), 61 deletions(-)",
+  "consecutiveNoProgress": 0,
+  "feature": "",
   "version": 1,
-  "lastGitHead": "627ea57bd079ce3d3310e0fc4ebdf48ab98039bb",
-  "multiStoryWarnings": 0
+  "lastGitHead": "6d1ae0a1965d374ea23b895eda462e4388da0ef4",
+  "multiStoryWarnings": 0,
+  "passesSnapshot": [
+    "story-1",
+    "story-2",
+    "story-3",
+    "story-4",
+    "story-5",
+    "story-6",
+    "story-7",
+    "story-8",
+    "story-9",
+    "story-10",
+    "story-11",
+    "story-12"
+  ],
+  "passesSnapshotHash": "e947bc9fe890d99e"
 }

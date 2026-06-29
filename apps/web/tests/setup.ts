@@ -23,9 +23,31 @@ export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
 
   let body: unknown;
   if (method === 'POST') {
-    body = { id: 'mock-task-id', taskId: 'mock-task-id', status: 'pending' };
+    if (url.includes('/preview')) {
+      body = {
+        symbol: '600519',
+        bars: [],
+        overlays: [],
+        signals: [],
+        pagination: { has_more: false, next_cursor: null },
+        fingerprint: 'sha256:mock-hash',
+        engine_version: '1.0.0',
+      };
+    } else {
+      body = { id: 'mock-task-id', taskId: 'mock-task-id', status: 'pending' };
+    }
+  } else if (method === 'PUT') {
+    if (url.includes('/config')) {
+      body = { saved: true, hash: 'mock-hash' };
+    } else {
+      body = { success: true };
+    }
   } else if (method === 'DELETE') {
     body = { success: true };
+  } else if (url.includes('/config')) {
+    body = null;
+  } else if (url.includes('/diagnostics')) {
+    body = [];
   } else if (url.includes('/count')) {
     body = { count: 0 };
   } else {

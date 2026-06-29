@@ -1,3 +1,8 @@
+/**
+ * @deprecated 已被 strategy-grid-new.tsx 取代 — 策略分类体系改为 Factor/Non-Factor/Transitional 三级分类。
+ * 保留以维护 git blame。
+ */
+
 import type { ResearchModeId, StrategyRow, UiCopy } from '../appData';
 import s from '../styles/strategy-grid.module.css';
 

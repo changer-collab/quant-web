@@ -103,6 +103,7 @@ export enum L2OrderType {
 export type PageId =
   | 'dashboard'
   | 'strategies'
+  | 'strategy'
   | 'factor-lab'
   | 'workspace'
   | 'backtest'
@@ -115,6 +116,30 @@ export type ResearchModeId = 'traditional' | 'hft' | 'ai';
 export type MetricTone = 'good' | 'info' | 'warn';
 export type LanguageCode = 'en' | 'zh';
 export type JobTemplate = 'backtest' | 'train' | 'experiment' | 'run';
+
+/** 策略分类（与 Python StrategyCategory 值对齐） */
+export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
+
+/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+export type StrategySubcategory =
+  | 'linear_multi_factor'
+  | 'nonlinear_ml'
+  | 'trend_cta'
+  | 'mean_reversion'
+  | 'arbitrage'
+  | 'high_frequency'
+  | 'macro_quant'
+  | 'event_driven'
+  | 'e2e_ai_timeseries'
+  | 'tail_risk_hedging';
+
+/** UI 约束条件（与 Python UIConstraint 对齐） */
+export interface UIConstraint {
+  kind: 'disable_when' | 'require_when' | 'set_default_when' | 'range_when';
+  target_field: string;
+  target_value: unknown;
+  action_value?: unknown;
+}
 
 export interface NavItem {
   id: PageId;
@@ -165,6 +190,10 @@ export interface StrategyParam {
   min?: number;
   max?: number;
   options?: string[];
+  /** 是否在 K 线预览中显示（与 Python chart_relevant 对齐） */
+  chartRelevant?: boolean;
+  /** UI 约束条件列表（与 Python UIConstraint 对齐） */
+  uiConstraints?: UIConstraint[];
 }
 
 export interface StrategyRow {
@@ -184,6 +213,72 @@ export interface StrategyRow {
   kind?: string;
   /** 可调参数定义（与 Python StrategyMeta.params 对齐） */
   params?: StrategyParam[];
+  /** 策略分类（与 Python StrategyCategory 对齐） */
+  category?: string;
+  /** 策略子分类（与 Python StrategySubcategory 对齐） */
+  subcategory?: string | null;
+  /** 是否可进入工作流 */
+  workflowReady?: boolean;
+  /** 策略摘要 */
+  summary?: string;
+}
+
+// ─── 预览引擎类型 ────────────────────────────────────────────
+
+/** K 线数据点 */
+export interface BarData {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+/** 图表叠加层（MA 均线） */
+export interface ChartOverlay {
+  type: 'sma' | 'ema';
+  period: number;
+  values: (number | null)[];
+}
+
+/** 预览信号 */
+export interface PreviewSignal {
+  bar_index: number;
+  side: 'buy' | 'sell';
+  type: string;
+  reason: string;
+  factor_snapshot?: Record<string, number>;
+}
+
+/** 分页参数 */
+export interface Pagination {
+  has_more: boolean;
+  next_cursor: number | null;
+}
+
+/** 预览 API 响应 */
+export interface PreviewResponse {
+  symbol: string;
+  bars: BarData[];
+  overlays: ChartOverlay[];
+  signals: PreviewSignal[];
+  pagination: Pagination;
+  fingerprint: string;
+  engine_version: string;
+}
+
+/** 诊断结果 */
+export interface DiagnosticResult {
+  id: string;
+  taskId: string;
+  strategy: string;
+  configSnapshot: {
+    strategy: string;
+    params: Record<string, unknown>;
+  };
+  dataJson: Record<string, unknown>;
+  createdAt: number;
 }
 
 export interface MarketTick {
@@ -379,6 +474,146 @@ export interface UiCopy {
     hft: string;
     ai: string;
   };
+  /** 策略总览返回按钮 */
+  backToOverview: string;
+  /** 策略分类标签 */
+  strategyCategoryLabels: {
+    factor_based: string;
+    non_factor: string;
+    transitional: string;
+  };
+  /** 策略子分类标签 */
+  strategySubcategoryLabels: {
+    linear_multi_factor: string;
+    nonlinear_ml: string;
+    trend_cta: string;
+    mean_reversion: string;
+    arbitrage: string;
+    high_frequency: string;
+    macro_quant: string;
+    event_driven: string;
+    e2e_ai_timeseries: string;
+    tail_risk_hedging: string;
+  };
+  /** ConfigPanel 占位文案 */
+  configPanelPlaceholder: string;
+  /** KlineChart 占位文案 */
+  klineChartPlaceholder: string;
+  /** ConfigPanel 分类 Tab */
+  configPanelCategoryTabs: Record<string, string>;
+  /** ConfigPanel 保存按钮 */
+  configPanelSave: string;
+  /** ConfigPanel 已保存 */
+  configPanelSaved: string;
+  /** ConfigPanel 保存中 */
+  configPanelSaving: string;
+  /** ConfigPanel 保存失败 */
+  configPanelSaveError: string;
+  /** ConfigPanel 基础参数区标题 */
+  configPanelBasicParams: string;
+  /** ConfigPanel 因子池标题 */
+  configPanelFactorPool: string;
+  /** ConfigPanel 因子池占位符 */
+  configPanelFactorPoolPlaceholder: string;
+  /** ConfigPanel 数据预处理标题 */
+  configPanelPreprocessing: string;
+  /** ConfigPanel 极值缩尾 */
+  configPanelWinsorization: string;
+  /** ConfigPanel 中性化 */
+  configPanelNeutralization: string;
+  /** ConfigPanel 标准化 */
+  configPanelStandardization: string;
+  /** ConfigPanel 时序窗口参数 */
+  configPanelWindowParams: string;
+  /** ConfigPanel 回看窗口 */
+  configPanelLookbackWindow: string;
+  /** ConfigPanel 持仓周期 */
+  configPanelHoldPeriod: string;
+  /** ConfigPanel 指标工具箱 */
+  configPanelIndicatorToolbox: string;
+  /** ConfigPanel 指标名称 */
+  configPanelMACD: string;
+  configPanelRSI: string;
+  configPanelBollinger: string;
+  /** ConfigPanel 动态参数区 */
+  configPanelDynamicParams: string;
+  /** ConfigPanel 数据源绑定 */
+  configPanelDataSource: string;
+  /** ConfigPanel 衰减半衰期 */
+  configPanelDecayHalfLife: string;
+  /** ConfigPanel 映射目标因子 */
+  configPanelMappingTarget: string;
+  /** ConfigPanel 预览按钮 */
+  configPanelPreview: string;
+  /** ConfigPanel 提交任务 */
+  configPanelSubmitTask: string;
+  /** ─── KlineChart ─── */
+  /** [预览引擎] 标签 */
+  klineChartPreviewEngine: string;
+  /** 预览引擎 hover 提示 */
+  klineChartPreviewEngineTooltip: string;
+  /** 品种搜索占位符 */
+  klineChartSymbolSearch: string;
+  /** fingerprint 变更 toast */
+  klineChartFingerprintChanged: string;
+  /** 加载提示 */
+  klineChartLoading: string;
+  /** 成交量标签 */
+  klineChartVolume: string;
+  /** 策略专属副图 — RSI */
+  klineChartRSI: string;
+  /** 策略专属副图 — IC 序列 */
+  klineChartIC: string;
+  /** 策略专属副图 — 价差 */
+  klineChartSpread: string;
+  /** 策略专属副图 — 情感得分 */
+  klineChartSentiment: string;
+  /** open/high/low/close 标签前缀 */
+  klineChartOHLC: string;
+  /** 买入信号 */
+  klineChartBuy: string;
+  /** 卖出信号 */
+  klineChartSell: string;
+  /** 信号原因 */
+  klineChartReason: string;
+  /** 因子快照 */
+  klineChartFactorSnapshot: string;
+  /** ─── WorkspacePage ─── */
+  workspaceStep1Label: string;
+  workspaceStep2Label: string;
+  workspaceBackButton: string;
+  workspaceRunDiagnostics: string;
+  workspaceDiagnosticsRunning: string;
+  workspaceDiagnosticsFailed: string;
+  workspaceDiagnosticExpired: string;
+  workspaceRecalculate: string;
+  workspaceConfirmStep2: string;
+  workspaceConfigSummary: string;
+  workspaceSubmitBacktest: string;
+  workspaceBacktestRunning: string;
+  workspaceBacktestFailed: string;
+  workspaceICSeries: string;
+  workspaceLayeredReturns: string;
+  workspaceCorrelationHeatmap: string;
+  workspaceParamSensitivity: string;
+  workspaceSignalDist: string;
+  workspaceSlippageStress: string;
+  workspaceMacroCorrelation: string;
+  workspaceEconomicCycle: string;
+  workspaceCARChart: string;
+  workspaceEventSamples: string;
+  workspaceSHAPImportance: string;
+  workspaceLossCurves: string;
+  workspacePerformanceTitle: string;
+  workspaceEquityCurve: string;
+  workspaceTradeDetails: string;
+  workspaceStep1Desc: string;
+  workspaceStep2Desc: string;
+  workspaceDiagnosticsLabel: string;
+  workspaceBacktestLabel: string;
+  workspaceSignalMetrics: string;
+  workspaceReturnMetrics: string;
+  workspaceRiskMetrics: string;
 }
 
 export interface LanguageContent {
