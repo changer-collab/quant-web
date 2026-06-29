@@ -573,3 +573,35 @@ build_fail
   - `configSnapshot` 在 `handleRunDiagnostics` 和 `handleRunBacktest` 中均以 `configSnapshot ?? { strategy: strategy.name, params: {} }` 形式 fallback，避免 null 时 payload 缺失
   - API `task.ts` 的 POST 路由当前不使用 Zod 验证，payload 以 `Record<string, unknown>` 形式存储，`category` 字段天然透传给 Worker
 ---
+
+## [2026-06-29 16:22:06] - Iteration 2
+
+- Exit code: 0
+- Stories remaining: 8
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-30 00:24] - story-16
+- 删除了已弃用的 strategy-grid.tsx（被 strategy-grid-new.tsx 取代，story-13 已移除所有 import）
+- 修改了 App.tsx：
+  - 移除了 WorkspaceContent 的 import（保留 WorkspaceModeTabs）
+  - 移除了旧的 WorkspaceContent 条件渲染分支（旧单页面 fallback）
+  - 移除了因旧分支删除而不再使用的变量解构（selectedStrategy, activeConfigSummary, backtestConfig, setBacktestConfig）
+- 修改了哪些文件：
+  - `apps/web/src/components/strategy-grid.tsx`（删除）
+  - `apps/web/src/App.tsx`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- Doc Sync: no docs update needed because this is internal dead code cleanup — no API schema, DB schema, architectural boundary, or behavioral changes
+- 验证：
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅 11 个已存在 warning）
+  - `npx vitest run` → 96/96 passed
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - WorkspaceModeTabs 仍然在 workspace 页面渲染（state.activePage === 'workspace'），但它现在是半死代码 — 渲染在新 WorkspacePage 之上且不再被 WorkspaceContent 使用。story-17 清理 ResearchMode 时可以一并处理
+  - strategyGridModeLabels 国际化 key 仍被 zh.ts/en.ts/types.ts 保留（strategy-grid-new.tsx 仍在引用），不要误删
+---

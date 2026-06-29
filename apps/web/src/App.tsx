@@ -10,7 +10,7 @@ import { ChartMockup } from './components/charts';
 import { ReportSummary } from './components/report-summary';
 import { LanguageSettings } from './components/settings';
 import { FactorLabContent } from './components/factor-lab';
-import { WorkspaceContent, WorkspaceModeTabs } from './components/workspace';
+import { WorkspaceModeTabs } from './components/workspace';
 import { ActivityFeed } from './components/activity-feed';
 import { StrategyPage } from './components/strategy-page';
 import { WorkspacePage } from './components/workspace-page';
@@ -39,16 +39,12 @@ export default function App() {
     state,
     activeMode,
     setActiveMode,
-    selectedStrategy,
     researchMode,
     localizedJobs,
     activeReport,
     activeBacktestReport,
     backtestReports,
     reportJobIds,
-    activeConfigSummary,
-    backtestConfig,
-    setBacktestConfig,
     handleNavClick,
     handleRunResearch,
     handleViewReport,
@@ -186,18 +182,6 @@ export default function App() {
                   handleNavClick('strategy');
                 }}
                 language={language}
-                ui={ui}
-              />
-            ) : state.activePage === 'workspace' ? (
-              <WorkspaceContent
-                mode={researchMode}
-                configSummary={activeConfigSummary}
-                onRunResearch={handleRunResearch}
-                strategies={strategies}
-                selectedStrategy={selectedStrategy}
-                backtestConfig={backtestConfig}
-                onConfigChange={setBacktestConfig}
-                ticks={[]}
                 ui={ui}
               />
             ) : (
