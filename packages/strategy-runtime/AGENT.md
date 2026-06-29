@@ -30,7 +30,7 @@
 - 分层策略基类（SelectorStrategy、TimingStrategy、PositionStrategy、CompositeStrategy）
 - 序列化工具（to_camel、to_snake、to_camel_dict、from_camel_dict）
 - CLI 入口（cli.py，stdin JSON → stdout NDJSON 事件流）
-- 命令分发（backtest、factorEval、aiTrain，延迟导入下游包）
+- 命令分发（backtest、factorEval、aiTrain、diagnostics，延迟导入下游包）
 ```
 
 ## 边界

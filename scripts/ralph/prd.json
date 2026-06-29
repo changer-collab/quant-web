@@ -113,7 +113,7 @@
       "agent": "strategy-agent",
       "priority": 18,
       "dependsOn": ["story-17b"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-19",

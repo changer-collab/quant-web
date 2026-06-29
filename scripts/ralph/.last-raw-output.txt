@@ -1,6 +1,51 @@
-﻿Let me check the current branch and investigate the codebase for story-16.Good, I'm on the right branch. Let me check more broadly for any remaining references to the old grid and workspace components.Everything is clear. No other files import `strategy-grid.tsx`. Now let me implement story-16:
+﻿濂界殑锛屾垜鍏堣鍙栦笂涓€杞殑閿欒鏂囦欢鍜屽綋鍓嶅垎鏀姸鎬侊紝鐒跺悗瀹炵幇 story-17b銆傚綋鍓嶅垎鏀纭細`ralph/strategy-classification`銆傜幇鍦ㄨ鍙?story-17b 娑夊強鐨勬墍鏈夌洰鏍囨枃浠躲€侺et me now read the mock data files and the repository interface.Good, I've found the transitional strategy at line 413 of both en.ts and zh.ts with `subcategory: 'event_driven'` that needs to change to `null`. Now let me check for tests.鐜板湪鎴戞湁浜嗗畬鏁寸殑淇℃伅銆傚紑濮嬪疄鐜?story-17b銆?
+**淇敼璁″垝锛?*
 
-1. **Delete `strategy-grid.tsx`** (task 2.1)
-2. **Remove `WorkspaceContent` import and rendering branch from `App.tsx`** (task 2.2)Now let me run quality checks:TypeScript compiles fine! Let me check what the 4 lint errors are:4 lint errors 鈥?`selectedStrategy`, `activeConfigSummary`, `backtestConfig`, `setBacktestConfig` were only used by the old `WorkspaceContent` component which is now removed. Let me clean up those unused destructured vars:Let me verify the current state of App.tsx and check if `researchMode` is still used:Lint is clean 鈥?0 errors, only the 11 pre-existing warnings. Now let me run tests and build:All 96 tests pass. Let me run the build:All quality checks pass! Let me verify there's no AGENTS.md to update, then proceed with Doc Sync Gate:No AGENT.md updates needed. Now let me commit and update tracking files.
+1. **`connection.ts`** 鈥?diagnostic_results 寤鸿〃SQL鍔?`category` 鍒?2. **`schema.ts`** 鈥?Drizzle schema 鍔?`category` 瀛楁
+3. **`types.ts`** 鈥?DiagnosticResult 鎺ュ彛鍔?`category`
+4. **`sqlite-diag-repo.ts`** 鈥?save/getById/listByStrategy 璇诲啓 category
+5. **`task.ts`** 鈥?鏋勫缓 DiagnosticResult 鏃朵紶鍏?category
+6. **`en.ts`** 鈥?transitional 绛栫暐 subcategory 鏀逛负 null
+7. **`zh.ts`** 鈥?鍚屼笂Now update task.ts to include `category` when constructing DiagnosticResult, and fix the mock data.Now fix the mock data in en.ts and zh.ts.鎵€鏈夋枃浠朵慨鏀瑰畬姣曘€傜幇鍦ㄨ繍琛岃川閲忔鏌ャ€俆ypeScript 缂栬瘧閫氳繃銆傜户缁窇 lint 鍜?test銆侺int 鍏ㄧ豢锛? errors锛屼粎宸叉湁 11 涓?warning锛夈€傜幇鍦ㄨ窇 test 鍜?build銆傚叏閮?10 涓寘 test/build 閫氳繃銆傜户缁墽琛?Doc Sync Gate 鍜屾彁浜ゃ€傛灦鏋勬枃妗?`2026-06-29-strategy-classification-architecture.md` 宸茬粡璁板綍浜?`category` 鍒楋紙绗?526 琛岋級銆傛湰 story 鍙槸璁╁疄鐜板榻愬凡璁板綍鐨勬灦鏋勶紝涓嶉渶瑕佹洿鏂版枃妗ｃ€?
+鐜板湪鎻愪氦浠ｇ爜銆佹洿鏂?prd.json 鍜?progress.txt銆侼ow update progress.txt and commit.鎻愪氦鎴愬姛銆傛鏌ユ槸鍚﹁繕鏈夋湭瀹屾垚鐨勬晠浜嬧€斺€攕tory-18~22 浠嶆湁 `passes: false`锛屾甯哥粨鏉熴€?# 鎬荤粨
 
-**Doc Sync Gate**: No docs update needed 鈥?pure internal cleanup (delete deprecated file, remove old rendering branch). No API/DB/architectural changes.Correct 鈥?story-16 is now `passes: true`. Now let me append to progress.txt and commit:Now let me commit:鎻愪氦鎴愬姛锛丩et me verify the final state:鏁呬簨 16 瀹屾垚銆備粛鏈?7 涓湭瀹屾垚鐨勬晠浜嬶紙story-17 ~ story-22锛夛紝涓嬩竴杞凯浠ｆ帴鎵嬨€?鏁呬簨 16 瀹屾垚銆備粛鏈?7 涓湭瀹屾垚鐨勬晠浜嬶紙story-17 ~ story-22锛夛紝涓嬩竴杞凯浠ｆ帴鎵嬨€
+**Story-17b 宸插畬鎴愬苟鎻愪氦銆?* 淇敼鎽樿锛?
+### DB 杩佺Щ锛圓PI 渚э級
+| 鏂囦欢 | 鍙樻洿 |
+|---|---|
+| `connection.ts` | diagnostic_results 寤鸿〃 SQL 杩藉姞 `category TEXT NOT NULL DEFAULT 'non_factor'` |
+| `schema.ts` | Drizzle schema 杩藉姞 `category: text('category').notNull().default('non_factor')` |
+| `types.ts` | DiagnosticResult 鎺ュ彛杩藉姞 `category: StrategyCategory` |
+| `sqlite-diag-repo.ts` | save/getById/listByStrategy 涓夐」鏂规硶璇诲啓 category 瀛楁 |
+| `task.ts` | 鏋勫缓 DiagnosticResult 鏃朵粠 `payload.category` 鑾峰彇锛岄檷绾?`'non_factor'` |
+
+### Mock 鏁版嵁淇锛圵eb 渚э級
+| 鏂囦欢 | 鍙樻洿 |
+|---|---|
+| `en.ts` | transitional 绛栫暐 `subcategory: 'event_driven'` 鈫?`null` |
+| `zh.ts` | 鍚屼笂 |
+
+### 璐ㄩ噺妫€鏌ョ粨鏋?- 鉁?`npx tsc --noEmit` (api + web) 鈥?缂栬瘧閫氳繃
+- 鉁?`pnpm lint` 鈥?0 errors锛堜粎 11 涓凡瀛樺湪 warning锛?- 鉁?`pnpm test` 鈥?鍏ㄩ儴 263 tests passed
+- 鉁?`pnpm build` 鈥?5/5 successful
+## 鎬荤粨
+
+**Story-17b 宸插畬鎴愬苟鎻愪氦銆?* 淇敼鎽樿锛?
+### DB 杩佺Щ锛圓PI 渚э級
+| 鏂囦欢 | 鍙樻洿 |
+|---|---|
+| `connection.ts` | diagnostic_results 寤鸿〃 SQL 杩藉姞 `category TEXT NOT NULL DEFAULT 'non_factor'` |
+| `schema.ts` | Drizzle schema 杩藉姞 `category: text('category').notNull().default('non_factor')` |
+| `types.ts` | DiagnosticResult 鎺ュ彛杩藉姞 `category: StrategyCategory` |
+| `sqlite-diag-repo.ts` | save/getById/listByStrategy 涓夐」鏂规硶璇诲啓 category 瀛楁 |
+| `task.ts` | 鏋勫缓 DiagnosticResult 鏃朵粠 `payload.category` 鑾峰彇锛岄檷绾?`'non_factor'` |
+
+### Mock 鏁版嵁淇锛圵eb 渚э級
+| 鏂囦欢 | 鍙樻洿 |
+|---|---|
+| `en.ts` | transitional 绛栫暐 `subcategory: 'event_driven'` 鈫?`null` |
+| `zh.ts` | 鍚屼笂 |
+
+### 璐ㄩ噺妫€鏌ョ粨鏋?- 鉁?`npx tsc --noEmit` (api + web) 鈥?缂栬瘧閫氳繃
+- 鉁?`pnpm lint` 鈥?0 errors锛堜粎 11 涓凡瀛樺湪 warning锛?- 鉁?`pnpm test` 鈥?鍏ㄩ儴 263 tests passed
+- 鉁?`pnpm build` 鈥?5/5 successful

@@ -677,3 +677,52 @@ lint_error
   - story-17b 是 Phase 2 最后一个 story，完成后 Phase 3 的 story-18~21 可开始实施（Python diagnostics 框架 + 算法 + Worker 接线）
   - 架构文档中 diagnostic_results 的 `diagnostics_type`/`result_json` 字段与当前 `config_snapshot`/`data_json` 实现仍不一致，Phase 3 接线时需对齐
   - 当前 SQL schema 使用 DEFAULT 'non_factor' 确保旧数据兼容，新写入数据应提供真实的 category 值
+
+## [2026-06-29 16:45:10] - Iteration 5
+
+- Exit code: 0
+- Stories remaining: 5
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-30 01:00] - story-18
+- 实现了 Python diagnostics 框架：目录 + 入口 + CLI 注册
+- **新建文件：**
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/__init__.py` — 路由函数 `run_diagnostics()`，按 params['category'] 分支调用对应诊断类；未知/缺失/空 category 默认走 non_factor 分支，不崩溃
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/factor.py` — DiagnosticsFactor.run() 返回 stub FactorDiagnosticsResult（全零 IC 序列、5 组分层收益、空相关性矩阵）
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py` — DiagnosticsNonFactor.run() 返回 stub NonFactorDiagnosticsResult（空参数敏感度、信号质量零值、滑点压力 4 档）
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/transitional.py` — DiagnosticsTransitional.run() 返回 stub TransitionalDiagnosticsResult（全零，结构同因子型）
+  - `packages/strategy-runtime/tests/test_diagnostics_stub.py` — 15 个测试覆盖：3 种 category 路由、未知/缺失/空 category 容错、返回字段结构、emit 验证、CLI 子进程集成
+- **修改文件：**
+  - `packages/strategy-runtime/quantforge_strategy/commands/__init__.py` — 新增 `run_diagnostics` 延迟导入函数
+  - `packages/strategy-runtime/quantforge_strategy/cli.py` — 新增 `_run_diagnostics` 包装函数，`_COMMANDS['diagnostics']` 注册
+  - `packages/strategy-runtime/AGENT.md` — 命令分发列表添加 diagnostics
+- **关键设计决策：**
+  - `run_diagnostics` 返回 `{"ok": True, "data": <结果>}` 格式，与 backtest/analyze 等其他命令保持一致，确保 CLI `_output()` 正确解析
+  - `diagnostics/__init__.py` 同时作为包入口（含路由函数），避免 `diagnostics.py` 文件与 `diagnostics/` 目录的 Python 导入歧义冲突
+  - 诊断类使用 `@staticmethod` 模式，保持简单
+- **Doc Sync**: strategy-runtime AGENT.md 已更新命令分发列表；架构文档已覆盖 diagnostics 概念（story-17b 提及），本 story 只是实现 stub 框架，不需要额外更新
+- **验证：**
+  - `python -m pytest tests/test_diagnostics_stub.py -v` → 15/15 passed
+  - `python -m pytest` → 90/90 passed（全部 strategy-runtime 测试）
+  - 其他 6 个 Python 包全部通过（80+73+18+32+11+7）
+  - `pnpm lint` → 0 errors
+  - `pnpm test` → 10/10 successful
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-19 和 story-20 将替换 diagnostics/factor.py 和 diagnostics/non_factor.py 中的 stub 为真实算法
+  - CLI 子进程诊断命令返回格式为 `{"event": "result", "data": {<diagnostics dict>}}`，前端/Worker 解析时注意从 event.data 取诊断结果
+  - diagnostics 命令不依赖外部包（quantforge_data 等），仅在 stub 阶段可在不安装额外依赖的环境运行测试
+---
+
+
+- Exit code: 0
+- Stories remaining: 5
+- **Detected issues:**
+```
+lint_error
+```
+---
