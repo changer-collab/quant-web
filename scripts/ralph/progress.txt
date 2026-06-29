@@ -540,3 +540,36 @@ build_fail
   - configSnapshot state 当前 eslint-disable unused-vars（story-15 将把它接入 payload 消除此 warning）
   - setup.ts mock fetch 中 GET /config → null 已覆盖「无配置」场景，测试不会崩溃
 ---
+
+## [2026-06-29 16:18:27] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 9
+- **Detected issues:**
+```
+lint_error
+build_fail
+```
+---
+
+## [2026-06-30 00:20] - story-15
+- **实现了 diagnostics/backtest payload 带真实 configSnapshot + API category 字段**
+- **修改的文件：**
+  - `apps/web/src/api/tasks.ts` — submitBacktest payload 新增 `configSnapshot?: ConfigSnapshot` 字段
+  - `apps/web/src/components/workspace-page.tsx`：
+    - `handleRunDiagnostics` POST body 使用 `configSnapshot` state 替代硬编码空对象 + 新增 `category` 字段
+    - `handleRunBacktest` POST body 使用 `strategy.name`（替代 `strategy.id`）+ 新增 `configSnapshot` 字段
+    - 移除 `configSnapshot` 的 eslint-disable 注释（现在已被使用）
+    - 更新对应 useCallback 的 dependency arrays
+  - `apps/worker/src/handlers/diagnostics-handler.ts` — DiagnosticsPayload 新增 `category?: string` 字段，PythonBridge 请求中传入 `category`
+- **Doc Sync**: no docs update needed because this is internal payload wiring between existing components (frontend → API → Worker) — no API schema, DB schema, or architectural boundary changes
+- **验证：**
+  - `npx tsc --noEmit` (web + api + worker) → 编译通过
+  - `pnpm lint` → 0 errors（仅 11 个已存在 warning）
+  - `npx vitest run` → 96/96 passed
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-21 (Phase 3d) 将接管 DiagnosticsHandler 进行更深入的改造（streamCall 含完整参数、前端替换 mock），当前 story-15 仅添加了 category 透传
+  - `configSnapshot` 在 `handleRunDiagnostics` 和 `handleRunBacktest` 中均以 `configSnapshot ?? { strategy: strategy.name, params: {} }` 形式 fallback，避免 null 时 payload 缺失
+  - API `task.ts` 的 POST 路由当前不使用 Zod 验证，payload 以 `Record<string, unknown>` 形式存储，`category` 字段天然透传给 Worker
+---

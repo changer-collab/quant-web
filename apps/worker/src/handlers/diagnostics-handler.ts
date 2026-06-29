@@ -13,6 +13,7 @@ import { PythonBridge } from '../python-bridge.js';
 export interface DiagnosticsPayload {
   strategy: string;
   configSnapshot?: { strategy: string; params: Record<string, unknown> };
+  category?: string;
   [key: string]: unknown;
 }
 
@@ -29,6 +30,7 @@ export class DiagnosticsHandler implements TaskHandler {
     const request = {
       command: 'diagnostics',
       strategy: payload.strategy,
+      category: payload.category ?? 'non_factor',
       config: {
         strategyParams: payload.configSnapshot?.params ?? {},
       },

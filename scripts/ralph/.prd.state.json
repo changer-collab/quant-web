@@ -1,55 +1,20 @@
 {
-  "iterations": 11,
+  "iterations": 0,
   "lastExitCode": 0,
-  "lastError": {
-    "iteration": 11,
-    "exitCode": 0,
-    "timestamp": "2026-06-28T13:26:50.294Z",
-    "detectedFailures": [
-      "lint_error",
-      "build_fail"
-    ],
-    "summary": "棣栧厛锛岃鎴戝垹闄?`strategy-grid.tsx` 鐨勫鍏ュ拰娓叉煋锛堝凡琚?`StrategyGridNew` 鍙栦唬锛夛紝骞舵爣璁颁负 deprecated銆侼ow let me update `useResearchWorkflow.ts` 鈥?remove `ResearchModeId`, rename `activeMode` 鈫?`activeCategory`, and remove hardcoded old mode values.Now let me update `App.tsx` 鈥?remove `ResearchModeId` and `StrategyGrid` imports, update destructuring, and remove `StrategyGrid` rendering.Now update the `WorkspaceModeTabs` props in App.tsx to use the new names:Now let me verify the consistency of all changes by r"
-  },
+  "lastError": null,
   "storyAttempts": {
-    "story-8": {
-      "attempts": 1
-    },
-    "story-9": {
-      "attempts": 1
-    },
-    "story-10": {
-      "attempts": 1
-    },
-    "story-11": {
-      "attempts": 1
-    },
-    "story-12": {
-      "attempts": 1
-    },
-    "story-13": {
+    "story-15": {
       "attempts": 1
     }
   },
-  "lastChanges": "scripts/ralph/.last-error.json     |  10 ++--  scripts/ralph/.last-raw-output.txt | 105 +++++++++++++++++++------------------  scripts/ralph/.prd.state.json      |  12 +++--  3 files changed, 66 insertions(+), 61 deletions(-)",
+  "lastChanges": "",
   "consecutiveNoProgress": 0,
   "feature": "",
   "version": 1,
-  "lastGitHead": "6d1ae0a1965d374ea23b895eda462e4388da0ef4",
+  "lastGitHead": "b5ffeb30cc837b1d97143f28d4f11a924b183c12",
   "multiStoryWarnings": 0,
   "passesSnapshot": [
-    "story-1",
-    "story-2",
-    "story-3",
-    "story-4",
-    "story-5",
-    "story-6",
-    "story-7",
-    "story-8",
-    "story-9",
-    "story-10",
-    "story-11",
-    "story-12"
+    "story-14"
   ],
-  "passesSnapshotHash": "e947bc9fe890d99e"
+  "passesSnapshotHash": "3a0a89ad56bba4ca"
 }

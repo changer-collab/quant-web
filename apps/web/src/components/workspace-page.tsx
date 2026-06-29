@@ -228,7 +228,6 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void 
 
 export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- story-15 will wire this into payloads
   const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
   const [diagnosticData, setDiagnosticData] = useState<Record<string, unknown> | null>(null);
   const [diagnosticLoading, setDiagnosticLoading] = useState(false);
@@ -343,10 +342,8 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         type: 'diagnostics',
         payload: {
           strategy: strategy.name,
-          configSnapshot: {
-            strategy: strategy.name,
-            params: {},
-          },
+          configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
+          category,
         },
       });
 
@@ -388,7 +385,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setDiagnosticLoading(false);
     }
-  }, [strategy.name, language, ui.workspaceDiagnosticsFailed]);
+  }, [strategy.name, category, configSnapshot, language, ui.workspaceDiagnosticsFailed]);
 
   // ── Run Backtest ──
   const handleRunBacktest = useCallback(async () => {
@@ -398,10 +395,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
     try {
       const { id: taskId } = await submitBacktest({
-        strategy: strategy.id,
+        strategy: strategy.name,
         symbol: '600519',
         timeframe: '1d',
         initialCash: 1_000_000,
+        configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
         startTs: 1672675200000,
         endTs: 1735574400000,
       });
@@ -433,7 +431,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setBacktestLoading(false);
     }
-  }, [strategy.id, language, ui.workspaceBacktestFailed]);
+  }, [strategy.name, configSnapshot, language, ui.workspaceBacktestFailed]);
 
   // ── Step 1 Diagnostics Content ──
   function renderDiagnosticContent() {

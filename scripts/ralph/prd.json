@@ -41,7 +41,7 @@
       "agent": "fullstack-agent",
       "priority": 15,
       "dependsOn": ["story-14"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-16",

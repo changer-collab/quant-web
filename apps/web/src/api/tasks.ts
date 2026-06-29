@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from './client';
+import type { ConfigSnapshot } from '../data/types';
 
 export type ApiTaskType = 'backtest' | 'factor_compute' | 'factor_eval' | 'ai_train';
 export type ApiTaskStatus = 'pending' | 'running' | 'completed' | 'failed';
@@ -46,6 +47,7 @@ export function submitBacktest(payload: {
   startTs?: number;
   endTs?: number;
   params?: Record<string, unknown>;
+  configSnapshot?: ConfigSnapshot;
 }): Promise<{ id: string; status: ApiTaskStatus }> {
   return apiPost('/tasks', { type: 'backtest', payload });
 }
