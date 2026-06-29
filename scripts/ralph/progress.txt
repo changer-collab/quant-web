@@ -782,3 +782,37 @@ vitest_fail
 lint_error
 ```
 ---
+
+## [2026-06-30 01:08] - story-20
+- 实现了非因子型诊断真实算法（参数敏感性 / 信号质量 / 滑点压力）
+- **修改的文件：**
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py` — 从 stub 替换为真实算法：
+    - **参数敏感性** (`_compute_param_sensitivity`)：从 configSnapshot.params 提取数值型参数与 uiConstraints，对每个有 [min,max] 的参数均匀取 5 个值，各跑基于 MA 的简化回测，记录 {param, values, returns, sharpe}；无 min/max 的参数跳过
+    - **信号质量** (`_compute_signal_quality`)：基于 MA(5)/MA(20) 金叉死叉信号生成交易记录，统计 total_signals / win_rate / avg_holding_bars / profit_factor / max_consecutive_losses
+    - **滑点压力** (`_compute_slippage_stress`)：对 1/3/5/10 bps 各重算 return / sharpe / trade_count
+    - 数据不足（<30根K线 / 缺少 close 列）时返回空结构并 emit warning
+    - 支持 _bars_df 测试参数绕过 DataClient 加载
+    - _extract_numeric_params 支持两种 uiConstraints 格式（参数内嵌 dict 或 params 顶级字段）
+    - _fallback_simulation 在 MA 无交易信号时用价格方向信号兜底
+  - `packages/strategy-runtime/tests/test_diagnostics_non_factor.py`（新建，30 个测试）：
+    - 参数敏感性：含 uiConstraints 的 3 个参数均出现、每参数 5 个值点、值单调递增且范围正确、返回类型
+    - 信号质量：5 个必含字段、类型正确、值在合理范围、少量交易时仍完整
+    - 滑点压力：4 档（1/3/5/10）、每档含 bps/return/sharpe/trade_count、滑点越高收益越低、交易数量一致
+    - 无 min/max 跳过：参数确被跳过、空 params 不崩溃、缺 configSnapshot 不崩溃
+    - 数据不足：空/15根/缺 close 均返回空结果
+    - emit 验证：正常调用 emit log，数据不足时 emit warning
+    - 集成测试：通过 run_diagnostics 路由正常
+- **Doc Sync**: no docs update needed because this is pure Python algorithm implementation within the existing diagnostics framework — no API schema, DB schema, architectural boundary, or behavioral changes
+- **验证：**
+  - `python -m pytest tests/test_diagnostics_non_factor.py -v` → 30/30 passed
+  - `python -m pytest` → 154/154 passed（全包）
+  - `pnpm lint` → 0 errors（仅已存在 warnings）
+  - `pnpm test` → 10/10 successful
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - `_simulate_trading` 返回 3 个值（total_return, sharpe, trades），调用处必须对应解包
+  - 信号生成使用 MA 交叉规则（close vs MA），阈值 0.2% 缓冲减少噪音；极端参数值（周期 >= n）安全返回零结果
+  - `_extract_numeric_params` 处理两种 uiConstraints 格式：{value, uiConstraints} 内嵌 dict 和 params 顶级键
+  - 当所有参数都无 min/max 时，param_sensitivity 返回空数组（不崩溃）
+  - 当 MA 信号产生 0 笔交易时，通过 `_fallback_simulation` 用短期均线与长期均线比较产生方向信号兜底
+---
