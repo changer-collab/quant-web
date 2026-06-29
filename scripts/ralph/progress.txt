@@ -647,3 +647,33 @@ lint_error
   - WorkspaceModeTabs/WorkspaceContent 组件保留在 workspace.tsx 中作为 dead code，未从 App.tsx 渲染；后续 story-17b 可考虑彻底删除
   - factories.ts 中 createResearchReport 的 metrics/diagnostics 在无 strategy 时返回空数组，相比之前从 ResearchMode 获取后备数据的逻辑行为变化需留意
 ---
+
+## [2026-06-30 00:45] - story-17b
+- **DB migration**: diagnostic_results 表加 `category TEXT NOT NULL DEFAULT 'non_factor'` 列
+  - connection.ts: 建表 SQL 追加 category 列
+  - schema.ts: Drizzle schema 追加 category 字段 (text, notNull, default 'non_factor')
+  - types.ts: DiagnosticResult 接口追加 `category: StrategyCategory`
+  - sqlite-diag-repo.ts: save/getById/listByStrategy 方法读写 category 字段
+  - task.ts: 构建 DiagnosticResult 时从 payload.category 获取 category（降级 'non_factor'）
+- **Mock 数据修复**: en.ts/zh.ts transitional 策略 subcategory 从 `'event_driven'` 改为 `null`（workflowReady: true 保持不变）
+- **修改的文件**:
+  - `apps/api/src/storage/connection.ts`
+  - `apps/api/src/storage/schema.ts`
+  - `apps/api/src/types.ts`
+  - `apps/api/src/repositories/sqlite-diag-repo.ts`
+  - `apps/api/src/routes/task.ts`
+  - `apps/web/src/data/en.ts`
+  - `apps/web/src/data/zh.ts`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- **Doc Sync**: docs 架构设计文档已记录 category 列（2026-06-29-strategy-classification-architecture.md 第 7.2 节），本次故事只是实现对其记录的标准，不需要更新。
+- **验证**:
+  - `cd apps/api && npx tsc --noEmit` → 通过
+  - `cd apps/web && npx tsc --noEmit` → 通过
+  - `pnpm lint` → 0 errors（仅 11 个已存在 warning）
+  - `pnpm test` → API 42 + Web 90 + Worker 26 + Data-center 47 + Data-collector 58 = 全部通过
+  - `pnpm build` → 5/5 successful (API/Web/Worker/Data-center/Data-collector)
+- **后续迭代注意事项：**
+  - story-17b 是 Phase 2 最后一个 story，完成后 Phase 3 的 story-18~21 可开始实施（Python diagnostics 框架 + 算法 + Worker 接线）
+  - 架构文档中 diagnostic_results 的 `diagnostics_type`/`result_json` 字段与当前 `config_snapshot`/`data_json` 实现仍不一致，Phase 3 接线时需对齐
+  - 当前 SQL schema 使用 DEFAULT 'non_factor' 确保旧数据兼容，新写入数据应提供真实的 category 值

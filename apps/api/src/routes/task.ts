@@ -124,6 +124,7 @@ export async function internalTaskRoutes(app: FastifyInstance) {
           id: randomUUID(),
           taskId: task.id,
           strategy: (payload.strategy as string) || 'unknown',
+          category: (payload.category as DiagnosticResult['category']) || 'non_factor',
           configSnapshot: (payload.configSnapshot as ConfigSnapshot) ?? { strategy: (payload.strategy as string) || 'unknown', params: {} },
           dataJson: result,
           createdAt: Date.now(),

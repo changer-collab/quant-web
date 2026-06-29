@@ -141,6 +141,7 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL,
       strategy TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'non_factor',
       config_snapshot TEXT NOT NULL,
       data_json TEXT NOT NULL,
       created_at INTEGER NOT NULL

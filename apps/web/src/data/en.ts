@@ -411,7 +411,7 @@ export const enContent: LanguageContent = {
         sharpe: '1.08',
         status: 'Draft',
         category: 'transitional',
-        subcategory: 'event_driven',
+        subcategory: null,
         workflowReady: true,
       },
     ],

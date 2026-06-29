@@ -411,7 +411,7 @@ export const zhContent: LanguageContent = {
         sharpe: '1.08',
         status: '草稿',
         category: 'transitional',
-        subcategory: 'event_driven',
+        subcategory: null,
         workflowReady: true,
       },
     ],
