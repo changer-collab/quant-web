@@ -688,7 +688,52 @@ lint_error
 ```
 ---
 
-## [2026-06-30 01:00] - story-18
+## [2026-06-30 01:05] - story-19
+- 实现了因子型诊断算法（IC / 分层收益 / 相关性矩阵）
+- **修改的文件：**
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/factor.py` — 从 stub 替换为真实算法：
+    - 从 configSnapshot.params.factorPool 提取因子 ID，映射到默认 OHLCV 公式（momentum/vol/turnover 等）
+    - 按月分组计算各因子的 Pearson IC 和 Spearman Rank IC → `ic_series`
+    - 按首因子值分 5 组（Q1~Q5），累积各分层收益 → `layered_returns`
+    - 多因子周期均值 Pearson 相关矩阵 → `correlation_matrix`
+    - 汇总统计：mean_ic / ic_std / ic_ir(=mean_ic/ic_std) / mean_rank_ic
+    - 数据不足（<30根K线 / <2个月）时返回空结构并 emit warning，不崩溃
+    - 支持 `_bars_df` 测试参数绕过 DataClient 数据库加载
+    - `_parse_dates` 自动检测 epoch 秒/毫秒/微秒分辨率
+  - `packages/strategy-runtime/tests/test_diagnostics_factor.py`（新建，34 个测试）：
+    - IC 序列：长度 = 月数、有效值范围、必含字段（period/ic/rank_ic）
+    - 分层收益：Q1~Q5 共 5 组、从 1.0 开始累积、各组长度一致
+    - 相关性矩阵：N×N 维度、对角线=1.0、对称性、值域 [-1, 1]、单因子→[[1.0]]
+    - 汇总统计：ic_ir = mean_ic/ic_std、mean_ic 与 ic_series 一致
+    - 数据不足：空数据/15根/单月/未知因子ID 均不崩溃
+    - emit 验证：正常调用 emit log，数据不足时 emit warning
+    - 集成测试：通过 run_diagnostics 路由正常
+  - `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` — `FactorDiagnostics.layered_returns` 接口从 `{group, return}[]` 修正为 `Record<Q1~Q5, number[]>`，添加 Doc Sync Log
+- **验证：**
+  - `python -m pytest tests/test_diagnostics_factor.py -v` → 34/34 passed
+  - `python -m pytest` → 124/124 passed（全包）
+  - 其他 6 个 Python 包全部通过
+  - `pnpm lint` → 0 errors（仅已存在 11 个 warning）
+  - `pnpm test` → 10/10 successful
+  - `pnpm build` → 5/5 successful
+- **Doc Sync**: updated `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md`:
+  - `layered_returns` 接口对齐实际实现（Q1~Q5 累积收益曲线 vs 单返回值数组）
+  - 添加 Doc Sync Log 条目
+- **后续迭代注意事项：**
+  - _parse_dates 自动检测秒/毫秒/微秒分辨率（sample > 1e11→毫秒, >1e15→微秒）
+  - pandas 3.x 的 DatetimeIndex.astype(np.int64) 返回微秒而非纳秒，测试数据生成时用 // 10**6
+  - factor.py 的 `_build_factor_defs` 只识别 `DEFAULT_FACTOR_FORMULAS` 中定义的因子 ID，自定义公式需额外注入
+  - 默认因子映射（mom/vol/turn）基于 OHLCV 代理公式，生产环境应从因子注册表获取真实计算公式
+  - `_bars_df` 测试参数支持直接传入 DataFrame 绕过 DataClient，适用于无数据库的单元测试
+  - 测试使用 np.random 生成合成数据且使用固定种子（SEED=42），测试结果确定性可复现
+---
+
+- Exit code: 0
+- Stories remaining: 3
+- **Detected issues:**
+```
+```
+---
 - 实现了 Python diagnostics 框架：目录 + 入口 + CLI 注册
 - **新建文件：**
   - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/__init__.py` — 路由函数 `run_diagnostics()`，按 params['category'] 分支调用对应诊断类；未知/缺失/空 category 默认走 non_factor 分支，不崩溃
@@ -723,6 +768,17 @@ lint_error
 - Stories remaining: 5
 - **Detected issues:**
 ```
+lint_error
+```
+---
+
+## [2026-06-29 16:54:21] - Iteration 6
+
+- Exit code: 0
+- Stories remaining: 4
+- **Detected issues:**
+```
+vitest_fail
 lint_error
 ```
 ---

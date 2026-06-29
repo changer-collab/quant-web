@@ -360,7 +360,7 @@ interface DiagnosticsPayload {
 interface FactorDiagnostics {
   type: 'factor_based';
   ic_series: { period: string; ic: number; rank_ic: number }[];
-  layered_returns: { group: string; return: number }[];
+  layered_returns: Record<'Q1' | 'Q2' | 'Q3' | 'Q4' | 'Q5', number[]>;
   correlation_matrix: number[][];
   factor_labels: string[];
   summary: { mean_ic: number; ic_std: number; ic_ir: number; mean_rank_ic: number };
@@ -646,3 +646,12 @@ graph LR
 | 配置传递 | 不保存，会话级 | API 持久化，跨会话 |
 | 策略就绪 | `workflowReady: true/false` | 同左，但基于 subcategory 非 null |
 | 组件 | `WorkspaceContent` + `StrategyGrid` | `WorkspacePage` + `StrategyGridNew` |
+
+---
+
+## 十一、Doc Sync Log
+
+| 日期 | 触发 Story | 变更内容 | 原因 |
+|------|-----------|---------|------|
+| 2026-06-30 | story-19 | `FactorDiagnostics.layered_returns` 从 `{group, return}[]` 修正为 `Record<Q1~Q5, number[]>`（累积收益曲线） | 实际实现（story-18 stub 已确立）使用 Q1~Q5 字典+累积数组 而非单返回值数组。累积曲线展示各分层随时间演变，信息量更大 |
+
