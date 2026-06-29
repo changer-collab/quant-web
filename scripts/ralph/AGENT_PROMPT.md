@@ -38,9 +38,10 @@
 5. 确认你在正确的分支上（参考 prd.json 的 `branchName`）
 6. **只实现这一个故事**
 7. 跑质量检查
-8. 提交代码
-9. 更新 prd.json（将完成的故事设为 `passes: true`）
-10. 追加进度到 progress.txt
+8. 执行 Doc Sync Gate：判断并更新相关 `docs/plans/*`、`docs/superpowers/specs/*`、`docs/development/*`、`.skills/ralph-harness/*`；如果不需要更新 docs，在 progress.txt 记录原因
+9. 提交代码
+10. 更新 prd.json（将完成的故事设为 `passes: true`）
+11. 追加进度到 progress.txt
 
 ## 💡 核心规则：测试文件不可修改
 
@@ -119,6 +120,18 @@ feat: [Story ID] - [Story Title]
 - 示例：前端测试通过 globalThis.fetch mock 脱离后端
 - 示例：Worker 通过 PythonBridge 调用 Python CLI
 ```
+
+## Doc Sync Gate
+
+提交前，必须判断本 story 是否需要同步文档或开发基础设施：
+
+- 改变执行状态、优先级、阻塞点、下一步 → 更新对应 `docs/plans/*` 的 Current Status / Decision Log / Doc Sync Log
+- 改变 API payload、结果结构、DB schema、任务状态机、分类枚举、层间职责边界 → 更新对应 `docs/superpowers/specs/*`
+- 发现长期开发标准或 Ralph 可复用规则 → 更新 `docs/development/*` 或 `.skills/ralph-harness/*`
+- Ralph 执行的 story → 追加 `scripts/ralph/progress.txt`，并同步 `prd.json` passes
+- 如果判断不需要更新 docs，也要在 `progress.txt` 中写明：`Doc Sync: no docs update needed because ...`
+
+**不要等“之后再补文档”。文档同步是完成条件，不是收尾建议。**
 
 ## 更新 AGENTS.md
 

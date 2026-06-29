@@ -74,8 +74,32 @@ StrategyMeta(
     ],
     version="0.1.0",
     kind=StrategyKind.Combined,        # Combined/Select/Timing/Position/Composite
+    category=StrategyCategory.NON_FACTOR,           # 三级分类：FACTOR_BASED/NON_FACTOR/TRANSITIONAL
+    subcategory=StrategySubcategory.TREND_CTA,      # 子分类，见下表
+    required_factors=None,             # 仅因子型策略填写依赖的因子 id 列表
 )
 ```
+
+`category`/`subcategory` 默认 `NON_FACTOR`/`None`，存量策略向后兼容。`meta.factor_based` 属性按 `category == FACTOR_BASED` 自动派生。
+
+### category / subcategory 对照
+
+> 子分类值在 Python / API / 前端三层严格一致（共 10 个）。
+
+| category | subcategory |
+|----------|-------------|
+| `FACTOR_BASED` 因子型 | `linear_multi_factor` / `nonlinear_ml` |
+| `NON_FACTOR` 非因子型 | `trend_cta` / `mean_reversion` / `arbitrage` / `high_frequency` / `macro_quant` / `event_driven` / `e2e_ai_timeseries` / `tail_risk_hedging` |
+| `TRANSITIONAL` 过渡形态 | 无子分类（前端 `CATEGORY_SUBCATEGORIES.transitional` 为空） |
+
+### StrategyParamDef 扩展字段
+
+供策略配置页动态表单与 K 线预览使用：
+
+| 字段 | 说明 |
+|------|------|
+| `chart_relevant` | 该参数变动是否触发 K 线预览重新请求（默认 `False`） |
+| `ui_constraints` | 前端表单联动规则列表（`UIConstraint`，kind 取 `disable_when`/`require_when`/`set_default_when`/`range_when`） |
 
 ## 4. 生命周期
 

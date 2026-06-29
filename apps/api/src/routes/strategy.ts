@@ -23,7 +23,7 @@ export async function strategyRoutes(app: FastifyInstance) {
       backtestable: m.backtestable,
       category: m.category ?? 'non_factor',
       subcategory: m.subcategory ?? null,
-      workflowReady: m.subcategory !== null && m.subcategory !== undefined,
+      workflowReady: m.category === 'transitional' || (m.subcategory !== null && m.subcategory !== undefined),
     }));
   });
 
@@ -51,7 +51,7 @@ export async function strategyRoutes(app: FastifyInstance) {
       backtestable: meta.backtestable,
       category: meta.category ?? 'non_factor',
       subcategory: meta.subcategory ?? null,
-      workflowReady: meta.subcategory !== null && meta.subcategory !== undefined,
+      workflowReady: meta.category === 'transitional' || (meta.subcategory !== null && meta.subcategory !== undefined),
     };
   });
 }

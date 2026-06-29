@@ -72,7 +72,7 @@ ralph-core.mjs  ← 核心逻辑（状态管理、错误检测、收敛判断、
 
 ## 核心原则
 
-Harness Engineering 遵循 6 条核心原则：
+Harness Engineering 遵循 7 条核心原则：
 
 | # | 原则 | 核心要求 |
 |---|------|---------|
@@ -82,6 +82,7 @@ Harness Engineering 遵循 6 条核心原则：
 | 4 | **多维度评估** | 三维度前置审查 + 验收边界检查清单，不信单个指标 |
 | 5 | **一切可回滚，留改动日志** | 结构化日志（changelog.jsonl）+ 按 iteration 粒度一键回滚 |
 | 6 | **单案例进台账，攒够升规则** | error-ledger.jsonl 累计，≥3 次输出升级建议给人审 |
+| 7 | **Story 完成必须包含文档同步判断** | 每次 story 完成后必须显式判断文档是否需要同步：更新受影响文档或记录明确判断"无需更新"并写明原因。判断不可延期；"之后再补"不算有效完成。 |
 
 ### 1. 结构化错误记录（必须）
 
@@ -218,6 +219,7 @@ These thoughts mean you're about to violate a harness engineering rule:
 | "No need to check convergence, one more iteration won't hurt" | Infinite loops start with "one more." Trust the convergence detector. |
 | "I'll just run the engine without checking for actual signal" | Engine wastes Claude CLI invocations on no-op iterations. `shouldRun()` first. |
 | "The error is probably in the frontend, let me fix it there" | Guess-driven fixes waste iterations. Add logging, observe, THEN fix. |
+| "I'll update docs in a separate iteration" | Story completion without Doc Sync judgment is incomplete. Judgment must fire every iteration — deferred documentation is not accepted. |
 
 ---
 
@@ -226,7 +228,7 @@ These thoughts mean you're about to violate a harness engineering rule:
 以下内容已拆分为独立参考文件，按需加载（避免每次加载 51KB 进上下文）：
 
 - **[prd-generation.md](prd-generation.md)** — PRD 生成规范：三维度前置审查、Story 拆解、验收标准编写、Agent 分配规则、验收边界检查清单、故障横向排查
-- **[anti-patterns.md](anti-patterns.md)** — 反模式表（24 条已知失败模式及修复）、Story 完成度审查清单与矩阵、故障排查（.prd.state.json 损坏、prd.json 进度不同步）、PowerShell CRLF 换行符兼容性
+- **[anti-patterns.md](anti-patterns.md)** — 反模式表（25 条已知失败模式及修复）、Story 完成度审查清单与矩阵、故障排查（.prd.state.json 损坏、prd.json 进度不同步）、PowerShell CRLF 换行符兼容性
 
 ---
 

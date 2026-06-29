@@ -1,6 +1,6 @@
 # 项目路线图
 
-> 📋 2026-06-27 完整链条审计：[pipeline-audit-2026-06-27.md](./pipeline-audit-2026-06-27.md) — 15 个环节逐项评估，含 5 个致命缺陷和 10 个次优先缺口。
+> 📋 最新链条审计：[pipeline-audit-2026-06-28.md](./pipeline-audit-2026-06-28.md) — 15 个环节逐项评估。5 个致命缺陷已修复 4 个，仅「过拟合防护」仍空白。
 
 ## 已完成计划
 
@@ -19,58 +19,63 @@
 | 2026-06-22 | 后端完善（回测报告与因子评估持久化） | api/report-repo, api/eval-repo, api/report-mapper |
 | 2026-06-22 | 策略开发就绪（策略同步/数据导入/Worker 扩展/类型匹配） | api/strategy-sync, data-center/import-data, worker/main, api/task-service |
 | 2026-06-23 | 回测单次闭环打通（equity_stats/CLI 衍生统计/obsidian-sync/前端字段修复） | backtest-engine/equity_stats, strategy-runtime/cli, web/factories |
+| 2026-06-25 | Ralph Harness 工程加固（结构化错误记录/跨迭代反馈/收敛检测） | scripts/ralph/ralph-core.mjs, ralph.ps1, ralph.sh |
+| 2026-06-27 | 回测报告 Potential Issues 关键词瓦片 | web/report/KeywordTileGrid |
+| 2026-06-28 | 链条致命缺陷修复（市场规则接入/FormulaFactor/AI 模型持久化/存活偏差/涨跌停） | backtest-engine, factor-lab, ai-engine, strategies |
+| 2026-06-28 | 策略分类体系重构 + 策略配置页 + Workspace 两步工作流 | strategy-runtime, api（config/preview/diagnostics）, web（strategy-page/workspace） |
+| 2026-06-25 | Agent 包装层（统一 AgentExecutor 接口） | worker/agents（base/python-agent/backtest-agent） |
 
 ---
 
 ## 待实施计划
 
+> 优先级依据 [pipeline-audit-2026-06-28.md](./pipeline-audit-2026-06-28.md)：4/5 致命缺陷已修复，过拟合防护是唯一剩余的致命缺陷。
+
 ### 高优先级
 
-### 1. 历史报告持久化展示
+### 1. 过拟合防护（唯一剩余的致命缺陷）
 
-- **目标**：前端接入 `/api/reports` 接口，页面刷新后历史报告仍在
-- **涉及**：web/api-reports, web/useResearchWorkflow
-- **前置**：回测闭环已打通（commit `32fd572`），API 报告接口已就绪
+- **目标**：实现 Walk-Forward 分析、样本外验证、Deflated Sharpe Ratio，把 `model.py` 的随机 `train_test_split` 换成时间序列切分
+- **涉及**：backtest-engine, ai-engine/model.py, api/report-mapper（OOS 字段当前硬编码为 0）
+- **影响**：区分"能跑回测"与"回测结果可信"的关键分水岭
 
-### 2. 真实数据接入与端到端验证
+### 2. 真实数据接入批量导入验证
 
-- **目标**：接入 AKShare 真实 A 股行情，跑通"数据采集 → 写入数据中心 → Python 回测 → 输出结果"闭环
+- **目标**：AKShare 适配器已实现，批量导入与端到端闭环待最终验证
 - **涉及**：data-collector, data-center, data-client, backtest-engine
-- **进度**：约 95%（AKShare 适配器已实现，批量导入待验证）
-- **计划**：`plans/2026-06-24-data-and-e2e.md`
 
-### 3. dual_ma 策略交易逻辑测试
+### 3. 策略分类重构遗留清理
 
-- **目标**：验证金叉买入、死叉卖出、持仓状态切换等核心逻辑
-- **涉及**：packages/strategies
+- **目标**：`useResearchWorkflow.ts` 仍残留 `ResearchModeId/activeMode/traditional`（约 10 处），spec 要求删除并替换为 `StrategyCategory`
+- **涉及**：web/useResearchWorkflow, web/strategy-grid
 
-### 4. 代码审查与质量加固
+### 4. 边界情况修复
 
-- **目标**：全仓库代码审查，补齐测试覆盖，修复集成缺口
-- **涉及**：全部 packages + apps + services
-
-### 5. 边界情况修复
-
-- **目标**：修复 SSE 幂等、API 健康检查、任务超时、种子数据统一等边界情况
+- **目标**：SSE 幂等、API 健康检查、任务超时、种子数据统一
 - **涉及**：web, api, worker
 
 ### 中优先级
 
-### 6. Agent 包装层 + 单次闭环
+### 5. 单次闭环打通（LoopHandler 迭代执行）
 
-- **目标**：构建统一的 AgentExecutor 接口，打通 LoopHandler 迭代执行闭环
-- **涉及**：apps/worker/src/agents/, handlers/loop-handler.ts, 条件评估器
-- **计划**：`plans/2026-06-25-agent-and-loop.md`
+- **目标**：Agent 包装层（AgentExecutor）已完成；LoopHandler 迭代循环仍是骨架（`loop-handler.ts` 始终返回 0 次迭代），需打通迭代执行闭环
+- **涉及**：apps/worker/src/handlers/loop-handler.ts, 条件评估器
+- **计划**：`plans/2026-06-25-agent-and-loop.md`（B/C 部分）
 
-### 7. 通用 Agent Harness 框架
+### 6. 通用 Agent Harness 框架
 
 - **目标**：创建 `packages/agent-harness` 通用框架
-- **前置**：#6 落地
+- **前置**：#5 落地
 
-### 8. Agent 测试评估框架
+### 7. Agent 测试评估框架
 
 - **目标**：建立 Agent 行为的测试和评估体系
-- **前置**：#7 落地
+- **前置**：#6 落地
+
+### 8. 特征提取与因子分析扩展
+
+- **目标**：特征提取仅 3 类基础特征，需补技术指标/基本面特征；因子分析缺 IC 衰减/中性化/正交化/换手率
+- **涉及**：ai-engine/features.py, factor-lab/evaluator.py
 
 ### 9. 策略分层 Timer 数据连续性
 
@@ -80,11 +85,17 @@
 ### 10. 借鉴 OSkhQuant（3/7 已完成）
 
 - **已完成**：技术指标库、A 股市场规则、OrderRequest.reason
-- **待实施**：多标的回测增强、风控模块、绩效归因
+- **待实施**：多标的回测增强、风控模块、绩效归因（当前仅多标的权益分解）
 
 ### 低优先级
 
-### 11. 多市场扩展路线图
+### 11. 组合优化与模拟交易
+
+- **目标**：组合优化（mean-variance/risk parity）当前空白；Paper Trading 缺失，回测→实盘之间无过渡桥梁
+- **涉及**：strategies/sizers, strategy-runtime（新增 forward/paper 命令）
+
+### 12. 多市场扩展路线图
 
 - **目标**：港股/美股/期货/基金市场支持
 - **当前不做**：按 AGENTS.md 规定，当前不做实盘和权限系统
+

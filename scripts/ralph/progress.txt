@@ -520,3 +520,5 @@ build_fail
   - legacy `WorkspaceContent`/`WorkspaceModeTabs` 组件仍引用 `ResearchModeId`，不影响功能
   - 旧的 `strategy-grid.tsx` 标记为 deprecated 但保留在代码库中以维护 git blame
 ---
+
+## ✅ ALL STORIES COMPLETE

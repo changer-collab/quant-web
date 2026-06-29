@@ -1,6 +1,8 @@
 # Agent 与循环引擎计划
 
 > 合并自 06-25 三个子计划：Agent 包装层、单次闭环打通、自治 Agent 循环
+>
+> **状态（2026-06-28）**：A. Agent 包装层 ✅ 已完成（`apps/worker/src/agents/` base/python-agent/backtest-agent/index 已落地）；C. 自治 Agent 循环 ✅ 已完成（`scripts/ralph/` ralph-core.mjs/ralph.ps1/ralph.sh，详见 [ralph-harness-design](../superpowers/specs/2026-06-25-ralph-harness-design.md)）；**B. 单次闭环打通 🔴 未完成** — LoopHandler 迭代循环仍是骨架，是本计划唯一剩余工作。
 
 ---
 
