@@ -56,10 +56,16 @@ importers:
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
+      sql.js:
+        specifier: ^1.14.1
+        version: 1.14.1
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.11
         version: 7.6.13
+      '@types/sql.js':
+        specifier: ^1.4.11
+        version: 1.4.11
       tsx:
         specifier: ^4.19.0
         version: 4.22.4
@@ -3784,8 +3790,7 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
-  '@types/emscripten@1.41.5':
-    optional: true
+  '@types/emscripten@1.41.5': {}
 
   '@types/estree@1.0.9': {}
 
@@ -3807,7 +3812,6 @@ snapshots:
     dependencies:
       '@types/emscripten': 1.41.5
       '@types/node': 24.13.2
-    optional: true
 
   '@typescript-eslint/eslint-plugin@8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.4)(typescript@5.9.3))(eslint@9.39.4)(typescript@5.9.3)':
     dependencies:
@@ -5482,8 +5486,7 @@ snapshots:
 
   split2@4.2.0: {}
 
-  sql.js@1.14.1:
-    optional: true
+  sql.js@1.14.1: {}
 
   stackback@0.0.2: {}
 

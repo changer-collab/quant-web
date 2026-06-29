@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { StrategyRow, UiCopy, LanguageCode } from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
 import { fetchDiagnostic } from '../api/diagnostics';
+import { fetchStrategyConfig } from '../api/strategies-config';
 import { submitBacktest, streamTask as streamBacktestTask } from '../api/tasks';
 import s from '../styles/workspace-page.module.css';
 
@@ -17,13 +18,33 @@ interface WorkspacePageProps {
 
 type ProgressState = { percent: number; message: string } | null;
 
-interface TradeRow {
-  date: string;
-  side: 'buy' | 'sell';
-  price: number;
-  shares: number;
-  pnl: number;
-  reason: string;
+interface ConfigSnapshot {
+  strategy: string;
+  params: Record<string, unknown>;
+}
+
+interface BacktestMetricsView {
+  totalReturn?: number;
+  maxDrawdown?: number;
+  sharpeRatio?: number;
+  totalTrades?: number;
+}
+
+interface BacktestTradeView {
+  timestamp?: number;
+  date?: string;
+  side?: string;
+  price?: number;
+  quantity?: number;
+  shares?: number;
+  pnl?: number;
+  reason?: string;
+}
+
+interface BacktestResultView {
+  metrics?: BacktestMetricsView;
+  equityCurve?: Array<{ timestamp: number; equity: number }>;
+  trades?: BacktestTradeView[];
 }
 
 // ── Deterministic mock data generators (no Math.random) ─────
@@ -61,23 +82,6 @@ function genMockLinePoints(count: number): number[] {
     pts.push(Math.round(val * 100) / 100);
   }
   return pts;
-}
-
-function genMockTradeRows(): TradeRow[] {
-  const sides: ('buy' | 'sell')[] = ['buy', 'sell'];
-  const rows: TradeRow[] = [];
-  for (let i = 0; i < 10; i++) {
-    const side = sides[i % 2];
-    rows.push({
-      date: `2024-${String(Math.floor(i / 2) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
-      side,
-      price: Math.round((20 + det(i, 2) * 80) * 100) / 100,
-      shares: Math.round(det(i, 3) * 10000 + 1000),
-      pnl: side === 'sell' ? Math.round((det(i, 4) * 20000 - 5000) * 100) / 100 : 0,
-      reason: side === 'buy' ? 'Signal triggered' : 'Take profit',
-    });
-  }
-  return rows;
 }
 
 // ── Chart subcomponents ──────────────────────────────────────
@@ -167,7 +171,7 @@ function LineChart({ points, color = 'var(--green)' }: { points: number[]; color
   const range = max - min || 1;
   const w = 100;
   const h = 100;
-  const stepX = w / (points.length - 1);
+  const stepX = points.length === 1 ? 0 : w / (points.length - 1);
   const pathD = points
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${i * stepX},${h - ((p - min) / range) * h}`)
     .join(' ');
@@ -192,6 +196,74 @@ function MiniGrid({ items }: { items: { label: string; value: string }[] }) {
       ))}
     </div>
   );
+}
+
+function getNestedNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
+  let current: unknown = record;
+  for (const key of keys) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === 'number' && Number.isFinite(current) ? current : undefined;
+}
+
+function extractBacktestResult(data: Record<string, unknown> | null): BacktestResultView | null {
+  if (!data) return null;
+  const raw = data.backtestResult && typeof data.backtestResult === 'object'
+    ? data.backtestResult as Record<string, unknown>
+    : data;
+  const metricsRaw = raw.metrics && typeof raw.metrics === 'object'
+    ? raw.metrics as Record<string, unknown>
+    : {};
+  const equityCurve = Array.isArray(raw.equityCurve)
+    ? raw.equityCurve
+        .map((point) => {
+          if (!point || typeof point !== 'object') return null;
+          const p = point as Record<string, unknown>;
+          const timestamp = typeof p.timestamp === 'number' ? p.timestamp : undefined;
+          const equity = typeof p.equity === 'number' ? p.equity : undefined;
+          return timestamp !== undefined && equity !== undefined ? { timestamp, equity } : null;
+        })
+        .filter((point): point is { timestamp: number; equity: number } => point !== null)
+    : [];
+  const trades = Array.isArray(raw.trades)
+    ? raw.trades.filter((trade): trade is BacktestTradeView => Boolean(trade && typeof trade === 'object'))
+    : [];
+
+  return {
+    metrics: {
+      totalReturn: getNestedNumber(metricsRaw, ['totalReturn']),
+      maxDrawdown: getNestedNumber(metricsRaw, ['maxDrawdown']),
+      sharpeRatio: getNestedNumber(metricsRaw, ['sharpeRatio']),
+      totalTrades: getNestedNumber(metricsRaw, ['totalTrades']),
+    },
+    equityCurve,
+    trades,
+  };
+}
+
+function formatPercent(value: number | undefined): string {
+  if (value === undefined) return '--';
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function formatNumber(value: number | undefined, digits = 2): string {
+  if (value === undefined) return '--';
+  return value.toFixed(digits);
+}
+
+function formatTradeDate(trade: BacktestTradeView): string {
+  if (trade.date) return trade.date;
+  if (typeof trade.timestamp === 'number') {
+    return new Date(trade.timestamp).toISOString().slice(0, 10);
+  }
+  return '--';
+}
+
+function formatTradeSide(side: string | undefined, language: LanguageCode): string {
+  if (side === 'buy') return language === 'zh' ? '买入' : 'Buy';
+  if (side === 'sell') return language === 'zh' ? '卖出' : 'Sell';
+  return side ?? '--';
 }
 
 // ── Progress / Error helpers ─────────────────────────────────
@@ -238,9 +310,15 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   const [backtestError, setBacktestError] = useState<string | null>(null);
   const [backtestResult, setBacktestResult] = useState<Record<string, unknown> | null>(null);
   const [backtestSubmitted, setBacktestSubmitted] = useState(false);
+  const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
+  const [backtestSymbol, setBacktestSymbol] = useState('600519');
+  const [backtestTimeframe, setBacktestTimeframe] = useState('1d');
+  const [backtestInitialCapital, setBacktestInitialCapital] = useState(1_000_000);
+  const configDefaultsApplied = useRef(false);
 
   const subcategory = strategy.subcategory ?? '';
   const category = strategy.category ?? 'non_factor';
+  const parsedBacktest = extractBacktestResult(backtestResult);
 
   // ── Pre-computed deterministic mock data for charts ──
   const mockData = useMemo(() => ({
@@ -280,13 +358,6 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       { label: 'Feature 6', value: 0.05 },
     ],
     trainLoss: genMockLinePoints(30),
-    equityPts: genMockLinePoints(252),
-    mockTrades: genMockTradeRows(),
-    perfTotalReturn: `${(det(0) * 60 + 10).toFixed(1)}%`,
-    perfMaxDrawdown: `${(det(1) * 15 + 5).toFixed(1)}%`,
-    perfSharpe: (det(2) * 2 + 0.5).toFixed(2),
-    perfTotalReturnNum: det(0) * 60 + 10,
-    perfSharpeNum: det(2) * 2 + 0.5,
     factorLabels: ['Momentum', 'Quality', 'Value', 'Size', 'Volatility', 'Growth'],
     sensLabels: ['Lookback', 'Entry', 'Exit', 'Stop', 'Size'],
     macroLabels: ['GDP', 'CPI', 'PMI', 'M2'],
@@ -315,6 +386,34 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         .finally(() => setDiagnosticLoading(false));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    configDefaultsApplied.current = false;
+    fetchStrategyConfig(strategy.name)
+      .then((res) => {
+        setConfigSnapshot(res ? { strategy: strategy.name, params: res.config_json } : null);
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch strategy config:', err);
+      });
+  }, [strategy.name]);
+
+  useEffect(() => {
+    if (configSnapshot?.params && !configDefaultsApplied.current) {
+      configDefaultsApplied.current = true;
+      const p = configSnapshot.params;
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (typeof p.symbol === 'string') setBacktestSymbol(p.symbol);
+      if (typeof p.timeframe === 'string') setBacktestTimeframe(p.timeframe);
+      const initialCash = typeof p.initialCash === 'number'
+        ? p.initialCash
+        : typeof p.initialCapital === 'number'
+          ? p.initialCapital
+          : undefined;
+      if (initialCash !== undefined) setBacktestInitialCapital(initialCash);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [configSnapshot]);
 
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {
@@ -383,9 +482,9 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     try {
       const { id: taskId } = await submitBacktest({
         strategy: strategy.id,
-        symbol: '600519',
-        timeframe: '1d',
-        initialCash: 1_000_000,
+        symbol: backtestSymbol,
+        timeframe: backtestTimeframe,
+        initialCash: backtestInitialCapital,
         startTs: 1672675200000,
         endTs: 1735574400000,
       });
@@ -417,7 +516,14 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setBacktestLoading(false);
     }
-  }, [strategy.id, language, ui.workspaceBacktestFailed]);
+  }, [
+    strategy.id,
+    backtestSymbol,
+    backtestTimeframe,
+    backtestInitialCapital,
+    language,
+    ui.workspaceBacktestFailed,
+  ]);
 
   // ── Step 1 Diagnostics Content ──
   function renderDiagnosticContent() {
@@ -556,11 +662,9 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
   // ── Step 2 Backtest Content ──
   function renderBacktestContent() {
-    const mockPerfMetrics = {
-      totalReturn: mockData.perfTotalReturn,
-      maxDrawdown: mockData.perfMaxDrawdown,
-      sharpe: mockData.perfSharpe,
-    };
+    const metrics = parsedBacktest?.metrics;
+    const equityPoints = parsedBacktest?.equityCurve?.map((point) => point.equity) ?? [];
+    const trades = parsedBacktest?.trades ?? [];
 
     return (
       <>
@@ -572,15 +676,15 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
           </div>
           <div className={s.configItem}>
             <span className={s.configItemLabel}>{language === 'zh' ? '标的' : 'Symbol'}</span>
-            <span className={s.configItemValue}>600519</span>
+            <span className={s.configItemValue}>{backtestSymbol}</span>
           </div>
           <div className={s.configItem}>
             <span className={s.configItemLabel}>{language === 'zh' ? '时间周期' : 'Timeframe'}</span>
-            <span className={s.configItemValue}>1d</span>
+            <span className={s.configItemValue}>{backtestTimeframe}</span>
           </div>
           <div className={s.configItem}>
             <span className={s.configItemLabel}>{language === 'zh' ? '初始资金' : 'Initial Cash'}</span>
-            <span className={s.configItemValue}>¥1,000,000</span>
+            <span className={s.configItemValue}>¥{backtestInitialCapital.toLocaleString()}</span>
           </div>
           <div className={s.configItem}>
             <span className={s.configItemLabel}>{language === 'zh' ? '回测区间' : 'Backtest Range'}</span>
@@ -614,20 +718,20 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             <div className={s.chartCardTitle}>{ui.workspacePerformanceTitle}</div>
             <div className={s.perfGrid}>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${parseFloat(mockPerfMetrics.totalReturn) > 10 ? s.perfCardGood : s.perfCardWarn}`}>
-                  {mockPerfMetrics.totalReturn}
+                <div className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}>
+                  {formatPercent(metrics?.totalReturn)}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '总收益' : 'Total Return'}</div>
               </div>
               <div className={s.perfCard}>
                 <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
-                  {mockPerfMetrics.maxDrawdown}
+                  {formatPercent(metrics?.maxDrawdown)}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '最大回撤' : 'Max Drawdown'}</div>
               </div>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${parseFloat(mockPerfMetrics.sharpe) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
-                  {mockPerfMetrics.sharpe}
+                <div className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
+                  {formatNumber(metrics?.sharpeRatio)}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}</div>
               </div>
@@ -636,7 +740,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             {/* Equity Curve */}
             <div className={s.chartCardTitle}>{ui.workspaceEquityCurve}</div>
             <div className={s.equityCurve}>
-              <LineChart points={mockData.equityPts} />
+              <LineChart points={equityPoints} />
             </div>
 
             {/* Trade Details */}
@@ -654,22 +758,26 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                   </tr>
                 </thead>
                 <tbody>
-                  {mockData.mockTrades.map((t, i) => (
-                    <tr key={i}>
-                      <td>{t.date}</td>
-                      <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
-                        {t.side === 'buy' ? (language === 'zh' ? '买入' : 'Buy') : (language === 'zh' ? '卖出' : 'Sell')}
-                      </td>
-                      <td>{t.price.toFixed(2)}</td>
-                      <td>{t.shares.toLocaleString()}</td>
-                      <td style={{ color: t.pnl >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)' }}>
-                        {t.pnl >= 0 ? '+' : ''}{t.pnl.toFixed(2)}
-                      </td>
-                      <td>{t.reason}</td>
-                    </tr>
-                  ))}
+                  {trades.map((t, i) => {
+                    const quantity = t.quantity ?? t.shares;
+                    return (
+                      <tr key={i}>
+                        <td>{formatTradeDate(t)}</td>
+                        <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
+                          {formatTradeSide(t.side, language)}
+                        </td>
+                        <td>{formatNumber(t.price)}</td>
+                        <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
+                        <td style={{ color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)' }}>
+                          {(t.pnl ?? 0) >= 0 ? '+' : ''}{formatNumber(t.pnl)}
+                        </td>
+                        <td>{t.reason ?? '--'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+              {trades.length === 0 && <div className={s.emptyState}>No trades</div>}
             </div>
           </>
         )}
