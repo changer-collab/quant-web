@@ -26,10 +26,6 @@ export function getPages(language?: LanguageCode) {
   return getContent(language).pages;
 }
 
-export function getResearchModes(language?: LanguageCode) {
-  return getContent(language).researchModes;
-}
-
 export function getStrategies(language?: LanguageCode) {
   return getContent(language).strategies;
 }
@@ -71,12 +67,7 @@ export function getPage(id: string, language?: LanguageCode) {
   return pages[(id as keyof typeof pages) in pages ? (id as keyof typeof pages) : 'dashboard'];
 }
 
-export function getResearchMode(id: string, language?: LanguageCode) {
-  return getResearchModes(language).find((mode) => mode.id === id) ?? getResearchModes(language)[0];
-}
-
 export const NAV_ITEMS = getNavItems(DEFAULT_LANGUAGE);
-export const RESEARCH_MODES = getResearchModes(DEFAULT_LANGUAGE);
 export const PAGES = getPages(DEFAULT_LANGUAGE);
 export const STRATEGIES = getStrategies(DEFAULT_LANGUAGE);
 export const MARKET_TICKS = getMarketTicks(DEFAULT_LANGUAGE);

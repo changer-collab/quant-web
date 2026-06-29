@@ -8,14 +8,14 @@ import type {
   ReportConclusion,
   ReportRiskWarnings,
 } from './types';
-import { getContent, getResearchMode } from './accessors';
+import { getContent } from './accessors';
 import { localizeJobState, localizeResearchJob } from './localization';
 
 function resolveResearchTarget(input: CreateResearchJobInput, language?: LanguageCode) {
   const content = getContent(language);
-  const mode = input.strategy?.mode ?? input.mode ?? 'traditional';
+  const mode = input.strategy?.mode ?? input.mode ?? 'non_factor';
   const strategyName =
-    input.strategy?.name ?? `${getResearchMode(mode, language).title}${content.draftSuffix} #${input.sequence}`;
+    input.strategy?.name ?? `${mode}${content.draftSuffix} #${input.sequence}`;
 
   return { content, mode, strategyName };
 }
@@ -26,7 +26,7 @@ export function createResearchJob(input: CreateResearchJobInput, language?: Lang
   return {
     id: input.id,
     name: `${content.runJobPrefix}${strategyName}`,
-    kind: content.modeJobKind[mode],
+    kind: mode,
     state: input.initialState ?? 'Running',
     progress: input.initialProgress ?? 0,
     strategyName,
@@ -41,7 +41,7 @@ export function createResearchJob(input: CreateResearchJobInput, language?: Lang
 export function createResearchReport(input: CreateResearchReportInput, language?: LanguageCode): ResearchReport {
   const { content, mode, strategyName } = resolveResearchTarget(input, language);
   const labels = content.reportMetricLabels;
-  const modeName = content.modeJobKind[mode];
+  const modeName = mode;
   const metrics = input.strategy
     ? [
         { label: labels.return, value: input.strategy.return, tone: 'good' as const },
@@ -49,20 +49,11 @@ export function createResearchReport(input: CreateResearchReportInput, language?
         { label: labels.sharpe, value: input.strategy.sharpe, tone: 'good' as const },
         { label: labels.mode, value: modeName, tone: 'info' as const },
       ]
-    : getResearchMode(mode, language).heroMetrics.map((metric) =>
-        metric.label === labels.mode ? metric : { ...metric },
-      );
-
-  if (!input.strategy && !metrics.some((metric) => metric.label === labels.mode)) {
-    metrics[0] = { label: labels.mode, value: modeName, tone: 'info' };
-  }
+    : [];
 
   const diagnostics = input.diagnosticSections?.length
     ? input.diagnosticSections.map((section) => ({ title: section.title, items: [...section.items] }))
-    : getResearchMode(mode, language).sections.map((section) => ({
-        title: section.title,
-        items: [...section.items],
-      }));
+    : [];
 
   if (input.configSummary?.length && !diagnostics.some((section) => section.title === content.ui.runConfigurationTitle)) {
     diagnostics.unshift({

@@ -9,8 +9,6 @@ import {
   getJobs,
   getNavItems,
   getPage,
-  getResearchMode,
-  getResearchModes,
   getStrategies,
   getUiCopy,
   localizeResearchJob,
@@ -78,7 +76,6 @@ it('Chinese copy is readable and does not contain mojibake markers', () => {
   const chineseContent = JSON.stringify({
     nav: getNavItems('zh'),
     pages: ['dashboard', 'strategies', 'workspace', 'jobs', 'settings'].map((id) => getPage(id, 'zh')),
-    modes: getResearchModes('zh'),
     strategies: getStrategies('zh'),
     jobs: getJobs('zh'),
     ui: getUiCopy('zh'),
@@ -88,23 +85,6 @@ it('Chinese copy is readable and does not contain mojibake markers', () => {
   assert.ok(chineseContent.includes('策略研究台'));
   assert.ok(chineseContent.includes('运行研究'));
   assert.ok(!/[鐮綛栫暐昏�]/u.test(chineseContent));
-});
-
-it('research workspace exposes traditional, high-frequency, and AI modes in both languages', () => {
-  assert.deepEqual(
-    getResearchModes('en').map((mode) => mode.id),
-    ['traditional', 'hft', 'ai'],
-  );
-
-  assert.deepEqual(
-    getResearchModes('en').map((mode) => mode.label),
-    ['Traditional Quant', 'High-Frequency Research', 'AI Quant'],
-  );
-
-  assert.deepEqual(
-    getResearchModes('zh').map((mode) => mode.label),
-    ['传统量化', '高频研究', 'AI 量化'],
-  );
 });
 
 it('strategies carry stable ids and localized labels', () => {
@@ -125,62 +105,6 @@ it('strategies carry stable ids and localized labels', () => {
   assert.equal(chineseStrategies[5].type, '订单流动量策略');
   assert.equal(englishStrategies[6].type, 'AI Alpha Mining Strategy');
   assert.equal(chineseStrategies[6].type, 'AI Alpha 挖掘策略');
-});
-
-it('traditional quant is explicit and generic code strategy wording is removed', () => {
-  const allContent = JSON.stringify({
-    nav: getNavItems('en'),
-    workspace: getPage('workspace', 'en'),
-    modes: getResearchModes('en'),
-  });
-  const traditionalMode = getResearchMode('traditional', 'en');
-
-  assert.ok(allContent.includes('Traditional Quant Strategy'));
-  assert.ok(!allContent.includes('Generic Code Strategy'));
-  assert.ok(traditionalMode.sections.flatMap((section) => section.items).includes('Multi-factor Selection'));
-  assert.ok(traditionalMode.sections.flatMap((section) => section.items).includes('Statistical Arbitrage'));
-});
-
-it('research modes expose their own configuration and diagnostics', () => {
-  const traditionalItems = getResearchMode('traditional', 'zh').sections.flatMap((section) => section.items);
-  const hftItems = getResearchMode('hft', 'zh').sections.flatMap((section) => section.items);
-  const aiItems = getResearchMode('ai', 'zh').sections.flatMap((section) => section.items);
-
-  assert.ok(traditionalItems.includes('因子'));
-  assert.ok(traditionalItems.includes('股票池'));
-  assert.ok(traditionalItems.includes('调仓频率'));
-  assert.ok(hftItems.includes('逐笔'));
-  assert.ok(hftItems.includes('订单簿'));
-  assert.ok(hftItems.includes('撤单率'));
-  assert.ok(aiItems.includes('特征'));
-  assert.ok(aiItems.includes('训练区间'));
-  assert.ok(aiItems.includes('预测结果'));
-});
-
-it('research modes expose data driven run configuration items', () => {
-  const englishModes = getResearchModes('en');
-  const chineseModes = getResearchModes('zh');
-
-  assert.deepEqual(
-    englishModes.map((mode) => mode.configItems.map((item) => item.label)),
-    [
-      ['Factors', 'Universe', 'Rebalance', 'Backtest Window'],
-      ['Tick Source', 'Order Book Depth', 'Matching Rule', 'Latency Assumption'],
-      ['Feature Set', 'Label', 'Model', 'Training Window'],
-    ],
-  );
-
-  assert.deepEqual(
-    chineseModes.map((mode) => mode.configItems.map((item) => item.label)),
-    [
-      ['因子', '股票池', '调仓频率', '回测区间'],
-      ['Tick 源', '订单簿深度', '撮合规则', '延迟假设'],
-      ['特征集', '标签', '模型', '训练区间'],
-    ],
-  );
-
-  assert.ok(englishModes.every((mode) => mode.configItems.every((item) => item.value && item.description)));
-  assert.ok(JSON.stringify(chineseModes).includes('默认值'));
 });
 
 it('state changes valid pages and ignores removed pages', () => {
@@ -222,16 +146,16 @@ it('research jobs are localized from selected strategy or active mode', () => {
     },
     {
       id: 'job-custom',
-      kind: 'High-Frequency Research',
+      kind: 'hft',
       progress: 0,
       state: 'Running',
       strategyName: 'Order Flow Momentum',
       name: 'Run Research: Order Flow Momentum',
     },
   );
-  assert.equal(defaultJob.kind, 'AI 量化');
-  assert.equal(defaultJob.strategyName, 'AI 量化策略草稿 #8');
-  assert.equal(defaultJob.name, '运行研究：AI 量化策略草稿 #8');
+  assert.equal(defaultJob.kind, 'ai');
+  assert.equal(defaultJob.strategyName, 'ai草稿 #8');
+  assert.equal(defaultJob.name, '运行研究：ai草稿 #8');
   assert.equal(defaultJob.progress, 0);
   assert.equal(defaultJob.state, 'Running');
   assert.equal(localizeResearchJob(selectedJob, 'zh').state, '运行中');
@@ -269,15 +193,14 @@ it('research reports inherit selected strategy and mode metrics', () => {
   assert.equal(report.id, 'report-custom');
   assert.equal(report.jobId, 'job-custom');
   assert.equal(report.mode, 'hft');
-  assert.equal(report.modeName, 'High-Frequency Research');
+  assert.equal(report.modeName, 'hft');
   assert.equal(report.strategyName, 'Order Flow Momentum');
   assert.equal(report.title, 'Report: Order Flow Momentum');
   assert.equal(report.status, 'Completed · 15:30:00');
   assert.deepEqual(
     report.metrics.map((metric) => metric.value),
-    ['+34.6%', '-9.2%', '2.18', 'High-Frequency Research'],
+    ['+34.6%', '-9.2%', '2.18', 'hft'],
   );
-  assert.ok(report.diagnostics.flatMap((section) => section.items).includes('Order Book'));
 });
 
 it('research reports include run configuration diagnostics', () => {
@@ -311,12 +234,10 @@ it('research reports create localized draft names without selected strategy', ()
   );
 
   assert.equal(report.mode, 'ai');
-  assert.equal(report.modeName, 'AI 量化');
-  assert.equal(report.strategyName, 'AI 量化策略草稿 #8');
-  assert.equal(report.title, '报告：AI 量化策略草稿 #8');
+  assert.equal(report.modeName, 'ai');
+  assert.equal(report.strategyName, 'ai草稿 #8');
+  assert.equal(report.title, '报告：ai草稿 #8');
   assert.equal(report.status, '已完成 · 15:31:00');
-  assert.ok(report.metrics.some((metric) => metric.label === '研究模式' && metric.value === 'AI 量化'));
-  assert.ok(report.diagnostics.flatMap((section) => section.items).includes('预测结果'));
 });
 
 it('mock jobs are localized', () => {

@@ -1,6 +1,5 @@
 import type { LanguageContent } from './types';
 import { FactorStatus, FactorEvalTab } from './types';
-import { aiCodeSample, hftCodeSample, traditionalCodeSample } from './codeSamples';
 
 export const zhContent: LanguageContent = {
     navItems: [
@@ -14,83 +13,6 @@ export const zhContent: LanguageContent = {
       { id: 'data', label: '数据中心', eyebrow: '' },
       { id: 'jobs', label: '任务中心', eyebrow: '' },
       { id: 'settings', label: '系统设置', eyebrow: '' },
-    ],
-    researchModes: [
-      {
-        id: 'traditional',
-        label: '传统量化',
-        title: '传统量化策略',
-        description: '覆盖因子、择时、套利和组合回测，是平台最基础的一等策略入口。',
-        codeFile: 'traditional_alpha.py',
-        codeSample: traditionalCodeSample,
-        configItems: [
-          { label: '因子', value: '质量 + 动量', description: '默认值，适合先验证多因子基础表现。' },
-          { label: '股票池', value: 'CSI 500', description: '默认值，使用流动性较好的中盘样本。' },
-          { label: '调仓频率', value: '每日收盘', description: '默认值，用于日频回测和换手诊断。' },
-          { label: '回测区间', value: '2021-2025', description: '默认值，便于生成可比较的报告。' },
-        ],
-        heroMetrics: [
-          { label: '策略范式', value: '因子型', tone: 'info' },
-          { label: '调仓频率', value: '日频', tone: 'good' },
-          { label: '股票池', value: 'CSI 500', tone: 'info' },
-          { label: '换手率', value: '38.4%', tone: 'warn' },
-        ],
-        sections: [
-          { title: '传统量化类型', items: ['多因子选股', '均值回归', '趋势跟踪', '统计套利', '择时策略'] },
-          { title: '研究配置', items: ['因子', '股票池', '调仓频率', '持仓约束', '回测参数'] },
-          { title: '诊断指标', items: ['收益', '回撤', '夏普', '胜率', '换手率'] },
-        ],
-      },
-      {
-        id: 'hft',
-        label: '高频研究',
-        title: '高频策略研究',
-        description: '高频作为研究模式存在，专注 tick、盘口、撮合假设和执行质量。',
-        codeFile: 'hft_microstructure.py',
-        codeSample: hftCodeSample,
-        configItems: [
-          { label: 'Tick 源', value: 'Level1 + 成交流', description: '默认值，用于微观结构回放。' },
-          { label: '订单簿深度', value: '前五档', description: '默认值，用于成交假设和盘口冲击。' },
-          { label: '撮合规则', value: '队列优先', description: '默认值，模拟排队成交。' },
-          { label: '延迟假设', value: '25ms', description: '默认值，下单前加入固定延迟。' },
-        ],
-        heroMetrics: [
-          { label: '频率', value: 'Tick / 1s', tone: 'info' },
-          { label: '成交率', value: '72.6%', tone: 'good' },
-          { label: '平均滑点', value: '1.4bp', tone: 'warn' },
-          { label: '撤单率', value: '18.9%', tone: 'warn' },
-        ],
-        sections: [
-          { title: '高频配置', items: ['逐笔', '订单簿', '撮合规则', '滑点', '延迟', '撤单率'] },
-          { title: '微观结构', items: ['逐笔数据查看', '订单簿快照', '成交流', '买卖盘深度变化'] },
-          { title: '执行诊断', items: ['成交率', '平均滑点', '订单延迟', '盘口冲击'] },
-        ],
-      },
-      {
-        id: 'ai',
-        label: 'AI 量化',
-        title: 'AI 量化策略',
-        description: 'AI 作为预测型研究模式存在，围绕特征、标签、模型训练和样本外表现。',
-        codeFile: 'ml_alpha.py',
-        codeSample: aiCodeSample,
-        configItems: [
-          { label: '特征集', value: '价格 + 成交量 + 微观 Alpha', description: '默认值，用于首轮训练。' },
-          { label: '标签', value: '未来 5 日超额收益', description: '默认值，用于横截面排序预测。' },
-          { label: '模型', value: 'XGBoost', description: '默认值，适合快速表格实验。' },
-          { label: '训练区间', value: '2020-2024', description: '默认值，覆盖训练和验证样本。' },
-        ],
-        heroMetrics: [
-          { label: '模型', value: 'XGBoost', tone: 'info' },
-          { label: 'IC', value: '0.071', tone: 'good' },
-          { label: 'Rank IC', value: '0.094', tone: 'good' },
-          { label: '样本外', value: '+6.8%', tone: 'info' },
-        ],
-        sections: [
-          { title: 'AI 配置', items: ['特征', '标签', '模型', '训练区间', '验证区间', '预测结果'] },
-          { title: '模型训练', items: ['训练任务状态', '特征重要性', '预测结果曲线'] },
-          { title: '策略验证', items: ['预测值 vs 实际收益', '训练集 / 验证集 / 测试集表现', 'AI 策略回测结果'] },
-        ],
-      },
     ],
     pages: {
       dashboard: {
@@ -605,11 +527,6 @@ export const zhContent: LanguageContent = {
         strategyId: 'strategy-cancel-spike',
       },
     ],
-    modeJobKind: {
-      traditional: '传统量化',
-      hft: '高频研究',
-      ai: 'AI 量化',
-    },
     reportMetricLabels: {
       return: '收益',
       drawdown: '回撤',
@@ -629,12 +546,10 @@ export const zhContent: LanguageContent = {
       },
       brandTagline: '因子 · 策略 · AI 量化研究终端',
       chartAriaLabel: '研究图表预览',
-      currentResearchMode: '当前研究模式',
       enterWorkspace: '进入策略研究台',
       heroEyebrow: '你的量化研究实验室',
       languageDescription: '选择界面语言。你的选择会保存在本机。',
       languageTitle: '界面语言',
-      modeTabsAriaLabel: '策略研究模式',
       navAriaLabel: '主导航',
       currentRunSummary: '当前运行摘要',
       ready: '就绪',

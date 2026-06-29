@@ -1,56 +1,6 @@
-﻿璁╂垜鍏堟鏌ュ綋鍓嶅垎鏀姸鎬佸拰浠ｇ爜搴撶殑褰撳墠鐘跺喌銆傝鎴戞鏌ョ幇鏈夌殑 API 瀹㈡埛绔拰 tests/setup.ts 鐨?mock 閰嶇疆銆傚ソ锛屾垜鐞嗚В浜嗗綋鍓嶇姸鍐点€傝鎴戞鏌ュ綋鍓?TypeScript 缂栬瘧鐘舵€併€俆ypeScript 缂栬瘧宸查€氳繃銆傜幇鍦ㄨ鎴戞鏌ュ綋鍓嶅垎鏀姸鍐靛拰鏈€鏂扮殑鎻愪氦璇︽儏銆傜幇鍦ㄦ垜瀵规墍鏈変唬鐮佺殑鑴夌粶宸茬粡娓呮櫚浜嗐€傝鎴戞墽琛?**story-14**銆?
-## 姒傝
+﻿Let me check the current branch and investigate the codebase for story-16.Good, I'm on the right branch. Let me check more broadly for any remaining references to the old grid and workspace components.Everything is clear. No other files import `strategy-grid.tsx`. Now let me implement story-16:
 
-褰撳墠鍒嗘敮锛歚ralph/strategy-classification` 鉁?鏈€楂樹紭鍏堢骇鏈畬鎴?story锛?*story-14** (Phase 1a 鈥?ConfigSnapshot 绫诲瀷瀵煎嚭 + WorkspacePage 閰嶇疆璇诲彇鎸傝浇)
+1. **Delete `strategy-grid.tsx`** (task 2.1)
+2. **Remove `WorkspaceContent` import and rendering branch from `App.tsx`** (task 2.2)Now let me run quality checks:TypeScript compiles fine! Let me check what the 4 lint errors are:4 lint errors 鈥?`selectedStrategy`, `activeConfigSummary`, `backtestConfig`, `setBacktestConfig` were only used by the old `WorkspaceContent` component which is now removed. Let me clean up those unused destructured vars:Let me verify the current state of App.tsx and check if `researchMode` is still used:Lint is clean 鈥?0 errors, only the 11 pre-existing warnings. Now let me run tests and build:All 96 tests pass. Let me run the build:All quality checks pass! Let me verify there's no AGENTS.md to update, then proceed with Doc Sync Gate:No AGENT.md updates needed. Now let me commit and update tracking files.
 
-闇€瑕佸仛锛?1. `types.ts` 鈥?鏂板 `ConfigSnapshot` 鎺ュ彛
-2. `appData.ts` 鈥?閲嶆柊瀵煎嚭 `ConfigSnapshot`
-3. `workspace-page.tsx` 鈥?娣诲姞 `configSnapshot` state + useEffect 鑾峰彇閰嶇疆
-
-璁╂垜鍏堝揩閫熸鏌ユ槸鍚︽湁 workspace-page 鐨勬祴璇曟枃浠躲€傚ソ锛屾病鏈?workspace-page 鐨勬祴璇曟枃浠躲€傜幇鍦ㄥ紑濮嬪疄鐜?story-14銆?
-### Step 1: 鍦?`types.ts` 涓坊鍔?ConfigSnapshot 鎺ュ彛### Step 2: 鍦?`appData.ts` 涓噸鏂板鍑?ConfigSnapshot### Step 3: 淇敼 `workspace-page.tsx` 鈥?娣诲姞 config 璇诲彇
-
-棣栧厛瀵煎叆 `fetchStrategyConfig` 鍑芥暟鍜?`ConfigSnapshot` 绫诲瀷锛氱幇鍦ㄦ坊鍔?`configSnapshot` state 鍜?useEffect 鑾峰彇閰嶇疆锛氱幇鍦ㄦ坊鍔?config 鑾峰彇鐨?useEffect锛屾斁鍦?F5 鎭㈠ useEffect 鍚庨潰锛氭墍鏈変唬鐮佷慨鏀瑰畬鎴愩€傝鎴戣繍琛?TypeScript 缂栬瘧妫€鏌ャ€俆ypeScript 缂栬瘧閫氳繃銆傜幇鍦ㄨ繍琛屾祴璇曘€傚叏閮?96 涓祴璇曢€氳繃銆傜幇鍦ㄨ繍琛?lint 鍜?build銆傛瀯寤洪€氳繃锛屼絾鏈変竴涓?lint error锛歚configSnapshot` 琚祴鍊间絾鏈浣跨敤銆傝繖鍦?story-14 涓鏈熷唴锛坰tory-15 鎵嶄細鎺ョ嚎锛夛紝鎴戦渶瑕佹坊鍔?eslint 琛屽唴蹇界暐銆侺int 閫氳繃銆傜幇鍦ㄨ繍琛屽畬鏁磋川閲忔鏌ャ€傞浂 errors锛屽彧鏈夊凡瀛樺湪鐨?11 涓?warning銆傝鎴戣繍琛屾渶缁堢殑瀹屾暣娴嬭瘯楠岃瘉銆傚叏閮?10 鍖?269+ 娴嬭瘯閫氳繃銆傝鎴戣繍琛?smoke-test.sh 楠岃瘉绔埌绔€傚叏閮?7/7 鐑熼浘娴嬭瘯閫氳繃銆傜幇鍦ㄦ墽琛?**Doc Sync Gate**锛岀劧鍚庢彁浜ゃ€?
-棣栧厛妫€鏌ョ浉鍏崇洰褰曠殑 AGENTS.md锛氭病鏈夐渶瑕佹洿鏂?AGENTS.md 鐨勫疄璐ㄦ€ф柊鐭ヨ瘑銆傜幇鍦ㄦ洿鏂?prd.json 灏?story-14 鏍囪涓哄畬鎴愩€傜幇鍦ㄨ拷鍔?progress.txt 璁板綍锛氱幇鍦ㄦ彁浜や唬鐮併€侾ush 瓒呮椂锛堢綉缁滈棶棰橈級锛屼絾鏈湴鎻愪氦鎴愬姛锛坄b5ffeb3`锛夈€傛鏌?git 鐘舵€佺‘璁ゅ共鍑€锛?# 鉁?Story-14 宸插畬鎴?
-### 瀹炵幇鍐呭
-
-| 浠诲姟 | 鏂囦欢 | 鍙樻洿 |
-|------|------|------|
-| **1.5** ConfigSnapshot 鎺ュ彛 | `apps/web/src/data/types.ts` | 鏂板 `ConfigSnapshot` 鎺ュ彛 + 鏇存柊 `DiagnosticResult.configSnapshot` 寮曠敤璇ユ帴鍙?|
-| 閲嶆柊瀵煎嚭 | `apps/web/src/appData.ts` | 娣诲姞 `ConfigSnapshot` 鍒伴噸瀵煎嚭鍒楄〃 |
-| **1.1** WorkspacePage 閰嶇疆璇诲彇 | `apps/web/src/components/workspace-page.tsx` | 鏂板 `configSnapshot` state + `useEffect` 璋冪敤 `fetchStrategyConfig(strategy.name)` |
-
-### 楠屾敹鏍囧噯
-
-- 鉁?`types.ts` 瀵煎嚭 `ConfigSnapshot` 鎺ュ彛
-- 鉁?`WorkspacePage` useEffect 鍐呰皟鐢?`fetchStrategyConfig(strategy.name)`
-- 鉁?`configSnapshot` state 鍒濆鍊?`null`锛岃鍙栨垚鍔熷悗鏇存柊
-- 鉁?GET config 杩斿洖 404/null 鏃堕〉闈笉宕╂簝锛坈onsole.warn 澶勭悊锛?- 鉁?`npx tsc --noEmit` 鈥?闆堕敊璇?- 鉁?`npx vitest run` 鈥?96/96 passed
-- 鉁?`pnpm build` 鈥?5/5 鎴愬姛
-- 鉁?`bash scripts/smoke-test.sh` 鈥?7/7 ALL PASSED
-
-### 鍓╀綑鏁呬簨
-
-浠嶆湁 **8 涓?*鏈畬鎴愭晠浜嬶紙story-15 ~ story-22锛夛紝涓嬫杩唬灏嗕粠 **story-15**锛圥hase 1b 鈥?diagnostics/backtest payload 甯︾湡瀹?configSnapshot锛夌户缁€?
-> 娉ㄦ剰锛氱綉缁滃師鍥?push 瓒呮椂锛屾湰鍦板凡鎻愪氦鍦?`b5ffeb3`銆?## 鉁?Story-14 宸插畬鎴?
-### 瀹炵幇鍐呭
-
-| 浠诲姟 | 鏂囦欢 | 鍙樻洿 |
-|------|------|------|
-| **1.5** ConfigSnapshot 鎺ュ彛 | `apps/web/src/data/types.ts` | 鏂板 `ConfigSnapshot` 鎺ュ彛 + 鏇存柊 `DiagnosticResult.configSnapshot` 寮曠敤璇ユ帴鍙?|
-| 閲嶆柊瀵煎嚭 | `apps/web/src/appData.ts` | 娣诲姞 `ConfigSnapshot` 鍒伴噸瀵煎嚭鍒楄〃 |
-| **1.1** WorkspacePage 閰嶇疆璇诲彇 | `apps/web/src/components/workspace-page.tsx` | 鏂板 `configSnapshot` state + `useEffect` 璋冪敤 `fetchStrategyConfig(strategy.name)` |
-
-### 楠屾敹鏍囧噯
-
-- 鉁?`types.ts` 瀵煎嚭 `ConfigSnapshot` 鎺ュ彛
-- 鉁?`WorkspacePage` useEffect 鍐呰皟鐢?`fetchStrategyConfig(strategy.name)`
-- 鉁?`configSnapshot` state 鍒濆鍊?`null`锛岃鍙栨垚鍔熷悗鏇存柊
-- 鉁?GET config 杩斿洖 404/null 鏃堕〉闈笉宕╂簝锛坈onsole.warn 澶勭悊锛?- 鉁?`npx tsc --noEmit` 鈥?闆堕敊璇?- 鉁?`npx vitest run` 鈥?96/96 passed
-- 鉁?`pnpm build` 鈥?5/5 鎴愬姛
-- 鉁?`bash scripts/smoke-test.sh` 鈥?7/7 ALL PASSED
-
-### 鍓╀綑鏁呬簨
-
-浠嶆湁 **8 涓?*鏈畬鎴愭晠浜嬶紙story-15 ~ story-22锛夛紝涓嬫杩唬灏嗕粠 **story-15**锛圥hase 1b 鈥?diagnostics/backtest payload 甯︾湡瀹?configSnapshot锛夌户缁€?
-> 娉ㄦ剰锛氱綉缁滃師鍥?push 瓒呮椂锛屾湰鍦板凡鎻愪氦鍦?`b5ffeb3`銆
+**Doc Sync Gate**: No docs update needed 鈥?pure internal cleanup (delete deprecated file, remove old rendering branch). No API/DB/architectural changes.Correct 鈥?story-16 is now `passes: true`. Now let me append to progress.txt and commit:Now let me commit:鎻愪氦鎴愬姛锛丩et me verify the final state:鏁呬簨 16 瀹屾垚銆備粛鏈?7 涓湭瀹屾垚鐨勬晠浜嬶紙story-17 ~ story-22锛夛紝涓嬩竴杞凯浠ｆ帴鎵嬨€?鏁呬簨 16 瀹屾垚銆備粛鏈?7 涓湭瀹屾垚鐨勬晠浜嬶紙story-17 ~ story-22锛夛紝涓嬩竴杞凯浠ｆ帴鎵嬨€

@@ -1,6 +1,5 @@
 import type { LanguageContent } from './types';
 import { FactorStatus, FactorEvalTab } from './types';
-import { aiCodeSample, hftCodeSample, traditionalCodeSample } from './codeSamples';
 
 export const enContent: LanguageContent = {
     navItems: [
@@ -14,86 +13,6 @@ export const enContent: LanguageContent = {
       { id: 'data', label: 'Data Center', eyebrow: '' },
       { id: 'jobs', label: 'Jobs', eyebrow: '' },
       { id: 'settings', label: 'Settings', eyebrow: '' },
-    ],
-    researchModes: [
-      {
-        id: 'traditional',
-        label: 'Traditional Quant',
-        title: 'Traditional Quant Strategy',
-        description: 'Covers factors, timing, arbitrage, and portfolio backtests as the platform baseline strategy path.',
-        codeFile: 'traditional_alpha.py',
-        codeSample: traditionalCodeSample,
-        configItems: [
-          { label: 'Factors', value: 'quality + momentum', description: 'Default factor blend for a stable first pass.' },
-          { label: 'Universe', value: 'CSI 500', description: 'Default liquid mid-cap research universe.' },
-          { label: 'Rebalance', value: 'Daily close', description: 'Default schedule for end-of-day backtests.' },
-          { label: 'Backtest Window', value: '2021-2025', description: 'Default sample window for comparable reports.' },
-        ],
-        heroMetrics: [
-          { label: 'Strategy Style', value: 'Factor', tone: 'info' },
-          { label: 'Rebalance', value: 'Daily', tone: 'good' },
-          { label: 'Universe', value: 'CSI 500', tone: 'info' },
-          { label: 'Turnover', value: '38.4%', tone: 'warn' },
-        ],
-        sections: [
-          {
-            title: 'Traditional Quant Types',
-            items: ['Multi-factor Selection', 'Mean Reversion', 'Trend Following', 'Statistical Arbitrage', 'Market Timing'],
-          },
-          { title: 'Research Setup', items: ['Factors', 'Universe', 'Rebalance Frequency', 'Position Constraints', 'Backtest Params'] },
-          { title: 'Diagnostics', items: ['Return', 'Drawdown', 'Sharpe', 'Win Rate', 'Turnover'] },
-        ],
-      },
-      {
-        id: 'hft',
-        label: 'High-Frequency Research',
-        title: 'High-Frequency Strategy Research',
-        description: 'A research mode focused on Tick data, order books, matching assumptions, and execution quality.',
-        codeFile: 'hft_microstructure.py',
-        codeSample: hftCodeSample,
-        configItems: [
-          { label: 'Tick Source', value: 'Level1 + trades', description: 'Default stream for microstructure replay.' },
-          { label: 'Order Book Depth', value: 'Top 5 levels', description: 'Default depth used by the fill assumption.' },
-          { label: 'Matching Rule', value: 'Queue priority', description: 'Default matching rule for simulated fills.' },
-          { label: 'Latency Assumption', value: '25ms', description: 'Default delay applied before order evaluation.' },
-        ],
-        heroMetrics: [
-          { label: 'Frequency', value: 'Tick / 1s', tone: 'info' },
-          { label: 'Fill Rate', value: '72.6%', tone: 'good' },
-          { label: 'Avg Slippage', value: '1.4bp', tone: 'warn' },
-          { label: 'Cancel Rate', value: '18.9%', tone: 'warn' },
-        ],
-        sections: [
-          { title: 'HFT Setup', items: ['Tick', 'Order Book', 'Matching Rules', 'Slippage', 'Latency', 'Cancel Rate'] },
-          { title: 'Microstructure', items: ['Tick Data View', 'Order Book Snapshots', 'Trade Stream', 'Depth Changes'] },
-          { title: 'Execution Diagnostics', items: ['Fill Rate', 'Average Slippage', 'Order Latency', 'Book Impact'] },
-        ],
-      },
-      {
-        id: 'ai',
-        label: 'AI Quant',
-        title: 'AI Quant Strategy',
-        description: 'A predictive research mode built around features, labels, model training, and out-of-sample behavior.',
-        codeFile: 'ml_alpha.py',
-        codeSample: aiCodeSample,
-        configItems: [
-          { label: 'Feature Set', value: 'price + volume + micro alpha', description: 'Default feature bundle for first training runs.' },
-          { label: 'Label', value: 'next 5d excess return', description: 'Default prediction target for cross-sectional ranking.' },
-          { label: 'Model', value: 'XGBoost', description: 'Default model for fast tabular experiments.' },
-          { label: 'Training Window', value: '2020-2024', description: 'Default train and validation window.' },
-        ],
-        heroMetrics: [
-          { label: 'Model', value: 'XGBoost', tone: 'info' },
-          { label: 'IC', value: '0.071', tone: 'good' },
-          { label: 'Rank IC', value: '0.094', tone: 'good' },
-          { label: 'Out-of-Sample', value: '+6.8%', tone: 'info' },
-        ],
-        sections: [
-          { title: 'AI Setup', items: ['Features', 'Labels', 'Model', 'Training Window', 'Validation Window', 'Predictions'] },
-          { title: 'Model Training', items: ['Training Job Status', 'Feature Importance', 'Prediction Curve'] },
-          { title: 'Strategy Validation', items: ['Predicted vs Actual Return', 'Train / Validation / Test Performance', 'AI Backtest Result'] },
-        ],
-      },
     ],
     pages: {
       dashboard: {
@@ -608,11 +527,6 @@ export const enContent: LanguageContent = {
         strategyId: 'strategy-cancel-spike',
       },
     ],
-    modeJobKind: {
-      traditional: 'Traditional Quant',
-      hft: 'High-Frequency Research',
-      ai: 'AI Quant',
-    },
     reportMetricLabels: {
       return: 'Return',
       drawdown: 'Drawdown',
@@ -632,12 +546,10 @@ export const enContent: LanguageContent = {
       },
       brandTagline: 'Factor · Strategy · AI Research Terminal',
       chartAriaLabel: 'Research chart preview',
-      currentResearchMode: 'Current Research Mode',
       enterWorkspace: 'Open Research Workspace',
       heroEyebrow: 'Your Quant Research Lab',
       languageDescription: 'Choose the interface language. Your choice is saved on this device.',
       languageTitle: 'Interface Language / 界面语言',
-      modeTabsAriaLabel: 'Strategy research modes',
       navAriaLabel: 'Main navigation',
       currentRunSummary: 'Current Run Summary',
       ready: 'Ready',

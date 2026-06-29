@@ -1,4 +1,4 @@
-import type { MarketTick, ResearchMode, ResearchModeId, StrategyRow, UiCopy } from '../appData';
+import type { MarketTick, MetricTone, StrategyRow, UiCopy } from '../appData';
 import type { BacktestConfig } from '../hooks/useResearchWorkflow';
 import { MetricCard } from './common';
 import { AiDiagnostics, TickTable } from './market-tables';
@@ -31,7 +31,7 @@ function WorkspaceMockup({
   ui,
 }: {
   configSummary: string[];
-  mode: ResearchMode;
+  mode: { id: string; label: string; title: string; description: string; codeFile: string; codeSample: string; configItems: { label: string; value: string; description: string }[]; heroMetrics: { label: string; value: string; tone: MetricTone }[]; sections: { title: string; items: string[] }[] };
   onRunResearch: () => void;
   selectedStrategy?: StrategyRow;
   backtestConfig: BacktestConfig;
@@ -151,15 +151,13 @@ export function WorkspaceModeTabs({
   activeMode,
   onChange,
   modes,
-  ui,
 }: {
-  activeMode: ResearchModeId;
-  onChange: (mode: ResearchModeId) => void;
-  modes: ResearchMode[];
-  ui: UiCopy;
+  activeMode: string;
+  onChange: (mode: string) => void;
+  modes: { id: string; label: string; title: string }[];
 }) {
   return (
-    <section className={modeTabsStyles.modeTabs} aria-label={ui.modeTabsAriaLabel}>
+    <section className={modeTabsStyles.modeTabs} aria-label="Strategy research modes">
       {modes.map((mode) => (
         <button
           className={`${modeTabsStyles.modeTab} ${mode.id === activeMode ? modeTabsStyles.modeTabActive : ''}`}
@@ -187,7 +185,7 @@ export function WorkspaceContent({
   ui,
 }: {
   configSummary: string[];
-  mode: ResearchMode;
+  mode: { id: string; label: string; title: string; description: string; codeFile: string; codeSample: string; configItems: { label: string; value: string; description: string }[]; heroMetrics: { label: string; value: string; tone: MetricTone }[]; sections: { title: string; items: string[] }[] };
   onRunResearch: () => void;
   strategies: StrategyRow[];
   selectedStrategy?: StrategyRow;
@@ -200,7 +198,7 @@ export function WorkspaceContent({
     <>
       <section className={modeTabsStyles.modeSummary}>
         <div>
-          <p className={modeTabsStyles.modeSummaryEyebrow}>{ui.currentResearchMode}</p>
+          <p className={modeTabsStyles.modeSummaryEyebrow}>Current Research Mode</p>
           <h2 className={modeTabsStyles.modeSummaryTitle}>{mode.title}</h2>
           <span className={modeTabsStyles.modeSummaryDesc}>{mode.description}</span>
         </div>

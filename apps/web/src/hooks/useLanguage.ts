@@ -4,7 +4,6 @@ import {
   LANGUAGE_STORAGE_KEY,
   getNavItems,
   getPage,
-  getResearchModes,
   getStrategies,
   getMarketTicks,
   getFactors,
@@ -15,7 +14,6 @@ import {
   type LanguageCode,
   type NavItem,
   type PageContent,
-  type ResearchMode,
   type StrategyRow,
   type MarketTick,
   type FactorDisplayRow,
@@ -44,12 +42,11 @@ export function useLanguage() {
   const ui = useMemo(() => getUiCopy(language), [language]);
   const strategies = useMemo(() => getStrategies(language), [language]);
   const ticks = useMemo(() => getMarketTicks(language), [language]);
-  const researchModes = useMemo(() => getResearchModes(language), [language]);
   const factors = useMemo(() => getFactors(language), [language]);
   const factorEvalResults = useMemo(() => getFactorEvalResults(language), [language]);
   const reportUiCopy = useMemo(() => getReportUiCopy(language), [language]);
 
-  return { language, handleLanguageChange, navItems, ui, strategies, ticks, researchModes, factors, factorEvalResults, reportUiCopy };
+  return { language, handleLanguageChange, navItems, ui, strategies, ticks, factors, factorEvalResults, reportUiCopy };
 }
 
 export function usePageContent(
@@ -60,4 +57,4 @@ export function usePageContent(
   return { activePage };
 }
 
-export { type NavItem, type PageContent, type ResearchMode, type StrategyRow, type MarketTick, type FactorDisplayRow, type FactorEvalDisplayResult, type UiCopy };
+export { type NavItem, type PageContent, type StrategyRow, type MarketTick, type FactorDisplayRow, type FactorEvalDisplayResult, type UiCopy };

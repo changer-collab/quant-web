@@ -10,7 +10,6 @@ import { ChartMockup } from './components/charts';
 import { ReportSummary } from './components/report-summary';
 import { LanguageSettings } from './components/settings';
 import { FactorLabContent } from './components/factor-lab';
-import { WorkspaceModeTabs } from './components/workspace';
 import { ActivityFeed } from './components/activity-feed';
 import { StrategyPage } from './components/strategy-page';
 import { WorkspacePage } from './components/workspace-page';
@@ -18,7 +17,7 @@ import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
 import { JobList } from './components/jobs';
-import type { ResearchJob, ResearchModeId, JobTemplate, StrategyRow } from './appData';
+import type { ResearchJob, JobTemplate, StrategyRow } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
 import hero from './styles/hero.module.css';
@@ -29,7 +28,7 @@ import './styles/tokens.css';
 const FullReport = lazy(() => import('./components/report').then((module) => ({ default: module.FullReport })));
 
 export default function App() {
-  const { language, handleLanguageChange, navItems, ui, researchModes, factorEvalResults, reportUiCopy } = useLanguage();
+  const { language, handleLanguageChange, navItems, ui, factorEvalResults, reportUiCopy } = useLanguage();
   const { strategies: apiStrategies } = useStrategies();
   const { tasks: apiTasks } = useTasks();
   const { factors: apiFactors } = useFactors();
@@ -37,9 +36,6 @@ export default function App() {
   const factors = apiFactors;
   const {
     state,
-    activeMode,
-    setActiveMode,
-    researchMode,
     localizedJobs,
     activeReport,
     activeBacktestReport,
@@ -68,7 +64,7 @@ export default function App() {
         progress: task.status === 'completed' ? 100 : task.status === 'running' ? 50 : 0,
         strategyName,
         errorMessage: task.error,
-        mode: 'non_factor' as ResearchModeId,
+        mode: 'non_factor',
         template: task.type as JobTemplate,
       };
     });
@@ -76,16 +72,15 @@ export default function App() {
   }, [localizedJobs, apiTasks, strategies]);
 
   const isGeneratedReportPage = state.activePage === 'backtest' && Boolean(activeReport);
-  const pageTitle =
-    state.activePage === 'workspace' ? researchMode.title : isGeneratedReportPage && activeReport ? activeReport.title : activePage.title;
+  const pageTitle = isGeneratedReportPage && activeReport ? activeReport.title : activePage.title;
   const pageStatus =
     state.activePage === 'workspace'
-      ? researchMode.description
+      ? activePage.status
       : isGeneratedReportPage && activeReport
         ? activeReport.status
         : activePage.status;
   const heroMetrics = useMemo(() => {
-    if (state.activePage === 'workspace') return researchMode.heroMetrics;
+    if (state.activePage === 'workspace') return activePage.heroMetrics;
     if (isGeneratedReportPage && activeBacktestReport) {
       const rm = activeBacktestReport.returnMetrics;
       const rs = activeBacktestReport.riskAdjMetrics;
@@ -97,10 +92,10 @@ export default function App() {
       ];
     }
     return activePage.heroMetrics;
-  }, [state.activePage, isGeneratedReportPage, activeBacktestReport, researchMode.heroMetrics, activePage.heroMetrics]);
+  }, [state.activePage, isGeneratedReportPage, activeBacktestReport, activePage.heroMetrics]);
   const sections =
     state.activePage === 'workspace'
-      ? researchMode.sections
+      ? activePage.sections
       : isGeneratedReportPage && activeReport
         ? activeReport.diagnostics
         : activePage.sections;
@@ -153,9 +148,6 @@ export default function App() {
             ))}
           </div>
         </section>
-        {state.activePage === 'workspace' && (
-          <WorkspaceModeTabs activeMode={activeMode} modes={researchModes} onChange={setActiveMode} ui={ui} />
-        )}
         {state.activePage === 'settings' && (
           <LanguageSettings language={language} onChange={handleLanguageChange} ui={ui} />
         )}

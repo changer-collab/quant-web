@@ -42,7 +42,6 @@ describe('Research workflow integration', () => {
     };
     act(() => result.current.handleSelectStrategy(strategy));
     expect(result.current.state.activePage).toBe('workspace');
-    expect(result.current.activeMode).toBe('hft');
 
     act(() => result.current.handleRunResearch());
     expect(result.current.state.activePage).toBe('jobs');
@@ -101,11 +100,8 @@ describe('Research workflow integration', () => {
     expect(result.current.activeReport).toBeDefined();
   });
 
-  it('mode switching preserves workspace navigation', async () => {
+  it('navigates to workspace before running research', async () => {
     const { result } = renderHook(() => useResearchWorkflow('en'));
-
-    act(() => result.current.setActiveMode('ai'));
-    expect(result.current.researchMode.id).toBe('ai');
 
     act(() => result.current.handleNavClick('workspace'));
     expect(result.current.state.activePage).toBe('workspace');
@@ -113,6 +109,7 @@ describe('Research workflow integration', () => {
     const strategy = {
       id: 'strategy-ai-ml',
       mode: 'ai' as const,
+      category: 'ai' as const,
       name: 'AI Strategy',
       type: 'AI/ML',
       return: '+15%',
@@ -129,6 +126,6 @@ describe('Research workflow integration', () => {
     }, { timeout: 5000 });
 
     const job = result.current.localizedJobs[0];
-    expect(job.kind).toContain('AI');
+    expect(job.kind).toBe('ai');
   });
 });

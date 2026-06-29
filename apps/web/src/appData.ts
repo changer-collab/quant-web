@@ -15,11 +15,8 @@ export type {
   PageContent,
   PageId,
   PageSection,
-  ResearchConfigItem,
   ResearchJob,
   ResearchReport,
-  ResearchMode,
-  ResearchModeId,
   ResearchRunConfigSummary,
   StrategyRow,
   StrategyParam,
@@ -102,8 +99,6 @@ export {
   getNavItems,
   getPage,
   getPages,
-  getResearchMode,
-  getResearchModes,
   getStrategies,
   getUiCopy,
   getReportUiCopy,
@@ -114,7 +109,6 @@ export {
   MARKET_TICKS,
   NAV_ITEMS,
   PAGES,
-  RESEARCH_MODES,
   STRATEGIES,
 } from './data/accessors';
 

@@ -4,15 +4,11 @@ import {
   createResearchReport,
   createBacktestReportFull,
   mapBacktestResultToReport,
-  getResearchMode,
-  getResearchModes,
   getStrategies,
-  DEFAULT_LANGUAGE,
   isPageId,
   localizeResearchJob,
   type AppState,
   type LanguageCode,
-  type ResearchModeId,
   type ResearchJob,
   type ResearchReport,
   type BacktestReportFull,
@@ -93,8 +89,6 @@ export interface BacktestConfig {
 
 export function useResearchWorkflow(language: LanguageCode) {
   const [state, setState] = useState<AppState>(() => ({ activePage: 'dashboard' }));
-  // 默认值从 researchModes 数组推导，避免在文件中硬编码 'traditional'/'hft'/'ai'
-  const [activeMode, setActiveMode] = useState<ResearchModeId>(() => getResearchModes(DEFAULT_LANGUAGE)[0].id);
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyRow | undefined>();
   const [jobs, setJobs] = useState<ResearchJob[]>([]);
   const [reports, setReports] = useState<ResearchReport[]>([]);
@@ -234,7 +228,6 @@ export function useResearchWorkflow(language: LanguageCode) {
     return () => { cancelled = true; };
   }, [language]);
 
-  const researchMode = useMemo(() => getResearchMode(activeMode, language), [activeMode, language]);
   const localizedJobs = useMemo(() => jobs.map((job) => localizeResearchJob(job, language)), [jobs, language]);
   const selectedStrategyForLanguage = useMemo(
     () => getStrategies(language).find((strategy) => strategy.id === selectedStrategy?.id),
@@ -277,7 +270,6 @@ export function useResearchWorkflow(language: LanguageCode) {
 
   function handleSelectStrategy(strategy: StrategyRow) {
     setSelectedStrategy(strategy);
-    setActiveMode(strategy.mode);
     // 用策略定义的默认值初始化参数
     const defaultParams: Record<string, unknown> = {};
     for (const param of strategy.params ?? []) {
@@ -305,7 +297,7 @@ export function useResearchWorkflow(language: LanguageCode) {
         .then((taskId) => {
           // 创建本地 job 跟踪进度（初始 progress=0）
           const nextJob = createResearchJob(
-            { id: taskId, mode: activeMode, sequence, strategy: selectedStrategyForLanguage, configSummary: activeConfigSummary },
+            { id: taskId, mode: selectedStrategy?.category ?? 'non_factor', sequence, strategy: selectedStrategyForLanguage, configSummary: activeConfigSummary },
             language,
           );
           setJobs((current) => [nextJob, ...current]);
@@ -349,7 +341,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                 language,
               );
               const nextReport = createResearchReport(
-                { id: reportId, jobId: taskId, mode: activeMode, sequence, strategy: selectedStrategyForLanguage, generatedAt, configSummary: activeConfigSummary, diagnosticSections },
+                { id: reportId, jobId: taskId, mode: selectedStrategy?.category ?? 'non_factor', sequence, strategy: selectedStrategyForLanguage, generatedAt, configSummary: activeConfigSummary, diagnosticSections },
                 language,
               );
               const nextBacktestReport = mapBacktestResultToReport(
@@ -402,7 +394,7 @@ export function useResearchWorkflow(language: LanguageCode) {
     }
 
     setState((current) => ({ ...current, activePage: 'jobs' }));
-  }, [jobs.length, selectedStrategy, activeMode, selectedStrategyForLanguage, activeConfigSummary, language, submitBacktestTask, submitAndStream, backtestConfig]);
+  }, [jobs.length, selectedStrategy, selectedStrategyForLanguage, activeConfigSummary, language, submitBacktestTask, submitAndStream, backtestConfig]);
 
   function handleViewReport(job: ResearchJob) {
     const report = reports.find((item) => item.jobId === job.id);
@@ -427,10 +419,7 @@ export function useResearchWorkflow(language: LanguageCode) {
 
   return {
     state,
-    activeMode,
-    setActiveMode,
     selectedStrategy,
-    researchMode,
     localizedJobs,
     selectedStrategyForLanguage,
     activeReport,

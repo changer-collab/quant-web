@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useApi } from './useApi';
 import { fetchStrategies, type ApiStrategy, type ApiStrategyParam } from '../api/strategies';
-import type { StrategyRow, ResearchModeId, StrategyParam } from '../appData';
+import type { StrategyRow, StrategyParam } from '../appData';
 
 /** 将 API 策略参数映射为前端 StrategyParam */
 function mapParam(api: ApiStrategyParam): StrategyParam {
@@ -22,7 +22,7 @@ function mapParam(api: ApiStrategyParam): StrategyParam {
 function mapStrategy(api: ApiStrategy): StrategyRow {
   return {
     id: api.name,
-    mode: (api.category ?? 'non_factor') as ResearchModeId,
+    mode: api.category ?? 'non_factor',
     name: api.description || api.name,
     type: api.subcategory ?? 'Trend',
     return: '—',
