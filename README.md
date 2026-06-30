@@ -12,7 +12,7 @@
 
 ## 模块连接图
 
-绿色实线 = 已连通；红色虚线 = 断点
+绿色实线 = 已连通；红色虚线 = 断点或待增强连接
 
 ```mermaid
 graph LR
@@ -23,6 +23,8 @@ graph LR
   end
 
   subgraph 执行层
+    API[apps/api<br/>TS · HTTP/SSE]
+    WK[apps/worker<br/>TS · 任务编排]
     SR[strategy-runtime<br/>PY · CLI入口]
     BT[backtest-engine<br/>PY · 回测]
     FL[factor-lab<br/>PY · 因子评估]
@@ -34,6 +36,11 @@ graph LR
     WEB[apps/web<br/>React · 研究原型]
   end
 
+  WEB -->|提交任务| API
+  API -->|内部任务端点| WK
+  WK -->|PythonBridge| SR
+  API -->|SSE result| WEB
+
   DC -->|写入| DCE
   DCE -->|quant.db| DCL
   DCL -->|Bar数据| SR
@@ -44,7 +51,7 @@ graph LR
   BT -.->|断点1| OB
   FL -.->|断点2| OB
   AI -.->|断点3| OB
-  BT -.->|断点4| WEB
+  BT -->|返回 backtestResult| WK
   WEB -.->|断点5| OB
   OB -.->|断点6| WEB
 
@@ -58,9 +65,12 @@ data-collector → data-center (SQLite) → data-client → strategy-runtime CLI
   ├→ backtest-engine
   ├→ factor-lab
   └→ ai-engine
+
+apps/web → apps/api → apps/worker → PythonBridge → strategy-runtime CLI
+apps/worker → apps/api → SSE → apps/web
 ```
 
-数据从采集到执行完整可跑，每个模块单独有测试覆盖。前端通过 SSE 已能消费 CLI 的 `progress/log/status/result/error` 事件流（`useTaskStream` ↔ `cli.py` NDJSON 一一对应）。
+数据从采集到执行完整可跑，每个模块单独有测试覆盖。前端通过 API/SSE 已能提交回测任务并消费 `progress/log/status/result/error` 事件流，`WorkspacePage` 可渲染真实 `backtestResult` 的指标、权益曲线和交易明细。
 
 ### 断点分析
 
@@ -69,7 +79,7 @@ data-collector → data-center (SQLite) → data-client → strategy-runtime CLI
 | 1 | backtest 结果 | obsidian-sync | CLI 的 `run_backtest` 返回后直接结束，不调用 `SyncService.sync_backtest_result()` | 在 worker `BacktestHandler` 拿到 `backtestResult` 后调用 sync（保持 CLI 纯计算，sync 作为编排动作放 worker，失败可独立重试） |
 | 2 | factor 评估结果 | obsidian-sync | `run_factor_eval` 不同步 | 在 worker `FactorEvalHandler` 后置调用 `sync_factor` |
 | 3 | AI 训练结果 | obsidian-sync | `run_ai_train` 不同步 | 在 worker AI handler 后置调用 sync |
-| 4 | backtest 结果 | apps/web | 前端能消费事件流，但 `result.data`（回测指标/资金曲线）无专门渲染组件，未形成可视化报告 | 前端补回测报告组件（指标卡、资金曲线、持仓表） |
+| 4 | backtest 结果 | apps/web | 已打通：`WorkspacePage` Step 2 消费 SSE `backtestResult`，展示指标、权益曲线和交易明细；后续可继续增强为完整报告页 | 完善报告级可视化、导出和长期任务恢复体验 |
 | 5 | web 前端 | obsidian-sync | 前端不触发同步 | 前端加同步触发按钮，调 API 端点 |
 | 6 | obsidian 看板 | web 反馈 | Obsidian 看板不回流到前端 | 前端读 Obsidian Local REST API 展示看板 |
 | 7 | orchestrator | — | 不存在，无编排层把整条链串起来 | 新建 orchestrator 服务（或扩展 worker 编排能力） |
