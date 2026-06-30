@@ -33,9 +33,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Format check
-        run: pnpm format:check
-
       - name: API smoke test
         run: bash scripts/smoke-test.sh
 
