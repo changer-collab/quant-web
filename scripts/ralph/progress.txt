@@ -910,3 +910,28 @@ lint_error
   - 提交后表单字段消失，改为显示只读摘要（configSummary 复用），性能指标保留 mock 数据等待后续真实数据接入
 
 ## ✅ ALL STORIES COMPLETE
+
+# Branch changed to ralph/backend-sync-realign
+
+## [2026-06-30 09:40] - story-1 (Phase 0 — 冻结三类诊断算法契约)
+- 新建 `docs/superpowers/specs/2026-06-30-diagnostics-algorithm-contract.md`，定义三类诊断算法的输入、输出、错误码与最小算法规则
+- **文档内容**：
+  - FactorDiagnosticsResult：ic_series（period/ic/rank_ic）、layered_returns（Q1~Q5 累积收益）、correlation_matrix（N×N Pearson）、factor_labels、summary（mean_ic/ic_std/ic_ir/mean_rank_ic）
+  - NonFactorDiagnosticsResult：param_sensitivity（param/values/returns/sharpe）、signal_quality（total_signals/win_rate/avg_holding_bars/profit_factor/max_consecutive_losses）、slippage_stress（1/3/5/10 bps）
+  - TransitionalDiagnosticsResult：目标结构（decay_curve/mapping_metrics/factor_quality/mapping_validation）及当前 stub 输出
+  - 错误码：NO_PRICE_DATA / NO_FACTOR_DATA / NO_EVENT_SENTIMENT_DATA / INVALID_CONFIG_SNAPSHOT / DIAGNOSTICS_ERROR 及触发条件
+  - 数据输入来源：price bars（DataClient.query_bars_df）、factor values（FormulaFactor.compute）、event-sentiment records（预留）
+  - synthetic diagnostics 默认关闭，仅开发模式可启用并带 synthetic:true
+  - 前端消费契约（按 data.type 分派渲染路径）
+- **字段名来源**：逐字对齐 factor.py（IC 系列）和 non_factor.py（参数敏感性/信号质量/滑点压力）的真实实现输出；transitional 按 PRD story-1 描述定义目标结构
+- 修改了哪些文件：
+  - `docs/superpowers/specs/2026-06-30-diagnostics-algorithm-contract.md`（新建）
+  - `scripts/ralph/prd.json`（story-1 → passes: true）
+- **验证**：人工自审 —— 全文无 TBD/TODO/矛盾字段名，所有字段与已有 Python 实现一致；无代码改动，跳过 pnpm 质量检查
+- **Doc Sync**: 本 story 本身即文档产出，已同步到 `docs/superpowers/specs/` 目录
+- **后续迭代注意事项：**
+  - transitional 诊断当前为 stub 输出（字段结构同 factor_based 空结果），真实算法（情感衰减曲线/映射验证）待 Phase 6 实现
+  - story-1 文档是 story-2 TaskResultEnvelope 中 diagnostics 分支 data 类型的契约来源；Phase 6 收紧类型时需参照本文定义
+  - INVALID_CONFIG_SNAPSHOT 错误码当前在 factor.py/non_factor.py 中未实现显式检查（由运行时异常隐式处理），Phase 6 可考虑显式化
+  - NO_EVENT_SENTIMENT_DATA 为 transitional 专用错误码，当前未在任何代码中引用
+---
