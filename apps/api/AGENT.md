@@ -31,6 +31,10 @@
 - 策略列表扩展：返回 category/subcategory/workflowReady + 扩展 params（chart_relevant/ui_constraints）
 - Preview 端点（POST /api/strategies/:name/preview）：加载 K 线 → PreviewService 计算 SMA/EMA/RSI/MACD 叠加层 + 信号标注 → 返回 bars/overlays/signals/pagination/fingerprint
 - PreviewService：纯 TypeScript 预览引擎，不依赖外部数学库，支持反向分页（cursor 翻页）
+- ResultProcessor 注册表（services/result-processors/）：TaskType → ResultProcessor 映射，complete handler 退化为统一分派（≤25 行，无 per-type if/switch）
+- BacktestResultProcessor：报告映射 + AI analysis 合并 + surrogate 清洗 + ReportRepository 持久化，保存失败时抛异常（任务标记 failed）
+- DiagnosticsResultProcessor：诊断结果持久化 + resultId/resultType 信封输出
+- ReportRepository 通过 app.decorate 注入（app.reportRepository），与既有 Service 注入模式一致
 
 ## 边界
 

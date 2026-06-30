@@ -1016,3 +1016,33 @@ lint_error
   - task.test.ts 的 diagnostics claim/complete 测试 URL 缺少 `/api` 前缀（`/internal/tasks/` → 应为 `/api/internal/tasks/`），这是 story-2 引入时的遗留 bug，不影响 story-4
   - 子插件（configRoutes/previewRoutes）通过 `app.register()` 注册时继承父级的装饰属性（app.configService / app.dataCenter），无需额外注入
 ---
+
+## [2026-06-30 18:07] - story-5 (Phase 1.5 Task 1.5.2 — 抽出 ResultProcessor 注册表 + Repo 走 DI)
+
+- **问题背景**：task.ts complete handler 内联 ~120 行回测后处理（mapBacktestResultToReport + AI 合并 + surrogate 清洗 + reportRepo.save），且 `new ReportRepository()` 绕过 app.decorate 注入模式
+- **新增文件**：
+  - `apps/api/src/services/result-processors/types.ts` — ResultProcessor / ResultProcessorContext / ResultProcessorOutput 接口定义 + FastifyInstance 类型扩展
+  - `apps/api/src/services/result-processors/backtest-result-processor.ts` — BacktestResultProcessor：报告映射 + AI analysis 合并 + surrogate 清洗 + ReportRepository.save；保存失败抛异常（complete handler 标记任务 failed）
+  - `apps/api/src/services/result-processors/diagnostics-result-processor.ts` — DiagnosticsResultProcessor：构造 DiagnosticResult + diagnosticService.storeResult
+  - `apps/api/src/services/result-processors/index.ts` — createResultProcessorRegistry() 工厂函数，注册 backtest + diagnostics
+  - `apps/api/tests/services/result-processors.test.ts` — 7 个单元测试覆盖 backtest/diagnostics processor 的 resultId/resultType 输出、存储失败抛异常、默认 category 降级、注册表完整性
+- **修改文件**：
+  - `apps/api/src/app.ts` — AppOptions 新增 reportRepository / resultProcessorRegistry（可选）；app.decorate 注入；添加 FastifyInstance 类型扩展
+  - `apps/api/src/index.ts` — 创建 ReportRepository + createResultProcessorRegistry，传入 buildApp
+  - `apps/api/src/routes/task.ts` — complete handler 退化为统一分派（查注册表 → processor 产出信封 → SSE 推送；processor 抛异常 → 标记 failed；无 processor → 原样完成）。无 per-type if/switch，主体 ≤ 25 行
+  - `apps/api/tests/routes/task.test.ts` — 修复 diagnostics 测试 URL（/internal/tasks → /api/internal/tasks）+ 提供 mock processor registry
+  - `apps/api/tests/routes/report.test.ts` — 4 个回测持久化测试注册 BacktestResultProcessor + 真实 ReportRepository
+  - `apps/api/AGENT.md` — 记录 ResultProcessor 注册表模式
+- **Doc Sync**: updated `apps/api/AGENT.md` with ResultProcessor registry pattern. The integrated plan (`docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`) already fully documents story-5 architecture — no plan doc update needed.
+- **验证**：
+  - `cd apps/api && npx tsc --noEmit` → 通过
+  - `pnpm lint` → 0 errors（仅 11 个预存 warning，3 个 data-collector warning）
+  - `pnpm test` → 10/10 包全部通过；API 50/50 passed（含 7 个新 result-processors 测试）
+  - `pnpm build` → 5/5 successful
+  - `bash scripts/smoke-test.sh` → 7/7 ALL PASSED
+- **后续迭代注意事项：**
+  - BacktestResultProcessor.save() 失败时抛异常，complete handler 捕获后标记任务 failed（旧行为：静默 console.error 并继续完成）
+  - 回测 SSE result 事件现在顶层含 resultType='backtest' + resultId（reportId），与 story-2 的 diagnostics 信封对称
+  - report.ts 路由内的 `new ReportRepository()` 未迁移到 DI（属前 scope 遗留，story-5 只改 complete handler 的注入方式）
+  - 现有 task.test.ts 的 diagnostics 测试 URL 已修复（/internal/tasks → /api/internal/tasks），之前 story-2 引入时缺少 /api 前缀
+  - report.test.ts 中 4 个回测持久化测试现在通过真实 BacktestResultProcessor + ReportRepository 完成，不再依赖 inline handler 逻辑

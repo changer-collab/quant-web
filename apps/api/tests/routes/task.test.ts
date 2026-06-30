@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { buildApp } from '../../src/app.js';
 import { InMemoryTaskService } from '../../src/plugins/task-service.js';
 import type { DataCenter } from '@quant/data-center';
+import { TaskType } from '../../src/types.js';
+import type { ResultProcessor } from '../../src/services/result-processors/types.js';
 
 function createMockDataCenter(): DataCenter {
   return {
@@ -70,6 +72,26 @@ function createMockDataCenter(): DataCenter {
   };
 }
 
+/** Mock diagnostics processor — 模拟 store + 产出信封 */
+const mockDiagnosticsProcessor: ResultProcessor = {
+  async process(ctx) {
+    const payload = ctx.task.payload as Record<string, unknown>;
+    const diagData = (ctx.result as { diagnostics?: Record<string, unknown> }).diagnostics ?? ctx.result;
+    const resultId = `diag-${ctx.task.id}-${Date.now()}`;
+    return {
+      resultId,
+      resultType: 'diagnostics',
+      data: { category: payload.category ?? 'non_factor', diagnostics: diagData },
+    };
+  },
+};
+
+function createMockProcessorRegistry(): Map<TaskType, ResultProcessor> {
+  const map = new Map<TaskType, ResultProcessor>();
+  map.set(TaskType.Diagnostics, mockDiagnosticsProcessor);
+  return map;
+}
+
 describe('Task Routes', () => {
   it('POST /api/tasks 提交回测任务返回 202', async () => {
     const app = await buildApp({
@@ -126,6 +148,7 @@ describe('Task Routes', () => {
     const app = await buildApp({
       dataCenter: createMockDataCenter(),
       taskService: new InMemoryTaskService(),
+      resultProcessorRegistry: createMockProcessorRegistry(),
     });
 
     // 创建 diagnostics 任务
@@ -144,14 +167,14 @@ describe('Task Routes', () => {
     // 认领任务
     const claim = await app.inject({
       method: 'POST',
-      url: `/internal/tasks/${id}/claim`,
+      url: `/api/internal/tasks/${id}/claim`,
     });
     expect(claim.statusCode).toBe(200);
 
     // 完成任务带诊断数据
     const complete = await app.inject({
       method: 'POST',
-      url: `/internal/tasks/${id}/complete`,
+      url: `/api/internal/tasks/${id}/complete`,
       payload: {
         result: {
           diagnostics: { type: 'factor_based', ic_series: [{ period: '2024-01', ic: 0.05, rank_ic: 0.04 }] },

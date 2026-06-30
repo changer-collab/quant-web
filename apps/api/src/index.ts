@@ -2,10 +2,12 @@ import { buildApp } from './app.js';
 import { createDataCenter } from '@quant/data-center/storage';
 import { SqliteTaskService } from './plugins/sqlite-task-service.js';
 import { initApiDb, closeApiDb } from './storage/connection.js';
+import { ReportRepository } from './storage/report-repo.js';
 import { SqliteConfigHistoryRepo, SqliteConfigRepo } from './repositories/sqlite-config-repo.js';
 import { SqliteDiagnosticRepo } from './repositories/sqlite-diag-repo.js';
 import { StrategyConfigService } from './services/config-service.js';
 import { DiagnosticService } from './services/diagnostic-service.js';
+import { createResultProcessorRegistry } from './services/result-processors/index.js';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
@@ -40,7 +42,21 @@ const diagRepo = new SqliteDiagnosticRepo(apiDb);
 const configService = new StrategyConfigService(configRepo);
 const diagnosticService = new DiagnosticService(diagRepo);
 
-const app = await buildApp({ dataCenter, taskService, configService, diagnosticService });
+// ─── ReportRepository + ResultProcessor 注册表 ───────────────────────
+const reportRepo = new ReportRepository();
+const resultProcessorRegistry = createResultProcessorRegistry({
+  reportRepository: reportRepo,
+  diagnosticService,
+});
+
+const app = await buildApp({
+  dataCenter,
+  taskService,
+  configService,
+  diagnosticService,
+  reportRepository: reportRepo,
+  resultProcessorRegistry,
+});
 
 // 优雅关闭
 process.on('SIGINT', async () => {

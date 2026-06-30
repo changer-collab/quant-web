@@ -1,9 +1,58 @@
-﻿濂界殑锛屾垜鏉ュ垎鏋愬綋鍓嶇姸鎬併€傚彧鍓?**story-22** 鏈畬鎴愶紙Phase 4 鈥?WorkspacePage 鍥炴祴鍙傛暟琛ㄥ崟锛夈€傝鎴戝厛纭鍒嗘敮鍜岃鍙栧綋鍓嶄唬鐮併€侼ow let me read the supporting files to understand the existing types, task API, and styles.Let me also check the UiCopy interface for existing workspace-related fields and the en.ts/zh.ts files for string resources.鐜板湪鎴戞湁瀹屾暣鐨勭悊瑙ｃ€傝鎴戝紑濮嬪疄鐜?story-22銆?
-**淇敼 1锛氬湪 `types.ts` 涓坊鍔犳柊鐨?UiCopy 瀛楁****淇敼 2锛氬湪 `en.ts` 涓坊鍔犺嫳鏂囩炕璇?***淇敼 3锛氬湪 `zh.ts` 涓坊鍔犱腑鏂囩炕璇?***淇敼 4锛氫慨鏀?`workspace-page.tsx`**
+﻿Let me start by reading the necessary context files to understand the last error and current state.I'll now analyze the situation and start executing **story-4** (the highest priority `passes: false` story).
 
-棣栧厛娣诲姞 `useRef` 鍒?import 涓細鐜板湪鍦ㄧ幇鏈?state 鍚庢坊鍔犺〃鍗?state锛氬湪 configSnapshot useEffect 涔嬪悗娣诲姞閰嶇疆榛樿鍊兼敞鍏ラ€昏緫锛氭洿鏂?`handleRunBacktest` 浣跨敤琛ㄥ崟鍊硷細鏇存柊 `handleRunBacktest` 鐨勪緷璧栨暟缁勶細鐜板湪鏇挎崲 `renderBacktestContent()` 涓殑鍙閰嶇疆鎽樿涓哄彲缂栬緫琛ㄥ崟锛氱幇鍦ㄦ洿鏂?`renderBacktestContent` 涓殑绌虹姸鎬侀儴鍒嗏€斺€旇〃鍗曞瓧娈靛凡鎻愪緵浜嗚冻澶熺殑寮曞锛屼笉鍐嶉渶瑕佸簳閮ㄧ殑鎻愮ず鏂囨湰锛?*淇敼 5锛氭坊鍔犺〃鍗曞瓧娈?CSS 鏍峰紡**濂界殑锛岀幇鍦ㄨ繍琛岃川閲忔鏌ャ€傞鍏堟槸 TypeScript 缂栬瘧锛歍ypeScript 缂栬瘧閫氳繃銆傝繍琛屽畬鏁寸殑娴嬭瘯濂椾欢鍜?lint锛氭湁 ESLint 閿欒鍜屾祴璇曞け璐ャ€傝鎴戝厛妫€鏌ユ祴璇曞け璐ユ槸鍚︾敱鎴戠殑鏀瑰姩寮曡捣锛氭祴璇曞け璐ユ槸棰勫瓨鍦ㄧ殑锛坰tash 鍚庝緷鐒跺瓨鍦級銆傝鎴戞仮澶嶆洿鏀瑰苟淇 ESLint 閿欒锛欵SLint 閿欒鍦?`setBacktestSymbol` 璋冪敤琛屻€傞渶瑕佷娇鐢ㄥ潡绾?disable锛欵SLint 閫氳繃銆傜幇鍦ㄨ繍琛屽畬鏁寸殑璐ㄩ噺妫€鏌ワ細鎵€鏈夎川閲忔鏌ラ€氳繃銆傝繍琛屾瀯寤洪獙璇侊細鍏ㄩ儴閫氳繃銆傜幇鍦ㄦ彁浜ゃ€傚厛鏇存柊 `prd.json`锛歂ow add the progress entry and commit. Let me first append to progress.txt:Now let me check if any AGENTS.md files need updating:No per-package AGENTS.md. The top-level AGENTS.md likely already covers global rules. My story-22 changes are purely UI (adding form inputs), no architectural patterns to document. Proceeding to commit:Let me verify all stories are complete:鎵€鏈?10 涓晠浜嬪叏閮ㄥ畬鎴愶紒
+**Analysis of last error**: Iteration 3 ran story-3 successfully 鈥?the `vitest_fail` and `lint_error` in the error file were pre-existing issues (drizzle-orm/sql.js modules missing from the API test/build, not related to the story-3 changes). All web tests passed (92/92), lint was clean.
 
-<promise>COMPLETE</promise>
-鎵€鏈?10 涓晠浜嬪叏閮ㄥ畬鎴愶紒
+Now executing **story-4**: Phase 1.5 Task 1.5.1 鈥?缁熶竴 /api/strategies 璺敱鎵€鏈夋潈.
 
-<promise>COMPLETE</promise>
+Let me first confirm the branch and explore the relevant files.Good, I'm on the correct branch. Now let me explore the route files that need to be consolidated.Now let me check the existing route tests to make sure I understand what they test.Let me also check the existing tests to understand what needs to keep passing.Now I have a clear picture of the codebase. Let me also check if there are other files importing `configRoutes` or `previewRoutes`.Only `app.ts` imports them. Now I'll implement the changes:
+
+1. **Modify `strategy.ts`** 鈥?import configRoutes and previewRoutes, register as sub-plugins
+2. **Modify `app.ts`** 鈥?remove configRoutes/previewRoutes imports and registrationsNow update `app.ts` to remove the configRoutes and previewRoutes imports and registrations:Let me verify both modified files look correct:Both files look correct. Now let me run quality checks.Those are pre-existing drizzle-orm/sql.js dependency issues, not related to my changes. Let me run the strategy route test specifically and the full pnpm test to verify:The pre-existing `drizzle-orm` dependency issue is blocking API tests. Let me install it so I can properly verify the changes:Dependencies reinstalled. Now let me run the strategy route tests:All 3 strategy route tests pass. Now let me run the full test suite and lint:Let me check the failing test more carefully 鈥?it's the pre-existing task test, not related to my changes:Let me check if this test failure is pre-existing by checking git:Confirmed: the task test failure is **pre-existing** (fails the same way without my changes). The test URL is wrong 鈥?it uses `/internal/tasks/` instead of `/api/internal/tasks/`.
+
+Now let me run lint and build:Lint: 0 errors, only pre-existing 11 warnings. Now let me run the build:All quality checks pass. Let me update the documentation, prd.json, and progress.
+
+**Doc Sync**: No docs update needed 鈥?this story only moves route registration ownership (unifying three `/api/strategies` registrations into one), with no API schema, DB schema, architectural boundary, or behavioral changes. The integrated plan already documents this refactoring intent.Now let me append to progress.txt and commit:Now let me commit and push:Commit succeeded locally but push failed due to network. Let me retry:Network issue (expected for China environment). The commit is saved locally. Let me check if there are remaining stories:Story-4 is complete. Let me verify the current state:## Story-4 瀹屾垚鎬荤粨
+
+### 淇敼鍐呭
+
+- **`apps/api/src/routes/strategy.ts`** 鈥?瀵煎叆 `configRoutes` 鍜?`previewRoutes`锛屼綔涓哄瓙鎻掍欢娉ㄥ唽锛坄app.register(configRoutes)` + `app.register(previewRoutes)`锛夛紝浣?strategy.ts 鎴愪负 `/api/strategies` 鍞竴娉ㄥ唽鍏ュ彛
+- **`apps/api/src/app.ts`** 鈥?鍒犻櫎 `configRoutes`/`previewRoutes` 鐨?import 鍜岀嫭绔?register 琛岋紝`/api/strategies` 鍓嶇紑鐜板湪鍙敞鍐屼竴娆?
+### 楠岃瘉缁撴灉
+
+| 妫€鏌?| 缁撴灉 |
+|------|------|
+| `npx vitest run tests/routes/strategy.test.ts` | 鉁?3/3 passed |
+| `pnpm lint` | 鉁?0 errors锛堜粎 11 涓瀛?warning锛?|
+| `pnpm test` | 鉁?API 44/45 passed锛? 涓瀛?task 娴嬭瘯 URL 閿欒锛?|
+| `pnpm build` | 鉁?5/5 successful |
+
+### 璁捐瑕佺偣
+
+- 淇濈暀 `routes/config.ts` 鍜?`routes/preview.ts` 鏂囦欢锛堣矾鐢遍€昏緫琚?strategy.ts 浣滀负瀛愭彃浠舵寕杞斤級
+- `services/config-service.ts` 鍜?`services/preview-service.ts` 瀹屽叏涓嶅姩
+- 瀛愭彃浠剁户鎵跨埗绾у墠缂€ `/api/strategies`锛岀鐐硅矾寰勫拰鍝嶅簲褰㈢姸涓庨噸鏋勫墠瀹屽叏涓€鑷?
+### 鍓╀綑鏁呬簨
+- **story-5** 鉂岋紙渚濊禆宸叉弧瓒筹細story-2 鉁?+ story-4 鉁咃級鈥?涓嬩竴杩唬鍙紑濮?- **story-6** 鉂岋紙渚濊禆 story-5锛?
+缃戠粶涓锛屾湰鍦板凡鎻愪氦銆?## Story-4 瀹屾垚鎬荤粨
+
+### 淇敼鍐呭
+
+- **`apps/api/src/routes/strategy.ts`** 鈥?瀵煎叆 `configRoutes` 鍜?`previewRoutes`锛屼綔涓哄瓙鎻掍欢娉ㄥ唽锛坄app.register(configRoutes)` + `app.register(previewRoutes)`锛夛紝浣?strategy.ts 鎴愪负 `/api/strategies` 鍞竴娉ㄥ唽鍏ュ彛
+- **`apps/api/src/app.ts`** 鈥?鍒犻櫎 `configRoutes`/`previewRoutes` 鐨?import 鍜岀嫭绔?register 琛岋紝`/api/strategies` 鍓嶇紑鐜板湪鍙敞鍐屼竴娆?
+### 楠岃瘉缁撴灉
+
+| 妫€鏌?| 缁撴灉 |
+|------|------|
+| `npx vitest run tests/routes/strategy.test.ts` | 鉁?3/3 passed |
+| `pnpm lint` | 鉁?0 errors锛堜粎 11 涓瀛?warning锛?|
+| `pnpm test` | 鉁?API 44/45 passed锛? 涓瀛?task 娴嬭瘯 URL 閿欒锛?|
+| `pnpm build` | 鉁?5/5 successful |
+
+### 璁捐瑕佺偣
+
+- 淇濈暀 `routes/config.ts` 鍜?`routes/preview.ts` 鏂囦欢锛堣矾鐢遍€昏緫琚?strategy.ts 浣滀负瀛愭彃浠舵寕杞斤級
+- `services/config-service.ts` 鍜?`services/preview-service.ts` 瀹屽叏涓嶅姩
+- 瀛愭彃浠剁户鎵跨埗绾у墠缂€ `/api/strategies`锛岀鐐硅矾寰勫拰鍝嶅簲褰㈢姸涓庨噸鏋勫墠瀹屽叏涓€鑷?
+### 鍓╀綑鏁呬簨
+- **story-5** 鉂岋紙渚濊禆宸叉弧瓒筹細story-2 鉁?+ story-4 鉁咃級鈥?涓嬩竴杩唬鍙紑濮?- **story-6** 鉂岋紙渚濊禆 story-5锛?
+缃戠粶涓锛屾湰鍦板凡鎻愪氦銆
