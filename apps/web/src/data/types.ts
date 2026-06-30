@@ -262,14 +262,19 @@ export interface ConfigSnapshot {
   params: Record<string, unknown>;
 }
 
-/** 诊断结果 */
+/** 诊断结果（与 API DiagnosticResultWire 逐字段对齐） */
 export interface DiagnosticResult {
-  id: string;
+  resultId: string;
+  resultType: 'diagnostics';
   taskId: string;
   strategy: string;
+  category: string;
+  subcategory: string | null;
   configSnapshot: ConfigSnapshot;
-  dataJson: Record<string, unknown>;
+  data: Record<string, unknown>;
   createdAt: number;
+  expiresAt: number;
+  engineVersion: string;
 }
 
 export interface MarketTick {

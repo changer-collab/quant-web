@@ -468,3 +468,22 @@ export interface DiagnosticResult {
   dataJson: Record<string, unknown>;
   createdAt: number;
 }
+
+/**
+ * DiagnosticResultWire — API 响应投射格式
+ * 与 apps/web/src/data/types.ts DiagnosticResult 逐字段对齐
+ * id→resultId, dataJson→data, 补 resultType/expiresAt/engineVersion/subcategory
+ */
+export interface DiagnosticResultWire {
+  resultId: string;
+  resultType: 'diagnostics';
+  taskId: string;
+  strategy: string;
+  category: StrategyCategory;
+  subcategory: string | null;
+  configSnapshot: ConfigSnapshot;
+  data: Record<string, unknown>;
+  createdAt: number;
+  expiresAt: number;
+  engineVersion: string;
+}

@@ -55,7 +55,7 @@
       "agent": "fullstack-agent",
       "priority": 3,
       "dependsOn": ["story-2"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-4",
