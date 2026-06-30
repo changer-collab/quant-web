@@ -986,3 +986,33 @@ lint_error
   - `expiresAt = createdAt + 7天` 是静态计算；story-6 端到端验收时可确认过期清理逻辑
 ---
 ---
+
+## [2026-06-30 09:40:22] - Iteration 3
+
+- Exit code: 0
+- Stories remaining: 3
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-30 17:55] - story-4 (Phase 1.5 Task 1.5.1 — 统一 /api/strategies 路由所有权)
+- **修改的文件：**
+  - `apps/api/src/routes/strategy.ts` — 导入 configRoutes 和 previewRoutes，作为子插件注册（`app.register(configRoutes)` + `app.register(previewRoutes)`）
+  - `apps/api/src/app.ts` — 删除 configRoutes/previewRoutes 的 import 和独立 register 行
+- **设计决策：**
+  - strategy.ts 成为 `/api/strategies` 唯一注册入口，但保留 routes/config.ts 和 routes/preview.ts 文件（它们的路由处理逻辑被 strategy.ts 作为子插件挂载）
+  - services/config-service.ts 和 services/preview-service.ts 完全不动
+  - 端点路径、请求体、响应形状全部不变（config 和 preview 子插件继承父级前缀）
+- **验证：**
+  - `cd apps/api && npx vitest run tests/routes/strategy.test.ts` → 3/3 passed（包含策略列表、策略详情、404 测试）
+  - `pnpm lint` → 0 errors（仅 11 个预存 warning）
+  - `pnpm test` → API 44/45 passed（task.test.ts 1 个预存失败：URL 缺少 `/api` 前缀，story-2 引入时就已存在）
+  - `pnpm build` → 5/5 successful
+- **Doc Sync**: no docs update needed because this story only refactors route registration ownership (unifying three `/api/strategies` registrations into one) — no API schema, DB schema, architectural boundary, or behavioral changes. The integrated plan already documents this refactoring intent.
+- **后续迭代注意事项：**
+  - story-5 依赖 story-4（已满足），可开始实施 ResultProcessor 注册表 + Repo DI 改造
+  - task.test.ts 的 diagnostics claim/complete 测试 URL 缺少 `/api` 前缀（`/internal/tasks/` → 应为 `/api/internal/tasks/`），这是 story-2 引入时的遗留 bug，不影响 story-4
+  - 子插件（configRoutes/previewRoutes）通过 `app.register()` 注册时继承父级的装饰属性（app.configService / app.dataCenter），无需额外注入
+---

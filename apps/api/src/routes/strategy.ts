@@ -1,7 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { strategySyncService } from '../services/strategy-sync.js';
+import { configRoutes } from './config.js';
+import { previewRoutes } from './preview.js';
 
 export async function strategyRoutes(app: FastifyInstance) {
+  // ── 策略元信息 ──
+
   app.get('/', async () => {
     const strategies = await strategySyncService.syncFromPython();
     return strategies.map((m) => ({
@@ -54,4 +58,10 @@ export async function strategyRoutes(app: FastifyInstance) {
       workflowReady: meta.category === 'transitional' || (meta.subcategory !== null && meta.subcategory !== undefined),
     };
   });
+
+  // ── 策略配置 CRUD（挂载 GET/PUT /:name/config） ──
+  await app.register(configRoutes);
+
+  // ── Preview 端点（挂载 POST /:name/preview） ──
+  await app.register(previewRoutes);
 }
