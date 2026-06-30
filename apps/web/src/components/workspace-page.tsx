@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot } from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
@@ -18,33 +18,29 @@ interface WorkspacePageProps {
 
 type ProgressState = { percent: number; message: string } | null;
 
-// ── Backtest mock data (static, no random) ──────────────────
-const BACKTEST_MOCK = {
-  equityPts: (() => {
-    const pts: number[] = [];
-    let val = 100;
-    for (let i = 0; i < 252; i++) {
-      val += ((i * 13 + 5) % 200 - 90) / 100;
-      pts.push(Math.round(val * 100) / 100);
-    }
-    return pts;
-  })(),
-  mockTrades: [
-    { date: '2024-01-05', side: 'buy' as const, price: 45.32, shares: 5000, pnl: 0, reason: 'Signal triggered' },
-    { date: '2024-01-15', side: 'sell' as const, price: 48.76, shares: 5000, pnl: 17200.00, reason: 'Take profit' },
-    { date: '2024-02-03', side: 'buy' as const, price: 47.10, shares: 4800, pnl: 0, reason: 'Signal triggered' },
-    { date: '2024-02-20', side: 'sell' as const, price: 44.30, shares: 4800, pnl: -13440.00, reason: 'Stop loss' },
-    { date: '2024-03-10', side: 'buy' as const, price: 43.80, shares: 5200, pnl: 0, reason: 'Signal triggered' },
-    { date: '2024-04-05', side: 'sell' as const, price: 49.20, shares: 5200, pnl: 28080.00, reason: 'Take profit' },
-    { date: '2024-04-22', side: 'buy' as const, price: 50.50, shares: 4900, pnl: 0, reason: 'Signal triggered' },
-    { date: '2024-05-15', side: 'sell' as const, price: 52.80, shares: 4900, pnl: 11270.00, reason: 'Take profit' },
-    { date: '2024-06-01', side: 'buy' as const, price: 51.20, shares: 5100, pnl: 0, reason: 'Signal triggered' },
-    { date: '2024-06-20', side: 'sell' as const, price: 47.90, shares: 5100, pnl: -16830.00, reason: 'Stop loss' },
-  ],
-  perfTotalReturn: '35.2%',
-  perfMaxDrawdown: '-12.5%',
-  perfSharpe: '1.52',
-};
+interface BacktestMetricsView {
+  totalReturn?: number;
+  maxDrawdown?: number;
+  sharpeRatio?: number;
+  totalTrades?: number;
+}
+
+interface BacktestTradeView {
+  timestamp?: number;
+  date?: string;
+  side?: string;
+  price?: number;
+  quantity?: number;
+  shares?: number;
+  pnl?: number;
+  reason?: string;
+}
+
+interface BacktestResultView {
+  metrics?: BacktestMetricsView;
+  equityCurve?: Array<{ timestamp: number; equity: number }>;
+  trades?: BacktestTradeView[];
+}
 
 // ── Chart subcomponents ──────────────────────────────────────
 
@@ -133,7 +129,7 @@ function LineChart({ points, color = 'var(--green)' }: { points: number[]; color
   const range = max - min || 1;
   const w = 100;
   const h = 100;
-  const stepX = w / (points.length - 1);
+  const stepX = points.length === 1 ? 0 : w / (points.length - 1);
   const pathD = points
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${i * stepX},${h - ((p - min) / range) * h}`)
     .join(' ');
@@ -158,6 +154,74 @@ function MiniGrid({ items }: { items: { label: string; value: string }[] }) {
       ))}
     </div>
   );
+}
+
+function getNestedNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
+  let current: unknown = record;
+  for (const key of keys) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === 'number' && Number.isFinite(current) ? current : undefined;
+}
+
+function extractBacktestResult(data: Record<string, unknown> | null): BacktestResultView | null {
+  if (!data) return null;
+  const raw = data.backtestResult && typeof data.backtestResult === 'object'
+    ? data.backtestResult as Record<string, unknown>
+    : data;
+  const metricsRaw = raw.metrics && typeof raw.metrics === 'object'
+    ? raw.metrics as Record<string, unknown>
+    : {};
+  const equityCurve = Array.isArray(raw.equityCurve)
+    ? raw.equityCurve
+        .map((point) => {
+          if (!point || typeof point !== 'object') return null;
+          const p = point as Record<string, unknown>;
+          const timestamp = typeof p.timestamp === 'number' ? p.timestamp : undefined;
+          const equity = typeof p.equity === 'number' ? p.equity : undefined;
+          return timestamp !== undefined && equity !== undefined ? { timestamp, equity } : null;
+        })
+        .filter((point): point is { timestamp: number; equity: number } => point !== null)
+    : [];
+  const trades = Array.isArray(raw.trades)
+    ? raw.trades.filter((trade): trade is BacktestTradeView => Boolean(trade && typeof trade === 'object'))
+    : [];
+
+  return {
+    metrics: {
+      totalReturn: getNestedNumber(metricsRaw, ['totalReturn']),
+      maxDrawdown: getNestedNumber(metricsRaw, ['maxDrawdown']),
+      sharpeRatio: getNestedNumber(metricsRaw, ['sharpeRatio']),
+      totalTrades: getNestedNumber(metricsRaw, ['totalTrades']),
+    },
+    equityCurve,
+    trades,
+  };
+}
+
+function formatPercent(value: number | undefined): string {
+  if (value === undefined) return '--';
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function formatNumber(value: number | undefined, digits = 2): string {
+  if (value === undefined) return '--';
+  return value.toFixed(digits);
+}
+
+function formatTradeDate(trade: BacktestTradeView): string {
+  if (trade.date) return trade.date;
+  if (typeof trade.timestamp === 'number') {
+    return new Date(trade.timestamp).toISOString().slice(0, 10);
+  }
+  return '--';
+}
+
+function formatTradeSide(side: string | undefined, language: LanguageCode): string {
+  if (side === 'buy') return language === 'zh' ? '买入' : 'Buy';
+  if (side === 'sell') return language === 'zh' ? '卖出' : 'Sell';
+  return side ?? '--';
 }
 
 // ── Progress / Error helpers ─────────────────────────────────
@@ -221,9 +285,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   const configDefaultsApplied = useRef(false);
 
   const category = strategy.category ?? 'non_factor';
-
-  // ── Backtest static mock data (used only until real backtest data flows in) ──
-  const backtestMock = useMemo(() => BACKTEST_MOCK, []);
+  const parsedBacktest = extractBacktestResult(backtestResult);
 
   // ── F5 recovery: check URL for ?diagnosticId on mount ──
   useEffect(() => {
@@ -248,13 +310,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Fetch strategy config on mount / strategy change ──
   useEffect(() => {
+    configDefaultsApplied.current = false;
     fetchStrategyConfig(strategy.name)
       .then((res) => {
-        if (res) {
-          setConfigSnapshot({ strategy: strategy.name, params: res.config_json });
-        }
+        setConfigSnapshot(res ? { strategy: strategy.name, params: res.config_json } : null);
       })
       .catch((err) => {
         console.warn('Failed to fetch strategy config:', err);
@@ -269,7 +329,12 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       /* eslint-disable react-hooks/set-state-in-effect */
       if (typeof p.symbol === 'string') setBacktestSymbol(p.symbol);
       if (typeof p.timeframe === 'string') setBacktestTimeframe(p.timeframe);
-      if (typeof p.initialCapital === 'number') setBacktestInitialCapital(p.initialCapital);
+      const initialCash = typeof p.initialCash === 'number'
+        ? p.initialCash
+        : typeof p.initialCapital === 'number'
+          ? p.initialCapital
+          : undefined;
+      if (initialCash !== undefined) setBacktestInitialCapital(initialCash);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [configSnapshot]);
@@ -296,14 +361,26 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
           if (event.type === 'progress') {
             setDiagnosticProgress({ percent: event.percent ?? 0, message: event.message ?? '' });
           } else if (event.type === 'result') {
-            const result = event.data as { diagnostics?: Record<string, unknown>; resultId?: string; resultType?: string };
+            const result = event.data as {
+              data?: Record<string, unknown>;
+              diagnostics?: Record<string, unknown>;
+              resultId?: string;
+              resultType?: string;
+            };
             if (result?.resultId) {
               const url = new URL(window.location.href);
               url.searchParams.set('diagnosticId', result.resultId);
               window.history.replaceState({}, '', url.toString());
+              fetchDiagnostic(result.resultId).then((data) => {
+                if (data) {
+                  setDiagnosticData(data.dataJson);
+                  setDiagnosticReady(true);
+                }
+              });
             }
-            if (result?.diagnostics) {
-              setDiagnosticData(result.diagnostics);
+            const diagnostics = result?.diagnostics ?? result?.data;
+            if (diagnostics) {
+              setDiagnosticData(diagnostics);
               setDiagnosticReady(true);
             }
             setDiagnosticProgress({ percent: 100, message: language === 'zh' ? '诊断完成' : 'Diagnostics complete' });
@@ -510,6 +587,10 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
   // ── Step 2 Backtest Content ──
   function renderBacktestContent() {
+    const metrics = parsedBacktest?.metrics;
+    const equityPoints = parsedBacktest?.equityCurve?.map((point) => point.equity) ?? [];
+    const trades = parsedBacktest?.trades ?? [];
+
     return (
       <>
         {/* Editable backtest parameter form (shown before submission) */}
@@ -624,20 +705,20 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             <div className={s.chartCardTitle}>{ui.workspacePerformanceTitle}</div>
             <div className={s.perfGrid}>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${parseFloat(backtestMock.perfTotalReturn) > 10 ? s.perfCardGood : s.perfCardWarn}`}>
-                  {backtestMock.perfTotalReturn}
+                <div className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}>
+                  {formatPercent(metrics?.totalReturn)}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '总收益' : 'Total Return'}</div>
               </div>
               <div className={s.perfCard}>
                 <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
-                  {backtestMock.perfMaxDrawdown}
+                  {formatPercent(metrics?.maxDrawdown)}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '最大回撤' : 'Max Drawdown'}</div>
               </div>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${parseFloat(backtestMock.perfSharpe) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
-                  {backtestMock.perfSharpe}
+                <div className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
+                  {formatNumber(metrics?.sharpeRatio)}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}</div>
               </div>
@@ -646,7 +727,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             {/* Equity Curve */}
             <div className={s.chartCardTitle}>{ui.workspaceEquityCurve}</div>
             <div className={s.equityCurve}>
-              <LineChart points={backtestMock.equityPts} />
+              <LineChart points={equityPoints} />
             </div>
 
             {/* Trade Details */}
@@ -664,22 +745,26 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                   </tr>
                 </thead>
                 <tbody>
-                  {backtestMock.mockTrades.map((t, i) => (
-                    <tr key={i}>
-                      <td>{t.date}</td>
-                      <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
-                        {t.side === 'buy' ? (language === 'zh' ? '买入' : 'Buy') : (language === 'zh' ? '卖出' : 'Sell')}
-                      </td>
-                      <td>{t.price.toFixed(2)}</td>
-                      <td>{t.shares.toLocaleString()}</td>
-                      <td style={{ color: t.pnl >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)' }}>
-                        {t.pnl >= 0 ? '+' : ''}{t.pnl.toFixed(2)}
-                      </td>
-                      <td>{t.reason}</td>
-                    </tr>
-                  ))}
+                  {trades.map((t, i) => {
+                    const quantity = t.quantity ?? t.shares;
+                    return (
+                      <tr key={i}>
+                        <td>{formatTradeDate(t)}</td>
+                        <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
+                          {formatTradeSide(t.side, language)}
+                        </td>
+                        <td>{formatNumber(t.price)}</td>
+                        <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
+                        <td style={{ color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)' }}>
+                          {(t.pnl ?? 0) >= 0 ? '+' : ''}{formatNumber(t.pnl)}
+                        </td>
+                        <td>{t.reason ?? '--'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+              {trades.length === 0 && <div className={s.emptyState}>No trades</div>}
             </div>
           </>
         )}

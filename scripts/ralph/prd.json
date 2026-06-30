@@ -1,190 +1,115 @@
 {
-  "feature": "strategy-classification-phase1-4",
-  "branchName": "ralph/strategy-classification",
-  "description": "策略分类 Phase 1→4：配置链路打通 + 死代码清理 + 诊断后端 + 回测参数 UI",
+  "feature": "backend-realign",
+  "branchName": "ralph/backend-realign",
+  "description": "后端结构对齐前端领域模型：P0 契约对齐（判别式结果信封 + 类型补齐）+ P1 结构重组（策略路由统一 + 完成回调上帝函数拆解 + DI 修正）",
   "qualityChecks": {
-    "js": "pnpm lint && pnpm test && pnpm build && bash scripts/smoke-test.sh",
-    "python": "cd packages/strategy-runtime && python -m pytest -v && cd ../backtest-engine && python -m pytest -v && cd ../factor-lab && python -m pytest -v && cd ../ai-engine && python -m pytest -v && cd ../strategies && python -m pytest -v && cd ../data-client && python -m pytest -v"
+    "js": "pnpm lint && pnpm test && pnpm build && bash scripts/smoke-test.sh"
   },
   "userStories": [
     {
-      "id": "story-14",
-      "title": "Phase 1a — ConfigSnapshot 类型导出 + WorkspacePage 配置读取挂载",
-      "phase": 1,
-      "description": "**任务 1.5**：在 apps/web/src/data/types.ts 中导出 ConfigSnapshot 接口 `{ strategy: string; params: Record<string, unknown> }`。\n\n**任务 1.1**：修改 apps/web/src/components/workspace-page.tsx，在组件 useEffect（deps: [strategy.name]）中调用 `fetchStrategyConfig(strategy.name)`，将结果存入 `configSnapshot` state（初始值 null）。读取失败时 console.warn，不阻塞页面渲染。\n\n验收：WorkspacePage 挂载时控制台可见 config 请求；tests/setup.ts 中 GET config mock 返回 null 时组件不崩溃。",
+      "id": "story-1",
+      "title": "P0a — 类型契约对齐：判别式结果信封 + DiagnosticResult.category + ApiTaskType 补 diagnostics",
+      "description": "**问题**：result 信封无类型契约（前端靠嗅探 backtestResult/resultId 分支）；前端 DiagnosticResult 缺 category（后端 types.ts:426 已有）；前端 ApiTaskType 缺 'diagnostics'（实际却在提交该类型）。\n\n**任务（纯类型，不改运行时行为）**：\n1. apps/api/src/types.ts：新增判别式联合 `TaskResult = { resultType: 'diagnostics'; resultId: string; category: StrategyCategory; diagnostics: Record<string, unknown> } | { resultType: 'backtest'; reportId: string; backtestResult: BacktestResult; analysis?: Record<string, unknown> }`。\n2. apps/web/src/data/types.ts：镜像同一 TaskResult 联合（值对齐，遵循 AGENTS.md「不设中转包」）；给 DiagnosticResult 补 `category: StrategyCategory` 字段。\n3. apps/web/src/api/tasks.ts：ApiTaskType 增加 'diagnostics'（与后端 6 值对齐，可一并补 'collect'）。\n\n仅加字段/类型，不动函数体。每改一处立即 tsc。",
       "acceptanceCriteria": [
-        "types.ts 导出 ConfigSnapshot 接口",
-        "WorkspacePage useEffect 内调用 fetchStrategyConfig(strategy.name)",
-        "configSnapshot state 初始值 null，读取成功后更新",
-        "GET config 返回 404/null 时页面不崩溃",
-        "cd apps/web && npx tsc --noEmit 无错误",
-        "npm test 通过"
-      ],
-      "agent": "frontend-agent",
-      "priority": 14,
-      "passes": true
-    },
-    {
-      "id": "story-15",
-      "title": "Phase 1b — diagnostics/backtest payload 带真实 configSnapshot + API category 字段",
-      "phase": 1,
-      "description": "**任务 1.2**：修改 apps/web/src/components/workspace-page.tsx 中 `handleRunDiagnostics()`：POST /api/tasks body 中加入 `configSnapshot`（来自 state）和 `category`（来自 strategy.category）。\n\n**任务 1.3**：修改 `handleRunBacktest()`：POST body 加入 `configSnapshot`。同步修改 apps/web/src/api/tasks.ts 中的 BacktestPayload 类型。\n\n**任务 1.4**：POST body 中 `strategy` 字段统一使用 `strategy.name`（snake_case），与后端 API 对齐。\n\n**任务 1.6**：修改 apps/api/src/routes/task.ts：POST /api/tasks 路由 schema 中 diagnostics payload 追加可选字段 `category: z.string().optional()`，透传给 Worker。",
-      "acceptanceCriteria": [
-        "handleRunDiagnostics POST body 含 configSnapshot 和 category",
-        "handleRunBacktest POST body 含 configSnapshot",
-        "POST body strategy 字段为 strategy.name",
-        "API task.ts diagnostics payload 接受 category 字段",
+        "apps/api/src/types.ts 导出 TaskResult 判别联合，discriminant 为 resultType",
+        "apps/web/src/data/types.ts 的 TaskResult 字段名与嵌套结构与 API 侧逐字一致",
+        "apps/web DiagnosticResult 含 category: StrategyCategory",
+        "apps/web ApiTaskType 包含 'diagnostics'",
+        "历史诊断记录（dataJson 无 category）在前端不崩溃，分类回退到 dataJson.type",
         "cd apps/api && npx tsc --noEmit 无错误",
         "cd apps/web && npx tsc --noEmit 无错误",
-        "npm test 通过"
+        "pnpm test 通过"
       ],
       "agent": "fullstack-agent",
-      "priority": 15,
-      "dependsOn": ["story-14"],
-      "passes": true
+      "priority": 1,
+      "passes": false
     },
     {
-      "id": "story-16",
-      "title": "Phase 2a — 删除旧 strategy-grid.tsx + App.tsx 旧 WorkspaceContent 引用",
-      "phase": 2,
-      "description": "**任务 2.1**：删除 apps/web/src/components/strategy-grid.tsx（已标记 deprecated，被 strategy-grid-new.tsx 取代）。\n\n**任务 2.2**：修改 apps/web/src/App.tsx：删除对 WorkspaceContent（旧单页面）的条件渲染分支，保留 WorkspacePage（新双流程）。删除对已删文件的 import。\n\n删前先 grep 确认无其他组件仍在 import strategy-grid.tsx 和 WorkspaceContent。",
+      "id": "story-2",
+      "title": "P0b — 运行时贯通信封：API 发判别式 result + 前端 SSE 按 resultType 分派",
+      "description": "**问题**：complete handler 临时拼装 result，前端只能 ad-hoc 嗅探字段。本 story 让运行时数据符合 story-1 的 TaskResult 契约。\n\n**API**（apps/api/src/routes/task.ts complete handler，仅调整出参形状，不抽函数）：\n1. diagnostics 分支：enrichedResult 显式补 `resultType:'diagnostics'` 与 `category`（与已有 resultId 一起）。\n2. backtest 分支：报告保存成功后，构造 `{ resultType:'backtest', reportId: report.id, backtestResult, analysis }` 作为 SSE result data 下发（当前未带判别字段）。\n\n**前端**（apps/web/src/components/workspace-page.tsx SSE 处理）：result 事件改为 `switch(data.resultType)` 分派渲染，不再靠字段存在性嗅探。\n\n保持端点路径与既有字段不变，仅新增判别字段。",
       "acceptanceCriteria": [
-        "strategy-grid.tsx 已删除",
-        "App.tsx 无旧 WorkspaceContent 分支",
-        "grep -r 'strategy-grid' src/ 只剩 strategy-grid-new 引用",
-        "cd apps/web && npx tsc --noEmit 无错误",
-        "npm test + npm run build 通过"
-      ],
-      "agent": "frontend-agent",
-      "priority": 16,
-      "dependsOn": ["story-15"],
-      "passes": true
-    },
-    {
-      "id": "story-17",
-      "title": "Phase 2b — ResearchMode 类型/数据/i18n/useResearchWorkflow 全清理",
-      "phase": 2,
-      "description": "**任务 2.3**：修改 apps/web/src/data/types.ts：删除 ResearchMode / ResearchModeId 类型定义。\n\n**任务 2.4**：修改 apps/web/src/data/appData.ts：删除 researchModes 数组及相关类型引用。修改 apps/web/src/data/accessors.ts：删除 researchModes 相关 accessor。修改国际化文件 en.ts / zh.ts：删除 researchModes 相关 key-value 条目。\n\n**任务 2.5**：重写 apps/web/src/hooks/useResearchWorkflow.ts：删除 mode 参数（'traditional'|'hft'|'ai'），改用 category（StrategyCategory）。activeMode → activeCategory。\n\n**任务 2.6**：修改 apps/web/src/data/localization.ts 和 factories.ts：删除对 ResearchMode 的引用。\n\n每删一处，立即运行 npx tsc --noEmit 确认无新错误。",
-      "acceptanceCriteria": [
-        "types.ts 无 ResearchMode / ResearchModeId",
-        "appData.ts 无 researchModes 数组",
-        "en.ts / zh.ts 无 researchModes 相关 key",
-        "useResearchWorkflow.ts 无 'traditional' | 'hft' | 'ai' 字面量",
-        "cd apps/web && npx tsc --noEmit 无错误",
-        "npm test + npm run build 通过"
-      ],
-      "agent": "frontend-agent",
-      "priority": 17,
-      "dependsOn": ["story-16"],
-      "passes": true
-    },
-    {
-      "id": "story-17b",
-      "title": "Phase 2d — diagnostic_results 表加 category 列 + transitional mock 数据修复",
-      "phase": 2,
-      "description": "**DB migration**：修改 apps/api/src/storage/connection.ts 建表语句，在 diagnostic_results 表中加入 `category TEXT NOT NULL DEFAULT 'non_factor'`。同步修改 apps/api/src/storage/schema.ts（Drizzle schema 加 category 字段）和 apps/api/src/types.ts（DiagnosticResult 接口加 `category: StrategyCategory`）。同步修改 apps/api/src/repositories/sqlite-diag-repo.ts 的 save/getById/listByStrategy 方法读写 category 字段。\n\n**Mock 数据修复**：修改 apps/web/src/data/en.ts 和 zh.ts 中 transitional 策略数据，将错误的 `subcategory: 'event_driven'`（非因子型子分类）改为 `subcategory: null`，`workflowReady: true` 保持不变（符合新 API 逻辑）。",
-      "acceptanceCriteria": [
-        "diagnostic_results 建表 SQL 含 category 列",
-        "schema.ts Drizzle 定义含 category 字段",
-        "DiagnosticResult 接口含 category: StrategyCategory",
-        "sqlite-diag-repo.ts save/read 正确处理 category",
-        "en.ts / zh.ts transitional 策略 subcategory 为 null",
-        "cd apps/api && npx tsc --noEmit 无错误",
-        "npm test 通过"
-      ],
-      "agent": "fullstack-agent",
-      "priority": 17,
-      "dependsOn": ["story-17"],
-      "passes": true
-    },
-    {
-      "id": "story-18",
-      "title": "Phase 3a — Python diagnostics 框架：目录 + 入口 + CLI 注册",
-      "phase": 3,
-      "description": "在 packages/strategy-runtime/quantforge_strategy/commands/ 下新建：\n- `diagnostics/__init__.py`（空）\n- `diagnostics/factor.py`：DiagnosticsFactor.run(params, emit) 返回 stub FactorDiagnosticsResult（全零）\n- `diagnostics/non_factor.py`：DiagnosticsNonFactor.run(params, emit) 返回 stub NonFactorDiagnosticsResult（全零）\n- `diagnostics/transitional.py`：DiagnosticsTransitional.run(params, emit) 返回 stub TransitionalDiagnosticsResult\n- `commands/diagnostics.py`：run_diagnostics(params, emit) 按 params['category'] 分支调用对应类\n\n修改 cli.py：_COMMANDS['diagnostics'] = run_diagnostics。\n\n新增 tests/test_diagnostics_stub.py：3 种 category 均返回含 type 字段的 dict，未知 category 不崩溃。",
-      "acceptanceCriteria": [
-        "_COMMANDS['diagnostics'] 注册成功",
-        "category='factor_based' → dict 含 type='factor_based'",
-        "category='non_factor' → dict 含 type='non_factor'",
-        "category='transitional' → dict 含 type='transitional'",
-        "未知 category 不抛异常",
-        "python -m pytest tests/test_diagnostics_stub.py -v 通过"
-      ],
-      "agent": "strategy-agent",
-      "priority": 18,
-      "dependsOn": ["story-17b"],
-      "passes": true
-    },
-    {
-      "id": "story-19",
-      "title": "Phase 3b — 因子型诊断算法（IC / 分层收益 / 相关性矩阵）",
-      "phase": 3,
-      "description": "实现 commands/diagnostics/factor.py 真实算法：\n1. IC 序列：按月12期计算各因子与 T+1 期收益的 Pearson / Spearman rank IC\n2. 分层收益：按因子值均匀分 5 组（Q1~Q5），计算各组累计收益\n3. 相关性矩阵：多因子 Pearson 相关，输出 correlation_matrix + factor_labels\n4. summary：mean_ic / ic_std / ic_ir(=mean_ic/ic_std) / mean_rank_ic\n\n数据不足时返回空数组并 emit warning，不崩溃。\n\n新增 tests/test_diagnostics_factor.py：mock 数据验证 ic_series 长度、layered_returns 5 组、矩阵维度。",
-      "acceptanceCriteria": [
-        "ic_series 长度 = period 数",
-        "layered_returns 含 Q1~Q5 共 5 组",
-        "correlation_matrix 维度正确",
-        "ic_ir ≈ mean_ic / ic_std",
-        "数据不足时不崩溃",
-        "python -m pytest tests/test_diagnostics_factor.py -v 通过"
-      ],
-      "agent": "strategy-agent",
-      "priority": 19,
-      "dependsOn": ["story-18"],
-      "passes": true
-    },
-    {
-      "id": "story-20",
-      "title": "Phase 3c — 非因子型诊断算法（参数敏感性 / 信号质量 / 滑点压力）",
-      "phase": 3,
-      "description": "实现 commands/diagnostics/non_factor.py：\n1. 参数敏感性：对每个数值型参数在 [min,max] 取 5 个值，各跑简化回测（跳过 analyze/syncBacktest），记录 {param, values, returns, sharpe}\n2. 信号质量：统计 total_signals / win_rate / avg_holding_bars / profit_factor / max_consecutive_losses\n3. 滑点压力：1/3/5/10 bps 各重算收益和夏普，输出 [{bps, return, sharpe, trade_count}]\n\n参数无 min/max 时跳过该参数，不崩溃。\n\n新增 tests/test_diagnostics_non_factor.py：验证 param_sensitivity 5 值点、slippage_stress 4 档。",
-      "acceptanceCriteria": [
-        "param_sensitivity 每参数含 5 个值点",
-        "slippage_stress 含 1/3/5/10 bps 共 4 档",
-        "signal_quality 含 win_rate / profit_factor / max_consecutive_losses",
-        "参数无 min/max 时跳过（不崩溃）",
-        "python -m pytest tests/test_diagnostics_non_factor.py -v 通过"
-      ],
-      "agent": "strategy-agent",
-      "priority": 20,
-      "dependsOn": ["story-18"],
-      "passes": true
-    },
-    {
-      "id": "story-21",
-      "title": "Phase 3d — Worker DiagnosticsHandler 改造 + API 结构化存储 + 前端替换 mock",
-      "phase": 3,
-      "description": "**Worker**：修改 apps/worker/src/handlers/diagnostics-handler.ts：从 task.payload 提取 category + configSnapshot，构建 PythonBridge.streamCall({ command: 'diagnostics', strategy, category, configSnapshot, symbol, timeframe, dataRange })。\n\n**API**：修改 apps/api/src/routes/task.ts 的 complete handler：diagnostics 任务解析 result.diagnostics（含 type 字段）存入 diagnostic_results 表，SSE result 事件追加 resultId + resultType。\n\n**前端**：修改 workspace-page.tsx：删除 det() mock 函数和 mockDiagnosticsData，改从 SSE complete 事件的 data.diagnostics 字段渲染。更新 tests/setup.ts POST /tasks mock 含 diagnostics 字段。",
-      "acceptanceCriteria": [
-        "DiagnosticsHandler streamCall 含 category + configSnapshot",
-        "SSE result 事件含 resultId + resultType + diagnostics",
-        "workspace-page.tsx 无 det() 和 mockDiagnosticsData",
-        "前端按 diagnostics.type 分支渲染",
+        "diagnostics 任务 SSE result.data 含 resultType='diagnostics' + resultId + category + diagnostics",
+        "backtest 任务 SSE result.data 含 resultType='backtest' + reportId + backtestResult",
+        "workspace-page.tsx 按 data.resultType 分派，无 backtestResult/resultId 字段嗅探",
+        "SSE result 缺 resultType（旧任务）时前端显示占位提示，不崩溃也不误渲染",
         "cd apps/api && npx tsc --noEmit 无错误",
         "cd apps/web && npx tsc --noEmit 无错误",
-        "pnpm test + pnpm build 通过"
+        "pnpm test 通过"
       ],
       "agent": "fullstack-agent",
-      "priority": 21,
-      "dependsOn": ["story-19", "story-20"],
-      "passes": true
+      "priority": 2,
+      "dependsOn": ["story-1"],
+      "passes": false
     },
     {
-      "id": "story-22",
-      "title": "Phase 4 — WorkspacePage 回测参数表单（symbol / timeframe / 资金 / 日期）",
-      "phase": 4,
-      "description": "修改 workspace-page.tsx 的 WorkspaceStep2，在提交按钮上方新增参数输入区：\n- symbol 输入框（默认从 configSnapshot.params.symbol 读，无则 '600519'）\n- timeframe 下拉（'1d'|'1h'|'30m'，默认 '1d'）\n- 初始资金 number input（默认 1000000）\n- 回测区间 date picker（默认近1年）\n\n提交时 payload 带入 { symbol, timeframe, initialCapital, dataRange: { startTs, endTs } }。\n默认值优先级：configSnapshot.params > URL searchParams > 硬编码默认。",
+      "id": "story-3",
+      "title": "P1a — 统一 /api/strategies 路由所有权（catalog + config + preview 合并单次注册）",
+      "description": "**问题**：/api/strategies 前缀被 strategyRoutes + configRoutes + previewRoutes 三个模块分别 register（app.ts:34,41,42），一个资源散在三处。\n\n**任务**（仅 apps/api，路径与契约不变）：\n1. 新建 apps/api/src/routes/strategy.ts 聚合插件（或在现有 strategy.ts 内合并），统一挂载 GET /、GET /:name、GET /:name/config、PUT /:name/config、POST /:name/preview。config/preview 的处理逻辑保持原样（可 import 现有 service）。\n2. app.ts：strategy 域只 register 一次；删除 configRoutes、previewRoutes 的独立 register 与 import。\n3. 保留 config.ts / preview.ts 的 service 层，仅收拢路由注册。\n\n端点 URL、请求体、响应形状全部不变。",
       "acceptanceCriteria": [
-        "Step 2 有 symbol / timeframe / initialCapital / 日期区间输入",
-        "symbol 默认从 configSnapshot.params.symbol 读取",
-        "提交 POST body 含 symbol / timeframe / initialCapital / dataRange",
-        "cd apps/web && npx tsc --noEmit 无错误",
-        "npm test + npm run build 通过"
+        "app.ts 中 /api/strategies 前缀只被 register 一次",
+        "GET /api/strategies、GET /:name、GET/PUT /:name/config、POST /:name/preview 行为与重构前一致",
+        "curl GET /api/strategies/<不存在的名字> 仍返回 404",
+        "app.ts 不再 import configRoutes / previewRoutes",
+        "cd apps/api && npx tsc --noEmit 无错误",
+        "pnpm test && pnpm build 通过"
       ],
-      "agent": "frontend-agent",
-      "priority": 22,
-      "dependsOn": ["story-21"],
-      "passes": true
+      "agent": "api-agent",
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "story-4",
+      "title": "P1b — 抽出 BacktestResultProcessor：回测后处理移出 HTTP 层 + ReportRepository 走 DI",
+      "description": "**问题**：complete handler 内联了 ~120 行回测后处理（report-mapper 调用 + AI 合并 + surrogate 清洗），且 `new ReportRepository()`（task.ts:150）绕过了其余 service 的 app.decorate 注入模式，违反 AGENTS.md「API 层保持薄」。\n\n**任务**（仅 apps/api，行为等价）：\n1. 新建 apps/api/src/services/backtest-result-processor.ts：`BacktestResultProcessor.process(task, result): Promise<{ reportId: string }>`，承载 mapBacktestResultToReport + AI 合并 + cleanStr/cleanArray + reportRepo.save 全部逻辑（逐字搬运，不改算法）。\n2. ReportRepository / BacktestResultProcessor 通过 app.decorate 注入（index.ts 构造，app.ts 声明），handler 内不再 new。\n3. task.ts complete handler 的 backtest 分支收敛为：调用 processor → 用返回 reportId 组装 story-2 的 backtest 信封。\n\n保持报告字段与 AI 合并行为完全不变。",
+      "acceptanceCriteria": [
+        "backtest-result-processor.ts 含报告映射 + AI 合并 + surrogate 清洗逻辑",
+        "task.ts complete handler 不再出现 new ReportRepository() 与 mapBacktestResultToReport 直接调用",
+        "ReportRepository 经 app.decorate 注入，与既有 service 注入模式一致",
+        "同一回测输入产出的 reportData 字段与值与重构前一致（对比 GET /api/reports/:id）",
+        "处理器内部异常被捕获，任务仍标记 completed（报告保存失败不阻塞任务，与原行为一致）",
+        "cd apps/api && npx tsc --noEmit 无错误",
+        "pnpm test && pnpm build 通过"
+      ],
+      "agent": "api-agent",
+      "priority": 4,
+      "dependsOn": ["story-2"],
+      "passes": false
+    },
+    {
+      "id": "story-5",
+      "title": "P1c — 抽出 DiagnosticsResultProcessor + ResultProcessor 注册表，complete handler 退化为分派",
+      "description": "**问题**：complete handler 仍按 task.type 写 if 分支做领域后处理，对新任务类型不开放封闭。\n\n**任务**（仅 apps/api，行为等价）：\n1. 新建 apps/api/src/services/diagnostics-result-processor.ts：搬运 diagnostics 落库逻辑（构造 DiagnosticResult + diagnosticService.storeResult），返回 `{ resultId, category }`。\n2. 新建 result-processor 注册表（Map<TaskType, Processor>），注册 backtest（story-4）与 diagnostics 两个处理器；processor 统一接口 `process(task, result): Promise<Partial<TaskResult>>`。\n3. complete handler 退化为：落库 task → 查注册表 → 有则执行 processor 并把返回值并入 story-2 信封 → updateTask 发 SSE。无注册类型（如 collect）直接完成、原样返回 result。handler 主体 ≤ 25 行，无 per-type if。",
+      "acceptanceCriteria": [
+        "存在 ResultProcessor 注册表，backtest 与 diagnostics 各注册一个处理器",
+        "complete handler 无 task.type 的 if/switch 分支，主体 ≤ 25 行",
+        "diagnostics 任务 SSE result 仍含 resultId + category + diagnostics（与 story-2 一致）",
+        "未注册类型（collect）的任务正常 completed，result 原样返回，不抛异常",
+        "cd apps/api && npx tsc --noEmit 无错误",
+        "pnpm test && pnpm build 通过"
+      ],
+      "agent": "api-agent",
+      "priority": 5,
+      "dependsOn": ["story-4"],
+      "passes": false
+    },
+    {
+      "id": "story-6",
+      "title": "端到端验收 — 诊断/回测全链路 + 契约一致性（无代码改动）",
+      "description": "启动 api + worker，跑通诊断与回测两条流程，验证 story-1~5 的契约与结构重构未破坏链路。仅验证，不改代码；若发现问题按 prd-generation.md「Fault Investigation Order」逐层定位，不猜测。",
+      "acceptanceCriteria": [
+        "Tier1 数据链路：提交 diagnostics 任务，SSE result.data 含 resultType='diagnostics' + resultId + category + diagnostics，且 GET /api/diagnostics/:resultId 能取回该记录（category 非空）",
+        "Tier1 数据链路：提交 backtest 任务，SSE result.data 含 resultType='backtest' + reportId，GET /api/reports/:id 的 reportData 结构与 apps/web/src/data/types.ts BacktestReportFull 逐字段对齐",
+        "Tier1 契约：apps/api 与 apps/web 的 TaskResult 联合字段名与嵌套一致",
+        "Tier2 渲染：WorkspacePage 诊断结果按 category 正确分支渲染（factor_based 显示 IC/分层；non_factor 显示参数敏感性/滑点），无空白卡片",
+        "Tier2 渲染：中文文案无乱码，浏览器控制台无 TS/JS 报错",
+        "失败路径：提交一个注定失败的 backtest（如不存在的 symbol），前端显示错误态、不跳转、不白屏",
+        "pnpm lint && pnpm test && pnpm build && bash scripts/smoke-test.sh 全通过"
+      ],
+      "agent": "fullstack-agent",
+      "priority": 6,
+      "dependsOn": ["story-2", "story-3", "story-5"],
+      "passes": false
     }
   ]
 }

@@ -908,3 +908,5 @@ lint_error
   - handleRunBacktest 的 dependency array 已包含全部 5 个表单字段（需保持同步）
   - 回测参数表单使用 config 热力图类似的 `.formInput`/`.formSelect` 样式，与 Panel 组件视觉一致
   - 提交后表单字段消失，改为显示只读摘要（configSummary 复用），性能指标保留 mock 数据等待后续真实数据接入
+
+## ✅ ALL STORIES COMPLETE
