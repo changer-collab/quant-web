@@ -37,6 +37,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Format check
+        run: pnpm format:check
+
       - name: Install smoke Python packages
         run: |
           pip install -e packages/strategy-runtime \
