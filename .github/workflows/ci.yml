@@ -51,6 +51,7 @@ jobs:
 
       - name: Install Python packages
         run: |
+          pip install "pytest>=8.0" respx
           pip install -e packages/strategy-runtime \
             -e packages/data-client \
             -e packages/backtest-engine \
