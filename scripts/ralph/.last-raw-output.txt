@@ -1,58 +1,63 @@
-﻿Let me start by reading the necessary context files to understand the last error and current state.I'll now analyze the situation and start executing **story-4** (the highest priority `passes: false` story).
+﻿鎴戝厛璇诲彇涓婁竴杞殑閿欒淇℃伅鍜岃繘搴︽枃浠讹紝浜嗚В褰撳墠鐘舵€併€傚ソ鐨勶紝鎴戞潵鍒嗘瀽褰撳墠鐘舵€併€備笂涓€涓凯浠ｏ紙Iteration 5锛夋娴嬪埌鍏ㄩ潰鐨勫け璐ワ紙vitest/pytest/lint/build锛夛紝浣?story-5 琚爣璁颁负閫氳繃銆傚綋鍓嶅敮涓€鐨勬湭瀹屾垚 Story 鏄?story-6锛堢鍒扮楠屾敹锛屾棤浠ｇ爜鏀瑰姩锛夈€傛垜闇€瑕佸厛鐞嗚В瀹為檯鐨勯棶棰樼姸鎬併€傚綋鍓嶅垎鏀纭€傚彧鏈?Ralph 鍏冩暟鎹枃浠舵湁鏀瑰姩銆傝鎴戣窇璐ㄩ噺妫€鏌ワ紝鐪嬪疄闄呯姸鎬併€侺int 鍜?build 閮介€氳繃锛佽鎴戣窇娴嬭瘯銆傛墍鏈夎川閲忔鏌ラ€氳繃锛佽鎴戝啀璺?smoke test 鍜?Python 娴嬭瘯銆?/7 smoke 閫氳繃锛宻trategy-runtime 154/154 閫氳繃銆傝鎴戦獙璇佸叾浠?Python 鍖呫€傛墍鏈?Python 鍖呮祴璇曢€氳繃锛佺幇鍦ㄨ繘琛?story-6 鐨勭粨鏋勯獙璇?鈥?妫€鏌?API 鍜屽墠绔被鍨嬪畾涔夌殑涓€鑷存€с€傜被鍨嬪畾涔夌粨鏋勫榻愰獙璇佸凡瀹屾垚銆侫PI `DiagnosticResultWire` 涓庡墠绔?`DiagnosticResult` 鐨?11 涓瓧娈靛悕瀹屽叏涓€鑷淬€傝鎴戝啀楠岃瘉 ConfigSnapshot 瀵归綈銆俙ConfigSnapshot` 绫诲瀷涓や晶瀹屽叏涓€鑷淬€傝鎴戞鏌ヨ鍒掓枃妗ｇ姸鎬併€傛墍鏈夐獙璇佸凡瀹屾垚銆傝鎴戝仛鎬荤粨骞舵洿鏂拌褰曘€?
+---
 
-**Analysis of last error**: Iteration 3 ran story-3 successfully 鈥?the `vitest_fail` and `lint_error` in the error file were pre-existing issues (drizzle-orm/sql.js modules missing from the API test/build, not related to the story-3 changes). All web tests passed (92/92), lint was clean.
+## 绔埌绔獙鏀舵姤鍛?鈥?Story-6
 
-Now executing **story-4**: Phase 1.5 Task 1.5.1 鈥?缁熶竴 /api/strategies 璺敱鎵€鏈夋潈.
+### 鉁?璐ㄩ噺妫€鏌?| 妫€鏌ラ」 | 缁撴灉 |
+|--------|------|
+| `pnpm lint` | 0 errors (浠?11 涓瀛?warning) |
+| `pnpm build` | 5/5 successful |
+| `pnpm test` | 10/10 鍖呭叏閮ㄩ€氳繃 (API 50 + Web 92 + Worker 26 + DC 47 + DCol 58 = 273) |
+| `bash scripts/smoke-test.sh` | 7/7 ALL PASSED |
+| Python 6 鍖?| 鍏ㄩ儴閫氳繃 (154+80+73+18+32+11+7 = 375) |
 
-Let me first confirm the branch and explore the relevant files.Good, I'm on the correct branch. Now let me explore the route files that need to be consolidated.Now let me check the existing route tests to make sure I understand what they test.Let me also check the existing tests to understand what needs to keep passing.Now I have a clear picture of the codebase. Let me also check if there are other files importing `configRoutes` or `previewRoutes`.Only `app.ts` imports them. Now I'll implement the changes:
+### 鉁?Tier1 鏁版嵁缁撴瀯瀵归綈
+- **ConfigSnapshot**: API/Web 绫诲瀷瀹屽叏涓€鑷?- **DiagnosticResultWire 鈫?DiagnosticResult**: 11 涓瓧娈靛悕瀹屽叏涓€鑷?(resultId/resultType/taskId/strategy/category/subcategory/configSnapshot/data/createdAt/expiresAt/engineVersion)
+- **TaskResultEnvelope**: 鍒ゅ埆鑱斿悎 resultType: 'diagnostics'|'backtest' + resultId + data
+- **TaskStreamEvent**: resultType/resultId 鍙€夐《灞傚瓧娈碉紝鍏煎鏃т换鍔?- **ApiTaskType**: 鍚?'diagnostics'|'collect' 绛?6 鍊?
+### 鉁?Tier2 娓叉煋璺緞
+- WorkspacePage 鎸?resultType/diagnostics.type 鍒嗘淳娓叉煋
+- 缂哄皯 resultType 鏃朵笉浼氬穿婧冿紙鍙€夊瓧娈碉級
 
-1. **Modify `strategy.ts`** 鈥?import configRoutes and previewRoutes, register as sub-plugins
-2. **Modify `app.ts`** 鈥?remove configRoutes/previewRoutes imports and registrationsNow update `app.ts` to remove the configRoutes and previewRoutes imports and registrations:Let me verify both modified files look correct:Both files look correct. Now let me run quality checks.Those are pre-existing drizzle-orm/sql.js dependency issues, not related to my changes. Let me run the strategy route test specifically and the full pnpm test to verify:The pre-existing `drizzle-orm` dependency issue is blocking API tests. Let me install it so I can properly verify the changes:Dependencies reinstalled. Now let me run the strategy route tests:All 3 strategy route tests pass. Now let me run the full test suite and lint:Let me check the failing test more carefully 鈥?it's the pre-existing task test, not related to my changes:Let me check if this test failure is pre-existing by checking git:Confirmed: the task test failure is **pre-existing** (fails the same way without my changes). The test URL is wrong 鈥?it uses `/internal/tasks/` instead of `/api/internal/tasks/`.
+### Doc Sync
+鏃?docs 鏇存柊闇€瑕?鈥?story-6 浠呬负绔埌绔獙璇侊紝鏃犳柊 API schema銆丏B schema銆佹灦鏋勮竟鐣屾垨琛屼负鍙樺寲銆傛晠浜?1~5 鐨勭粨鏋勫彉鍖栧凡鍦ㄥ悇鑷殑鎻愪氦涓褰曚簡鏂囨。鏇存柊銆?
+鐜板湪鏇存柊 prd.json 鍜?progress.txt銆傛墍鏈夐獙璇侀€氳繃銆傛洿鏂?prd.json 鍜?progress.txt銆俻rd.json 宸叉洿鏂帮紙story-6 鈫?passes: true锛夈€傜幇鍦ㄨ拷鍔犺繘搴︽棩蹇楀埌 progress.txt銆傜幇鍦ㄦ彁浜や唬鐮併€傝鎴戠‘璁ゆ墍鏈?story 宸插畬鎴愩€傛墍鏈?6 涓?story 鍏ㄩ儴瀹屾垚锛堝叏閮?`passes: true`锛夈€?
+---
 
-Now let me run lint and build:Lint: 0 errors, only pre-existing 11 warnings. Now let me run the build:All quality checks pass. Let me update the documentation, prd.json, and progress.
+## 绔埌绔獙鏀舵€荤粨
 
-**Doc Sync**: No docs update needed 鈥?this story only moves route registration ownership (unifying three `/api/strategies` registrations into one), with no API schema, DB schema, architectural boundary, or behavioral changes. The integrated plan already documents this refactoring intent.Now let me append to progress.txt and commit:Now let me commit and push:Commit succeeded locally but push failed due to network. Let me retry:Network issue (expected for China environment). The commit is saved locally. Let me check if there are remaining stories:Story-4 is complete. Let me verify the current state:## Story-4 瀹屾垚鎬荤粨
-
-### 淇敼鍐呭
-
-- **`apps/api/src/routes/strategy.ts`** 鈥?瀵煎叆 `configRoutes` 鍜?`previewRoutes`锛屼綔涓哄瓙鎻掍欢娉ㄥ唽锛坄app.register(configRoutes)` + `app.register(previewRoutes)`锛夛紝浣?strategy.ts 鎴愪负 `/api/strategies` 鍞竴娉ㄥ唽鍏ュ彛
-- **`apps/api/src/app.ts`** 鈥?鍒犻櫎 `configRoutes`/`previewRoutes` 鐨?import 鍜岀嫭绔?register 琛岋紝`/api/strategies` 鍓嶇紑鐜板湪鍙敞鍐屼竴娆?
-### 楠岃瘉缁撴灉
-
-| 妫€鏌?| 缁撴灉 |
-|------|------|
-| `npx vitest run tests/routes/strategy.test.ts` | 鉁?3/3 passed |
-| `pnpm lint` | 鉁?0 errors锛堜粎 11 涓瀛?warning锛?|
-| `pnpm test` | 鉁?API 44/45 passed锛? 涓瀛?task 娴嬭瘯 URL 閿欒锛?|
+| 楠屾敹椤?| 鐘舵€?|
+|--------|------|
+| `pnpm lint` | 鉁?0 errors |
+| `pnpm test` | 鉁?10/10 鍖呴€氳繃 (273 tests) |
 | `pnpm build` | 鉁?5/5 successful |
+| `bash scripts/smoke-test.sh` | 鉁?7/7 ALL PASSED |
+| Python 6 鍖?| 鉁?375/375 passed |
+| DiagnosticResultWire 鈫?Web 绫诲瀷瀵归綈 | 鉁?11 瀛楁瀹屽叏涓€鑷?|
+| TaskResultEnvelope 鍒ゅ埆鑱斿悎 | 鉁?鍙屽悜瀵归綈 |
+| TaskStreamEvent 鍏煎鏃т换鍔?| 鉁?resultType 鍙€夊瓧娈?|
+| 澶辫触璺緞锛堜繚瀛樺け璐ユ爣璁?failed锛?| 鉁?娴嬭瘯瑕嗙洊 |
+| 鏃?DB row 鍏煎锛坋ngineVersion='legacy'锛墊 鉁?mapper 澶勭悊 |
 
-### 璁捐瑕佺偣
+Phase 0 + Phase 1 + Phase 1.5锛坒eature `backend-sync-realign`锛夊叏閮ㄤ氦浠樺畬姣曘€?
+<promise>COMPLETE</promise>
+鎵€鏈?6 涓?story 鍏ㄩ儴瀹屾垚锛堝叏閮?`passes: true`锛夈€?
+---
 
-- 淇濈暀 `routes/config.ts` 鍜?`routes/preview.ts` 鏂囦欢锛堣矾鐢遍€昏緫琚?strategy.ts 浣滀负瀛愭彃浠舵寕杞斤級
-- `services/config-service.ts` 鍜?`services/preview-service.ts` 瀹屽叏涓嶅姩
-- 瀛愭彃浠剁户鎵跨埗绾у墠缂€ `/api/strategies`锛岀鐐硅矾寰勫拰鍝嶅簲褰㈢姸涓庨噸鏋勫墠瀹屽叏涓€鑷?
-### 鍓╀綑鏁呬簨
-- **story-5** 鉂岋紙渚濊禆宸叉弧瓒筹細story-2 鉁?+ story-4 鉁咃級鈥?涓嬩竴杩唬鍙紑濮?- **story-6** 鉂岋紙渚濊禆 story-5锛?
-缃戠粶涓锛屾湰鍦板凡鎻愪氦銆?## Story-4 瀹屾垚鎬荤粨
+## 绔埌绔獙鏀舵€荤粨
 
-### 淇敼鍐呭
-
-- **`apps/api/src/routes/strategy.ts`** 鈥?瀵煎叆 `configRoutes` 鍜?`previewRoutes`锛屼綔涓哄瓙鎻掍欢娉ㄥ唽锛坄app.register(configRoutes)` + `app.register(previewRoutes)`锛夛紝浣?strategy.ts 鎴愪负 `/api/strategies` 鍞竴娉ㄥ唽鍏ュ彛
-- **`apps/api/src/app.ts`** 鈥?鍒犻櫎 `configRoutes`/`previewRoutes` 鐨?import 鍜岀嫭绔?register 琛岋紝`/api/strategies` 鍓嶇紑鐜板湪鍙敞鍐屼竴娆?
-### 楠岃瘉缁撴灉
-
-| 妫€鏌?| 缁撴灉 |
-|------|------|
-| `npx vitest run tests/routes/strategy.test.ts` | 鉁?3/3 passed |
-| `pnpm lint` | 鉁?0 errors锛堜粎 11 涓瀛?warning锛?|
-| `pnpm test` | 鉁?API 44/45 passed锛? 涓瀛?task 娴嬭瘯 URL 閿欒锛?|
+| 楠屾敹椤?| 鐘舵€?|
+|--------|------|
+| `pnpm lint` | 鉁?0 errors |
+| `pnpm test` | 鉁?10/10 鍖呴€氳繃 (273 tests) |
 | `pnpm build` | 鉁?5/5 successful |
+| `bash scripts/smoke-test.sh` | 鉁?7/7 ALL PASSED |
+| Python 6 鍖?| 鉁?375/375 passed |
+| DiagnosticResultWire 鈫?Web 绫诲瀷瀵归綈 | 鉁?11 瀛楁瀹屽叏涓€鑷?|
+| TaskResultEnvelope 鍒ゅ埆鑱斿悎 | 鉁?鍙屽悜瀵归綈 |
+| TaskStreamEvent 鍏煎鏃т换鍔?| 鉁?resultType 鍙€夊瓧娈?|
+| 澶辫触璺緞锛堜繚瀛樺け璐ユ爣璁?failed锛?| 鉁?娴嬭瘯瑕嗙洊 |
+| 鏃?DB row 鍏煎锛坋ngineVersion='legacy'锛墊 鉁?mapper 澶勭悊 |
 
-### 璁捐瑕佺偣
-
-- 淇濈暀 `routes/config.ts` 鍜?`routes/preview.ts` 鏂囦欢锛堣矾鐢遍€昏緫琚?strategy.ts 浣滀负瀛愭彃浠舵寕杞斤級
-- `services/config-service.ts` 鍜?`services/preview-service.ts` 瀹屽叏涓嶅姩
-- 瀛愭彃浠剁户鎵跨埗绾у墠缂€ `/api/strategies`锛岀鐐硅矾寰勫拰鍝嶅簲褰㈢姸涓庨噸鏋勫墠瀹屽叏涓€鑷?
-### 鍓╀綑鏁呬簨
-- **story-5** 鉂岋紙渚濊禆宸叉弧瓒筹細story-2 鉁?+ story-4 鉁咃級鈥?涓嬩竴杩唬鍙紑濮?- **story-6** 鉂岋紙渚濊禆 story-5锛?
-缃戠粶涓锛屾湰鍦板凡鎻愪氦銆
+Phase 0 + Phase 1 + Phase 1.5锛坒eature `backend-sync-realign`锛夊叏閮ㄤ氦浠樺畬姣曘€?
+<promise>COMPLETE</promise>
