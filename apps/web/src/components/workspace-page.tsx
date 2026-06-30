@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot } from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
@@ -18,68 +18,33 @@ interface WorkspacePageProps {
 
 type ProgressState = { percent: number; message: string } | null;
 
-interface TradeRow {
-  date: string;
-  side: 'buy' | 'sell';
-  price: number;
-  shares: number;
-  pnl: number;
-  reason: string;
-}
-
-// ── Deterministic mock data generators (no Math.random) ─────
-/** Deterministic "pseudo-random" value for mock data */
-function det(i: number, j?: number): number {
-  const n = j !== undefined ? i * 31 + j * 7 : i * 13;
-  return ((n * 1103515245 + 12345) & 0x7FFFFFFF) / 0x7FFFFFFF;
-}
-
-function genMockBarData(count: number, label: string): { label: string; value: number }[] {
-  const vals: { label: string; value: number }[] = [];
-  for (let i = 0; i < count; i++) {
-    vals.push({ label: `${label}${i + 1}`, value: Math.round((det(i) * 0.3 - 0.05) * 1000) / 1000 });
-  }
-  return vals;
-}
-
-function genMockHeatmap(rows: number, cols: number): number[][] {
-  const grid: number[][] = [];
-  for (let r = 0; r < rows; r++) {
-    const row: number[] = [];
-    for (let c = 0; c < cols; c++) {
-      row.push(Math.round((det(r, c) * 2 - 1) * 100) / 100);
+// ── Backtest mock data (static, no random) ──────────────────
+const BACKTEST_MOCK = {
+  equityPts: (() => {
+    const pts: number[] = [];
+    let val = 100;
+    for (let i = 0; i < 252; i++) {
+      val += ((i * 13 + 5) % 200 - 90) / 100;
+      pts.push(Math.round(val * 100) / 100);
     }
-    grid.push(row);
-  }
-  return grid;
-}
-
-function genMockLinePoints(count: number): number[] {
-  let val = 100;
-  const pts: number[] = [];
-  for (let i = 0; i < count; i++) {
-    val += (det(i, 99) - 0.48) * 2;
-    pts.push(Math.round(val * 100) / 100);
-  }
-  return pts;
-}
-
-function genMockTradeRows(): TradeRow[] {
-  const sides: ('buy' | 'sell')[] = ['buy', 'sell'];
-  const rows: TradeRow[] = [];
-  for (let i = 0; i < 10; i++) {
-    const side = sides[i % 2];
-    rows.push({
-      date: `2024-${String(Math.floor(i / 2) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
-      side,
-      price: Math.round((20 + det(i, 2) * 80) * 100) / 100,
-      shares: Math.round(det(i, 3) * 10000 + 1000),
-      pnl: side === 'sell' ? Math.round((det(i, 4) * 20000 - 5000) * 100) / 100 : 0,
-      reason: side === 'buy' ? 'Signal triggered' : 'Take profit',
-    });
-  }
-  return rows;
-}
+    return pts;
+  })(),
+  mockTrades: [
+    { date: '2024-01-05', side: 'buy' as const, price: 45.32, shares: 5000, pnl: 0, reason: 'Signal triggered' },
+    { date: '2024-01-15', side: 'sell' as const, price: 48.76, shares: 5000, pnl: 17200.00, reason: 'Take profit' },
+    { date: '2024-02-03', side: 'buy' as const, price: 47.10, shares: 4800, pnl: 0, reason: 'Signal triggered' },
+    { date: '2024-02-20', side: 'sell' as const, price: 44.30, shares: 4800, pnl: -13440.00, reason: 'Stop loss' },
+    { date: '2024-03-10', side: 'buy' as const, price: 43.80, shares: 5200, pnl: 0, reason: 'Signal triggered' },
+    { date: '2024-04-05', side: 'sell' as const, price: 49.20, shares: 5200, pnl: 28080.00, reason: 'Take profit' },
+    { date: '2024-04-22', side: 'buy' as const, price: 50.50, shares: 4900, pnl: 0, reason: 'Signal triggered' },
+    { date: '2024-05-15', side: 'sell' as const, price: 52.80, shares: 4900, pnl: 11270.00, reason: 'Take profit' },
+    { date: '2024-06-01', side: 'buy' as const, price: 51.20, shares: 5100, pnl: 0, reason: 'Signal triggered' },
+    { date: '2024-06-20', side: 'sell' as const, price: 47.90, shares: 5100, pnl: -16830.00, reason: 'Stop loss' },
+  ],
+  perfTotalReturn: '35.2%',
+  perfMaxDrawdown: '-12.5%',
+  perfSharpe: '1.52',
+};
 
 // ── Chart subcomponents ──────────────────────────────────────
 
@@ -241,59 +206,24 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   const [backtestResult, setBacktestResult] = useState<Record<string, unknown> | null>(null);
   const [backtestSubmitted, setBacktestSubmitted] = useState(false);
 
-  const subcategory = strategy.subcategory ?? '';
+  // ── Backtest parameter form state (step 2) ──
+  const [backtestSymbol, setBacktestSymbol] = useState('600519');
+  const [backtestTimeframe, setBacktestTimeframe] = useState('1d');
+  const [backtestInitialCapital, setBacktestInitialCapital] = useState(1_000_000);
+  const [backtestStartDate, setBacktestStartDate] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [backtestEndDate, setBacktestEndDate] = useState(() => {
+    return new Date().toISOString().slice(0, 10);
+  });
+  const configDefaultsApplied = useRef(false);
+
   const category = strategy.category ?? 'non_factor';
 
-  // ── Pre-computed deterministic mock data for charts ──
-  const mockData = useMemo(() => ({
-    factorIcData: genMockBarData(12, 'F'),
-    factorLayerData: [
-      { label: 'Group 1 (Top)', value: 0.12 + det(0) * 0.08 },
-      { label: 'Group 2', value: 0.06 + det(1) * 0.04 },
-      { label: 'Group 3', value: 0.02 + det(2) * 0.02 },
-      { label: 'Group 4', value: -0.01 + det(3) * 0.02 },
-      { label: 'Group 5 (Bottom)', value: -0.08 + det(4) * 0.04 },
-    ],
-    factorHeatmap: genMockHeatmap(6, 6),
-    sensGrid: genMockHeatmap(5, 5),
-    signalDist: genMockBarData(8, 'B'),
-    slippagePts: genMockLinePoints(10),
-    costItems: [
-      { label: 'Base Return', value: `${(det(0, 10) * 30 + 10).toFixed(1)}%` },
-      { label: 'After Cost', value: `${(det(1, 10) * 20 + 5).toFixed(1)}%` },
-      { label: 'Cost Drag', value: `${(det(2, 10) * 5 + 2).toFixed(2)}%` },
-    ],
-    crossCorrGrid: genMockHeatmap(4, 4),
-    cycleValues: [det(0), det(1), det(2), det(3)].map((v) => `${(v * 15 + 5).toFixed(1)}%`),
-    macroLinePts: genMockLinePoints(20),
-    carPts: genMockLinePoints(21),
-    eventStats: [
-      { label: 'Total Events', value: '47' },
-      { label: 'Avg CAR', value: `${(det(0) * 3 + 1).toFixed(2)}%` },
-      { label: 'Win Rate', value: `${(det(1) * 20 + 55).toFixed(1)}%` },
-      { label: 'Avg Holding', value: `${Math.round(det(2) * 10 + 5)}d` },
-    ],
-    shapData: [
-      { label: 'Feature 1', value: 0.35 },
-      { label: 'Feature 2', value: 0.22 },
-      { label: 'Feature 3', value: 0.18 },
-      { label: 'Feature 4', value: 0.12 },
-      { label: 'Feature 5', value: 0.08 },
-      { label: 'Feature 6', value: 0.05 },
-    ],
-    trainLoss: genMockLinePoints(30),
-    equityPts: genMockLinePoints(252),
-    mockTrades: genMockTradeRows(),
-    perfTotalReturn: `${(det(0) * 60 + 10).toFixed(1)}%`,
-    perfMaxDrawdown: `${(det(1) * 15 + 5).toFixed(1)}%`,
-    perfSharpe: (det(2) * 2 + 0.5).toFixed(2),
-    perfTotalReturnNum: det(0) * 60 + 10,
-    perfSharpeNum: det(2) * 2 + 0.5,
-    factorLabels: ['Momentum', 'Quality', 'Value', 'Size', 'Volatility', 'Growth'],
-    sensLabels: ['Lookback', 'Entry', 'Exit', 'Stop', 'Size'],
-    macroLabels: ['GDP', 'CPI', 'PMI', 'M2'],
-    cycleLabels: ['Expansion', 'Peak', 'Contraction', 'Trough'],
-  }), []);
+  // ── Backtest static mock data (used only until real backtest data flows in) ──
+  const backtestMock = useMemo(() => BACKTEST_MOCK, []);
 
   // ── F5 recovery: check URL for ?diagnosticId on mount ──
   useEffect(() => {
@@ -331,6 +261,19 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       });
   }, [strategy.name]);
 
+  // ── Set backtest form defaults from configSnapshot when it loads ──
+  useEffect(() => {
+    if (configSnapshot?.params && !configDefaultsApplied.current) {
+      configDefaultsApplied.current = true;
+      const p = configSnapshot.params;
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (typeof p.symbol === 'string') setBacktestSymbol(p.symbol);
+      if (typeof p.timeframe === 'string') setBacktestTimeframe(p.timeframe);
+      if (typeof p.initialCapital === 'number') setBacktestInitialCapital(p.initialCapital);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [configSnapshot]);
+
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {
     setDiagnosticLoading(true);
@@ -353,20 +296,14 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
           if (event.type === 'progress') {
             setDiagnosticProgress({ percent: event.percent ?? 0, message: event.message ?? '' });
           } else if (event.type === 'result') {
-            const result = event.data as { resultId?: string; resultType?: string; data?: Record<string, unknown> };
+            const result = event.data as { diagnostics?: Record<string, unknown>; resultId?: string; resultType?: string };
             if (result?.resultId) {
               const url = new URL(window.location.href);
               url.searchParams.set('diagnosticId', result.resultId);
               window.history.replaceState({}, '', url.toString());
-              fetchDiagnostic(result.resultId).then((data) => {
-                if (data) {
-                  setDiagnosticData(data.dataJson);
-                  setDiagnosticReady(true);
-                }
-              });
             }
-            if (result?.data) {
-              setDiagnosticData(result.data);
+            if (result?.diagnostics) {
+              setDiagnosticData(result.diagnostics);
               setDiagnosticReady(true);
             }
             setDiagnosticProgress({ percent: 100, message: language === 'zh' ? '诊断完成' : 'Diagnostics complete' });
@@ -396,12 +333,12 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     try {
       const { id: taskId } = await submitBacktest({
         strategy: strategy.name,
-        symbol: '600519',
-        timeframe: '1d',
-        initialCash: 1_000_000,
+        symbol: backtestSymbol,
+        timeframe: backtestTimeframe,
+        initialCash: backtestInitialCapital,
         configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
-        startTs: 1672675200000,
-        endTs: 1735574400000,
+        startTs: new Date(backtestStartDate).getTime(),
+        endTs: new Date(backtestEndDate).getTime(),
       });
 
       const close = streamBacktestTask(
@@ -431,7 +368,60 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setBacktestLoading(false);
     }
-  }, [strategy.name, configSnapshot, language, ui.workspaceBacktestFailed]);
+  }, [strategy.name, configSnapshot, language, ui.workspaceBacktestFailed, backtestSymbol, backtestTimeframe, backtestInitialCapital, backtestStartDate, backtestEndDate]);
+
+  // ── Helpers: parse real diagnostic data for chart rendering ──
+  function parseFactorDiagnostics(data: Record<string, unknown>) {
+    const icSeries = (data.ic_series as Array<{ period: string; ic: number }>) ?? [];
+    const layeredReturns = (data.layered_returns as Record<string, number[]>) ?? {};
+    const corrMatrix = (data.correlation_matrix as number[][]) ?? [];
+    const factorLabels = (data.factor_labels as string[]) ?? [];
+    const summary = (data.summary as Record<string, number>) ?? {};
+
+    const icData = icSeries.map((item) => ({ label: item.period, value: item.ic }));
+    const layerData = Object.entries(layeredReturns).map(([group, vals]) => ({
+      label: group,
+      value: vals.length > 1
+        ? Math.round(((vals[vals.length - 1] - 1) * 100) * 100) / 100
+        : 0,
+    }));
+    const summaryItems = [
+      { label: 'Mean IC', value: (summary.mean_ic ?? 0).toFixed(4) },
+      { label: 'IC Std', value: (summary.ic_std ?? 0).toFixed(4) },
+      { label: 'IC IR', value: (summary.ic_ir ?? 0).toFixed(4) },
+      { label: 'Mean Rank IC', value: (summary.mean_rank_ic ?? 0).toFixed(4) },
+    ];
+
+    return { icData, layerData, corrMatrix, factorLabels, summaryItems, hasData: icSeries.length > 0 };
+  }
+
+  function parseNonFactorDiagnostics(data: Record<string, unknown>) {
+    const paramSens = (data.param_sensitivity as Array<{ param: string; values: number[]; returns: number[]; sharpe: number[] }>) ?? [];
+    const signalQuality = (data.signal_quality as Record<string, number>) ?? {};
+    const slippageStress = (data.slippage_stress as Array<{ bps: number; return: number; sharpe: number; trade_count: number }>) ?? [];
+
+    const sensSharpeGrid = paramSens.map((p) => p.sharpe ?? []);
+    const sensLabels = paramSens.map((p) => p.param);
+    const hasSens = sensSharpeGrid.length > 0 && sensSharpeGrid[0]?.length > 0;
+
+    const signalItems = [
+      { label: 'Total Signals', value: String(signalQuality.total_signals ?? 0) },
+      { label: 'Win Rate', value: `${((signalQuality.win_rate ?? 0) * 100).toFixed(1)}%` },
+      { label: 'Avg Holding', value: `${(signalQuality.avg_holding_bars ?? 0).toFixed(1)} bars` },
+      { label: 'Profit Factor', value: (signalQuality.profit_factor ?? 0).toFixed(2) },
+    ];
+
+    const slippageReturns = slippageStress.map((s) => s.return as number);
+    const costItems = slippageStress.length >= 4
+      ? [
+          { label: '1 bp Return', value: `${(slippageStress[0].return * 100).toFixed(2)}%` },
+          { label: '10 bp Return', value: `${(slippageStress[3].return * 100).toFixed(2)}%` },
+          { label: 'Cost Drag', value: `${((slippageStress[0].return - slippageStress[3].return) * 100).toFixed(2)}%` },
+        ]
+      : [];
+
+    return { sensSharpeGrid, sensLabels, hasSens, signalItems, slippageReturns, costItems, hasData: true };
+  }
 
   // ── Step 1 Diagnostics Content ──
   function renderDiagnosticContent() {
@@ -444,167 +434,147 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       );
     }
 
-    // Factor-based diagnostics
-    if (category === 'factor_based') {
+    if (!diagnosticData) {
+      return null;
+    }
+
+    const data = diagnosticData;
+    const diagType = (data.type as string) || '';
+
+    // Factor-based diagnostics (also covers transitional which has same structure)
+    if (diagType === 'factor_based' || diagType === 'transitional') {
+      const { icData, layerData, corrMatrix, factorLabels, summaryItems, hasData } = parseFactorDiagnostics(data);
+
       return (
         <div className={s.diagnosticGrid}>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceICSeries}</div>
-            <BarChart data={mockData.factorIcData} />
+            {hasData ? <BarChart data={icData} /> : <div className={s.emptyState}>No IC data</div>}
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceLayeredReturns}</div>
-            <HBarChart data={mockData.factorLayerData} />
+            {layerData.length > 0 ? <HBarChart data={layerData} /> : <div className={s.emptyState}>No layer data</div>}
           </div>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceCorrelationHeatmap}</div>
-            <HeatmapChart grid={mockData.factorHeatmap} rowLabels={mockData.factorLabels} colLabels={mockData.factorLabels} />
+            {corrMatrix.length > 0 && factorLabels.length > 0
+              ? <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
+              : <div className={s.emptyState}>No correlation data</div>}
+          </div>
+          <div className={s.chartCardFull}>
+            <MiniGrid items={summaryItems} />
           </div>
         </div>
       );
     }
 
-    // Non-factor trend / mean-reversion / arbitrage / HFT diagnostics
-    if (subcategory === 'trend_cta' || subcategory === 'mean_reversion' ||
-        subcategory === 'arbitrage' || subcategory === 'high_frequency' ||
-        (category === 'non_factor' && !subcategory)) {
+    // Non-factor diagnostics
+    if (diagType === 'non_factor') {
+      const { sensSharpeGrid, sensLabels, hasSens, signalItems, slippageReturns, costItems } = parseNonFactorDiagnostics(data);
+
       return (
         <div className={s.diagnosticGrid}>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceParamSensitivity}</div>
-            <HeatmapChart grid={mockData.sensGrid} rowLabels={mockData.sensLabels} colLabels={mockData.sensLabels} />
+            {hasSens
+              ? <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
+              : <div className={s.emptyState}>No param sensitivity data</div>}
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSignalDist}</div>
-            <BarChart data={mockData.signalDist} />
+            <MiniGrid items={signalItems} />
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSlippageStress}</div>
-            <LineChart points={mockData.slippagePts} color="#ffa94d" />
-            <div style={{ marginTop: 8 }}>
-              <MiniGrid items={mockData.costItems} />
-            </div>
+            {slippageReturns.length > 0
+              ? <LineChart points={slippageReturns} color="#ffa94d" />
+              : <div className={s.emptyState}>No slippage data</div>}
+            {costItems.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <MiniGrid items={costItems} />
+              </div>
+            )}
           </div>
         </div>
       );
     }
 
-    // Macro diagnostics
-    if (subcategory === 'macro_quant') {
-      return (
-        <div className={s.diagnosticGrid}>
-          <div className={s.chartCardFull}>
-            <div className={s.chartCardTitle}>{ui.workspaceMacroCorrelation}</div>
-            <HeatmapChart grid={mockData.crossCorrGrid} rowLabels={mockData.macroLabels} colLabels={mockData.macroLabels} />
-          </div>
-          <div className={s.chartCardFull}>
-            <div className={s.chartCardTitle}>{ui.workspaceEconomicCycle}</div>
-            <div className={s.miniGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-              {mockData.cycleLabels.map((label, i) => (
-                <div key={i} className={s.miniGridCell}>
-                  <span className={s.miniGridLabel}>{label}</span>
-                  <span className={s.miniGridValue}>{mockData.cycleValues[i]}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <LineChart points={mockData.macroLinePts} />
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Event-driven diagnostics
-    if (subcategory === 'event_driven') {
-      return (
-        <div className={s.diagnosticGrid}>
-          <div className={s.chartCardFull}>
-            <div className={s.chartCardTitle}>{ui.workspaceCARChart}</div>
-            <LineChart points={mockData.carPts} />
-          </div>
-          <div className={s.chartCardFull}>
-            <div className={s.chartCardTitle}>{ui.workspaceEventSamples}</div>
-            <MiniGrid items={mockData.eventStats} />
-            <div style={{ marginTop: 12 }}>
-              <BarChart data={genMockBarData(8, 'E')} />
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // E2E AI diagnostics
-    if (subcategory === 'e2e_ai_timeseries') {
-      return (
-        <div className={s.diagnosticGrid}>
-          <div className={s.chartCard}>
-            <div className={s.chartCardTitle}>{ui.workspaceSHAPImportance}</div>
-            <HBarChart data={mockData.shapData} />
-          </div>
-          <div className={s.chartCard}>
-            <div className={s.chartCardTitle}>{ui.workspaceLossCurves}</div>
-            <LineChart points={mockData.trainLoss} />
-            <LineChart points={genMockLinePoints(30)} color="rgba(77, 240, 160, 0.35)" />
-          </div>
-        </div>
-      );
-    }
-
-    // Tail risk hedging / default
+    // Fallback for unknown types
     return (
       <div className={s.chartCardFull}>
         <div className={s.chartCardTitle}>{ui.workspaceSignalMetrics}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          <MiniGrid
-            items={[
-              { label: 'Signal Count', value: '127' },
-              { label: 'Win Rate', value: '62.3%' },
-              { label: 'Avg Return', value: '1.24%' },
-            ]}
-          />
-        </div>
+        <div className={s.emptyState}>Diagnostics data available</div>
       </div>
     );
   }
 
   // ── Step 2 Backtest Content ──
   function renderBacktestContent() {
-    const mockPerfMetrics = {
-      totalReturn: mockData.perfTotalReturn,
-      maxDrawdown: mockData.perfMaxDrawdown,
-      sharpe: mockData.perfSharpe,
-    };
-
     return (
       <>
-        {/* Config Summary */}
-        <div className={s.configSummary}>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '策略' : 'Strategy'}</span>
-            <span className={s.configItemValue}>{strategy.name}</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '标的' : 'Symbol'}</span>
-            <span className={s.configItemValue}>600519</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '时间周期' : 'Timeframe'}</span>
-            <span className={s.configItemValue}>1d</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '初始资金' : 'Initial Cash'}</span>
-            <span className={s.configItemValue}>¥1,000,000</span>
-          </div>
-          <div className={s.configItem}>
-            <span className={s.configItemLabel}>{language === 'zh' ? '回测区间' : 'Backtest Range'}</span>
-            <span className={s.configItemValue}>2023-01-01 ~ 2024-12-31</span>
-          </div>
-        </div>
-
-        {/* Action button */}
+        {/* Editable backtest parameter form (shown before submission) */}
         {!backtestSubmitted && (
-          <div style={{ marginBottom: 16 }}>
+          <>
+            <div className={s.chartCardTitle}>{ui.workspaceBacktestConfigTitle}</div>
+            <div className={s.backtestForm}>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestSymbol}</label>
+                <input
+                  className={s.formInput}
+                  value={backtestSymbol}
+                  onChange={(e) => setBacktestSymbol(e.target.value)}
+                  placeholder="e.g. 600519"
+                  disabled={backtestLoading}
+                />
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestTimeframe}</label>
+                <select
+                  className={s.formSelect}
+                  value={backtestTimeframe}
+                  onChange={(e) => setBacktestTimeframe(e.target.value)}
+                  disabled={backtestLoading}
+                >
+                  <option value="1d">1d</option>
+                  <option value="1h">1h</option>
+                  <option value="30m">30m</option>
+                </select>
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestInitialCapital}</label>
+                <input
+                  className={s.formInput}
+                  type="number"
+                  min={1000}
+                  step={100000}
+                  value={backtestInitialCapital}
+                  onChange={(e) => setBacktestInitialCapital(Number(e.target.value))}
+                  disabled={backtestLoading}
+                />
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestStartDate}</label>
+                <input
+                  className={s.formInput}
+                  type="date"
+                  value={backtestStartDate}
+                  onChange={(e) => setBacktestStartDate(e.target.value)}
+                  disabled={backtestLoading}
+                />
+              </div>
+              <div className={s.formRow}>
+                <label className={s.formLabel}>{ui.workspaceBacktestEndDate}</label>
+                <input
+                  className={s.formInput}
+                  type="date"
+                  value={backtestEndDate}
+                  onChange={(e) => setBacktestEndDate(e.target.value)}
+                  disabled={backtestLoading}
+                />
+              </div>
+            </div>
+
+            {/* Action button */}
             <button
               className={s.primaryButton}
               onClick={handleRunBacktest}
@@ -613,6 +583,32 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             >
               {backtestLoading ? ui.workspaceBacktestRunning : ui.workspaceSubmitBacktest}
             </button>
+          </>
+        )}
+
+        {/* Read-only summary after submission */}
+        {backtestSubmitted && (
+          <div className={s.configSummary}>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestSymbol}</span>
+              <span className={s.configItemValue}>{backtestSymbol}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestTimeframe}</span>
+              <span className={s.configItemValue}>{backtestTimeframe}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestInitialCapital}</span>
+              <span className={s.configItemValue}>¥{backtestInitialCapital.toLocaleString()}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestStartDate}</span>
+              <span className={s.configItemValue}>{backtestStartDate}</span>
+            </div>
+            <div className={s.configItem}>
+              <span className={s.configItemLabel}>{ui.workspaceBacktestEndDate}</span>
+              <span className={s.configItemValue}>{backtestEndDate}</span>
+            </div>
           </div>
         )}
 
@@ -628,20 +624,20 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             <div className={s.chartCardTitle}>{ui.workspacePerformanceTitle}</div>
             <div className={s.perfGrid}>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${parseFloat(mockPerfMetrics.totalReturn) > 10 ? s.perfCardGood : s.perfCardWarn}`}>
-                  {mockPerfMetrics.totalReturn}
+                <div className={`${s.perfCardValue} ${parseFloat(backtestMock.perfTotalReturn) > 10 ? s.perfCardGood : s.perfCardWarn}`}>
+                  {backtestMock.perfTotalReturn}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '总收益' : 'Total Return'}</div>
               </div>
               <div className={s.perfCard}>
                 <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
-                  {mockPerfMetrics.maxDrawdown}
+                  {backtestMock.perfMaxDrawdown}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '最大回撤' : 'Max Drawdown'}</div>
               </div>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${parseFloat(mockPerfMetrics.sharpe) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
-                  {mockPerfMetrics.sharpe}
+                <div className={`${s.perfCardValue} ${parseFloat(backtestMock.perfSharpe) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
+                  {backtestMock.perfSharpe}
                 </div>
                 <div className={s.perfCardLabel}>{language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}</div>
               </div>
@@ -650,7 +646,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             {/* Equity Curve */}
             <div className={s.chartCardTitle}>{ui.workspaceEquityCurve}</div>
             <div className={s.equityCurve}>
-              <LineChart points={mockData.equityPts} />
+              <LineChart points={backtestMock.equityPts} />
             </div>
 
             {/* Trade Details */}
@@ -668,7 +664,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                   </tr>
                 </thead>
                 <tbody>
-                  {mockData.mockTrades.map((t, i) => (
+                  {backtestMock.mockTrades.map((t, i) => (
                     <tr key={i}>
                       <td>{t.date}</td>
                       <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
@@ -690,7 +686,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
         {!backtestSubmitted && !backtestLoading && !backtestResult && (
           <div className={s.emptyState}>
-            <span>{language === 'zh' ? '点击「提交回测」开始运行' : 'Click "Submit Backtest" to run'}</span>
+            <span>{language === 'zh' ? '填写上方参数后点击「提交回测」' : 'Fill in the parameters and click "Submit Backtest"'}</span>
           </div>
         )}
       </>

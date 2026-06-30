@@ -1,8 +1,10 @@
 # 策略分类体系下前端工作流对齐与诊断链路打通草案
 
+> **状态：历史草案。** 当前策略分类实施入口为 [../superpowers/plans/2026-06-30-backend-sync-realign-integrated.md](../superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)。本文保留为前端双流程、配置链路和 diagnostics 补洞的迁移背景参考。
+
 > **背景**：前端已完成大型重构，按策略分类（FACTOR_BASED / NON_FACTOR / TRANSITIONAL）构建了因子型/非因子型双流程。本文档用于记录前端迁移后的工作流对齐、配置链路打通和 diagnostics 后端补洞草案；**不作为完整后端匹配设计**。
 >
-> **当前权威入口**：本文件是策略分类主线的**动态施工路线图**；全栈目标契约以 `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` 为准。
+> **原始定位**：本文曾作为策略分类主线的动态施工路线图；现在不再作为当前执行入口。
 >
 > **后续**：后端 API / Worker / Python / DB 契约需要另行制定匹配 06-28 目标基准的设计计划。
 
@@ -10,12 +12,14 @@
 
 ## 0. 文档治理与当前状态
 
-### 0.1 当前权威入口
+### 0.1 原始权威入口（已失效）
+
+> 本节为 2026-06-29 当时的文档治理关系。当前执行入口已改为 `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`。
 
 | 用途 | 权威文件 | 更新频率 |
 |---|---|---|
-| 策略分类全栈目标契约 | `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` | 低频：仅当 API payload、结果结构、DB schema、任务状态机、分类枚举或职责边界变化时更新 |
-| 策略分类当前施工路线 | `docs/plans/2026-06-29-frontend-workflow-reconciliation.md` | 高频：每个阶段完成、发现偏差、调整优先级或新增阻塞时更新 |
+| 策略分类全栈目标契约 | `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` | 历史关系；现在仅作背景参考 |
+| 策略分类当前施工路线 | `docs/plans/2026-06-29-frontend-workflow-reconciliation.md` | 历史关系；现在仅作背景参考 |
 | Ralph / Agent 执行收敛规则 | `.skills/ralph-harness/` 与 `scripts/ralph/AGENT_PROMPT.md` | 中频：当执行闭环发现可复用规则或反模式时更新 |
 
 ### 0.2 当前执行状态（2026-06-29）

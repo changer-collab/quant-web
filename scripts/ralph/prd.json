@@ -148,7 +148,7 @@
       "agent": "strategy-agent",
       "priority": 20,
       "dependsOn": ["story-18"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-21",
@@ -167,7 +167,7 @@
       "agent": "fullstack-agent",
       "priority": 21,
       "dependsOn": ["story-19", "story-20"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-22",
@@ -184,7 +184,7 @@
       "agent": "frontend-agent",
       "priority": 22,
       "dependsOn": ["story-21"],
-      "passes": false
+      "passes": true
     }
   ]
 }

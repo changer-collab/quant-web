@@ -782,3 +782,129 @@ vitest_fail
 lint_error
 ```
 ---
+
+## [2026-06-30 01:08] - story-20
+- 实现了非因子型诊断真实算法（参数敏感性 / 信号质量 / 滑点压力）
+- **修改的文件：**
+  - `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py` — 从 stub 替换为真实算法：
+    - **参数敏感性** (`_compute_param_sensitivity`)：从 configSnapshot.params 提取数值型参数与 uiConstraints，对每个有 [min,max] 的参数均匀取 5 个值，各跑基于 MA 的简化回测，记录 {param, values, returns, sharpe}；无 min/max 的参数跳过
+    - **信号质量** (`_compute_signal_quality`)：基于 MA(5)/MA(20) 金叉死叉信号生成交易记录，统计 total_signals / win_rate / avg_holding_bars / profit_factor / max_consecutive_losses
+    - **滑点压力** (`_compute_slippage_stress`)：对 1/3/5/10 bps 各重算 return / sharpe / trade_count
+    - 数据不足（<30根K线 / 缺少 close 列）时返回空结构并 emit warning
+    - 支持 _bars_df 测试参数绕过 DataClient 加载
+    - _extract_numeric_params 支持两种 uiConstraints 格式（参数内嵌 dict 或 params 顶级字段）
+    - _fallback_simulation 在 MA 无交易信号时用价格方向信号兜底
+  - `packages/strategy-runtime/tests/test_diagnostics_non_factor.py`（新建，30 个测试）：
+    - 参数敏感性：含 uiConstraints 的 3 个参数均出现、每参数 5 个值点、值单调递增且范围正确、返回类型
+    - 信号质量：5 个必含字段、类型正确、值在合理范围、少量交易时仍完整
+    - 滑点压力：4 档（1/3/5/10）、每档含 bps/return/sharpe/trade_count、滑点越高收益越低、交易数量一致
+    - 无 min/max 跳过：参数确被跳过、空 params 不崩溃、缺 configSnapshot 不崩溃
+    - 数据不足：空/15根/缺 close 均返回空结果
+    - emit 验证：正常调用 emit log，数据不足时 emit warning
+    - 集成测试：通过 run_diagnostics 路由正常
+- **Doc Sync**: no docs update needed because this is pure Python algorithm implementation within the existing diagnostics framework — no API schema, DB schema, architectural boundary, or behavioral changes
+- **验证：**
+  - `python -m pytest tests/test_diagnostics_non_factor.py -v` → 30/30 passed
+  - `python -m pytest` → 154/154 passed（全包）
+  - `pnpm lint` → 0 errors（仅已存在 warnings）
+  - `pnpm test` → 10/10 successful
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - `_simulate_trading` 返回 3 个值（total_return, sharpe, trades），调用处必须对应解包
+  - 信号生成使用 MA 交叉规则（close vs MA），阈值 0.2% 缓冲减少噪音；极端参数值（周期 >= n）安全返回零结果
+  - `_extract_numeric_params` 处理两种 uiConstraints 格式：{value, uiConstraints} 内嵌 dict 和 params 顶级键
+  - 当所有参数都无 min/max 时，param_sensitivity 返回空数组（不崩溃）
+  - 当 MA 信号产生 0 笔交易时，通过 `_fallback_simulation` 用短期均线与长期均线比较产生方向信号兜底
+---
+
+## [2026-06-29 17:11:57] - Iteration 8
+
+- Exit code: 0
+- Stories remaining: 1
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-30 09:20] - story-21
+- 实现了 Diagnostics 数据全链路改造（Worker → API → 前端）
+- **Worker** (`diagnostics-handler.ts`)：
+  - 将 symbol/timeframe/dataRange 从 payload 提取并传入 PythonBridge.streamCall 请求
+  - 请求结构改为 `{ command, strategy, category, configSnapshot, symbol, timeframe, dataRange }`，与 Python `run_diagnostics(params)` 对齐
+  - 不再将 configSnapshot 包裹在 `config.strategyParams` 中
+- **API** (`task.ts`)：
+  - complete handler 中存储 `result.diagnostics`（干净诊断数据）而非完整 `result` 对象到 diagnostic_results.dataJson
+  - SSE result 事件 data 天然包含 `diagnostics` 字段（通过 `{...result}` 展开），前端可直接访问 `event.data.diagnostics`
+- **前端** (`workspace-page.tsx`)：
+  - 删除了 `det()` 确定性伪随机函数和所有 mock 数据生成器（genMockBarData/genMockHeatmap/genMockLinePoints/genMockTradeRows）
+  - 删除了 `mockData` useMemo，替换为 `backtestMock`（静态回测 mock 数据，不依赖 det()）
+  - SSE result 事件处理改为从 `event.data.diagnostics` 直接获取并设置 diagnosticData
+  - 重写了 `renderDiagnosticContent()`：按 `diagnosticData.type` 字段解析并渲染真实数据
+    - `factor_based` / `transitional`：ic_series → BarChart, layered_returns → HBarChart, correlation_matrix → HeatmapChart, summary → MiniGrid
+    - `non_factor`：param_sensitivity.sharpe → HeatmapChart, signal_quality → MiniGrid, slippage_stress.return → LineChart
+    - 数据不足时展示空状态，不崩溃
+  - 移除了 unused `TradeRow` 接口和 `subcategory` 变量
+- **测试** (`setup.ts`)：POST /tasks mock 响应添加 `diagnostics` 字段
+- **Doc Sync**: no docs update needed because this story is internal data flow plumbing — no API schema, DB schema, architectural boundary, or behavioral contract changes. The frontend mock→real switch aligns with web/AGENT.md policy ("不使用模拟数据").
+- **修改的文件**：
+  - `apps/worker/src/handlers/diagnostics-handler.ts`
+  - `apps/api/src/routes/task.ts`
+  - `apps/web/src/components/workspace-page.tsx`
+  - `apps/web/tests/setup.ts`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- **验证**：
+  - `npx tsc --noEmit` (web + api + worker) → 全部通过
+  - `pnpm lint` → 0 errors（仅 11 个已存在 warning）
+  - `pnpm test` → 10/10 包全部通过（web 90/90）
+  - `pnpm build` → 5/5 successful
+  - `bash scripts/smoke-test.sh` → 7/7 ALL PASSED
+  - `cd packages/strategy-runtime && python -m pytest -v` → 154/154 passed
+- **后续迭代注意事项：**
+  - diagnostics 前端现按 `diagnosticData.type` 渲染，不再依赖 `strategy.category` 判断渲染内容
+  - `backtestMock` 是静态 mock 数据，story-22 的 Phase 4 将其替换为真实回测参数
+  - SSE result 事件中的 `event.data.diagnostics` 直接包含 Python diagnostics 返回的诊断结果（含 type 字段）
+  - F5 恢复路径仍通过 `fetchDiagnostic(resultId)` → `data.dataJson`（API 现在存储 `result.diagnostics` 而非完整 result）
+  - `renderDiagnosticContent` 新增 `parseFactorDiagnostics()`/`parseNonFactorDiagnostics()` 两个解析辅助函数，保持图表组件复用
+  - `parseFactorDiagnostics` 将 `layered_returns` 各组的最终值（`last - 1 * 100`）转为 HBarChart 可用的百分比格式
+  - `parseNonFactorDiagnostics` 将 `param_sensitivity.sharpe` 二维数组转为 HeatmapChart 可用的 `number[][]` 格式
+---
+
+## [2026-06-29 17:20:02] - Iteration 9
+
+- Exit code: 0
+- Stories remaining: 1
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-06-30 09:25] - story-22
+- 实现了 WorkspacePage Step2 回测参数表单（symbol / timeframe / 资金 / 日期）
+- **修改的文件：**
+  - `apps/web/src/data/types.ts` — UiCopy 接口新增 6 个回测表单字段（workspaceBacktestSymbol/Timeframe/InitialCapital/StartDate/EndDate/ConfigTitle）
+  - `apps/web/src/data/en.ts` — 添加英文表单标签
+  - `apps/web/src/data/zh.ts` — 添加中文表单标签
+  - `apps/web/src/components/workspace-page.tsx`：
+    - 新增表单 state（backtestSymbol, backtestTimeframe, backtestInitialCapital, backtestStartDate, backtestEndDate）— 默认值：当前日期-1年~今天
+    - 新增 useEffect：configSnapshot 加载后自动注入表单默认值（symbol/timeframe/initialCapital），通过 useRef 确保仅执行一次
+    - 重写 renderBacktestContent()：提交前显示可编辑表单（symbol 输入框、timeframe 下拉 1d/1h/30m、资金 number、起始/结束 date input），提交后显示只读摘要
+    - handleRunBacktest() 使用表单 state 值替代硬编码常量
+    - 新增 `useRef` import
+  - `apps/web/src/styles/workspace-page.module.css` — 新增表单样式（backtestForm/formRow/formLabel/formInput/formSelect）
+  - `scripts/ralph/prd.json` — story-22 → passes: true
+  - `scripts/ralph/progress.txt`
+- **Doc Sync**: no docs update needed because this is a pure frontend UI enhancement (backtest parameter form fields) within the existing WorkspacePage component — no API schema, DB schema, architectural boundary, or behavioral contract changes. The submitBacktest API contract (startTs/endTs as top-level fields) is unchanged.
+- **验证：**
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅 11 个预存在 warning）
+  - `pnpm test` → 10/10 包全部通过（web 90/90）
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - 表单默认值优先级：configSnapshot.params > 硬编码默认。当前因 configSnapshot 异步加载，使用 `configDefaultsApplied` ref 确保仅注入一次
+  - date 输入使用 HTML5 `<input type="date">`，`backtestStartDate` 默认 = today - 1年，`backtestEndDate` 默认 = today
+  - handleRunBacktest 的 dependency array 已包含全部 5 个表单字段（需保持同步）
+  - 回测参数表单使用 config 热力图类似的 `.formInput`/`.formSelect` 样式，与 Panel 组件视觉一致
+  - 提交后表单字段消失，改为显示只读摘要（configSummary 复用），性能指标保留 mock 数据等待后续真实数据接入

@@ -1,5 +1,7 @@
 # Backend Sync to Strategy Classification Target Implementation Plan
 
+> **状态：历史计划，已并入当前整合计划。** 后续执行请以 [2026-06-30-backend-sync-realign-integrated.md](./2026-06-30-backend-sync-realign-integrated.md) 为准。本文保留为 06-29 后端契约迁移方案的原始记录。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 让 API / Worker / Python / DB 契约从当前 2026-06-29 现状迁移到 `docs/superpowers/specs/2026-06-28-strategy-classification-and-config-design.md` 所定义的策略分类、配置、Preview、Task、Diagnostics 目标态。

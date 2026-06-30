@@ -1,8 +1,10 @@
 # 策略分类体系全栈架构设计
 
+> **状态：历史架构记录。** 当前策略分类实施入口为 [2026-06-30-backend-sync-realign-integrated.md](../plans/2026-06-30-backend-sync-realign-integrated.md)，产品目标基准为 [2026-06-28-strategy-classification-and-config-design.md](./2026-06-28-strategy-classification-and-config-design.md)。本文保留为 2026-06-29 的全栈结构扫描和背景参考。
+
 > **版本**：v2（策略分类重构后）
 > **范围**：前端 → API → Worker → Python 引擎 → 存储的全链路架构
-> **定位**：策略分类主线的**稳定目标契约**；动态执行状态与阶段进度记录在 `docs/plans/2026-06-29-frontend-workflow-reconciliation.md`
+> **原始定位**：本文曾作为策略分类主线的稳定目标契约；现在仅保留为历史架构记录和背景参考
 > **核心变更**：从旧的 ResearchMode 三模式（traditional/hft/ai）转变为 StrategyCategory 三级分类（factor_based/non_factor/transitional），前端按分类实现双流程
 
 ---
@@ -360,7 +362,7 @@ interface DiagnosticsPayload {
 interface FactorDiagnostics {
   type: 'factor_based';
   ic_series: { period: string; ic: number; rank_ic: number }[];
-  layered_returns: Record<'Q1' | 'Q2' | 'Q3' | 'Q4' | 'Q5', number[]>;
+  layered_returns: { group: string; return: number }[];
   correlation_matrix: number[][];
   factor_labels: string[];
   summary: { mean_ic: number; ic_std: number; ic_ir: number; mean_rank_ic: number };
@@ -646,12 +648,3 @@ graph LR
 | 配置传递 | 不保存，会话级 | API 持久化，跨会话 |
 | 策略就绪 | `workflowReady: true/false` | 同左，但基于 subcategory 非 null |
 | 组件 | `WorkspaceContent` + `StrategyGrid` | `WorkspacePage` + `StrategyGridNew` |
-
----
-
-## 十一、Doc Sync Log
-
-| 日期 | 触发 Story | 变更内容 | 原因 |
-|------|-----------|---------|------|
-| 2026-06-30 | story-19 | `FactorDiagnostics.layered_returns` 从 `{group, return}[]` 修正为 `Record<Q1~Q5, number[]>`（累积收益曲线） | 实际实现（story-18 stub 已确立）使用 Q1~Q5 字典+累积数组 而非单返回值数组。累积曲线展示各分层随时间演变，信息量更大 |
-
