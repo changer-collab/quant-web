@@ -13,10 +13,12 @@
     "@quant/data-center": "workspace:*",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.44.2",
-    "fastify": "^5.0.0"
+    "fastify": "^5.0.0",
+    "sql.js": "^1.14.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
+    "@types/sql.js": "^1.4.11",
     "tsx": "^4.19.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.6"
