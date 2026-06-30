@@ -33,68 +33,77 @@
 
 ### 高优先级
 
-### 1. 过拟合防护（唯一剩余的致命缺陷）
+### 1. 策略分类后端契约整合与结构整理
+
+- **目标**：按当前整合计划统一后端产品契约与内部结构，解决 `ConfigSnapshot`、Preview、Task/SSE、Diagnostics、Worker/Python CLI 和 API 路由/Processor 整理问题。
+- **权威计划**：[superpowers/plans/2026-06-30-backend-sync-realign-integrated.md](./superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)
+- **产品基准**：[superpowers/specs/2026-06-28-strategy-classification-and-config-design.md](./superpowers/specs/2026-06-28-strategy-classification-and-config-design.md)
+- **涉及**：api, worker, strategy-runtime, strategies, web
+- **备注**：`2026-06-29-backend-sync-to-strategy-classification-target.md` 已并入整合计划，后续不再作为当前执行入口。
+
+### 2. 过拟合防护（唯一剩余的致命缺陷）
 
 - **目标**：实现 Walk-Forward 分析、样本外验证、Deflated Sharpe Ratio，把 `model.py` 的随机 `train_test_split` 换成时间序列切分
 - **涉及**：backtest-engine, ai-engine/model.py, api/report-mapper（OOS 字段当前硬编码为 0）
 - **影响**：区分"能跑回测"与"回测结果可信"的关键分水岭
 
-### 2. 真实数据接入批量导入验证
+### 3. 真实数据接入批量导入验证
 
 - **目标**：AKShare 适配器已实现，批量导入与端到端闭环待最终验证
 - **涉及**：data-collector, data-center, data-client, backtest-engine
 
-### 3. 策略分类重构遗留清理
+### 4. 策略分类重构遗留清理
 
 - **目标**：`useResearchWorkflow.ts` 仍残留 `ResearchModeId/activeMode/traditional`（约 10 处），spec 要求删除并替换为 `StrategyCategory`
 - **涉及**：web/useResearchWorkflow, web/strategy-grid
+- **备注**：该项已纳入整合计划 Phase 8，单独执行时须服从整合计划的后端契约。
 
-### 4. 边界情况修复
+### 5. 边界情况修复
 
 - **目标**：SSE 幂等、API 健康检查、任务超时、种子数据统一
 - **涉及**：web, api, worker
 
 ### 中优先级
 
-### 5. 单次闭环打通（LoopHandler 迭代执行）
+### 6. 单次闭环打通（LoopHandler 迭代执行）
 
 - **目标**：Agent 包装层（AgentExecutor）已完成；LoopHandler 迭代循环仍是骨架（`loop-handler.ts` 始终返回 0 次迭代），需打通迭代执行闭环
 - **涉及**：apps/worker/src/handlers/loop-handler.ts, 条件评估器
 - **计划**：`plans/2026-06-25-agent-and-loop.md`（B/C 部分）
 
-### 6. 通用 Agent Harness 框架
+### 7. 通用 Agent Harness 框架
 
 - **目标**：创建 `packages/agent-harness` 通用框架
 - **前置**：#5 落地
 
-### 7. Agent 测试评估框架
+### 8. Agent 测试评估框架
 
 - **目标**：建立 Agent 行为的测试和评估体系
 - **前置**：#6 落地
 
-### 8. 特征提取与因子分析扩展
+### 9. 特征提取与因子分析扩展
 
 - **目标**：特征提取仅 3 类基础特征，需补技术指标/基本面特征；因子分析缺 IC 衰减/中性化/正交化/换手率
 - **涉及**：ai-engine/features.py, factor-lab/evaluator.py
 
-### 9. 策略分层 Timer 数据连续性
+### 10. 策略分层 Timer 数据连续性
 
 - **目标**：解决 DefaultComposite 中 Timer 历史数据不连续问题
 - **涉及**：backtest-engine/composite_impl.py
 
-### 10. 借鉴 OSkhQuant（3/7 已完成）
+### 11. 借鉴 OSkhQuant（3/7 已完成）
 
 - **已完成**：技术指标库、A 股市场规则、OrderRequest.reason
 - **待实施**：多标的回测增强、风控模块、绩效归因（当前仅多标的权益分解）
 
 ### 低优先级
 
-### 11. 组合优化与模拟交易
+### 12. 组合优化与模拟交易
 
 - **目标**：组合优化（mean-variance/risk parity）当前空白；Paper Trading 缺失，回测→实盘之间无过渡桥梁
 - **涉及**：strategies/sizers, strategy-runtime（新增 forward/paper 命令）
 
-### 12. 多市场扩展路线图
+### 13. 多市场扩展路线图
 
 - **目标**：港股/美股/期货/基金市场支持
 - **当前不做**：按 AGENTS.md 规定，当前不做实盘和权限系统

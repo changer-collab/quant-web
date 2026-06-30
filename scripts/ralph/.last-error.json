@@ -1,10 +1,9 @@
 {
-  "iteration": 11,
+  "iteration": 8,
   "exitCode": 0,
-  "timestamp": "2026-06-28T13:26:50.294Z",
+  "timestamp": "2026-06-29T17:11:56.912Z",
   "detectedFailures": [
-    "lint_error",
-    "build_fail"
+    "lint_error"
   ],
-  "summary": "棣栧厛锛岃鎴戝垹闄?`strategy-grid.tsx` 鐨勫鍏ュ拰娓叉煋锛堝凡琚?`StrategyGridNew` 鍙栦唬锛夛紝骞舵爣璁颁负 deprecated銆侼ow let me update `useResearchWorkflow.ts` 鈥?remove `ResearchModeId`, rename `activeMode` 鈫?`activeCategory`, and remove hardcoded old mode values.Now let me update `App.tsx` 鈥?remove `ResearchModeId` and `StrategyGrid` imports, update destructuring, and remove `StrategyGrid` rendering.Now update the `WorkspaceModeTabs` props in App.tsx to use the new names:Now let me verify the consistency of all changes by r"
+  "summary": "- **涓婁竴杞敊璇?*锛歚lint_error` 鈥?浣?story-19锛堝洜瀛愬瀷璇婃柇绠楁硶锛夊凡瀹屾垚閫氳繃 璁╂垜鍏堝垏鎹㈠埌姝ｇ‘鍒嗘敮锛岀劧鍚庢煡鐪嬪綋鍓嶆枃浠剁粨鏋勩€傝鎴戠湅鐪?factor.py 鐨勫疄鐜版ā寮忥紙浣滀负鍙傝€冿級浠ュ強娴嬭瘯鏂囦欢銆傝鎴戞煡鐪嬬幇鏈夋祴璇曟枃浠跺拰 FormulaFactor 浜嗚В璁＄畻妯″紡銆傝鎴戞鏌ユ槸鍚﹀凡鏈夋祴璇曟枃浠跺拰褰撳墠瀹炵幇鐨勭姸鎬併€傜幇鍦ㄦ垜寮€濮嬪疄鐜?**story-20锛圥hase 3c 鈥?闈炲洜瀛愬瀷璇婃柇绠楁硶锛?*銆傞渶瑕佹浛鎹?`non_factor.py` 鐨?stub 涓虹湡瀹炵畻娉曪紝骞跺垱寤烘祴璇曟枃浠躲€傜幇鍦ㄥ垱寤烘祴璇曟枃浠讹細鐜板湪杩愯娴嬭瘯锛歚_simulate_trading` 杩斿洖 3 涓€间絾鍙В鍖呬簡 2 涓€備慨澶嶈繖涓?bug锛氬悓鏍蜂慨澶?`_fallback_simulation` 鐨勮В鍖咃細鎴戣繕闇€瑕佹鏌?`_compute_slippage_stress` 璋冪敤澶勭殑鍙傛暟锛氱幇鍦ㄩ噸鏂拌繍琛屾祴璇曪細30/30 鍏ㄩ儴閫氳繃"
 }

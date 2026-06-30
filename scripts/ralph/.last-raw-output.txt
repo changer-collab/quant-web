@@ -1,5 +1,29 @@
-﻿璁╂垜鍏堢‘璁ゅ垎鏀紝骞惰皟鐮旈渶瑕佷慨鏀圭殑鏂囦欢銆侺et me research the dependencies to understand the full scope of the cleanup.鐜板湪鎴戝叏闈簡瑙ｄ簡闇€瑕佷慨鏀圭殑鑼冨洿銆傚紑濮嬪疄鏂?story-13銆?
-棣栧厛锛岃鎴戝垹闄?`strategy-grid.tsx` 鐨勫鍏ュ拰娓叉煋锛堝凡琚?`StrategyGridNew` 鍙栦唬锛夛紝骞舵爣璁颁负 deprecated銆侼ow let me update `useResearchWorkflow.ts` 鈥?remove `ResearchModeId`, rename `activeMode` 鈫?`activeCategory`, and remove hardcoded old mode values.Now let me update `App.tsx` 鈥?remove `ResearchModeId` and `StrategyGrid` imports, update destructuring, and remove `StrategyGrid` rendering.Now update the `WorkspaceModeTabs` props in App.tsx to use the new names:Now let me verify the consistency of all changes by running TypeScript compilation:I need to fix the TypeScript issues. The tests reference `activeMode`/`setActiveMode` from the hook return, so I need backward compatibility. Let me read the original state and take a cleaner approach.Let me take a cleaner approach 鈥?keep backward-compatible return names (`activeMode`/`setActiveMode`) but change the values internally to avoid hardcoded old modes.Now fix the `researchMode` stub to have proper type compatibility, and fix the return values:TypeScript 缂栬瘧閫氳繃銆傜幇鍦ㄨ繍琛屽叏閲忚川閲忔鏌ワ細I see 鈥?I need to keep the `getResearchMode` call to make `researchMode` reactive. Let me fix this:The lint error is that `handleSelectStrategy` is now unused after removing `StrategyGrid`. Let me fix this:I'll derive the default from `getResearchModes` to avoid hardcoding 'traditional'/'hft'/'ai' as strings, while maintaining runtime backward compatibility for tests.鍏ㄩ儴 96 涓祴璇曢€氳繃锛佽繍琛屽畬鏁寸殑 lint 鍜?build锛歀int: 0 errors, build: 5/5 鎴愬姛銆傞獙璇?`strategy-grid.tsx` 宸叉棤瀵煎叆锛歂ow let me check the smoke test and Python packages:鎵€鏈夋鏌ュ凡閫氳繃锛佽繍琛屽墿浣欑殑 Python 鍖呮祴璇曪細鎵€鏈?Python 鍖呮祴璇曢€氳繃銆傞獙璇佹棤鏂颁緷璧栧紩鍏ワ細鍏ㄩ儴楠岃瘉閫氳繃锛佺幇鍦ㄦ洿鏂?prd.json 鍜?progress.txt锛屾彁浜や唬鐮併€傚叏閮ㄩ獙璇侀€氳繃锛佹洿鏂?prd.json 骞舵彁浜や唬鐮侊細鎺ㄩ€佸埌杩滅▼浠撳簱锛氱綉缁滀笉鍙敤锛屾帹閫佺◢鍚庨噸璇曘€傛墍鏈?13 涓晠浜嬪叏閮ㄥ畬鎴愩€?
-<promise>COMPLETE</promise>
-缃戠粶涓嶅彲鐢紝鎺ㄩ€佺◢鍚庨噸璇曘€傛墍鏈?13 涓晠浜嬪叏閮ㄥ畬鎴愩€?
-<promise>COMPLETE</promise>
+﻿璁╂垜鍏堣鍙栦笂涓€杞殑閿欒淇℃伅鍜岃繘搴﹁褰曘€傚ソ鐨勶紝璁╂垜鍒嗘瀽涓婁竴杞敊璇拰褰撳墠鐘舵€侊細
+
+- **涓婁竴杞敊璇?*锛歚lint_error` 鈥?浣?story-19锛堝洜瀛愬瀷璇婃柇绠楁硶锛夊凡瀹屾垚閫氳繃
+- **褰撳墠鏈€楂樹紭鍏堢骇鏈畬鎴愭晠浜?*锛?*story-20**锛圥hase 3c 鈥?闈炲洜瀛愬瀷璇婃柇绠楁硶锛?
+璁╂垜鍏堝垏鎹㈠埌姝ｇ‘鍒嗘敮锛岀劧鍚庢煡鐪嬪綋鍓嶆枃浠剁粨鏋勩€傝鎴戠湅鐪?factor.py 鐨勫疄鐜版ā寮忥紙浣滀负鍙傝€冿級浠ュ強娴嬭瘯鏂囦欢銆傝鎴戞煡鐪嬬幇鏈夋祴璇曟枃浠跺拰 FormulaFactor 浜嗚В璁＄畻妯″紡銆傝鎴戞鏌ユ槸鍚﹀凡鏈夋祴璇曟枃浠跺拰褰撳墠瀹炵幇鐨勭姸鎬併€傜幇鍦ㄦ垜寮€濮嬪疄鐜?**story-20锛圥hase 3c 鈥?闈炲洜瀛愬瀷璇婃柇绠楁硶锛?*銆傞渶瑕佹浛鎹?`non_factor.py` 鐨?stub 涓虹湡瀹炵畻娉曪紝骞跺垱寤烘祴璇曟枃浠躲€傜幇鍦ㄥ垱寤烘祴璇曟枃浠讹細鐜板湪杩愯娴嬭瘯锛歚_simulate_trading` 杩斿洖 3 涓€间絾鍙В鍖呬簡 2 涓€備慨澶嶈繖涓?bug锛氬悓鏍蜂慨澶?`_fallback_simulation` 鐨勮В鍖咃細鎴戣繕闇€瑕佹鏌?`_compute_slippage_stress` 璋冪敤澶勭殑鍙傛暟锛氱幇鍦ㄩ噸鏂拌繍琛屾祴璇曪細30/30 鍏ㄩ儴閫氳繃锛佺幇鍦ㄨ繍琛屽畬鏁村寘鐨勬祴璇曞拰鍏朵粬璐ㄩ噺妫€鏌ャ€傚叏鍖?154/154 閫氳繃锛佺幇鍦ㄨ繍琛屽叏灞€璐ㄩ噺妫€鏌ワ細lint 閫氳繃锛? errors锛夈€傜户缁繍琛?test 鍜?build锛氭墍鏈?263+ 娴嬭瘯鍏ㄩ儴閫氳繃銆傜幇鍦ㄨ繍琛?build锛氭墍鏈夋鏌ラ€氳繃锛佺幇鍦ㄦ洿鏂?prd.json銆乸rogress.txt锛屽苟鎻愪氦銆傛洿鏂?prd.json 鏍囪 story-20 瀹屾垚锛氳拷鍔犺繘搴﹀埌 progress.txt锛氭鏌?AGENTS.md 鏄惁闇€瑕佹洿鏂帮細AGENT.md 涓嶉渶瑕佹洿鏂帮紙diagnostics 宸插湪鍛戒护鍒楄〃涓紝鏈鏄鏋跺唴鐨勭畻娉曞疄鐜帮級銆?
+鐜板湪鎻愪氦锛歴tory-20 宸插畬鎴愬苟鎻愪氦銆?
+**楠岃瘉缁撴灉姹囨€伙細**
+- 鉁?`python -m pytest tests/test_diagnostics_non_factor.py -v` 鈫?**30/30 passed**
+- 鉁?`python -m pytest`锛坰trategy-runtime 鍏ㄥ寘锛夆啋 **154/154 passed**
+- 鉁?`pnpm lint` 鈫?**0 errors**
+- 鉁?`pnpm test` 鈫?**10/10 packages successful**
+- 鉁?`pnpm build` 鈫?**5/5 successful**
+- 鉁?宸叉彁浜ゅ埌 `ralph/strategy-classification` 鍒嗘敮
+
+**Doc Sync**: 涓嶉渶瑕佹洿鏂版枃妗?鈥?绾?Python 绠楁硶瀹炵幇锛屼笉娑夊強 API schema銆丏B schema銆佹灦鏋勮竟鐣屽彉鍖栥€?
+**鍓╀綑鏁呬簨锛堜笅涓€杞凯浠ｏ級**锛?- **story-21** (Phase 3d) 鈥?Worker DiagnosticsHandler 鏀归€?+ API 缁撴瀯鍖栧瓨鍌?+ 鍓嶇鏇挎崲 mock
+- **story-22** (Phase 4) 鈥?WorkspacePage 鍥炴祴鍙傛暟琛ㄥ崟
+story-20 宸插畬鎴愬苟鎻愪氦銆?
+**楠岃瘉缁撴灉姹囨€伙細**
+- 鉁?`python -m pytest tests/test_diagnostics_non_factor.py -v` 鈫?**30/30 passed**
+- 鉁?`python -m pytest`锛坰trategy-runtime 鍏ㄥ寘锛夆啋 **154/154 passed**
+- 鉁?`pnpm lint` 鈫?**0 errors**
+- 鉁?`pnpm test` 鈫?**10/10 packages successful**
+- 鉁?`pnpm build` 鈫?**5/5 successful**
+- 鉁?宸叉彁浜ゅ埌 `ralph/strategy-classification` 鍒嗘敮
+
+**Doc Sync**: 涓嶉渶瑕佹洿鏂版枃妗?鈥?绾?Python 绠楁硶瀹炵幇锛屼笉娑夊強 API schema銆丏B schema銆佹灦鏋勮竟鐣屽彉鍖栥€?
+**鍓╀綑鏁呬簨锛堜笅涓€杞凯浠ｏ級**锛?- **story-21** (Phase 3d) 鈥?Worker DiagnosticsHandler 鏀归€?+ API 缁撴瀯鍖栧瓨鍌?+ 鍓嶇鏇挎崲 mock
+- **story-22** (Phase 4) 鈥?WorkspacePage 鍥炴祴鍙傛暟琛ㄥ崟

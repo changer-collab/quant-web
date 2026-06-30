@@ -62,6 +62,7 @@ export const diagnosticResults = sqliteTable('diagnostic_results', {
   id: text('id').primaryKey(),
   taskId: text('task_id').notNull(),
   strategy: text('strategy').notNull(),
+  category: text('category').notNull().default('non_factor'),
   configSnapshot: text('config_snapshot').notNull(),
   dataJson: text('data_json').notNull(),
   createdAt: integer('created_at').notNull(),

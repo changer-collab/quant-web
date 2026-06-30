@@ -112,7 +112,6 @@ export type PageId =
   | 'jobs'
   | 'settings';
 
-export type ResearchModeId = 'traditional' | 'hft' | 'ai';
 export type MetricTone = 'good' | 'info' | 'warn';
 export type LanguageCode = 'en' | 'zh';
 export type JobTemplate = 'backtest' | 'train' | 'experiment' | 'run';
@@ -166,18 +165,6 @@ export interface PageContent {
   sections: PageSection[];
 }
 
-export interface ResearchMode {
-  id: ResearchModeId;
-  label: string;
-  title: string;
-  description: string;
-  codeFile: string;
-  codeSample: string;
-  configItems: ResearchConfigItem[];
-  heroMetrics: Metric[];
-  sections: PageSection[];
-}
-
 export interface AppState {
   activePage: PageId;
 }
@@ -198,7 +185,6 @@ export interface StrategyParam {
 
 export interface StrategyRow {
   id: string;
-  mode: ResearchModeId;
   name: string;
   type: string;
   return: string;
@@ -211,6 +197,8 @@ export interface StrategyRow {
   version?: string;
   /** 策略类型标识（combined/select/timing/position/composite） */
   kind?: string;
+  /** 策略标识 */
+  mode: string;
   /** 可调参数定义（与 Python StrategyMeta.params 对齐） */
   params?: StrategyParam[];
   /** 策略分类（与 Python StrategyCategory 对齐） */
@@ -268,15 +256,18 @@ export interface PreviewResponse {
   engine_version: string;
 }
 
+/** 策略配置快照 */
+export interface ConfigSnapshot {
+  strategy: string;
+  params: Record<string, unknown>;
+}
+
 /** 诊断结果 */
 export interface DiagnosticResult {
   id: string;
   taskId: string;
   strategy: string;
-  configSnapshot: {
-    strategy: string;
-    params: Record<string, unknown>;
-  };
+  configSnapshot: ConfigSnapshot;
   dataJson: Record<string, unknown>;
   createdAt: number;
 }
@@ -287,12 +278,6 @@ export interface MarketTick {
   ask: string;
   size: string;
   signal: string;
-}
-
-export interface ResearchConfigItem {
-  label: string;
-  value: string;
-  description: string;
 }
 
 export type ResearchRunConfigSummary = string[];
@@ -308,7 +293,7 @@ export interface ResearchJob extends JobItem {
   id: string;
   strategyName: string;
   template?: JobTemplate;
-  mode?: ResearchModeId;
+  mode?: string;
   strategyId?: string;
   sequence?: number;
   configSummary?: ResearchRunConfigSummary;
@@ -318,7 +303,7 @@ export interface ResearchJob extends JobItem {
 export interface ResearchReport {
   id: string;
   jobId: string;
-  mode: ResearchModeId;
+  mode: string;
   modeName: string;
   strategyName: string;
   title: string;
@@ -332,7 +317,7 @@ export interface ResearchReport {
 export interface CreateResearchJobInput {
   id: string;
   sequence: number;
-  mode?: ResearchModeId;
+  mode?: string;
   strategy?: StrategyRow;
   configSummary?: ResearchRunConfigSummary;
   /** 初始状态（内部英文值，如 "Running"/"Completed"），默认 "Running" */
@@ -384,12 +369,10 @@ export interface UiCopy {
   };
   brandTagline: string;
   chartAriaLabel: string;
-  currentResearchMode: string;
   enterWorkspace: string;
   heroEyebrow: string;
   languageDescription: string;
   languageTitle: string;
-  modeTabsAriaLabel: string;
   navAriaLabel: string;
   currentRunSummary: string;
   ready: string;
@@ -614,16 +597,21 @@ export interface UiCopy {
   workspaceSignalMetrics: string;
   workspaceReturnMetrics: string;
   workspaceRiskMetrics: string;
+  /** 回测参数表单标签 */
+  workspaceBacktestSymbol: string;
+  workspaceBacktestTimeframe: string;
+  workspaceBacktestInitialCapital: string;
+  workspaceBacktestStartDate: string;
+  workspaceBacktestEndDate: string;
+  workspaceBacktestConfigTitle: string;
 }
 
 export interface LanguageContent {
   navItems: NavItem[];
   pages: Record<PageId, PageContent>;
-  researchModes: ResearchMode[];
   strategies: StrategyRow[];
   marketTicks: MarketTick[];
   jobs: ResearchJob[];
-  modeJobKind: Record<ResearchModeId, string>;
   reportMetricLabels: {
     return: string;
     drawdown: string;

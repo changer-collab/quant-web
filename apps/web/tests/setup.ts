@@ -34,7 +34,7 @@ export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
         engine_version: '1.0.0',
       };
     } else {
-      body = { id: 'mock-task-id', taskId: 'mock-task-id', status: 'pending' };
+      body = { id: 'mock-task-id', taskId: 'mock-task-id', status: 'pending', diagnostics: { type: 'diagnostics' } };
     }
   } else if (method === 'PUT') {
     if (url.includes('/config')) {

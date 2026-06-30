@@ -423,6 +423,7 @@ export interface DiagnosticResult {
   id: string;
   taskId: string;
   strategy: string;
+  category: StrategyCategory;
   configSnapshot: ConfigSnapshot;
   dataJson: Record<string, unknown>;
   createdAt: number;

@@ -22,7 +22,7 @@
       ],
       "agent": "frontend-agent",
       "priority": 14,
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-15",
@@ -41,7 +41,7 @@
       "agent": "fullstack-agent",
       "priority": 15,
       "dependsOn": ["story-14"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-16",
@@ -58,7 +58,7 @@
       "agent": "frontend-agent",
       "priority": 16,
       "dependsOn": ["story-15"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-17",
@@ -76,7 +76,7 @@
       "agent": "frontend-agent",
       "priority": 17,
       "dependsOn": ["story-16"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-17b",
@@ -95,7 +95,7 @@
       "agent": "fullstack-agent",
       "priority": 17,
       "dependsOn": ["story-17"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-18",
@@ -113,7 +113,7 @@
       "agent": "strategy-agent",
       "priority": 18,
       "dependsOn": ["story-17b"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-19",
@@ -131,7 +131,7 @@
       "agent": "strategy-agent",
       "priority": 19,
       "dependsOn": ["story-18"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-20",
@@ -148,7 +148,7 @@
       "agent": "strategy-agent",
       "priority": 20,
       "dependsOn": ["story-18"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-21",
@@ -167,7 +167,7 @@
       "agent": "fullstack-agent",
       "priority": 21,
       "dependsOn": ["story-19", "story-20"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-22",
@@ -184,7 +184,7 @@
       "agent": "frontend-agent",
       "priority": 22,
       "dependsOn": ["story-21"],
-      "passes": false
+      "passes": true
     }
   ]
 }

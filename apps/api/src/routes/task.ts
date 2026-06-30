@@ -120,12 +120,14 @@ export async function internalTaskRoutes(app: FastifyInstance) {
     if (task.type === TaskType.Diagnostics) {
       try {
         const payload = task.payload as Record<string, unknown>;
+        const diagData = (result as { diagnostics?: Record<string, unknown> }).diagnostics ?? result;
         const diagnosticResult: DiagnosticResult = {
           id: randomUUID(),
           taskId: task.id,
           strategy: (payload.strategy as string) || 'unknown',
+          category: (payload.category as DiagnosticResult['category']) || 'non_factor',
           configSnapshot: (payload.configSnapshot as ConfigSnapshot) ?? { strategy: (payload.strategy as string) || 'unknown', params: {} },
-          dataJson: result,
+          dataJson: diagData,
           createdAt: Date.now(),
         };
         await app.diagnosticService.storeResult(diagnosticResult);

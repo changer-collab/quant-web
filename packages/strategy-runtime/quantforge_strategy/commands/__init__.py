@@ -21,4 +21,10 @@ def run_ai_train(*args, **kwargs):
     return _run_ai_train(*args, **kwargs)
 
 
-__all__ = ["run_backtest", "run_factor_eval", "run_ai_train"]
+def run_diagnostics(*args, **kwargs):
+    from .diagnostics import run_diagnostics as _run_diagnostics
+
+    return _run_diagnostics(*args, **kwargs)
+
+
+__all__ = ["run_backtest", "run_factor_eval", "run_ai_train", "run_diagnostics"]

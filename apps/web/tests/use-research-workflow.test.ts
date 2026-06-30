@@ -68,11 +68,6 @@ describe('useResearchWorkflow', () => {
     expect(result.current.state.activePage).toBe('dashboard');
   });
 
-  it('initializes with traditional as default mode', async () => {
-    const { result } = await renderWorkflow('en');
-    expect(result.current.activeMode).toBe('traditional');
-  });
-
   it('switches active page on nav click', async () => {
     const { result } = await renderWorkflow('en');
     act(() => result.current.handleNavClick('strategies'));
@@ -85,10 +80,9 @@ describe('useResearchWorkflow', () => {
     expect(result.current.state.activePage).toBe('dashboard');
   });
 
-  it('switches mode and navigates to workspace on strategy select', async () => {
+  it('navigates to workspace on strategy select', async () => {
     const { result } = await renderWorkflow('en');
     act(() => result.current.handleSelectStrategy(mockStrategy));
-    expect(result.current.activeMode).toBe('traditional');
     expect(result.current.state.activePage).toBe('workspace');
   });
 
@@ -169,13 +163,6 @@ describe('useResearchWorkflow', () => {
     };
     act(() => result.current.handleViewReport(fakeJob));
     expect(result.current.state.activePage).toBe('dashboard');
-  });
-
-  it('changes research mode', async () => {
-    const { result } = await renderWorkflow('en');
-    act(() => result.current.setActiveMode('ai'));
-    expect(result.current.activeMode).toBe('ai');
-    expect(result.current.researchMode.id).toBe('ai');
   });
 
   it('localizes jobs when language changes', async () => {

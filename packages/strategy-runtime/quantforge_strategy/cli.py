@@ -66,12 +66,18 @@ def _run_sync_backtest(params: dict) -> dict:
     return run_sync_backtest(params, emit=emit)
 
 
+def _run_diagnostics(params: dict) -> dict:
+    from .commands.diagnostics import run_diagnostics
+    return run_diagnostics(params, emit=emit)
+
+
 _COMMANDS = {
     "backtest": _run_backtest,
     "factorEval": _run_factor_eval,
     "aiTrain": _run_ai_train,
     "analyze": _run_analyze,
     "syncBacktest": _run_sync_backtest,
+    "diagnostics": _run_diagnostics,
 }
 
 

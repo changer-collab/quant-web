@@ -542,6 +542,60 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Backtest Parameter Form ── */
+.backtestForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--gradient-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.formLabel {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+.formInput {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  background: rgba(17, 25, 23, 0.64);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.formInput:focus {
+  border-color: var(--green);
+}
+.formInput:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.formSelect {
+  composes: formInput;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23808888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+  cursor: pointer;
+}
+.formSelect:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ── Two-column layout for step 2 ── */
 .twoColumn {
   display: grid;

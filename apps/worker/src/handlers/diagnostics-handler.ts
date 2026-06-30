@@ -13,6 +13,10 @@ import { PythonBridge } from '../python-bridge.js';
 export interface DiagnosticsPayload {
   strategy: string;
   configSnapshot?: { strategy: string; params: Record<string, unknown> };
+  category?: string;
+  symbol?: string;
+  timeframe?: string;
+  dataRange?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -25,13 +29,15 @@ export class DiagnosticsHandler implements TaskHandler {
   async handle(task: TaskRecord, onEvent?: TaskEventHandler): Promise<Record<string, unknown>> {
     const payload = task.payload as unknown as DiagnosticsPayload;
 
-    // 尝试通过 Python CLI 执行诊断
+    // 构建完整的诊断请求参数，与 Python run_diagnostics(params) 对齐
     const request = {
       command: 'diagnostics',
       strategy: payload.strategy,
-      config: {
-        strategyParams: payload.configSnapshot?.params ?? {},
-      },
+      category: payload.category ?? 'non_factor',
+      configSnapshot: payload.configSnapshot ?? { strategy: payload.strategy, params: {} },
+      symbol: payload.symbol ?? '',
+      timeframe: payload.timeframe ?? '1d',
+      dataRange: payload.dataRange ?? {},
     };
 
     // 优先使用流式调用
