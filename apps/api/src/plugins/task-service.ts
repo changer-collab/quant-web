@@ -23,6 +23,10 @@ export interface TaskEvent {
   percent?: number;
   message?: string;
   level?: string;
+  /** 任务结果 ID（诊断/回测），顶层透出供前端判别 */
+  resultId?: string;
+  /** 任务结果类型判别字段，顶层透出供前端分派渲染 */
+  resultType?: string;
   data?: Record<string, unknown>;
   error?: { code: string; message: string };
 }

@@ -117,6 +117,8 @@ export async function internalTaskRoutes(app: FastifyInstance) {
 
     // 对于 diagnostics 类型任务，先存储诊断结果再发送 SSE 事件（确保 resultId 可用）
     let enrichedResult = result;
+    let sseResultId: string | undefined;
+    let sseResultType: string | undefined;
     if (task.type === TaskType.Diagnostics) {
       try {
         const payload = task.payload as Record<string, unknown>;
@@ -132,6 +134,8 @@ export async function internalTaskRoutes(app: FastifyInstance) {
         };
         await app.diagnosticService.storeResult(diagnosticResult);
         enrichedResult = { ...result, resultId: diagnosticResult.id, resultType: 'diagnostics' };
+        sseResultId = diagnosticResult.id;
+        sseResultType = 'diagnostics';
       } catch (err) {
         console.error('[api] Failed to store diagnostic result:', err);
       }
@@ -142,7 +146,7 @@ export async function internalTaskRoutes(app: FastifyInstance) {
       result: enrichedResult,
       completedAt: Date.now(),
       progress: 100,
-    }, { type: 'result', taskId: req.params.id, data: enrichedResult });
+    }, { type: 'result', taskId: req.params.id, resultId: sseResultId, resultType: sseResultType, data: enrichedResult });
 
     // 如果是回测任务，自动保存报告
     if (task.type === TaskType.Backtest) {

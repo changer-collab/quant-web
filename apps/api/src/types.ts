@@ -372,6 +372,46 @@ export interface ConfigSnapshot {
   params: Record<string, unknown>;
 }
 
+/** 诊断任务载荷 */
+export interface DiagnosticsTaskPayload {
+  strategy: string;
+  category?: StrategyCategory;
+  configSnapshot?: ConfigSnapshot;
+  symbol?: string;
+  timeframe?: string;
+  dataRange?: string;
+}
+
+/** 回测任务载荷 */
+export interface BacktestTaskPayload {
+  strategy: string;
+  symbol: string;
+  timeframe: string;
+  initialCash?: number;
+  slippage?: number;
+  startTs?: number;
+  endTs?: number;
+  params?: Record<string, unknown>;
+  configSnapshot?: ConfigSnapshot;
+}
+
+/**
+ * 任务结果信封（判别联合）
+ * - diagnostics 分支 data 先用 Record<string, unknown>，Phase 6 按 story-1 契约收紧
+ * - backtest 分支 data 当前为完整 result 对象，story-5 抽 processor 时固定
+ */
+export type TaskResultEnvelope =
+  | {
+      resultType: 'diagnostics';
+      resultId: string;
+      data: Record<string, unknown>;
+    }
+  | {
+      resultType: 'backtest';
+      resultId: string;
+      data: Record<string, unknown>;
+    };
+
 /** 策略配置 */
 export interface StrategyConfig {
   config_json: Record<string, unknown>;

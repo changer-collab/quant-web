@@ -122,6 +122,62 @@ describe('Task Routes', () => {
     await app.close();
   });
 
+  it('POST /internal/:id/complete diagnostics 后 SSE 事件顶层含 resultType 与 resultId', async () => {
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+    });
+
+    // 创建 diagnostics 任务
+    const submit = await app.inject({
+      method: 'POST',
+      url: '/api/tasks',
+      payload: { type: 'diagnostics', payload: { strategy: 'test-strategy', category: 'factor_based' } },
+    });
+    expect(submit.statusCode).toBe(202);
+    const { id } = submit.json();
+
+    // 收集 SSE 事件
+    const events: unknown[] = [];
+    app.taskService.subscribe(id, (event) => events.push(event));
+
+    // 认领任务
+    const claim = await app.inject({
+      method: 'POST',
+      url: `/internal/tasks/${id}/claim`,
+    });
+    expect(claim.statusCode).toBe(200);
+
+    // 完成任务带诊断数据
+    const complete = await app.inject({
+      method: 'POST',
+      url: `/internal/tasks/${id}/complete`,
+      payload: {
+        result: {
+          diagnostics: { type: 'factor_based', ic_series: [{ period: '2024-01', ic: 0.05, rank_ic: 0.04 }] },
+        },
+      },
+    });
+    expect(complete.statusCode).toBe(200);
+
+    // 找到 result 事件，验证顶层字段
+    const resultEvents = (events as Array<{ type: string; resultId?: string; resultType?: string }>)
+      .filter((e) => e.type === 'result');
+    expect(resultEvents.length).toBeGreaterThanOrEqual(1);
+    const result = resultEvents[resultEvents.length - 1];
+    expect(result.resultType).toBe('diagnostics');
+    expect(result.resultId).toBeDefined();
+    expect(typeof result.resultId).toBe('string');
+
+    // data 内仍保留 resultId/resultType（向下兼容旧前端）
+    expect(result.data).toBeDefined();
+    const data = result.data as Record<string, unknown>;
+    expect(data.resultId).toBe(result.resultId);
+    expect(data.resultType).toBe('diagnostics');
+
+    await app.close();
+  });
+
   it('GET /api/tasks 列出所有任务', async () => {
     const app = await buildApp({
       dataCenter: createMockDataCenter(),

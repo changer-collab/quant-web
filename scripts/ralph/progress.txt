@@ -935,3 +935,26 @@ lint_error
   - INVALID_CONFIG_SNAPSHOT 错误码当前在 factor.py/non_factor.py 中未实现显式检查（由运行时异常隐式处理），Phase 6 可考虑显式化
   - NO_EVENT_SENTIMENT_DATA 为 transitional 专用错误码，当前未在任何代码中引用
 ---
+
+## [2026-06-30 17:30] - story-2 (Phase 1 Task 1.1 — TaskResultEnvelope + diagnostics 任务类型)
+- 实现了判别式 TaskResultEnvelope + diagnostics 任务类型
+- **修改的文件**：
+  - `apps/api/src/types.ts` — 新增 `DiagnosticsTaskPayload`、`BacktestTaskPayload`、`TaskResultEnvelope`（判别联合，resultType 分支 diagnostics/backtest）
+  - `apps/api/src/plugins/task-service.ts` — `TaskEvent` 接口新增 `resultId?: string`、`resultType?: string`（SSE 事件顶层字段）
+  - `apps/api/src/routes/task.ts` — diagnostics 分支完成后将 `resultId`/`resultType` 提升到 SSE 事件顶层（原嵌在 data 内），用 `sseExtra` 变量实现仅 diagnostics 时添加、非诊断分支不变
+  - `apps/web/src/api/tasks.ts` — `ApiTaskType` 补 `'diagnostics'`/`'collect'`（与后端 6 值对齐）；`TaskStreamEvent` 顶层加 `resultId?: string`、`resultType?: 'diagnostics' | 'backtest'`
+  - `apps/api/tests/routes/task.test.ts` — 新增测试：diagnostics 完成后 SSE 事件顶层含 `resultType='diagnostics'` 与 `resultId`，且 data 内仍保留以兼容旧前端
+  - `apps/web/tests/use-tasks.test.ts` — 新增两个测试：SSE resultType=diagnostics 正确透传；缺 resultType 的旧任务不崩溃
+- **验证**：
+  - `pnpm lint` → 0 errors（11 预存 warnings）
+  - `cd apps/web && npx tsc --noEmit` → 通过
+  - `cd apps/web && npx vitest run` → 92/92 passed（含 3 个 task stream 测试）
+  - `cd apps/web && npx vite build` → 3.34s 成功
+  - API/Worker tsc 失败是预存的 drizzle-orm/sql.js 模块未安装问题，与改动无关
+- **Doc Sync**: no docs update needed because the integrated plan doc (docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md) already documents TaskResultEnvelope / SSE protocol (line 252, 273, 447). My implementation is consistent with the design.
+- **后续迭代注意事项：**
+  - TaskEvent 和 TaskStreamEvent 的 resultType 字段是 string/common-union 类型，保持与后端 SSE JSON 序列化对齐
+  - sseExtra 变量模式（`let sseResultId/sseResultType` + 条件赋值 + 展开到 updateTask 事件）可复用于 story-5 的 processor 改造
+  - 前端旧代码（workspace-page.tsx）仍从 `event.data.resultId` 读取诊断结果 ID，新代码可直接用 `event.resultId`
+---
+
