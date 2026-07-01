@@ -1,37 +1,14 @@
 {
-  "iterations": 6,
+  "iterations": 0,
   "lastExitCode": 0,
-  "lastError": {
-    "iteration": 6,
-    "exitCode": 0,
-    "timestamp": "2026-06-30T10:15:28.356Z",
-    "detectedFailures": [
-      "vitest_fail",
-      "pytest_fail",
-      "lint_error"
-    ],
-    "summary": "| `pnpm lint` | 0 errors (浠?11 涓瀛?warning) | | `pnpm lint` | 鉁?0 errors | | 澶辫触璺緞锛堜繚瀛樺け璐ユ爣璁?failed锛?| 鉁?娴嬭瘯瑕嗙洊 | | `pnpm lint` | 鉁?0 errors | | 澶辫触璺緞锛堜繚瀛樺け璐ユ爣璁?failed锛?| 鉁?娴嬭瘯瑕嗙洊 |"
-  },
-  "storyAttempts": {
-    "story-5": {
-      "attempts": 1
-    },
-    "story-6": {
-      "attempts": 1
-    }
-  },
+  "lastError": null,
+  "storyAttempts": {},
   "lastChanges": "",
   "consecutiveNoProgress": 0,
-  "feature": "",
+  "feature": "backend-sync-realign",
   "version": 1,
-  "lastGitHead": "bd30ae3fa16d71bb4820827badde42d9af79d4b9",
+  "lastGitHead": "",
   "multiStoryWarnings": 0,
-  "passesSnapshot": [
-    "story-1",
-    "story-2",
-    "story-3",
-    "story-4",
-    "story-5"
-  ],
-  "passesSnapshotHash": "b4ad09122c62c0fc"
+  "passesSnapshot": [],
+  "passesSnapshotHash": ""
 }
