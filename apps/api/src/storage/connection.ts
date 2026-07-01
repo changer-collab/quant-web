@@ -125,7 +125,10 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
       strategy TEXT PRIMARY KEY,
       config_json TEXT NOT NULL,
       hash TEXT NOT NULL,
-      updated_at INTEGER NOT NULL
+      updated_at INTEGER NOT NULL,
+      category TEXT NOT NULL DEFAULT 'non_factor',
+      subcategory TEXT,
+      schema_version INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS config_history (
@@ -144,11 +147,40 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
       category TEXT NOT NULL DEFAULT 'non_factor',
       config_snapshot TEXT NOT NULL,
       data_json TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      subcategory TEXT,
+      engine_version TEXT NOT NULL DEFAULT 'legacy',
+      expires_at INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_diag_strategy ON diagnostic_results(strategy);
     CREATE INDEX IF NOT EXISTS idx_diag_created ON diagnostic_results(created_at);
   `);
+
+  // 迁移：为已有表安全添加新列（兼容旧 DB 文件，仅当列不存在时执行）
+  const migrationColumns: Array<{ table: string; column: string; def: string }> = [
+    // strategy_configs
+    { table: 'strategy_configs', column: 'category', def: 'category TEXT NOT NULL DEFAULT \'non_factor\'' },
+    { table: 'strategy_configs', column: 'subcategory', def: 'subcategory TEXT' },
+    { table: 'strategy_configs', column: 'schema_version', def: 'schema_version INTEGER NOT NULL DEFAULT 1' },
+    // diagnostic_results
+    { table: 'diagnostic_results', column: 'subcategory', def: 'subcategory TEXT' },
+    { table: 'diagnostic_results', column: 'engine_version', def: 'engine_version TEXT NOT NULL DEFAULT \'legacy\'' },
+    { table: 'diagnostic_results', column: 'expires_at', def: 'expires_at INTEGER NOT NULL DEFAULT 0' },
+  ];
+
+  for (const { table, column, def } of migrationColumns) {
+    try {
+      const info = sqlite.exec(`PRAGMA table_info('${table}')`);
+      if (info.length > 0) {
+        const existingCols = new Set(info[0].values.map((row) => row[1] as string));
+        if (!existingCols.has(column)) {
+          sqlite.run(`ALTER TABLE ${table} ADD COLUMN ${def}`);
+        }
+      }
+    } catch {
+      // PRAGMA 失败时静默跳过（表可能已被更高版本覆盖）
+    }
+  }
 
   db = drizzle(sqlite, { schema });
   return db;

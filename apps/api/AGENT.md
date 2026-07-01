@@ -37,6 +37,11 @@
 - ReportRepository 通过 app.decorate 注入（app.reportRepository），与既有 Service 注入模式一致
 - StrategyConfigService Phase 3b：buildDefaultSnapshot（canonical SHA256 hash）、getOrDefault（无配置返回默认快照）、save（expectedHash 乐观锁，冲突 → ConfigHashConflictError → 409）
 - ConfigHashConflictError 类（statusCode=409, expectedHash/currentHash/currentSnapshot 供 route 返回 409 body）
+- Phase 3d DB Schema additive migration：
+  - strategy_configs 新增 category/subcategory/schema_version 列（全部 NOT NULL DEFAULT 或 nullable）
+  - diagnostic_results 新增 subcategory/engine_version/expires_at 列（全部 DEFAULT 或 nullable）
+  - 迁移模式：CREATE TABLE IF NOT EXISTS 后运行 PRAGMA table_info 检查列是否存在 → ALTER TABLE ADD COLUMN（兼容旧 DB 文件）
+  - Drizzle schema 新增列用 .notNull().default() 保持现有 repo insert 语句不报错
 
 ## 边界
 

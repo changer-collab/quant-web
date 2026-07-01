@@ -1364,3 +1364,41 @@ build_fail
   - `getOrDefault` 传入的 category 从策略 registry 的 meta.category 获得，API 侧不做二次判断（仅透传）
   - 测试中使用 StrategyConfigService 真实实例 + vi.spyOn 控制方法返回值，比创建完全 mock 对象更简单
 ---
+
+## [2026-07-01 17:06:00] - Iteration 9
+
+- Exit code: 0
+- Stories remaining: 9
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-02] - story-10 (Phase 3d — DB schema additive migration)
+- **schema.ts**: strategyConfigs 新增 category(text,notNull,'non_factor')/subcategory(text,nullable)/schemaVersion(integer,notNull,1) 列
+- **schema.ts**: diagnosticResults 新增 subcategory(text,nullable)/engineVersion(text,notNull,'legacy')/expiresAt(integer,notNull,0) 列
+- **connection.ts**: CREATE TABLE IF NOT EXISTS 同步新增列（策略配置表 + 诊断结果表）
+- **connection.ts**: 新增迁移逻辑 - CREATE TABLE 后运行 PRAGMA table_info 检查列是否存在 → ALTER TABLE ADD COLUMN（兼容旧 DB 文件）
+  - strategy_configs: category/subcategory/schema_version 三列
+  - diagnostic_results: subcategory/engine_version/expires_at 三列
+- Drizzle schema 新增列用 `.notNull().default()` 确保现有 repo insert 语句不报错
+- **Doc Sync**: updated `apps/api/AGENT.md` with Phase 3d DB schema migration pattern (PRAGMA table_info + ALTER TABLE ADD COLUMN). No plan doc update needed — the integrated plan already documents Phase 3d as additive migration.
+- 修改了哪些文件：
+  - `apps/api/src/storage/schema.ts`
+  - `apps/api/src/storage/connection.ts`
+  - `apps/api/AGENT.md`
+  - `scripts/ralph/prd.json`
+  - `scripts/ralph/progress.txt`
+- 验证：
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅 11 个预存 warning + 3 个 data-collector warning）
+  - `pnpm test` → 10/10 包全部通过（API 86/86 + Web 93/93 + Worker 26/26 + DC 47/47 + DCL 58/58 = 310 tests）
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-11 (Phase 3e) 将更新 SqliteConfigRepo 读写新列 + IConfigRepo 签名变更（依赖本 story 完成）
+  - story-12 (Phase 3f) 将更新 SqliteDiagnosticRepo 读写新列（subcategory/engineVersion/expiresAt）
+  - Drizzle schema 的 `.notNull().default(0)` 对 `expiresAt` 是必需的——否则现有 `SqliteDiagnosticRepo.save()` 的 insert 语句缺 `expiresAt` 字段会编译报错
+  - ALTER TABLE 迁移使用 PRAGMA table_info 检查列存在性（sql.js 不支持 ALTER TABLE ADD COLUMN IF NOT EXISTS）
+  - `expires_at` 在 ALTER TABLE 中用 `INTEGER NOT NULL DEFAULT 0` 做默认值，旧 row 的 expiresAt 为 0（表示永不过期），story-12 的 processor 会写入真实值
+---
