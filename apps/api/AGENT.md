@@ -42,6 +42,13 @@
   - diagnostic_results 新增 subcategory/engine_version/expires_at 列（全部 DEFAULT 或 nullable）
   - 迁移模式：CREATE TABLE IF NOT EXISTS 后运行 PRAGMA table_info 检查列是否存在 → ALTER TABLE ADD COLUMN（兼容旧 DB 文件）
   - Drizzle schema 新增列用 .notNull().default() 保持现有 repo insert 语句不报错
+- Phase 3e SqliteConfigRepo 读写新列：
+  - IConfigRepo 接口签名变更：save(snapshot: ConfigSnapshot) 替代旧 save(strategy, configJson, hash)；get() 返回 ConfigSnapshot | null
+  - SqliteConfigRepo.save() 写入 category/subcategory/schemaVersion/hash 全列（默认值：'non_factor'/null/1/''）
+  - SqliteConfigRepo.get() 读新列后回构 ConfigSnapshot（缺省补默认值）
+  - IConfigHistoryRepo.append() 更新为接受 ConfigSnapshot，写入 strategyVersion/category/subcategory/schemaVersion
+  - config_history Drizzle schema + CREATE TABLE 新增 strategy_version/category/subcategory/schema_version 列
+  - 迁移模式：PRAGMA table_info + ALTER TABLE ADD COLUMN 兼容旧 DB 文件
 
 ## 边界
 

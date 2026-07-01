@@ -3,7 +3,7 @@
   "lastExitCode": 0,
   "lastError": null,
   "storyAttempts": {
-    "story-8": {
+    "story-11": {
       "attempts": 1
     }
   },
@@ -11,7 +11,7 @@
   "consecutiveNoProgress": 0,
   "feature": "",
   "version": 1,
-  "lastGitHead": "54163da74282556bbf49bd19618cc2deab907429",
+  "lastGitHead": "3ff125d9cbc8145e2f537d33bbda3424c878496e",
   "multiStoryWarnings": 0,
   "passesSnapshot": [
     "story-1",
@@ -20,7 +20,10 @@
     "story-4",
     "story-5",
     "story-6",
-    "story-7"
+    "story-7",
+    "story-8",
+    "story-9",
+    "story-10"
   ],
-  "passesSnapshotHash": "5aec16e9ef6ddf25"
+  "passesSnapshotHash": "91af8b50cb7c3ff7"
 }

@@ -136,7 +136,11 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
       strategy TEXT NOT NULL,
       config_json TEXT NOT NULL,
       hash TEXT NOT NULL,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      strategy_version TEXT,
+      category TEXT,
+      subcategory TEXT,
+      schema_version INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_cfg_hist_strategy ON config_history(strategy);
 
@@ -166,6 +170,11 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
     { table: 'diagnostic_results', column: 'subcategory', def: 'subcategory TEXT' },
     { table: 'diagnostic_results', column: 'engine_version', def: 'engine_version TEXT NOT NULL DEFAULT \'legacy\'' },
     { table: 'diagnostic_results', column: 'expires_at', def: 'expires_at INTEGER NOT NULL DEFAULT 0' },
+    // config_history
+    { table: 'config_history', column: 'strategy_version', def: 'strategy_version TEXT' },
+    { table: 'config_history', column: 'category', def: 'category TEXT' },
+    { table: 'config_history', column: 'subcategory', def: 'subcategory TEXT' },
+    { table: 'config_history', column: 'schema_version', def: 'schema_version INTEGER' },
   ];
 
   for (const { table, column, def } of migrationColumns) {

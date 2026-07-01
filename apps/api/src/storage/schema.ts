@@ -58,6 +58,10 @@ export const configHistory = sqliteTable('config_history', {
   configJson: text('config_json').notNull(),
   hash: text('hash').notNull(),
   createdAt: integer('created_at').notNull(),
+  strategyVersion: text('strategy_version'),
+  category: text('category'),
+  subcategory: text('subcategory'),
+  schemaVersion: integer('schema_version'),
 });
 
 /** 诊断结果表 */

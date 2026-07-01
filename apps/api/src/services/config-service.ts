@@ -120,12 +120,8 @@ export class StrategyConfigService {
       return {
         persisted: true,
         configSnapshot: {
-          strategy,
-          schemaVersion: 1,
+          ...existing,
           strategyVersion,
-          params: existing.config_json,
-          hash: existing.hash,
-          updatedAt: existing.updated_at,
         },
       };
     }
@@ -161,25 +157,18 @@ export class StrategyConfigService {
       if (existing && existing.hash !== expectedHash) {
         throw new ConfigHashConflictError(
           expectedHash,
-          existing.hash,
-          {
-            strategy: snapshot.strategy,
-            params: existing.config_json,
-            hash: existing.hash,
-            updatedAt: existing.updated_at,
-          },
+          existing.hash ?? '',
+          existing,
         );
       }
     }
 
-    // 持久化（repo 使用旧接口，story-11 会升级）
-    const hash = snapshot.hash ?? '';
-    const params = snapshot.params ?? {};
-    await this.repo.save(snapshot.strategy, params, hash);
+    // 持久化
+    await this.repo.save(snapshot);
 
     return {
       ...snapshot,
-      hash,
+      hash: snapshot.hash ?? '',
       updatedAt: Date.now(),
     };
   }

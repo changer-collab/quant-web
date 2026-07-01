@@ -15,20 +15,14 @@ import type { ConfigSnapshot, StrategyCategory } from '../../src/types.js';
 // ─── Mock Repository ──────────────────────────────────────────────────
 
 function createMockRepo(): IConfigRepo {
-  let store: Record<string, { configJson: Record<string, unknown>; hash: string; updatedAt: number }> = {};
+  let store: Record<string, ConfigSnapshot> = {};
 
   return {
     async get(strategy: string) {
-      const entry = store[strategy];
-      if (!entry) return null;
-      return {
-        config_json: entry.configJson,
-        hash: entry.hash,
-        updated_at: entry.updatedAt,
-      };
+      return store[strategy] ?? null;
     },
-    async save(strategy: string, configJson: Record<string, unknown>, hash: string) {
-      store[strategy] = { configJson, hash, updatedAt: Date.now() };
+    async save(snapshot: ConfigSnapshot) {
+      store[snapshot.strategy] = { ...snapshot, hash: snapshot.hash ?? '', updatedAt: Date.now() };
     },
   };
 }
@@ -129,7 +123,11 @@ describe('StrategyConfigService', () => {
 
     it('有 DB 数据 → {persisted:true, configSnapshot:持久化值}', async () => {
       // 先手工写入 repo
-      await repo.save('dual_ma', { period: 20, offset: 5 }, 'sha256:abc123');
+      await repo.save({
+        strategy: 'dual_ma',
+        params: { period: 20, offset: 5 },
+        hash: 'sha256:abc123',
+      });
 
       const result = await service.getOrDefault('dual_ma', '1.0');
 

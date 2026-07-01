@@ -182,7 +182,7 @@
       "agent": "api-agent",
       "priority": 11,
       "dependsOn": ["story-10"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-12",
