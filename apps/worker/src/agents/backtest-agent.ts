@@ -18,7 +18,12 @@ export interface BacktestParams {
   startTs?: number;
   endTs?: number;
   params?: Record<string, unknown>;
-  configSnapshot?: { strategy: string; params: Record<string, unknown> };
+  configSnapshot?: {
+    strategy: string;
+    params: Record<string, unknown>;
+    category?: string;
+    subcategory?: string | null;
+  };
 }
 
 export class BacktestAgent implements AgentExecutor {
@@ -28,6 +33,19 @@ export class BacktestAgent implements AgentExecutor {
 
   async execute(request: AgentRequest): Promise<AgentResponse> {
     const params = request.params as unknown as BacktestParams;
+    const configSnapshot = params.configSnapshot;
+
+    // 优先使用 configSnapshot.params；configSnapshot 缺失时降级到 params.params（已废弃）
+    let fallbackParams: Record<string, unknown>;
+    let snapshotParams: Record<string, unknown>;
+    if (configSnapshot) {
+      snapshotParams = configSnapshot.params ?? {};
+      fallbackParams = snapshotParams;
+    } else {
+      fallbackParams = params.params ?? {};
+      snapshotParams = fallbackParams;
+      console.warn('[backtest-agent] deprecated: params.params will be removed, use configSnapshot.params');
+    }
 
     // 转换为 Python CLI 格式
     const cliParams = {
@@ -36,7 +54,10 @@ export class BacktestAgent implements AgentExecutor {
       config: {
         initialCash: params.initialCash,
         slippage: params.slippage,
-        strategyParams: params.configSnapshot?.params ?? params.params ?? {},
+        category: configSnapshot?.category,
+        subcategory: configSnapshot?.subcategory ?? null,
+        snapshotParams,
+        strategyParams: fallbackParams,
       },
       dataRange: {
         symbol: params.symbol,

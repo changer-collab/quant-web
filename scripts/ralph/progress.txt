@@ -1569,3 +1569,27 @@ lint_error
   - collect 类型的 task 不需要 configSnapshot，校验豁免
   - factor_compute/factor_eval/ai_train 被拒绝后，需用其他方式（如任务编排或 Python CLI 显式调用）执行这些任务
 ---
+
+## [2026-07-01 17:34:11] - Iteration 15
+
+- Exit code: 0
+- Stories remaining: 3
+---
+
+## [2026-07-02] - story-16 (Phase 5b — Worker backtest-handler: pass configSnapshot.category/snapshotParams + mark params fallback deprecated)
+- **修改的文件**:
+  - `apps/worker/src/handlers/backtest-handler.ts` — 扩展 BacktestPayload.configSnapshot 类型（category/subcategory），请求新增 config.category/subcategory/snapshotParams；修改 params fallback 逻辑：configSnapshot 存在时只读 configSnapshot.params，缺失时降级到 payload.params 并输出 WARN deprecated
+  - `apps/worker/src/agents/backtest-agent.ts` — 同步 same 参数转换逻辑（BacktestParams 类型扩展 + fallback + WARN）
+  - `apps/worker/tests/backtest-handler.test.ts` — 2 个新测试：configSnapshot 传递验证 + 缺失时降级 WARN 验证
+  - `apps/worker/tests/agents/backtest-agent.test.ts` — 2 个新测试：configSnapshot 传递验证 + 缺失时降级 WARN 验证
+- **验证**:
+  - `pnpm lint` → 0 errors（仅预存 11+3 warnings）
+  - `pnpm test` → 10/10 包全部通过（worker 30/30，含 4 个新测试）
+  - `pnpm build` → 5/5 successful
+- **Doc Sync**: no docs update needed because this is internal worker payload plumbing — passing configSnapshot.category/subcategory/snapshotParams to Python CLI request. No API schema, DB schema, architectural boundary, or public contract changes.
+- **后续迭代注意事项:**
+  - 现有旧测试不提供 configSnapshot，触发 deprecated WARN 日志（stderr 输出正常，正确行为）
+  - configSnapshot 缺失时的降级行为：snapshotParams 和 strategyParams 都回退到 payload.params（两者值相同）
+  - backtest-agent.ts 的 WARN 消息前缀为 `[backtest-agent]`，与 handler 区分
+  - story-17（diagnostics fail-closed）为本切片下一个未完成故事
+---
