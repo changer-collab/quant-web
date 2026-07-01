@@ -102,7 +102,7 @@ describe('Task Routes', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/tasks',
-      payload: { type: 'backtest', payload: { strategyName: 'dual-ma' } },
+      payload: { type: 'backtest', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
     });
     expect(res.statusCode).toBe(202);
     expect(res.json()).toHaveProperty('id');
@@ -120,7 +120,7 @@ describe('Task Routes', () => {
     const submit = await app.inject({
       method: 'POST',
       url: '/api/tasks',
-      payload: { type: 'backtest', payload: {} },
+      payload: { type: 'backtest', payload: { strategy: 'test-strategy', configSnapshot: { strategy: 'test-strategy', params: {} } } },
     });
     const { id } = submit.json();
 
@@ -151,11 +151,11 @@ describe('Task Routes', () => {
       resultProcessorRegistry: createMockProcessorRegistry(),
     });
 
-    // 创建 diagnostics 任务
+    // 创建 diagnostics 任务（含有效 configSnapshot）
     const submit = await app.inject({
       method: 'POST',
       url: '/api/tasks',
-      payload: { type: 'diagnostics', payload: { strategy: 'test-strategy', category: 'factor_based' } },
+      payload: { type: 'diagnostics', payload: { strategy: 'test-strategy', category: 'factor_based', configSnapshot: { strategy: 'test-strategy', params: {} } } },
     });
     expect(submit.statusCode).toBe(202);
     const { id } = submit.json();
@@ -209,11 +209,11 @@ describe('Task Routes', () => {
 
     await app.inject({
       method: 'POST', url: '/api/tasks',
-      payload: { type: 'backtest', payload: {} },
+      payload: { type: 'backtest', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
     });
     await app.inject({
       method: 'POST', url: '/api/tasks',
-      payload: { type: 'factorCompute', payload: {} },
+      payload: { type: 'collect', payload: {} },
     });
 
     const res = await app.inject({ method: 'GET', url: '/api/tasks' });
@@ -221,5 +221,179 @@ describe('Task Routes', () => {
     expect(res.json()).toHaveLength(2);
 
     await app.close();
+  });
+
+  describe('Task Payload Validation', () => {
+    it('factor_compute 类型返回 400 not supported', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'factor_compute', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('not supported');
+      await app.close();
+    });
+
+    it('factor_eval 类型返回 400 not supported', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'factor_eval', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('not supported');
+      await app.close();
+    });
+
+    it('ai_train 类型返回 400 not supported', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'ai_train', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('not supported');
+      await app.close();
+    });
+
+    it('backtest 缺 configSnapshot 返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'backtest', payload: { strategy: 'dual-ma' } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('configSnapshot required');
+      await app.close();
+    });
+
+    it('diagnostics 缺 configSnapshot 返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'diagnostics', payload: { strategy: 'dual-ma' } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('configSnapshot required');
+      await app.close();
+    });
+
+    it('configSnapshot.strategy 空字符串返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'backtest', payload: { strategy: '', configSnapshot: { strategy: '', params: {} } } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('configSnapshot.strategy must be a non-empty string');
+      await app.close();
+    });
+
+    it('strategy 不匹配返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', configSnapshot: { strategy: 'macd', params: {} } } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('strategy mismatch: payload.strategy does not match configSnapshot.strategy');
+      await app.close();
+    });
+
+    it('configSnapshot.category 非 canonical 3 值返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'backtest', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', category: 'mean_reversion', params: {} } } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('invalid configSnapshot.category');
+      await app.close();
+    });
+
+    it('顶层 params 返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: {
+          type: 'diagnostics',
+          payload: {
+            strategy: 'dual-ma',
+            params: { period: 20 },
+            configSnapshot: { strategy: 'dual-ma', params: {} },
+          },
+        },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('params not allowed at top level');
+      await app.close();
+    });
+
+    it('collect 类型放行通过验证', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'collect', payload: { someField: 'test' } },
+      });
+      expect(res.statusCode).toBe(202);
+      expect(res.json()).toHaveProperty('id');
+      await app.close();
+    });
+
+    it('空 payload 对象返回 400', async () => {
+      const app = await buildApp({
+        dataCenter: createMockDataCenter(),
+        taskService: new InMemoryTaskService(),
+      });
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tasks',
+        payload: { type: 'backtest', payload: {} },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('configSnapshot required');
+      await app.close();
+    });
   });
 });

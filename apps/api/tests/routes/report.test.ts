@@ -178,11 +178,11 @@ describe('Report Routes', () => {
         resultProcessorRegistry,
       });
 
-      // 提交回测任务
+      // 提交回测任务（含有效 configSnapshot）
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d' } },
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
       });
       const taskId = submitRes.json().id;
 
@@ -228,7 +228,7 @@ describe('Report Routes', () => {
         url: '/api/tasks',
         payload: {
           type: 'backtest',
-          payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', startTs, endTs },
+          payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', startTs, endTs, configSnapshot: { strategy: 'dual_ma', params: {} } },
         },
       });
       const taskId = submitRes.json().id;
@@ -265,7 +265,7 @@ describe('Report Routes', () => {
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d' } },
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
       });
       const taskId = submitRes.json().id;
 
@@ -304,7 +304,7 @@ describe('Report Routes', () => {
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d' } },
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
       });
       const taskId = submitRes.json().id;
 

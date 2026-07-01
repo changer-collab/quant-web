@@ -1,15 +1,22 @@
-﻿Let me start by reading the error file and progress file to understand the current state, then find the next story to implement.Let me read the rest of the progress file to get the full picture.Now I have a clear picture. story-12 is complete and the next story is **story-13 (Phase 4a 鈥?Preview chart_relevant 鍙傛暟鏍￠獙鈫?22)**. Let me read the relevant source files.Let me read the app structure and existing preview tests to understand how services are injected.Let me check the strategy route and how it uses the strategy sync service, plus the config route pattern.Let me check the config route test file for testing patterns.Let me also check the PreviewService to understand how it handles empty bars.Good 鈥?`servePreview` returns empty overlays for empty bars (no crash). Now I have everything I need. Let me implement story-13.
+﻿Let me read the relevant source files for story-14.Let me also check how `configService` is accessed in the app and see the strategy sync service for the version method.Now I have a complete picture. Story-14 is up next 鈥?Preview config 鍚堝苟. Let me implement it.
 
-**Plan:**
-1. Modify `apps/api/src/routes/preview.ts` 鈥?add chart_relevant validation
-2. Create `apps/api/tests/routes/preview.test.ts` 鈥?test the validationNow let me create the test file.Now let me run the quality checks.TypeScript compiles clean. Now run API tests.All 92 tests passed (14 files), including 6 new preview route tests. Now let me run lint and build.All checks pass:
-- **Lint**: 0 errors (only pre-existing warnings)
-- **Test**: 92/92 passed (14 files, including 6 new preview route tests)
-- **Build**: 5/5 successful
+The key change: after chart_relevant validation, merge `configService.getOrDefault().params` (baseline) with `preview_params` (overrides), then pass the merged params to `PreviewService.computePreview`.Now let me add the tests for the merge behavior.Good, now let me run the quality checks.TypeScript compiles clean. Now run the API tests:All 9 preview tests pass. Let me now run the full test suite and lint:All 95 tests passed. Now lint and build:All checks pass. Now let me check the AGENTS.md for any needed updates:Good. No AGENTS.md update needed 鈥?the preview merge is an internal routing detail within the existing flow.
 
-Now let me do the Doc Sync Gate check and then commit.Let me check the integrated plan to see if it already covers this phase.No AGENTS.md update needed 鈥?the change is a simple validation addition, not a new pattern. Let me commit.Good 鈥?only the 2 expected files. Now let me update prd.json and commit.Now let me append progress.txt and commit.Now let me commit.Push failed due to network (connection reset), but the commit is saved locally. Since there are still stories with `passes: false` (stories 14-18), I'll end normally.
+Now let me commit and update state files:Good. Now let me commit:Now let me commit:Story-14 completed! Let me verify there are still remaining stories:鉁?**story-14 瀹屾垚** 鈥?Preview config 鍚堝苟宸插疄鐜板苟楠岃瘉閫氳繃銆?
+**淇敼鐨勬枃浠讹細**
+- `apps/api/src/routes/preview.ts` 鈥?鏂板 Phase 4b 閰嶇疆鍙傛暟鍚堝苟閫昏緫锛坈onfigService.getOrDefault 鈫?娴呭悎骞?鈫?computePreview锛?- `apps/api/tests/routes/preview.test.ts` 鈥?鏂板 3 涓祴璇曡鐩?merge/no-saved-config/empty-preview_params 鍦烘櫙
+- `scripts/ralph/prd.json` 鈥?story-14 鈫?`passes: true`
+- `scripts/ralph/progress.txt` 鈥?杩藉姞 story-14 璁板綍
 
-Story-13 is complete. The next `passes: false` story at the highest priority is **story-14** (Phase 4b 鈥?Preview config 鍚堝苟).
-Push failed due to network (connection reset), but the commit is saved locally. Since there are still stories with `passes: false` (stories 14-18), I'll end normally.
+**楠岃瘉缁撴灉锛?* 鉁?tsc 鉁?95 tests 鉁?lint 0 errors 鉁?build 5/5
 
-Story-13 is complete. The next `passes: false` story at the highest priority is **story-14** (Phase 4b 鈥?Preview config 鍚堝苟).
+**鍓╀綑鏈畬鎴愭晠浜嬶細** story-15, story-16, story-17, story-18锛堝叡 4 涓級
+鉁?**story-14 瀹屾垚** 鈥?Preview config 鍚堝苟宸插疄鐜板苟楠岃瘉閫氳繃銆?
+**淇敼鐨勬枃浠讹細**
+- `apps/api/src/routes/preview.ts` 鈥?鏂板 Phase 4b 閰嶇疆鍙傛暟鍚堝苟閫昏緫锛坈onfigService.getOrDefault 鈫?娴呭悎骞?鈫?computePreview锛?- `apps/api/tests/routes/preview.test.ts` 鈥?鏂板 3 涓祴璇曡鐩?merge/no-saved-config/empty-preview_params 鍦烘櫙
+- `scripts/ralph/prd.json` 鈥?story-14 鈫?`passes: true`
+- `scripts/ralph/progress.txt` 鈥?杩藉姞 story-14 璁板綍
+
+**楠岃瘉缁撴灉锛?* 鉁?tsc 鉁?95 tests 鉁?lint 0 errors 鉁?build 5/5
+
+**鍓╀綑鏈畬鎴愭晠浜嬶細** story-15, story-16, story-17, story-18锛堝叡 4 涓級

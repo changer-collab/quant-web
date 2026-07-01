@@ -1530,3 +1530,42 @@ lint_error
   - `configService.getOrDefault` 在 preview route 中的参数 `category` 从 `meta.category as StrategyCategory` 转换，若 meta.category 为 undefined/非 canonical 值，`getOrDefault` 内部会降级为默认 'non_factor'
   - 合并使用 `{...configSnapshot.params, ...preview_params}` 浅合并，嵌套对象会被覆盖而非递归合并（当前所有 params 是扁平结构，浅合并正确）
 ---
+
+## [2026-07-01 17:29:18] - Iteration 14
+
+- Exit code: 0
+- Stories remaining: 4
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-02 09:32] - story-15 (Phase 5a — API 任务 payload ConfigSnapshot 校验)
+- **新增** `apps/api/src/routes/task.ts` 中 `validateTaskPayload(type, payload)`：
+  - backtest/diagnostics: configSnapshot 必须存在且 strategy 非空→否则 400
+  - configSnapshot.strategy 必须 === payload.strategy→400 mismatch
+  - configSnapshot.category ∈ canonical 3→否则 400
+  - 顶层 payload.params 拒绝→400
+  - collect: 放行
+  - factor_compute/factor_eval/ai_train: 400 'not supported in this workflow'
+- **集成** validateTaskPayload 到 POST /api/tasks handler，校验失败立即 400 返回
+- **修改的文件**：
+  - `apps/api/src/routes/task.ts` — 新增 validateTaskPayload + POST handler 集成
+  - `apps/api/tests/routes/task.test.ts` — 更新 4 个现有测试 + 新增 11 个校验测试
+  - `apps/api/tests/routes/report.test.ts` — 更新 4 个回测提交测试（添加 configSnapshot）
+  - `scripts/ralph/prd.json` — story-15 → passes: true
+  - `scripts/ralph/progress.txt`
+- **Doc Sync**: no docs update needed because the integrated plan doc (`docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`) already documents "configSnapshot validation" as the planned evolution of task.ts (line 1019). The validation doesn't change API response structure — valid payloads still get 202, invalid get 400.
+- **验证**：
+  - `cd apps/api && npx tsc --noEmit` → 通过
+  - `pnpm lint` → 0 errors
+  - `pnpm --filter @quant/api test` → 106/106 passed（含 11 个新校验测试）
+  - `pnpm test` → 10/10 包全部通过
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - 现有 BacktestTaskPayload 仍有 `params?: Record<string, unknown>` 顶层字段，不影响校验（有 params 时会 400）
+  - frontend workspace-page.tsx 提交 task 时不传顶层 params（只传 configSnapshot.params），校验兼容
+  - collect 类型的 task 不需要 configSnapshot，校验豁免
+  - factor_compute/factor_eval/ai_train 被拒绝后，需用其他方式（如任务编排或 Python CLI 显式调用）执行这些任务
+---

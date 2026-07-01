@@ -1,9 +1,67 @@
 import { TaskType, TaskStatus } from '../types.js';
 import type { FastifyInstance } from 'fastify';
 
+/** Canonical 策略分类值集（与 Python StrategyCategory 对齐） */
+const CANONICAL_CATEGORIES = ['factor_based', 'non_factor', 'transitional'];
+
+/**
+ * 校验任务 payload 的 configSnapshot 完整性
+ * - backtest/diagnostics: 必须有 configSnapshot，strategy 非空且与顶层一致，category ∈ canonical 3，拒绝顶层 params
+ * - collect: 放行
+ * - factor_compute/factor_eval/ai_train: 拒绝（此工作流不支持）
+ * - 返回 null 表示通过，返回 string 表示错误消息
+ */
+function validateTaskPayload(type: TaskType, payload: Record<string, unknown>): string | null {
+  // 拒绝不受支持的任务类型
+  if (type === TaskType.FactorCompute || type === TaskType.FactorEval || type === TaskType.AITrain) {
+    return 'not supported in this workflow';
+  }
+
+  // collect: 不作 configSnapshot 校验
+  if (type === TaskType.Collect) {
+    return null;
+  }
+
+  // backtest/diagnostics: 校验 configSnapshot
+  if (type === TaskType.Backtest || type === TaskType.Diagnostics) {
+    const configSnapshot = payload.configSnapshot as Record<string, unknown> | undefined;
+    if (!configSnapshot) {
+      return 'configSnapshot required';
+    }
+
+    const snapshotStrategy = configSnapshot.strategy;
+    if (typeof snapshotStrategy !== 'string' || snapshotStrategy.trim() === '') {
+      return 'configSnapshot.strategy must be a non-empty string';
+    }
+
+    if (payload.strategy !== snapshotStrategy) {
+      return 'strategy mismatch: payload.strategy does not match configSnapshot.strategy';
+    }
+
+    const category = configSnapshot.category;
+    if (category !== undefined && category !== null && typeof category === 'string' && !CANONICAL_CATEGORIES.includes(category)) {
+      return `invalid configSnapshot.category: ${category}`;
+    }
+
+    if (payload.params !== undefined) {
+      return 'params not allowed at top level, use configSnapshot.params instead';
+    }
+
+    return null;
+  }
+
+  return null;
+}
+
 export async function taskRoutes(app: FastifyInstance) {
   app.post('/', async (req, reply) => {
     const { type, payload } = req.body as { type: TaskType; payload: Record<string, unknown> };
+
+    const validationError = validateTaskPayload(type, payload);
+    if (validationError) {
+      return reply.code(400).send({ error: validationError });
+    }
+
     const task = await app.taskService.submit(type, payload);
     return reply.code(202).send({ id: task.id, status: task.status });
   });
