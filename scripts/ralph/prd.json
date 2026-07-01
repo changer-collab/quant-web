@@ -100,7 +100,7 @@
       "agent": "api-agent",
       "priority": 6,
       "dependsOn": ["story-2"],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-7",

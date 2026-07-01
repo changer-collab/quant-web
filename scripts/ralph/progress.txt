@@ -1240,3 +1240,32 @@ lint_error
   - kline-chart.tsx 中 unknown canonical 子分类（如 `index_enhancement`）走 else 分支渲染默认副图（水平线 50），不崩溃
   - Phase 2 canonical taxonomy 5 故事（story-1~5）全部完成
 ---
+
+## [2026-07-01 16:48:37] - Iteration 5
+
+- Exit code: 0
+- Stories remaining: 13
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-02] - story-6 (Phase 3a — API types.ts ConfigSnapshot 富化 + 三类 Param 接口)
+- 修改 `apps/api/src/types.ts`：
+  - 新增 `ConfigSchemaVersion = 1` 常量
+  - 新增 `FactorBasedConfigParams` 接口（factor_pool/winsorize/neutralization/standardization/interaction_terms/max_interaction_order）
+  - 新增 `NonFactorConfigParams` 接口（lookback_window/hold_period/indicators/indicator_params/dynamic_params）
+  - 新增 `TransitionalConfigParams` 接口（data_source/sentiment_decay_half_life/target_factor_pool）
+  - 扩展 `ConfigSnapshot`：新增 `schemaVersion?/strategyVersion?/category?/subcategory?/hash?/updatedAt?` 全部可选字段，现有引用 0 破坏
+- **验证**：
+  - `cd apps/api && npx tsc --noEmit` → 编译通过，无新增错误
+  - `pnpm --filter @quant/api test` → 54/54 passed（11 个测试文件）
+  - `npx tsc -p tsconfig.json`（build）→ 成功
+  - `pnpm lint` → 3 个 errors 全部是预先存在的问题（API 包 `package.json` lint 脚本为 `exit 0`），非本次引入
+- **Doc Sync**: no docs update needed because this is a pure type enrichment at the API types layer — no API schema, DB schema, architectural boundary, or behavioral contract changes. The integrated plan already covers Phase 3 ConfigSnapshot expansion.
+- **后续迭代注意事项：**
+  - Story-6 的 ConfigSnapshot 新字段全部可选（`?`），story-8 (ConfigService) 将在 buildDefaultSnapshot 中产生实际值
+  - Story-7 (前端 types.ts 镜像) 依赖 story-6 已满足，可开始
+  - ESLint 3 个 errors（`interfaces.ts` 未使用 ConfigSnapshot 导入、`sqlite-diag-repo.ts` 未使用 sql 导入、`report.ts` 未使用 reply 参数）全是预先存在，API 包 package.json 的 lint 脚本为 `"exit 0"` 所以从未被 project-wide lint 捕获
+---
