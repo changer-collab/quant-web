@@ -16,12 +16,12 @@ function toWire(r: DiagnosticResult): DiagnosticResultWire {
     taskId: r.taskId,
     strategy: r.strategy,
     category: r.category,
-    subcategory: null, // canonical 迁移属 Phase 2
+    subcategory: r.subcategory ?? null,
     configSnapshot: r.configSnapshot,
     data: r.dataJson,
     createdAt: r.createdAt,
-    expiresAt: r.createdAt + 7 * 24 * 60 * 60 * 1000, // createdAt + 7天
-    engineVersion: 'legacy',
+    expiresAt: r.expiresAt,
+    engineVersion: r.engineVersion,
   };
 }
 

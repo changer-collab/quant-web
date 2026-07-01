@@ -198,7 +198,11 @@
       "agent": "api-agent",
       "priority": 12,
       "dependsOn": ["story-10"],
-      "passes": false
+      "passes": true,
+      "_runtime": {
+        "attempts": 1,
+        "lastError": null
+      }
     },
     {
       "id": "story-13",

@@ -49,6 +49,12 @@
   - IConfigHistoryRepo.append() 更新为接受 ConfigSnapshot，写入 strategyVersion/category/subcategory/schemaVersion
   - config_history Drizzle schema + CREATE TABLE 新增 strategy_version/category/subcategory/schema_version 列
   - 迁移模式：PRAGMA table_info + ALTER TABLE ADD COLUMN 兼容旧 DB 文件
+- Phase 3f SqliteDiagnosticRepo 读写 subcategory/engineVersion/expiresAt 列：
+  - DiagnosticResult 接口新增 subcategory/engineVersion/expiresAt 字段
+  - SqliteDiagnosticRepo.save() 写入 subcategory/engineVersion/expiresAt（engineVersion 默认 'legacy'，expiresAt = createdAt + 7天）
+  - SqliteDiagnosticRepo.getById/listByStrategy 读新列，旧 row 缺省 engineVersion='legacy'/expiresAt=createdAt+7天/subcategory=null
+  - diagnostics.ts toWire() 直接投影 repo 返回值（不再静态 expiresAt=createdAt+7 和 engineVersion='legacy'）
+  - DiagnosticsResultProcessor 从 configSnapshot.subcategory 取 subcategory，从 result.engine_version 取 engineVersion（均降级 null/'legacy'）
 
 ## 边界
 

@@ -18,9 +18,12 @@ export class SqliteDiagnosticRepo implements IDiagnosticRepo {
       taskId: result.taskId,
       strategy: result.strategy,
       category: result.category,
+      subcategory: result.subcategory,
       configSnapshot: JSON.stringify(result.configSnapshot),
       dataJson: JSON.stringify(result.dataJson),
       createdAt: result.createdAt,
+      engineVersion: result.engineVersion,
+      expiresAt: result.expiresAt,
     }).run();
   }
 
@@ -35,9 +38,12 @@ export class SqliteDiagnosticRepo implements IDiagnosticRepo {
       taskId: r.taskId,
       strategy: r.strategy,
       category: r.category as DiagnosticResult['category'],
+      subcategory: r.subcategory ?? null,
       configSnapshot: JSON.parse(r.configSnapshot) as DiagnosticResult['configSnapshot'],
       dataJson: JSON.parse(r.dataJson) as Record<string, unknown>,
       createdAt: r.createdAt,
+      engineVersion: r.engineVersion ?? 'legacy',
+      expiresAt: r.expiresAt ?? r.createdAt + 7 * 24 * 60 * 60 * 1000,
     };
   }
 
@@ -51,9 +57,12 @@ export class SqliteDiagnosticRepo implements IDiagnosticRepo {
       taskId: r.taskId,
       strategy: r.strategy,
       category: r.category as DiagnosticResult['category'],
+      subcategory: r.subcategory ?? null,
       configSnapshot: JSON.parse(r.configSnapshot) as DiagnosticResult['configSnapshot'],
       dataJson: JSON.parse(r.dataJson) as Record<string, unknown>,
       createdAt: r.createdAt,
+      engineVersion: r.engineVersion ?? 'legacy',
+      expiresAt: r.expiresAt ?? r.createdAt + 7 * 24 * 60 * 60 * 1000,
     }));
   }
 

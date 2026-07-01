@@ -499,9 +499,12 @@ export interface DiagnosticResult {
   taskId: string;
   strategy: string;
   category: StrategyCategory;
+  subcategory: string | null;
   configSnapshot: ConfigSnapshot;
   dataJson: Record<string, unknown>;
   createdAt: number;
+  engineVersion: string;
+  expiresAt: number;
 }
 
 /**

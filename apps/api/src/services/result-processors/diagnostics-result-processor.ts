@@ -17,17 +17,24 @@ export class DiagnosticsResultProcessor implements ResultProcessor {
     const payload = task.payload as Record<string, unknown>;
     const diagData = (result as { diagnostics?: Record<string, unknown> }).diagnostics ?? result;
 
+    const configSnapshot = (payload.configSnapshot as ConfigSnapshot) ?? {
+      strategy: (payload.strategy as string) || 'unknown',
+      params: {},
+    };
+    const now = Date.now();
     const diagnosticResult: DiagnosticResult = {
       id: randomUUID(),
       taskId: task.id,
       strategy: (payload.strategy as string) || 'unknown',
       category: (payload.category as DiagnosticResult['category']) || 'non_factor',
-      configSnapshot: (payload.configSnapshot as ConfigSnapshot) ?? {
-        strategy: (payload.strategy as string) || 'unknown',
-        params: {},
-      },
+      subcategory: configSnapshot.subcategory ?? null,
+      configSnapshot,
       dataJson: diagData,
-      createdAt: Date.now(),
+      createdAt: now,
+      engineVersion: ((result as Record<string, unknown>).engine_version as string)
+        ?? (diagData as Record<string, unknown>).engine_version as string
+        ?? 'legacy',
+      expiresAt: now + 7 * 24 * 60 * 60 * 1000,
     };
 
     await this.diagnosticService.storeResult(diagnosticResult);

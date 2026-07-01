@@ -1432,3 +1432,32 @@ build_fail
   - config_history 表新列是 nullable — 旧历史行无这些值，list 返回 undefined
   - mock repo 测试需模拟 hash ?? '' 默认值，否则 getOrDefault 返回 undefined hash 与 save 返回 '' 不一致
 ---
+
+## [2026-07-02] - story-12 (Phase 3f — SqliteDiagnosticRepo 读写 subcategory/engineVersion/expiresAt)
+- 修改 `apps/api/src/types.ts` — DiagnosticResult 接口新增 subcategory(string|null)/engineVersion(string)/expiresAt(number) 字段
+- 修改 `apps/api/src/repositories/sqlite-diag-repo.ts`：
+  - save() 写入 subcategory/engineVersion/expiresAt 全列
+  - getById/listByStrategy mapper 读新列，旧 row 缺省 engineVersion='legacy'/expiresAt=createdAt+7天/subcategory=null
+- 修改 `apps/api/src/routes/diagnostics.ts` — toWire() 直接投影 repo 返回值（不再静态补 expiresAt=createdAt+7 和 engineVersion='legacy'）
+- 修改 `apps/api/src/services/result-processors/diagnostics-result-processor.ts` — 构造 DiagnosticResult 时传 subcategory（从 configSnapshot.subcategory 降级 null）/engineVersion（从 result.engine_version 或 diagnostics data.engine_version 降级 'legacy'）/expiresAt（now+7天）
+- **Doc Sync**: no docs update needed — DiagnosticResult internal interface expansion fills fields already reserved by DB schema (story-10) and wire format (DiagnosticResultWire). The public-facing DiagnosticResultWire shape is unchanged.
+- **验证**：
+  - tsc --noEmit → 编译通过
+  - pnpm --filter @quant/api test → 86/86 passed（13 files）
+  - pnpm lint → 0 errors
+  - pnpm build → 5/5 successful
+- **后续迭代注意事项：**
+  - DiagnosticsResultProcessor 的 engineVersion 提取链：result.engine_version → diagData.engine_version → 'legacy'，确保旧 Worker 返回不合新字段时不会 undefined
+  - toWire() 不再硬编码过期时间和引擎版本，依赖 repo mapper 补默认值
+  - story-13 (Phase 4a Preview chart_relevant 校验) 是下一个待实施故事
+---
+
+- Exit code: 0
+- Stories remaining: 7
+- **Detected issues:**
+```
+vitest_fail
+lint_error
+build_fail
+```
+---
