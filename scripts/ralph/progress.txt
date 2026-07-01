@@ -1185,3 +1185,28 @@ build_fail
   - story-5（Phase 2e）将处理 config-panel + kline-chart 组件中的硬编码子分类字符串
   - strategySubcategoryLabels 的键集现在要求与 StrategySubcategory union 严格同步——新增/删除子分类时必须同时更新两个位置
 ---
+
+## [2026-07-01 16:42:38] - Iteration 3
+
+- Exit code: 0
+- Stories remaining: 15
+- **Detected issues:**
+```
+vitest_fail
+```
+---
+
+## [2026-07-02] - story-4 (Phase 2d — 前端 en.ts/zh.ts mock 数据迁移旧 subcategory 值)
+- 修改 `apps/web/src/data/en.ts` — 4 处 `mean_reversion`→`trend_cta`、3 处 `high_frequency`→`hft_microstructure`、1 处 `nonlinear_ml`→`ml_nonlinear_factor`
+- 修改 `apps/web/src/data/zh.ts` — 4 处 `mean_reversion`→`trend_cta`、3 处 `high_frequency`→`hft_microstructure`、1 处 `nonlinear_ml`→`ml_nonlinear_factor`
+- 验证：
+  - grep apps/web/src/data 无旧字符串残留
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅预存 11 个 warning）
+  - `pnpm --filter @quant/web test` → 93/93 passed（14 files）
+  - `pnpm build` → 5/5 successful
+- **Doc Sync**: no docs update needed because this is a pure mock data value migration within existing localization files — no API schema, DB schema, architectural boundary, or behavioral contract changes.
+- **后续迭代注意事项：**
+  - story-5 (Phase 2e) 将处理 config-panel + kline-chart 组件中的硬编码子分类字符串
+  - `tail_risk_hedging` 在 StrategyRow mock 数据中确认无任何引用（story-3 已删 labels 键）
+---
