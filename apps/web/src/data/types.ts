@@ -119,18 +119,18 @@ export type JobTemplate = 'backtest' | 'train' | 'experiment' | 'run';
 /** 策略分类（与 Python StrategyCategory 值对齐） */
 export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
 
-/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+/** 策略子分类（与 Python StrategySubcategory 值对齐，canonical 10 值） */
 export type StrategySubcategory =
   | 'linear_multi_factor'
-  | 'nonlinear_ml'
+  | 'index_enhancement'
+  | 'ml_nonlinear_factor'
   | 'trend_cta'
-  | 'mean_reversion'
   | 'arbitrage'
-  | 'high_frequency'
+  | 'hft_microstructure'
   | 'macro_quant'
   | 'event_driven'
   | 'e2e_ai_timeseries'
-  | 'tail_risk_hedging';
+  | 'event_sentiment_factor';
 
 /** UI 约束条件（与 Python UIConstraint 对齐） */
 export interface UIConstraint {
@@ -473,15 +473,15 @@ export interface UiCopy {
   /** 策略子分类标签 */
   strategySubcategoryLabels: {
     linear_multi_factor: string;
-    nonlinear_ml: string;
+    index_enhancement: string;
+    ml_nonlinear_factor: string;
     trend_cta: string;
-    mean_reversion: string;
     arbitrage: string;
-    high_frequency: string;
+    hft_microstructure: string;
     macro_quant: string;
     event_driven: string;
     e2e_ai_timeseries: string;
-    tail_risk_hedging: string;
+    event_sentiment_factor: string;
   };
   /** ConfigPanel 占位文案 */
   configPanelPlaceholder: string;
