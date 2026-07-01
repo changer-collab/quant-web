@@ -1,8 +1,9 @@
 /**
  * Diagnostics Handler — 诊断任务处理
  *
- * 通过 Python CLI 执行策略诊断（参数敏感性、信号质量等），
- * 若 Python CLI 尚未实现则该 handler 作为占位符直接回显输入数据。
+ * 通过 Python CLI 执行策略诊断（参数敏感性、信号质量等）。
+ * 当 Python 返回错误或无数据时抛出异常，由 main.ts 的 processTask
+ * 统一 catch 并调用 /fail 标记任务为失败（fail-closed）。
  */
 
 import { TaskType } from '../types.js';
@@ -44,19 +45,22 @@ export class DiagnosticsHandler implements TaskHandler {
     let resultData: Record<string, unknown>;
     if (onEvent) {
       const result = await this.bridge.streamCall(request, onEvent);
-      if (result.ok && result.data) {
-        resultData = result.data as Record<string, unknown>;
-      } else {
-        // Python CLI 尚未实现 diagnostics 命令时回显输入
-        resultData = { rawPayload: payload, note: 'diagnostics CLI not implemented, echoing input' };
+      if (!result.ok) {
+        throw new Error(result.error?.message ?? 'Python diagnostics failed');
       }
+      if (!result.data) {
+        throw new Error('empty diagnostics result');
+      }
+      resultData = result.data as Record<string, unknown>;
     } else {
       const result = await this.bridge.call(request);
-      if (result.ok && result.data) {
-        resultData = result.data as Record<string, unknown>;
-      } else {
-        resultData = { rawPayload: payload, note: 'diagnostics CLI not implemented, echoing input' };
+      if (!result.ok) {
+        throw new Error(result.error?.message ?? 'Python diagnostics failed');
       }
+      if (!result.data) {
+        throw new Error('empty diagnostics result');
+      }
+      resultData = result.data as Record<string, unknown>;
     }
 
     return {

@@ -1593,3 +1593,39 @@ lint_error
   - backtest-agent.ts 的 WARN 消息前缀为 `[backtest-agent]`，与 handler 区分
   - story-17（diagnostics fail-closed）为本切片下一个未完成故事
 ---
+
+## [2026-07-02] - story-17 (Phase 5c — Worker diagnostics-handler fail-closed)
+- 修改 `apps/worker/src/handlers/diagnostics-handler.ts`：
+  - 移除 echo fallback 逻辑（`rawPayload` + `not implemented, echoing input`）
+  - streamCall/call 返回 `{ok:false}` → `throw Error(result.error?.message ?? 'Python diagnostics failed')`
+  - `{ok:true,data:undefined}` → `throw Error('empty diagnostics result')`
+  - handler 自己不 try-catch（由 main.ts processTask 的 catch 统一处理→标记 failed）
+  - 删除 'not implemented' / 'echoing input' 字符串
+- 新建 `apps/worker/tests/diagnostics-handler.test.ts` — 6 个测试覆盖：
+  - call 返回 ok:false → 任务 failed（error 含 Python 错误消息）
+  - call 返回 ok:true 但无 data → 任务 failed（error 含 'empty diagnostics result'）
+  - streamCall 返回 ok:false → handler throw
+  - streamCall 返回 ok:true 但无 data → handler throw
+  - ok:true 有 data → 正常返回 diagnostics data，任务 completed
+  - ok:false 且无 error.message → 通用错误消息 'Python diagnostics failed'
+- Doc Sync: no docs update needed because this is purely internal worker handler refactoring (remove echo fallback, fail-closed on Python errors) — no API schema, DB schema, architectural boundary, or public behavioral contract changes. The fail-closed pattern is consistent with BacktestHandler's existing error handling.
+- 验证：
+  - `cd apps/worker && npx vitest run` → 36/36 passed（含 6 个新 diagnostics-handler 测试）
+  - `pnpm lint` → 0 errors（仅 11 个预存 web warning + 3 data-collector warning）
+  - `pnpm test` → 10/10 包全部通过
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - 本切片还剩 story-18（E2E 验收），依赖本 story 完成
+  - diagnostics handler 现在与 backtest handler 一致的错误处理模式：throw → main.ts catch → /fail
+  - 旧测试用例（backtest-handler 中使用 payload.params 而非 configSnapshot）会触发 deprecated WARN，是正确行为
+  - 删除了 echo fallback 意味着所有 Python diagnostics 返回错误都会导致任务 failed，不再有假 positive 完成
+---
+
+- Exit code: 0
+- Stories remaining: 2
+- **Detected issues:**
+```
+vitest_fail
+lint_error
+```
+---
