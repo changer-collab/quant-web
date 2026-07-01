@@ -1461,3 +1461,33 @@ lint_error
 build_fail
 ```
 ---
+
+## [2026-07-01 17:20:19] - Iteration 12
+
+## [2026-07-02] - story-13 (Phase 4a — Preview chart_relevant 参数校验→422)
+- 修改 `apps/api/src/routes/preview.ts`：
+  - 新增 `getNonChartRelevantFields(paramDefs, previewParams)` 辅助函数：遍历 preview_params 的 key，对每个 key 查注册表对应 param 的 chart_relevant 标志
+  - 若 key 无对应 param 定义 或 param.chart_relevant !== true → 加入非法字段列表
+  - POST handler 中新增：查 strategy registry → 不存在返回 404；非空 preview_params 校验 → 含非法字段返回 422 {error, fields}；空 preview_params 跳过校验
+  - 保留原有 `PreviewService.computePreview` 不修改
+- 新建 `apps/api/tests/routes/preview.test.ts` — 6 个测试覆盖：
+  - chart_relevant=false 的 param (offset) → 422 + fields=['offset']
+  - chart_relevant=true 的 param (period) → 200 正常计算
+  - 空 preview_params → 跳过校验，200 正常
+  - 不存在的策略 → 404
+  - 多个非 chart 字段 (offset + unknown_param) → 422 列出全部字段
+  - 全 chart_relevant 策略 (macd_strategy) → 全部通过
+- **Doc Sync**: no docs update needed because this is an internal route validation addition — no API schema, DB schema, architectural boundary, or behavioral contract changes. The prd.json already defines the acceptance criteria. The integrated plan covers Phase 4 at the architectural level.
+- 验证：
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm --filter @quant/api test` → 92/92 passed（14 files，含 6 个新 preview route 测试）
+  - `pnpm lint` → 0 errors（仅预存 11 web warning + 3 data-collector warning）
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-14 (Phase 4b Preview config 合并) 依赖本故事完成，将在 POST handler 中 validatePreviewParams 后添加 configService.getOrDefault 合并 params
+  - `getNonChartRelevantFields` 不仅检查 chart_relevant=false 的已定义参数，也拒绝未在注册表中出现的未知 key
+  - PreviewService.computePreview 本 story 不改动，story-14 不会修改它（仅改变传入的 params）
+  - 测试使用 mock barRepo（queryPaged → 空数组），PreviewService.computePreview([]) 返回空结果不崩溃
+  - route 的验证路径（404/422）在 barRepo 访问前 early return，无需 mock K 线数据
+---
+
