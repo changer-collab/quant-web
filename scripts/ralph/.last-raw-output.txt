@@ -1,63 +1,21 @@
-﻿鎴戝厛璇诲彇涓婁竴杞殑閿欒淇℃伅鍜岃繘搴︽枃浠讹紝浜嗚В褰撳墠鐘舵€併€傚ソ鐨勶紝鎴戞潵鍒嗘瀽褰撳墠鐘舵€併€備笂涓€涓凯浠ｏ紙Iteration 5锛夋娴嬪埌鍏ㄩ潰鐨勫け璐ワ紙vitest/pytest/lint/build锛夛紝浣?story-5 琚爣璁颁负閫氳繃銆傚綋鍓嶅敮涓€鐨勬湭瀹屾垚 Story 鏄?story-6锛堢鍒扮楠屾敹锛屾棤浠ｇ爜鏀瑰姩锛夈€傛垜闇€瑕佸厛鐞嗚В瀹為檯鐨勯棶棰樼姸鎬併€傚綋鍓嶅垎鏀纭€傚彧鏈?Ralph 鍏冩暟鎹枃浠舵湁鏀瑰姩銆傝鎴戣窇璐ㄩ噺妫€鏌ワ紝鐪嬪疄闄呯姸鎬併€侺int 鍜?build 閮介€氳繃锛佽鎴戣窇娴嬭瘯銆傛墍鏈夎川閲忔鏌ラ€氳繃锛佽鎴戝啀璺?smoke test 鍜?Python 娴嬭瘯銆?/7 smoke 閫氳繃锛宻trategy-runtime 154/154 閫氳繃銆傝鎴戦獙璇佸叾浠?Python 鍖呫€傛墍鏈?Python 鍖呮祴璇曢€氳繃锛佺幇鍦ㄨ繘琛?story-6 鐨勭粨鏋勯獙璇?鈥?妫€鏌?API 鍜屽墠绔被鍨嬪畾涔夌殑涓€鑷存€с€傜被鍨嬪畾涔夌粨鏋勫榻愰獙璇佸凡瀹屾垚銆侫PI `DiagnosticResultWire` 涓庡墠绔?`DiagnosticResult` 鐨?11 涓瓧娈靛悕瀹屽叏涓€鑷淬€傝鎴戝啀楠岃瘉 ConfigSnapshot 瀵归綈銆俙ConfigSnapshot` 绫诲瀷涓や晶瀹屽叏涓€鑷淬€傝鎴戞鏌ヨ鍒掓枃妗ｇ姸鎬併€傛墍鏈夐獙璇佸凡瀹屾垚銆傝鎴戝仛鎬荤粨骞舵洿鏂拌褰曘€?
----
+﻿濂界殑锛屾垜鏉ュ垎鏋愬綋鍓嶇姸鎬併€?
+**鐘舵€佹鏌ワ細**
+- 鍒嗘敮锛歚ralph/backend-sync-realign` 鉁?姝ｇ‘
+- `.last-error.json` 涓?`lint_error` 鏄?story-6 杩唬涓殑涓棿鐘舵€侊紝鏈€缁堝凡閫氳繃
+- Story 1-6 鍏ㄩ儴 `passes: true`
+- 鏈€楂樹紭鍏堢骇鏈畬鎴愶細**story-7**锛坧riority: 7, Phase 3a鈥?鈥?鍓嶇 types.ts ConfigSnapshot 闀滃儚鎵╁睍锛?
+璁╂垜鍏堣鍙栫浉鍏虫枃浠朵簡瑙ｅ綋鍓嶇姸鎬併€傚ソ锛屾垜鏉ュ垎鏋愬綋鍓嶇姸鎬併€?
+**Story-7 浠诲姟鍒嗘瀽**锛氬墠绔?types.ts 鐨?`ConfigSnapshot` 鐩墠鍙湁 `{strategy, params}`锛堢260-263琛岋級锛岄渶瑕侀暅鍍?story-6 鍦?API types.ts 涓瘜鍖栫殑鐗堟湰锛堝惈 `schemaVersion/strategyVersion/category/subcategory/hash/updatedAt`锛夛紝鍚屾椂琛ュ厖 `FactorBasedConfigParams` / `NonFactorConfigParams` / `TransitionalConfigParams` 涓夌被鍙傛暟鎺ュ彛锛屽苟鍦?appData.ts 涓噸鏂板鍑恒€?
+璁╂垜鍏堟鏌ョ幇鏈変唬鐮佸 `ConfigSnapshot` 鐨勫紩鐢紝纭繚鏀瑰姩瀹夊叏銆傚畬缇庛€傜幇鏈夊紩鐢ㄥ锛?- `workspace-page.tsx:317` 鍙祴鍊?`{strategy, params}` 鈥?鏂板瓧娈靛彲閫夛紝涓嶇牬鍧?- `DiagnosticResult` 涓殑 `configSnapshot: ConfigSnapshot` 鈥?鑷姩缁ф壙鏂板瓧娈?- 涓夌被 Param 鎺ュ彛鍦?web 鍖呭皻涓嶅瓨鍦?鈥?闇€瑕佹柊澧?
+寮€濮嬪疄鐜帮細鐜板湪鏇存柊 `appData.ts` 娣诲姞鏂扮被鍨嬬殑閲嶆柊瀵煎嚭锛氱幇鍦ㄨ繍琛岃川閲忔鏌ワ細TypeScript 缂栬瘧閫氳繃 鉁呫€傜户缁繍琛?lint銆乼est銆乥uild锛氳矾寰勯棶棰橈紝浣跨敤缁濆璺緞锛氬叏閮?14 涓祴璇曟枃浠躲€?3 涓祴璇曠敤渚嬮€氳繃 鉁呫€傝繍琛?lint 鍜?build锛氬叏閮ㄩ€氳繃锛?- `pnpm lint` 鈫?0 errors锛堜粎 11 涓瀛?warning锛?- `pnpm build` 鈫?5/5 successful 鉁?
+鐜板湪鏇存柊 prd.json銆乸rogress.txt銆佹彁浜や唬鐮併€侼ow update progress.txt:鐜板湪鎻愪氦浠ｇ爜锛歋tory-7 瀹屾垚 鉁?
+**鎬荤粨锛?*
+- **淇敼浜?`apps/web/src/data/types.ts`** 鈥?鏂板 `ConfigSchemaVersion` 甯搁噺銆乣FactorBasedConfigParams`/`NonFactorConfigParams`/`TransitionalConfigParams` 涓夌被鍙傛暟鎺ュ彛銆佹墿灞?`ConfigSnapshot` 鍚彲閫夊瘜鍖栧瓧娈?- **淇敼浜?`apps/web/src/appData.ts`** 鈥?閲嶆柊瀵煎嚭涓夌被鍙傛暟鎺ュ彛
+- **鎵€鏈夎川閲忔鏌ラ€氳繃**锛歵sc 鉁?| lint 0 errors 鉁?| test 93/93 鉁?| build 5/5 鉁?- **宸叉彁浜?*锛歚54163da` feat: [story-7] Phase 3a' 鈥?鍓嶇 types.ts ConfigSnapshot 闀滃儚鎵╁睍
 
-## 绔埌绔獙鏀舵姤鍛?鈥?Story-6
+**涓嬩竴涓緟瀹屾垚鐨勬晠浜嬶細** `story-8`锛圥hase 3b 鈥?ConfigService锛氶粯璁ゅ揩鐓ф瀯寤哄櫒 + canonical hash + getOrDefault + save锛?Story-7 瀹屾垚 鉁?
+**鎬荤粨锛?*
+- **淇敼浜?`apps/web/src/data/types.ts`** 鈥?鏂板 `ConfigSchemaVersion` 甯搁噺銆乣FactorBasedConfigParams`/`NonFactorConfigParams`/`TransitionalConfigParams` 涓夌被鍙傛暟鎺ュ彛銆佹墿灞?`ConfigSnapshot` 鍚彲閫夊瘜鍖栧瓧娈?- **淇敼浜?`apps/web/src/appData.ts`** 鈥?閲嶆柊瀵煎嚭涓夌被鍙傛暟鎺ュ彛
+- **鎵€鏈夎川閲忔鏌ラ€氳繃**锛歵sc 鉁?| lint 0 errors 鉁?| test 93/93 鉁?| build 5/5 鉁?- **宸叉彁浜?*锛歚54163da` feat: [story-7] Phase 3a' 鈥?鍓嶇 types.ts ConfigSnapshot 闀滃儚鎵╁睍
 
-### 鉁?璐ㄩ噺妫€鏌?| 妫€鏌ラ」 | 缁撴灉 |
-|--------|------|
-| `pnpm lint` | 0 errors (浠?11 涓瀛?warning) |
-| `pnpm build` | 5/5 successful |
-| `pnpm test` | 10/10 鍖呭叏閮ㄩ€氳繃 (API 50 + Web 92 + Worker 26 + DC 47 + DCol 58 = 273) |
-| `bash scripts/smoke-test.sh` | 7/7 ALL PASSED |
-| Python 6 鍖?| 鍏ㄩ儴閫氳繃 (154+80+73+18+32+11+7 = 375) |
-
-### 鉁?Tier1 鏁版嵁缁撴瀯瀵归綈
-- **ConfigSnapshot**: API/Web 绫诲瀷瀹屽叏涓€鑷?- **DiagnosticResultWire 鈫?DiagnosticResult**: 11 涓瓧娈靛悕瀹屽叏涓€鑷?(resultId/resultType/taskId/strategy/category/subcategory/configSnapshot/data/createdAt/expiresAt/engineVersion)
-- **TaskResultEnvelope**: 鍒ゅ埆鑱斿悎 resultType: 'diagnostics'|'backtest' + resultId + data
-- **TaskStreamEvent**: resultType/resultId 鍙€夐《灞傚瓧娈碉紝鍏煎鏃т换鍔?- **ApiTaskType**: 鍚?'diagnostics'|'collect' 绛?6 鍊?
-### 鉁?Tier2 娓叉煋璺緞
-- WorkspacePage 鎸?resultType/diagnostics.type 鍒嗘淳娓叉煋
-- 缂哄皯 resultType 鏃朵笉浼氬穿婧冿紙鍙€夊瓧娈碉級
-
-### Doc Sync
-鏃?docs 鏇存柊闇€瑕?鈥?story-6 浠呬负绔埌绔獙璇侊紝鏃犳柊 API schema銆丏B schema銆佹灦鏋勮竟鐣屾垨琛屼负鍙樺寲銆傛晠浜?1~5 鐨勭粨鏋勫彉鍖栧凡鍦ㄥ悇鑷殑鎻愪氦涓褰曚簡鏂囨。鏇存柊銆?
-鐜板湪鏇存柊 prd.json 鍜?progress.txt銆傛墍鏈夐獙璇侀€氳繃銆傛洿鏂?prd.json 鍜?progress.txt銆俻rd.json 宸叉洿鏂帮紙story-6 鈫?passes: true锛夈€傜幇鍦ㄨ拷鍔犺繘搴︽棩蹇楀埌 progress.txt銆傜幇鍦ㄦ彁浜や唬鐮併€傝鎴戠‘璁ゆ墍鏈?story 宸插畬鎴愩€傛墍鏈?6 涓?story 鍏ㄩ儴瀹屾垚锛堝叏閮?`passes: true`锛夈€?
----
-
-## 绔埌绔獙鏀舵€荤粨
-
-| 楠屾敹椤?| 鐘舵€?|
-|--------|------|
-| `pnpm lint` | 鉁?0 errors |
-| `pnpm test` | 鉁?10/10 鍖呴€氳繃 (273 tests) |
-| `pnpm build` | 鉁?5/5 successful |
-| `bash scripts/smoke-test.sh` | 鉁?7/7 ALL PASSED |
-| Python 6 鍖?| 鉁?375/375 passed |
-| DiagnosticResultWire 鈫?Web 绫诲瀷瀵归綈 | 鉁?11 瀛楁瀹屽叏涓€鑷?|
-| TaskResultEnvelope 鍒ゅ埆鑱斿悎 | 鉁?鍙屽悜瀵归綈 |
-| TaskStreamEvent 鍏煎鏃т换鍔?| 鉁?resultType 鍙€夊瓧娈?|
-| 澶辫触璺緞锛堜繚瀛樺け璐ユ爣璁?failed锛?| 鉁?娴嬭瘯瑕嗙洊 |
-| 鏃?DB row 鍏煎锛坋ngineVersion='legacy'锛墊 鉁?mapper 澶勭悊 |
-
-Phase 0 + Phase 1 + Phase 1.5锛坒eature `backend-sync-realign`锛夊叏閮ㄤ氦浠樺畬姣曘€?
-<promise>COMPLETE</promise>
-鎵€鏈?6 涓?story 鍏ㄩ儴瀹屾垚锛堝叏閮?`passes: true`锛夈€?
----
-
-## 绔埌绔獙鏀舵€荤粨
-
-| 楠屾敹椤?| 鐘舵€?|
-|--------|------|
-| `pnpm lint` | 鉁?0 errors |
-| `pnpm test` | 鉁?10/10 鍖呴€氳繃 (273 tests) |
-| `pnpm build` | 鉁?5/5 successful |
-| `bash scripts/smoke-test.sh` | 鉁?7/7 ALL PASSED |
-| Python 6 鍖?| 鉁?375/375 passed |
-| DiagnosticResultWire 鈫?Web 绫诲瀷瀵归綈 | 鉁?11 瀛楁瀹屽叏涓€鑷?|
-| TaskResultEnvelope 鍒ゅ埆鑱斿悎 | 鉁?鍙屽悜瀵归綈 |
-| TaskStreamEvent 鍏煎鏃т换鍔?| 鉁?resultType 鍙€夊瓧娈?|
-| 澶辫触璺緞锛堜繚瀛樺け璐ユ爣璁?failed锛?| 鉁?娴嬭瘯瑕嗙洊 |
-| 鏃?DB row 鍏煎锛坋ngineVersion='legacy'锛墊 鉁?mapper 澶勭悊 |
-
-Phase 0 + Phase 1 + Phase 1.5锛坒eature `backend-sync-realign`锛夊叏閮ㄤ氦浠樺畬姣曘€?
-<promise>COMPLETE</promise>
+**涓嬩竴涓緟瀹屾垚鐨勬晠浜嬶細** `story-8`锛圥hase 3b 鈥?ConfigService锛氶粯璁ゅ揩鐓ф瀯寤哄櫒 + canonical hash + getOrDefault + save锛

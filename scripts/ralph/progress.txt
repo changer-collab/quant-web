@@ -1297,3 +1297,43 @@ lint_error
   - 前端 `ConfigSnapshot` 新字段全部可选，现有 code 赋值 `{strategy, params}` 不触发 tsc 错误
   - `workspace-page.tsx:317` 直接赋值 `{strategy: strategy.name, params: res.config_json}`，新字段 `undefined` 运行时无害
 ---
+
+## [2026-07-01 16:54:40] - Iteration 7
+
+- Exit code: 0
+- Stories remaining: 11
+- **Detected issues:**
+```
+lint_error
+build_fail
+```
+---
+
+---
+
+## [2026-07-02] - story-8 (Phase 3b — ConfigService：默认快照构建器 + canonical hash + getOrDefault + save)
+- 重写 `apps/api/src/services/config-service.ts`：
+  - 新增 `buildDefaultSnapshot(strategy, strategyVersion, category?)` — 用 canonical JSON（排序键+无空格）→ SHA256 hex 生成 hash，schemaVersion=1，updatedAt≈now，category 默认 non_factor
+  - 新增 `getOrDefault(strategy, strategyVersion)` — DB 有数据 → `{persisted:true, configSnapshot}`；无 → `{persisted:false, configSnapshot: 默认快照}`
+  - 新增 `save(snapshot, expectedHash?)` — expectedHash 与 DB 不一致 → 抛 `ConfigHashConflictError`（含 statusCode=409 + currentHash + currentSnapshot）；匹配或首存 → repo.save + 返回保存后 ConfigSnapshot
+  - 保留 `getConfig`/`saveConfig` 向后兼容（@deprecated，story-9 路由更新后移除）
+  - 校验：空 strategy→throw Error；无效 category→throw Error
+  - 导出 `ConfigHashConflictError` 类（statusCode=409, expectedHash, currentHash, currentSnapshot）
+- 新建 `apps/api/tests/services/config-service.test.ts` — 21 个测试覆盖：
+  - buildDefaultSnapshot：形状、category 降级、显式指定、无效 category 拒绝、确定性 hash、不同输入不同 hash
+  - getOrDefault：无数据 persisted=false+默认快照、有数据 persisted=true+持久化值、save→getOrDefault 一致性
+  - save：首存、expectedHash 匹配、hash 冲突（验证 statusCode/expectedHash/currentHash/currentSnapshot）、无 DB 时不冲突检测、空 strategy 拒绝、无效 category 拒绝
+  - ConfigHashConflictError：子类、name、statusCode、字段、消息包含预期 hash
+- 更新 `apps/api/AGENT.md` — 记录 Phase 3b Service 新方法和 ConfigHashConflictError
+- **Doc Sync**: no docs update needed — the integrated plan (`docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`) already documents Phase 3b ConfigSnapshot design. This story is a pure implementation of the plan's declared interface, with no API schema, DB schema, architectural boundary, or behavioral contract deviations.
+- 验证：
+  - `npx tsc --noEmit` → 编译通过，无新增错误
+  - `pnpm --filter @quant/api test` → 75/75 passed（12 files，含 21 个新测试）
+  - `pnpm lint` → 0 errors（仅 11 个预存 warning）
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-9 (Phase 3c Config routes) 可直接使用 `configService.getOrDefault()` 和 `configService.save()` 的新签名
+  - `ConfigHashConflictError.statusCode=409` 供 route catch 时直接返回 409+错误体
+  - 向后兼容方法 `getConfig`/`saveConfig` 仍被 config.ts route 使用，story-9 更新 route 后可标记移除
+  - canonical hash 算法：`canonicalJson = JSON.stringify(obj, Object.keys(obj).sort())` → `createHash('sha256').update(canonical).digest('hex')`
+  - `CANONICAL_CATEGORIES` Set 验证与 types.ts StrategyCategory union 一致，新增 category 时需同步更新

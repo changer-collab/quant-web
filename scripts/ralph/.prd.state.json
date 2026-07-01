@@ -2,13 +2,25 @@
   "iterations": 0,
   "lastExitCode": 0,
   "lastError": null,
-  "storyAttempts": {},
+  "storyAttempts": {
+    "story-8": {
+      "attempts": 1
+    }
+  },
   "lastChanges": "",
   "consecutiveNoProgress": 0,
-  "feature": "backend-sync-realign",
+  "feature": "",
   "version": 1,
-  "lastGitHead": "",
+  "lastGitHead": "54163da74282556bbf49bd19618cc2deab907429",
   "multiStoryWarnings": 0,
-  "passesSnapshot": [],
-  "passesSnapshotHash": ""
+  "passesSnapshot": [
+    "story-1",
+    "story-2",
+    "story-3",
+    "story-4",
+    "story-5",
+    "story-6",
+    "story-7"
+  ],
+  "passesSnapshotHash": "5aec16e9ef6ddf25"
 }

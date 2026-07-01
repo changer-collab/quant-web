@@ -35,6 +35,8 @@
 - BacktestResultProcessor：报告映射 + AI analysis 合并 + surrogate 清洗 + ReportRepository 持久化，保存失败时抛异常（任务标记 failed）
 - DiagnosticsResultProcessor：诊断结果持久化 + resultId/resultType 信封输出
 - ReportRepository 通过 app.decorate 注入（app.reportRepository），与既有 Service 注入模式一致
+- StrategyConfigService Phase 3b：buildDefaultSnapshot（canonical SHA256 hash）、getOrDefault（无配置返回默认快照）、save（expectedHash 乐观锁，冲突 → ConfigHashConflictError → 409）
+- ConfigHashConflictError 类（statusCode=409, expectedHash/currentHash/currentSnapshot 供 route 返回 409 body）
 
 ## 边界
 
