@@ -1091,3 +1091,28 @@ build_fail
 ---
 
 ## ✅ ALL STORIES COMPLETE
+
+## [2026-07-02] - story-1 (Phase 2a — Python StrategySubcategory 枚举迁移到 canonical 10 值)
+- 修改 `packages/strategy-runtime/quantforge_strategy/types.py`：
+  - StrategySubcategory 迁移到 canonical 10 值
+  - 保留：LINEAR_MULTI_FACTOR/TREND_CTA/ARBITRAGE/MACRO_QUANT/EVENT_DRIVEN/E2E_AI_TIMESERIES
+  - 改名：NONLINEAR_ML→ML_NONLINEAR_FACTOR('ml_nonlinear_factor'), HIGH_FREQUENCY→HFT_MICROSTRUCTURE('hft_microstructure')
+  - 删除：MEAN_REVERSION, TAIL_RISK_HEDGING
+  - 新增：INDEX_ENHANCEMENT('index_enhancement'), EVENT_SENTIMENT_FACTOR('event_sentiment_factor')
+- 修改 `packages/strategy-runtime/tests/test_strategy_categories.py`：
+  - 新增 test_canonical_10_members（验证恰好 10 成员且值正确）
+  - 新增 test_old_subcategory_members_removed（访问旧 4 成员 → AttributeError）
+  - 新增 test_renamed_subcategory_members（改名后值正确）
+  - 新增 test_new_subcategory_members（新增成员值正确）
+  - 添加 import pytest（pytest.raises 需要）
+- 验证：
+  - `cd packages/strategy-runtime && python -m pytest -v` → 158/158 passed（含 4 个新测试）
+  - `cd packages/strategies && python -m pytest -v` → 73/73 passed（现有策略构造不受影响）
+  - grep packages/ — 旧 4 成员仅出现在测试文件的 AttributeError 断言中（正确行为）
+  - pnpm lint → 0 errors
+- **Doc Sync**: no docs update needed because this is a pure Python enum refactoring — no API schema, DB schema, architectural boundary, or behavioral contract changes. The PRD already documents the migration goal.
+- **后续迭代注意事项：**
+  - story-2 (Phase 2b API types.ts) 依赖本 story 的 canonical 10 值，API 的 StrategySubcategory union 需逐字对齐
+  - OLD enum 成员名（NONLINEAR_ML/HIGH_FREQUENCY/MEAN_REVERSION/TAIL_RISK_HEDGING）在 grep 中仅出现于测试 AttributeError 断言和 docstring，不视为残留
+  - INDEX_ENHANCEMENT/EVENT_SENTIMENT_FACTOR 目前仅补枚举入口，下游策略 / 前端 labels 需后续 stories 补充
+---
