@@ -332,18 +332,18 @@ export interface FactorEvaluation extends FactorEvaluationSummary {
 /** 策略分类（与 Python StrategyCategory 值对齐） */
 export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
 
-/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+/** 策略子分类（与 Python StrategySubcategory 值对齐，canonical 10 值） */
 export type StrategySubcategory =
   | 'linear_multi_factor'
-  | 'nonlinear_ml'
+  | 'index_enhancement'
+  | 'ml_nonlinear_factor'
   | 'trend_cta'
-  | 'mean_reversion'
   | 'arbitrage'
-  | 'high_frequency'
+  | 'hft_microstructure'
   | 'macro_quant'
   | 'event_driven'
   | 'e2e_ai_timeseries'
-  | 'tail_risk_hedging';
+  | 'event_sentiment_factor';
 
 /** 约束条件 */
 export interface UIConstraint {

@@ -1116,3 +1116,40 @@ build_fail
   - OLD enum 成员名（NONLINEAR_ML/HIGH_FREQUENCY/MEAN_REVERSION/TAIL_RISK_HEDGING）在 grep 中仅出现于测试 AttributeError 断言和 docstring，不视为残留
   - INDEX_ENHANCEMENT/EVENT_SENTIMENT_FACTOR 目前仅补枚举入口，下游策略 / 前端 labels 需后续 stories 补充
 ---
+
+## [2026-07-01 16:35:25] - Iteration 1
+
+- Exit code: 0
+- Stories remaining: 17
+- **Detected issues:**
+```
+vitest_fail
+pytest_fail
+lint_error
+```
+---
+
+## [2026-07-02] - story-2 (Phase 2b — API types.ts StrategySubcategory union + strategy route workflowReady 收敛)
+- 修改 `apps/api/src/types.ts` — StrategySubcategory union 迁移到 canonical 10 值：
+  - 删 nonlinear_ml/high_frequency/mean_reversion/tail_risk_hedging
+  - 加 index_enhancement/ml_nonlinear_factor/hft_microstructure/event_sentiment_factor
+- 修改 `apps/api/src/routes/strategy.ts`：
+  - 提取共享 `isWorkflowReady(cat, sub)` helper：category ∈ canonical 3 且 subcategory ∈ canonical 10 → true；subcategory=null → false
+  - 消除两处重复内联 `subcategory!==null` 逻辑
+  - 提取 `mapMeta()` 消除 GET / 与 GET /:name 的响应映射重复
+- 修改 `apps/api/tests/routes/strategy.test.ts` — 新增 4 个测试：
+  - workflowReady=true（canonical category + canonical subcategory）
+  - workflowReady=false（subcategory=null，sizer 组件策略）
+  - GET /:name workflowReady 跟随子分类
+  - 未知 subcategory 值 → workflowReady=false，不抛异常
+- 验证：
+  - `npx tsc --noEmit` → 编译通过
+  - `npx vitest run` → 54/54 passed（含 7 个 strategy route 测试）
+  - `pnpm lint` → 0 errors
+  - `pnpm build` → 5/5 successful
+- **Doc Sync**: no docs update needed because this is a pure API types/route refactoring (union type alignment + helper extraction) — no API schema, DB schema, or architectural boundary changes
+- **后续迭代注意事项：**
+  - story-3 (Phase 2c 前端 types.ts) 的 StrategySubcategory union 需逐字对齐 story-2 的 canonical 10 值
+  - `isWorkflowReady` 映射策略：category∈canonical 3 且 subcategory∈canonical 10 → true，比旧逻辑（|| 条件）更严格——旧 transitional 策略即使 subcategory=null 也会 workflowReady=true，新逻辑要求二者都有效
+  - 参数映射保持现状（key/min/max/chart_relevant/ui_constraints snake_case 不动）
+---
