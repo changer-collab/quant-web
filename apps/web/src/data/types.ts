@@ -256,10 +256,45 @@ export interface PreviewResponse {
   engine_version: string;
 }
 
-/** 策略配置快照 */
+/** 配置快照 Schema 版本 */
+export const ConfigSchemaVersion = 1;
+
+/** 因子型配置参数 */
+export interface FactorBasedConfigParams {
+  factor_pool?: string[];
+  winsorize?: [number, number];
+  neutralization?: string[];
+  standardization?: 'zscore' | 'quantile' | 'rank';
+  interaction_terms?: string[];
+  max_interaction_order?: number;
+}
+
+/** 非因子型配置参数 */
+export interface NonFactorConfigParams {
+  lookback_window?: number;
+  hold_period?: number;
+  indicators?: string[];
+  indicator_params?: Record<string, unknown>;
+  dynamic_params?: Record<string, unknown>;
+}
+
+/** 过渡形态配置参数 */
+export interface TransitionalConfigParams {
+  data_source?: string;
+  sentiment_decay_half_life?: number;
+  target_factor_pool?: string[];
+}
+
+/** 策略配置快照（富化后，新字段均为 ? 可选以兼容现有引用） */
 export interface ConfigSnapshot {
   strategy: string;
+  schemaVersion?: number;
+  strategyVersion?: string;
+  category?: string;
+  subcategory?: string;
   params: Record<string, unknown>;
+  hash?: string;
+  updatedAt?: number;
 }
 
 /** 诊断结果（与 API DiagnosticResultWire 逐字段对齐） */

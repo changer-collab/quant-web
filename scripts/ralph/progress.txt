@@ -1269,3 +1269,31 @@ lint_error
   - Story-7 (前端 types.ts 镜像) 依赖 story-6 已满足，可开始
   - ESLint 3 个 errors（`interfaces.ts` 未使用 ConfigSnapshot 导入、`sqlite-diag-repo.ts` 未使用 sql 导入、`report.ts` 未使用 reply 参数）全是预先存在，API 包 package.json 的 lint 脚本为 `"exit 0"` 所以从未被 project-wide lint 捕获
 ---
+
+## [2026-07-01 16:51:58] - Iteration 6
+
+- Exit code: 0
+- Stories remaining: 12
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-02] - story-7 (Phase 3a′ — 前端 types.ts ConfigSnapshot 镜像扩展)
+- 修改 `apps/web/src/data/types.ts`：
+  - 新增 `ConfigSchemaVersion = 1` 常量
+  - 新增 `FactorBasedConfigParams`、`NonFactorConfigParams`、`TransitionalConfigParams` 接口
+  - 扩展 `ConfigSnapshot`：新增 `schemaVersion?/strategyVersion?/category?/subcategory?/hash?/updatedAt?` 全部可选字段，现有引用 0 破坏
+- 修改 `apps/web/src/appData.ts`：重新导出 `FactorBasedConfigParams`/`NonFactorConfigParams`/`TransitionalConfigParams`
+- **Doc Sync**: no docs update needed because this is a pure frontend types mirror extension within existing type boundaries — no API schema, DB schema, architectural boundary, or behavioral changes.
+- **验证**：
+  - `npx tsc --noEmit` → 编译通过，无新增错误
+  - `pnpm lint` → 0 errors（仅 11 个预存 warning）
+  - `pnpm --filter @quant/web test` → 93/93 passed（14 files）
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-8 (Phase 3b ConfigService) 依赖 story-6 已满足，可开始实施
+  - 前端 `ConfigSnapshot` 新字段全部可选，现有 code 赋值 `{strategy, params}` 不触发 tsc 错误
+  - `workspace-page.tsx:317` 直接赋值 `{strategy: strategy.name, params: res.config_json}`，新字段 `undefined` 运行时无害
+---
