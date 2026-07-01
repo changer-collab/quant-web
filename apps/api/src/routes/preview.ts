@@ -14,6 +14,7 @@ import { TimeFrame } from '@quant/data-center';
 import type { BarRepository } from '@quant/data-center';
 import { PreviewService } from '../services/preview-service.js';
 import { strategySyncService } from '../services/strategy-sync.js';
+import type { StrategyCategory } from '../types.js';
 
 const DEFAULT_LIMIT = 200;
 /** 首次加载最大批量（条）— 从最早到最新扫描，取最后 limit 条作为最近 K 线 */
@@ -67,6 +68,24 @@ export async function previewRoutes(app: FastifyInstance) {
       });
     }
 
+    // Phase 4b: 合并已保存/默认配置参数
+    // saved/default configSnapshot.params 为 baseline，preview_params 浅覆盖
+    let effectiveParams = preview_params;
+    if (app.configService) {
+      try {
+        const { configSnapshot } = await app.configService.getOrDefault(
+          name,
+          meta.version,
+          meta.category as StrategyCategory,
+        );
+        effectiveParams = { ...configSnapshot.params, ...preview_params };
+      } catch (err) {
+        console.warn('[Preview] configService.getOrDefault falló, usando preview_params sin modificar:', err);
+      }
+    } else {
+      console.warn('[Preview] configService no inyectado, usando preview_params sin modificar');
+    }
+
     const tf = timeframe as TimeFrame;
     const barRepo: BarRepository = app.dataCenter.repos.bars;
 
@@ -75,8 +94,8 @@ export async function previewRoutes(app: FastifyInstance) {
       barRepo, symbol, tf, limit, cursor,
     );
 
-    // 预览计算
-    const preview = PreviewService.computePreview(bars, preview_params);
+    // 预览计算（使用合并后的参数）
+    const preview = PreviewService.computePreview(bars, effectiveParams);
 
     return {
       symbol,

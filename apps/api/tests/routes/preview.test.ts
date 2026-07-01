@@ -15,7 +15,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildApp } from '../../src/app.js';
 import { InMemoryTaskService } from '../../src/plugins/task-service.js';
 import { StrategyConfigService } from '../../src/services/config-service.js';
+import { PreviewService } from '../../src/services/preview-service.js';
 import { strategySyncService } from '../../src/services/strategy-sync.js';
+import type { ConfigSnapshot } from '../../src/types.js';
 import type { DataCenter } from '@quant/data-center';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -280,6 +282,127 @@ describe('Preview Routes — chart_relevant validation', () => {
     });
     expect(res.statusCode).toBe(200);
 
+    await app.close();
+  });
+
+  // ─── Phase 4b: Preview config 合并 ─────────────────────────────────
+
+  it('Phase 4b: 已保存 config 与 preview_params 合并（preview_params 优先）', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([MOCK_DUAL_MA_META]);
+
+    // 模拟已保存的配置
+    const savedConfig: ConfigSnapshot = {
+      strategy: 'dual_ma',
+      schemaVersion: 1,
+      params: { period: 20, offset: 5 },
+      hash: 'sha256:abc123',
+      updatedAt: Date.now(),
+    };
+    const mockRepo = {
+      get: vi.fn().mockResolvedValue(savedConfig),
+      save: vi.fn(),
+    };
+    const mergeConfigService = new StrategyConfigService(mockRepo as any);
+
+    const computePreviewSpy = vi.spyOn(PreviewService, 'computePreview');
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+      configService: mergeConfigService,
+      diagnosticService: null as never,
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/strategies/dual_ma/preview',
+      payload: { symbol: '000300.SH', timeframe: '1d', preview_params: { period: 10 } },
+    });
+    expect(res.statusCode).toBe(200);
+    // 合并结果: baseline {period:20,offset:5} + preview_params {period:10} → {period:10,offset:5}
+    expect(computePreviewSpy).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ period: 10, offset: 5 }),
+    );
+
+    computePreviewSpy.mockRestore();
+    await app.close();
+  });
+
+  it('Phase 4b: 无保存 config（仅默认值）→ preview_params 全量生效', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([MOCK_DUAL_MA_META]);
+
+    // 模拟无保存配置（repo.get → null，buildDefaultSnapshot 产生 params:{}）
+    const mockRepo = {
+      get: vi.fn().mockResolvedValue(null),
+      save: vi.fn(),
+    };
+    const emptyConfigService = new StrategyConfigService(mockRepo as any);
+
+    const computePreviewSpy = vi.spyOn(PreviewService, 'computePreview');
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+      configService: emptyConfigService,
+      diagnosticService: null as never,
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/strategies/dual_ma/preview',
+      payload: { symbol: '000300.SH', timeframe: '1d', preview_params: { period: 20 } },
+    });
+    expect(res.statusCode).toBe(200);
+    // 无保存 config → baseline params={} → 只有 preview_params 生效
+    expect(computePreviewSpy).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ period: 20 }),
+    );
+
+    computePreviewSpy.mockRestore();
+    await app.close();
+  });
+
+  it('Phase 4b: 空 preview_params → 使用已保存 config 的 baseline 参数', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([MOCK_DUAL_MA_META]);
+
+    // 模拟已保存的配置
+    const savedConfig: ConfigSnapshot = {
+      strategy: 'dual_ma',
+      schemaVersion: 1,
+      params: { period: 20, offset: 5 },
+      hash: 'sha256:abc123',
+      updatedAt: Date.now(),
+    };
+    const mockRepo = {
+      get: vi.fn().mockResolvedValue(savedConfig),
+      save: vi.fn(),
+    };
+    const mergeConfigService = new StrategyConfigService(mockRepo as any);
+
+    const computePreviewSpy = vi.spyOn(PreviewService, 'computePreview');
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+      configService: mergeConfigService,
+      diagnosticService: null as never,
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/strategies/dual_ma/preview',
+      payload: { symbol: '000300.SH', timeframe: '1d', preview_params: {} },
+    });
+    expect(res.statusCode).toBe(200);
+    // 空 preview_params → 使用 baseline {period:20,offset:5}
+    expect(computePreviewSpy).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ period: 20, offset: 5 }),
+    );
+
+    computePreviewSpy.mockRestore();
     await app.close();
   });
 });

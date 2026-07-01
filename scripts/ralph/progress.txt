@@ -1491,3 +1491,42 @@ build_fail
   - route 的验证路径（404/422）在 barRepo 访问前 early return，无需 mock K 线数据
 ---
 
+
+## [2026-07-01 17:24:41] - Iteration 13
+
+- Exit code: 0
+- Stories remaining: 5
+- **Detected issues:**
+```
+vitest_fail
+pytest_fail
+lint_error
+```
+---
+
+## [2026-07-02 01:27] - story-14 (Phase 4b — Preview config 合并)
+- **修改 `apps/api/src/routes/preview.ts`**：
+  - 在 chart_relevant 校验之后、加载 K 线之前，新增 Phase 4b 配置参数合并逻辑
+  - 调用 `app.configService.getOrDefault(name, meta.version, category)` 获取已保存/默认配置
+  - `{...configSnapshot.params, ...preview_params}` 浅合并：baseline 为配置参数，preview_params 覆盖
+  - 若 `app.configService` 不存在（legacy app），降级只用 preview_params + console.warn
+  - 若 `getOrDefault` 抛出异常，降级只用 preview_params + console.warn
+  - 新增 `import type { StrategyCategory } from '../types.js'`
+- **修改 `apps/api/tests/routes/preview.test.ts`**：
+  - 新增 3 个 Phase 4b 测试：
+    - 已保存 config(params={period:20,offset:5}) + preview_params({period:10}) → merged {period:10,offset:5}
+    - 无保存 config（repo.get→null）→ preview_params 全量生效（基线 params={}）
+    - 空 preview_params + 已保存 config → 使用 baseline {period:20,offset:5}
+  - 每个测试通过 `vi.spyOn(PreviewService, 'computePreview')` 验证传入的合并后参数
+- **Doc Sync**: no docs update needed because the config merge is an internal behavioral change within the existing preview route — no API schema, DB schema, architectural boundary, or behavioral contract changes. The PRD already documents the merge requirement.
+- **验证**：
+  - `npx tsc --noEmit` → 编译通过
+  - `npx vitest run tests/routes/preview.test.ts` → 9/9 passed（原 6 + 新 3）
+  - `pnpm test` → API 95/95 passed（14 files）
+  - `pnpm lint` → 0 errors
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-15 (Phase 5a — API 任务 payload ConfigSnapshot 校验) 是下一个最高优先级未完成故事
+  - `configService.getOrDefault` 在 preview route 中的参数 `category` 从 `meta.category as StrategyCategory` 转换，若 meta.category 为 undefined/非 canonical 值，`getOrDefault` 内部会降级为默认 'non_factor'
+  - 合并使用 `{...configSnapshot.params, ...preview_params}` 浅合并，嵌套对象会被覆盖而非递归合并（当前所有 params 是扁平结构，浅合并正确）
+---

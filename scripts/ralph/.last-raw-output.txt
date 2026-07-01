@@ -1,44 +1,15 @@
-﻿璁╂垜鍏堝垎鏋愬綋鍓嶇姸鎬侊紝鐒跺悗璇诲彇鐩稿叧鏂囦欢銆傚ソ鐨勶紝story-10 宸插畬鎴愩€傜幇鍦ㄨ瀹炴柦 story-11锛圥hase 3e锛夆€斺€?SqliteConfigRepo 璇诲啓鏂板瓧娈?+ interfaces.ts 绛惧悕鏇存柊銆傝鎴戝厛璇诲彇鐩稿叧浠ｇ爜鏂囦欢銆傜幇鍦ㄦ垜瀵规墍鏈夐渶瑕佹敼鐨勬枃浠舵湁浜嗗叏闈㈢殑浜嗚В銆傝鎴戝紑濮嬪疄鏂?story-11銆侼ow update `sqlite-config-repo.ts` 鈥?the core of this story:Now update `config-service.ts` to use the new repo interface:Now update the test file's mock repo to implement the new interface:Good 鈥?no other files reference `SqliteConfigRepo` directly in tests. Let me now also check if `StrategyConfig` is used elsewhere:Now let me run the compilation and tests to verify everything works:TypeScript 缂栬瘧閫氳繃锛佺幇鍦ㄨ窇娴嬭瘯锛歍here's one test failure 鈥?`hash` is now `undefined` instead of `''` when not provided. The test is the truth source, so I need to fix the implementation to maintain the `hash ?? ''` default in the return value:The mock repo doesn't simulate the real DB's defaulting behavior (hash 鈫?'' when undefined). Let me fix the mock:鍏ㄩ儴 86 涓祴璇曢€氳繃銆傜幇鍦ㄨ繍琛屽叏灞€ lint銆佹墍鏈夊寘娴嬭瘯銆佸拰 build锛歀int 閫氳繃锛? 鏂板 errors锛夈€傜幇鍦ㄨ窇鍏ㄩ噺娴嬭瘯鍜?build锛氬叏閲忔祴璇曢€氳繃锛?10 tests all passed锛夈€傜幇鍦ㄨ窇 build锛欱uild 鍏ㄩ€氳繃锛佺幇鍦ㄨ繘琛?Doc Sync Gate 鍜屾彁浜ゅ墠妫€鏌ャ€傜幇鍦ㄦ彁浜や唬鐮併€傚厛鏇存柊 prd.json锛歂ow update progress.txt:鐜板湪鎻愪氦锛氭彁浜ゆ垚鍔燂紒story-11 宸插畬鎴愩€傛鏌ユ槸鍚﹁繕鏈夋湭瀹屾垚鐨勬晠浜嬶細story-11 瀹屾垚銆備粛鏈?7 涓晠浜嬫湭瀹屾垚锛坰tory-12鈫?8锛夛紝浣嗘寜瑙勫垯姣忔杩唬鍙仛涓€涓晠浜嬶紝杩欓噷姝ｅ父缁撴潫銆?
-## 鎬荤粨
+﻿Let me start by reading the error file and progress file to understand the current state, then find the next story to implement.Let me read the rest of the progress file to get the full picture.Now I have a clear picture. story-12 is complete and the next story is **story-13 (Phase 4a 鈥?Preview chart_relevant 鍙傛暟鏍￠獙鈫?22)**. Let me read the relevant source files.Let me read the app structure and existing preview tests to understand how services are injected.Let me check the strategy route and how it uses the strategy sync service, plus the config route pattern.Let me check the config route test file for testing patterns.Let me also check the PreviewService to understand how it handles empty bars.Good 鈥?`servePreview` returns empty overlays for empty bars (no crash). Now I have everything I need. Let me implement story-13.
 
-**story-11 (Phase 3e 鈥?SqliteConfigRepo 璇诲啓鏂板瓧娈?+ interfaces.ts 绛惧悕鏇存柊) 宸插畬鎴愨渽**
+**Plan:**
+1. Modify `apps/api/src/routes/preview.ts` 鈥?add chart_relevant validation
+2. Create `apps/api/tests/routes/preview.test.ts` 鈥?test the validationNow let me create the test file.Now let me run the quality checks.TypeScript compiles clean. Now run API tests.All 92 tests passed (14 files), including 6 new preview route tests. Now let me run lint and build.All checks pass:
+- **Lint**: 0 errors (only pre-existing warnings)
+- **Test**: 92/92 passed (14 files, including 6 new preview route tests)
+- **Build**: 5/5 successful
 
-### 瀹炵幇鍐呭
+Now let me do the Doc Sync Gate check and then commit.Let me check the integrated plan to see if it already covers this phase.No AGENTS.md update needed 鈥?the change is a simple validation addition, not a new pattern. Let me commit.Good 鈥?only the 2 expected files. Now let me update prd.json and commit.Now let me append progress.txt and commit.Now let me commit.Push failed due to network (connection reset), but the commit is saved locally. Since there are still stories with `passes: false` (stories 14-18), I'll end normally.
 
-1. **`interfaces.ts`** 鈥?`IConfigRepo` 鎺ュ彛绛惧悕鍙樻洿锛?   - `save(snapshot: ConfigSnapshot)` 鏇夸唬鏃?`save(strategy, configJson, hash)`
-   - `get()` 杩斿洖 `ConfigSnapshot | null` 鏇夸唬 `StrategyConfig | null`
-   - `IConfigHistoryRepo.append()` 鎺ュ彈 `ConfigSnapshot`锛宍list()` 杩斿洖鍚柊瀛楁
+Story-13 is complete. The next `passes: false` story at the highest priority is **story-14** (Phase 4b 鈥?Preview config 鍚堝苟).
+Push failed due to network (connection reset), but the commit is saved locally. Since there are still stories with `passes: false` (stories 14-18), I'll end normally.
 
-2. **`schema.ts`** 鈥?`configHistory` Drizzle schema 鏂板 `strategyVersion/category/subcategory/schemaVersion` 鍒?
-3. **`connection.ts`** 鈥?`config_history` CREATE TABLE 鍚柊鍒?+ PRAGMA table_info 杩佺Щ閫昏緫
-
-4. **`sqlite-config-repo.ts`** 鈥?`save()` 鍐?category/subcategory/schemaVersion 鍏ㄥ垪锛堥粯璁ゅ€奸檷绾э級锛沗get()` 鍥炶鏂板垪鏋勫缓 ConfigSnapshot锛汬istoryRepo 璇诲啓鏂板垪
-
-5. **`config-service.ts`** 鈥?`save()` 鐩存帴浼?ConfigSnapshot 缁?repo锛沗getOrDefault()` 鍒╃敤 repo 杩斿洖鐨?ConfigSnapshot锛堝惈鏂板瓧娈碉級锛沨ash 鍐茬獊鐢?repo 蹇収鏋勯€犻敊璇?
-### 楠岃瘉
-- `tsc --noEmit`: 鉁?缂栬瘧閫氳繃
-- `pnpm lint`: 鉁?0 errors
-- `pnpm test`: 鉁?310/310 (API 86 + Web 93 + Worker 26 + DC 47 + DCL 58)
-- `pnpm build`: 鉁?5/5 FULL TURBO
-story-11 瀹屾垚銆備粛鏈?7 涓晠浜嬫湭瀹屾垚锛坰tory-12鈫?8锛夛紝浣嗘寜瑙勫垯姣忔杩唬鍙仛涓€涓晠浜嬶紝杩欓噷姝ｅ父缁撴潫銆?
-## 鎬荤粨
-
-**story-11 (Phase 3e 鈥?SqliteConfigRepo 璇诲啓鏂板瓧娈?+ interfaces.ts 绛惧悕鏇存柊) 宸插畬鎴愨渽**
-
-### 瀹炵幇鍐呭
-
-1. **`interfaces.ts`** 鈥?`IConfigRepo` 鎺ュ彛绛惧悕鍙樻洿锛?   - `save(snapshot: ConfigSnapshot)` 鏇夸唬鏃?`save(strategy, configJson, hash)`
-   - `get()` 杩斿洖 `ConfigSnapshot | null` 鏇夸唬 `StrategyConfig | null`
-   - `IConfigHistoryRepo.append()` 鎺ュ彈 `ConfigSnapshot`锛宍list()` 杩斿洖鍚柊瀛楁
-
-2. **`schema.ts`** 鈥?`configHistory` Drizzle schema 鏂板 `strategyVersion/category/subcategory/schemaVersion` 鍒?
-3. **`connection.ts`** 鈥?`config_history` CREATE TABLE 鍚柊鍒?+ PRAGMA table_info 杩佺Щ閫昏緫
-
-4. **`sqlite-config-repo.ts`** 鈥?`save()` 鍐?category/subcategory/schemaVersion 鍏ㄥ垪锛堥粯璁ゅ€奸檷绾э級锛沗get()` 鍥炶鏂板垪鏋勫缓 ConfigSnapshot锛汬istoryRepo 璇诲啓鏂板垪
-
-5. **`config-service.ts`** 鈥?`save()` 鐩存帴浼?ConfigSnapshot 缁?repo锛沗getOrDefault()` 鍒╃敤 repo 杩斿洖鐨?ConfigSnapshot锛堝惈鏂板瓧娈碉級锛沨ash 鍐茬獊鐢?repo 蹇収鏋勯€犻敊璇?
-### 楠岃瘉
-- `tsc --noEmit`: 鉁?缂栬瘧閫氳繃
-- `pnpm lint`: 鉁?0 errors
-- `pnpm test`: 鉁?310/310 (API 86 + Web 93 + Worker 26 + DC 47 + DCL 58)
-- `pnpm build`: 鉁?5/5 FULL TURBO
+Story-13 is complete. The next `passes: false` story at the highest priority is **story-14** (Phase 4b 鈥?Preview config 鍚堝苟).
