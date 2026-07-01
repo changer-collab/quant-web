@@ -1337,3 +1337,30 @@ build_fail
   - 向后兼容方法 `getConfig`/`saveConfig` 仍被 config.ts route 使用，story-9 更新 route 后可标记移除
   - canonical hash 算法：`canonicalJson = JSON.stringify(obj, Object.keys(obj).sort())` → `createHash('sha256').update(canonical).digest('hex')`
   - `CANONICAL_CATEGORIES` Set 验证与 types.ts StrategyCategory union 一致，新增 category 时需同步更新
+
+## [2026-07-02] - story-9 (Phase 3c — Config routes GET/PUT 合约对齐)
+- 重写 `apps/api/src/routes/config.ts`：
+  - **GET /:name/config**: 使用 `configService.getOrDefault(name, version, category)` 替代旧 `getConfig`
+    - version 从 `strategySyncService.syncFromPython()` 查策略 meta.version 获得
+    - 策略不存在时返回 404，始终返回 200（含默认快照 persisted=false）而非旧行为 404
+  - **PUT /:name/config**: 支持双 shape：
+    - 旧 shape `{config, hash}` → 自动封装为 ConfigSnapshot（category 从 registry 降级 non_factor，params=config，hash 用请求体 hash）
+    - 新 shape `{category, subcategory, params, expectedHash}` → 直接构造成 ConfigSnapshot，expectedHash 透传给 save() 乐观锁
+    - 201 响应 `{saved: true, configSnapshot}`；hash 冲突 catch ConfigHashConflictError → 409；无效 category → 422；空 body → 400
+  - 异常处理：ConfigHashConflictError → 409 body；Error('Invalid category') → 422；其余 throw 交由 Fastify 统一错误处理
+- 新建 `apps/api/tests/routes/config.test.ts` — 11 个测试覆盖：
+  - GET：无数据 200 default、有数据 200 saved、策略不存在 404、传入正确的 version/category 到 getOrDefault
+  - PUT：旧 shape 201、新 shape 201、hash 冲突 409、无效 category 422、空 body 400、策略不存在 404、旧 shape 使用 registry category 降级
+- **Doc Sync**: no docs update needed — the integrated plan (`docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`) already documents the Phase 3c config route contract (line 599-601: GET returns `{persisted, configSnapshot}`, PUT uses `{category, subcategory, params, expectedHash}`). My implementation is fully consistent with the plan.
+- 验证：
+  - `npx tsc --noEmit` → 编译通过
+  - `pnpm --filter @quant/api test` → 86/86 passed（13 files，含 11 个新 config route 测试）
+  - `pnpm lint` → 0 errors
+  - `pnpm build` → 5/5 successful
+- **后续迭代注意事项：**
+  - story-10 (Phase 3d DB schema) 依赖 story-9，可接续实施
+  - 旧 shape `{config, hash}` 路径没有 expectedHash 校验（hash 仅作存储用），新 shape 才支持乐观锁
+  - ConfigHashConflictError 的 statusCode=409 由 route catch 后直接映射到 409 响应，不再向上冒泡
+  - `getOrDefault` 传入的 category 从策略 registry 的 meta.category 获得，API 侧不做二次判断（仅透传）
+  - 测试中使用 StrategyConfigService 真实实例 + vi.spyOn 控制方法返回值，比创建完全 mock 对象更简单
+---
