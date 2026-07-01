@@ -1210,3 +1210,33 @@ vitest_fail
   - story-5 (Phase 2e) 将处理 config-panel + kline-chart 组件中的硬编码子分类字符串
   - `tail_risk_hedging` 在 StrategyRow mock 数据中确认无任何引用（story-3 已删 labels 键）
 ---
+
+## [2026-07-01 16:44:59] - Iteration 4
+
+- Exit code: 0
+- Stories remaining: 14
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-02] - story-5 (Phase 2e — 前端 config-panel + kline-chart 硬编码子分类字符串迁移)
+- 修改 `apps/web/src/components/config-panel.tsx`：
+  - 子分类列表：`nonlinear_ml`→`ml_nonlinear_factor`、删除 `mean_reversion` 和 `tail_risk_hedging`、`high_frequency`→`hft_microstructure`
+  - 条件分支（orderBookDepth、动态参数区、排除列表）：`high_frequency`→`hft_microstructure`
+- 修改 `apps/web/src/components/kline-chart.tsx`：
+  - 副图路由条件：删除 `mean_reversion`（保留 `trend_cta`）、`high_frequency`→`hft_microstructure`、`nonlinear_ml`→`ml_nonlinear_factor`
+  - 副图标签条件：`high_frequency`→`hft_microstructure`、`nonlinear_ml`→`ml_nonlinear_factor`
+- 验证：
+  - grep 确认 config-panel.tsx 和 kline-chart.tsx 无旧字符串残留
+  - `npx tsc --noEmit` → 通过
+  - `pnpm --filter @quant/web test` → 93/93 passed（14 files）
+  - `pnpm lint` → 0 errors（仅 11 个预存 warning）
+  - `pnpm build` → 5/5 successful
+- **Doc Sync**: no docs update needed — pure mechanical string replacement in component code, no API/DB/architecture boundary changes
+- **后续迭代注意事项：**
+  - config-panel.tsx 的 `hft_microstructure` 分支（盘口深度 orderBookDepth 滑块）和 `trend_cta` 分支是 canonical 值运行时的正确行为路径
+  - kline-chart.tsx 中 unknown canonical 子分类（如 `index_enhancement`）走 else 分支渲染默认副图（水平线 50），不崩溃
+  - Phase 2 canonical taxonomy 5 故事（story-1~5）全部完成
+---

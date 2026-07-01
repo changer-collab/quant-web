@@ -291,12 +291,12 @@ function drawSubChart(
   let yMin = 0;
   let yMax = 100;
 
-  if (subcat === 'trend_cta' || subcat === 'mean_reversion') {
+  if (subcat === 'trend_cta') {
     // RSI
     data = computeRSI(closes, DEFAULT_RSI_PERIOD);
     yMin = 0;
     yMax = 100;
-  } else if (subcat === 'arbitrage' || subcat === 'high_frequency') {
+  } else if (subcat === 'arbitrage' || subcat === 'hft_microstructure') {
     // 价差 = (high - low) / close
     data = bars.map(b => ((b.high - b.low) / b.close) * 100);
     yMin = 0;
@@ -309,7 +309,7 @@ function drawSubChart(
     const vals = data.filter((d): d is number => d != null);
     yMin = 0;
     yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 5;
-  } else if (subcat === 'e2e_ai_timeseries' || subcat === 'factor_based' || subcat === 'nonlinear_ml' || subcat === 'linear_multi_factor') {
+  } else if (subcat === 'e2e_ai_timeseries' || subcat === 'factor_based' || subcat === 'ml_nonlinear_factor' || subcat === 'linear_multi_factor') {
     // 模拟 IC 状曲线：close 的归一化变化
     const base = closes[0] || 1;
     data = closes.map(c => ((c - base) / base) * 100);
@@ -332,7 +332,7 @@ function drawSubChart(
   const range = yMax - yMin || 1;
 
   // 画参考线（RSI 的 70/30）
-  if (subcat === 'trend_cta' || subcat === 'mean_reversion') {
+  if (subcat === 'trend_cta') {
     ctx.strokeStyle = 'rgba(233, 196, 106, 0.25)';
     ctx.lineWidth = 0.5;
     ctx.setLineDash([3, 3]);
@@ -552,9 +552,9 @@ export function KlineChart({
 
     // 5. 策略专属副图
     let subLabel = ui.klineChartRSI;
-    if (subcategory && ['arbitrage', 'high_frequency'].includes(subcategory)) {
+    if (subcategory && ['arbitrage', 'hft_microstructure'].includes(subcategory)) {
       subLabel = ui.klineChartSpread;
-    } else if (subcategory && ['factor_based', 'linear_multi_factor', 'nonlinear_ml', 'e2e_ai_timeseries'].includes(subcategory)) {
+    } else if (subcategory && ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(subcategory)) {
       subLabel = ui.klineChartIC;
     } else if (subcategory && ['transitional', 'event_driven'].includes(subcategory)) {
       subLabel = ui.klineChartSentiment;
