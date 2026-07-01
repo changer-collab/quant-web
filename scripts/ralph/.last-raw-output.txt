@@ -1,22 +1,34 @@
-﻿Let me read the relevant source files for story-14.Let me also check how `configService` is accessed in the app and see the strategy sync service for the version method.Now I have a complete picture. Story-14 is up next 鈥?Preview config 鍚堝苟. Let me implement it.
+﻿Let me continue reading progress.txt and check the current state:The highest priority `passes: false` story is **story-17** (Phase 5c 鈥?Worker diagnostics-handler fail-closed). The last iteration 16 tried it and failed with `vitest_fail` and `lint_error`. Let me first check the current state of the code.Now I have a clear picture of the codebase patterns. Let me implement story-17 鈥?change diagnostics-handler.ts to fail-closed and add unit tests.Good, the handler is updated. Now let me create the unit test file.Good. Now let me create the unit test file for diagnostics-handler:Now let me run the tests to verify:All 36 worker tests passed (including 6 new diagnostics-handler tests). Now let me run the full quality checks:Lint: 0 errors (only 11 pre-existing warnings). Now run full tests:All 10 packages passed tests. Now build:All quality checks pass. Let me check for AGENT.md and then execute Doc Sync Gate:The AGENT.md doesn't need updating 鈥?the fail-closed pattern is already the same pattern BacktestHandler uses, and no new architectural knowledge was introduced.
 
-The key change: after chart_relevant validation, merge `configService.getOrDefault().params` (baseline) with `preview_params` (overrides), then pass the merged params to `PreviewService.computePreview`.Now let me add the tests for the merge behavior.Good, now let me run the quality checks.TypeScript compiles clean. Now run the API tests:All 9 preview tests pass. Let me now run the full test suite and lint:All 95 tests passed. Now lint and build:All checks pass. Now let me check the AGENTS.md for any needed updates:Good. No AGENTS.md update needed 鈥?the preview merge is an internal routing detail within the existing flow.
+Now let me execute Doc Sync Gate and update the files:
 
-Now let me commit and update state files:Good. Now let me commit:Now let me commit:Story-14 completed! Let me verify there are still remaining stories:鉁?**story-14 瀹屾垚** 鈥?Preview config 鍚堝苟宸插疄鐜板苟楠岃瘉閫氳繃銆?
-**淇敼鐨勬枃浠讹細**
-- `apps/api/src/routes/preview.ts` 鈥?鏂板 Phase 4b 閰嶇疆鍙傛暟鍚堝苟閫昏緫锛坈onfigService.getOrDefault 鈫?娴呭悎骞?鈫?computePreview锛?- `apps/api/tests/routes/preview.test.ts` 鈥?鏂板 3 涓祴璇曡鐩?merge/no-saved-config/empty-preview_params 鍦烘櫙
-- `scripts/ralph/prd.json` 鈥?story-14 鈫?`passes: true`
-- `scripts/ralph/progress.txt` 鈥?杩藉姞 story-14 璁板綍
+**Doc Sync**: no docs update needed because this is purely internal worker handler refactoring (remove echo fallback, fail-closed on Python errors) 鈥?no API schema, DB schema, architectural boundary, or public behavioral contract changes. The fail-closed pattern is consistent with BacktestHandler's existing behavior (already catches `!result.ok` and throws). No AGENT.md update needed since the diagnostics handler wasn't documented in its "宸插疄鐜? list and the behavioral change follows existing patterns.
 
-**楠岃瘉缁撴灉锛?* 鉁?tsc 鉁?95 tests 鉁?lint 0 errors 鉁?build 5/5
+Now let me update prd.json and progress.txt:Now commit and push:Network is unreachable (GitHub connection issue). The commit is saved locally 鈥?will push when connectivity resumes.
 
-**鍓╀綑鏈畬鎴愭晠浜嬶細** story-15, story-16, story-17, story-18锛堝叡 4 涓級
-鉁?**story-14 瀹屾垚** 鈥?Preview config 鍚堝苟宸插疄鐜板苟楠岃瘉閫氳繃銆?
-**淇敼鐨勬枃浠讹細**
-- `apps/api/src/routes/preview.ts` 鈥?鏂板 Phase 4b 閰嶇疆鍙傛暟鍚堝苟閫昏緫锛坈onfigService.getOrDefault 鈫?娴呭悎骞?鈫?computePreview锛?- `apps/api/tests/routes/preview.test.ts` 鈥?鏂板 3 涓祴璇曡鐩?merge/no-saved-config/empty-preview_params 鍦烘櫙
-- `scripts/ralph/prd.json` 鈥?story-14 鈫?`passes: true`
-- `scripts/ralph/progress.txt` 鈥?杩藉姞 story-14 璁板綍
+Let me check the remaining state:## 鉁?Story-17 瀹屾垚
 
-**楠岃瘉缁撴灉锛?* 鉁?tsc 鉁?95 tests 鉁?lint 0 errors 鉁?build 5/5
+**Phase 5c 鈥?Worker diagnostics-handler fail-closed锛堢Щ闄?echo fallback锛?*
 
-**鍓╀綑鏈畬鎴愭晠浜嬶細** story-15, story-16, story-17, story-18锛堝叡 4 涓級
+### 淇敼鐨勬枃浠?| 鏂囦欢 | 鍙樻洿 |
+|------|------|
+| `apps/worker/src/handlers/diagnostics-handler.ts` | 绉婚櫎 echo fallback 鈫?fail-closed (throw on error) |
+| `apps/worker/tests/diagnostics-handler.test.ts` | **鏂板缓** 鈥?6 涓祴璇曡鐩栨墍鏈?fail-closed 璺緞 |
+| `scripts/ralph/prd.json` | story-17 鈫?`passes: true` |
+| `scripts/ralph/progress.txt` | 杩藉姞 story-17 杩涘害 |
+
+### 璐ㄩ噺妫€鏌?- 鉁?`pnpm lint` 鈫?0 errors (浠呴瀛?warnings)
+- 鉁?`pnpm test` 鈫?10/10 鍖呭叏閮ㄩ€氳繃 (worker 36/36, 鍚?6 涓柊娴嬭瘯)
+- 鉁?`pnpm build` 鈫?5/5 successful
+
+### 鍏抽敭鏀瑰姩
+1. **绉婚櫎 echo fallback**锛歚{ok:false}` 鈫?`throw Error(result.error?.message ?? 'Python diagnostics failed')`
+2. **绌烘暟鎹娴?*锛歚{ok:true,data:undefined}` 鈫?`throw Error('empty diagnostics result')`
+3. **涓嶈嚜宸?try-catch**锛氱敱 main.ts `processTask` 缁熶竴 catch 鈫?璋冪敤 `/fail` 鏍囪浠诲姟 failed
+4. **鍒犻櫎**锛氭簮鐮佷腑涓嶅啀鍑虹幇 `'not implemented'` / `'echoing input'` 瀛楃涓?
+### 浠嶅緟澶勭悊
+- `story-18` (E2E 楠屾敹) 鈥?`passes: false`锛岀瓑寰呬笅涓€杞凯浠tories remaining: **story-18** (E2E 楠屾敹). Per the one-story-per-iteration rule, this iteration is complete. Next iteration will handle story-18.
+
+鈿狅笍 **娉ㄦ剰**锛欸it push 鍥犵綉缁滆繛鎺ラ棶棰樺け璐ワ紙鏃犳硶杩炴帴 github.com:443锛夈€傛彁浜ゅ凡鏈湴淇濆瓨锛坄43f45bd`锛夛紝闇€鍦ㄤ笅涓€杞帹閫併€?Stories remaining: **story-18** (E2E 楠屾敹). Per the one-story-per-iteration rule, this iteration is complete. Next iteration will handle story-18.
+
+鈿狅笍 **娉ㄦ剰**锛欸it push 鍥犵綉缁滆繛鎺ラ棶棰樺け璐ワ紙鏃犳硶杩炴帴 github.com:443锛夈€傛彁浜ゅ凡鏈湴淇濆瓨锛坄43f45bd`锛夛紝闇€鍦ㄤ笅涓€杞帹閫併€

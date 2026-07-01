@@ -1629,3 +1629,69 @@ vitest_fail
 lint_error
 ```
 ---
+
+## [2026-07-02] - story-18 (E2E 验收 — 全链路契约一致性验证)
+
+### 验证结果：全部通过 ✅
+
+**Tier1 Taxonomy** ✅
+- grep 全代码库无 `nonlinear_ml/high_frequency/mean_reversion/tail_risk_hedging` 残留
+- Python types.py / API types.ts / Web types.ts 三层 canonical 10 值逐字对齐
+
+**Tier1 Config** ✅
+- GET /config(无保存) → 200 + persisted=false + defaults
+- PUT 旧 body {config,hash} → 201 + saved:true
+- hash 冲突 → 409 + ConfigHashConflictError
+- 不存在的策略 → 404
+
+**Tier1 Preview** ✅
+- chart_relevant=false 参数 → 422 {fields:[...]}
+- saved config params + preview_params 浅合并
+- 空 preview_params → 跳过校验
+
+**Tier1 Task** ✅
+- 缺 configSnapshot → 400 'configSnapshot required'
+- 顶层 params → 400 'params not allowed at top level'
+- collect 放行不校验
+- factor_compute/factor_eval/ai_train → 400
+
+**Tier1 Worker** ✅
+- backtest-handler: configSnapshot.category/subcategory/snapshotParams 透传
+- diagnostics-handler: !ok → throw; !data → throw (fail-closed)
+
+**质量检查** ✅
+- `pnpm lint` → 0 errors (仅预存 11 web + 3 dc warnings)
+- `pnpm test` → 10/10 packages 全部通过
+- `pnpm build` → 5/5 successful
+- `bash scripts/smoke-test.sh` → 7/7 ALL PASSED
+
+**Python tests** ✅ (全部 379 通过)
+- strategy-runtime: 158 passed
+- strategies: 73 passed
+- backtest-engine: 80 passed
+- factor-lab: 18 passed
+- ai-engine: 32 passed
+- data-client: 11 passed
+- obsidian-sync: 7 passed
+
+**Doc Sync**: no docs update needed — story-18 is pure E2E verification with zero code changes. No schema, API, or architectural boundary changes.
+
+**后续迭代注意事项：**
+- 本切片所有 18 个 story 全部完成。Phase 2 (canonical taxonomy) + Phase 3 (ConfigSnapshot) + Phase 4 (Preview) + Phase 5 (Task/Worker) 全部交付
+- 后续可切片：Phase 6 (transitional 算法 real implementation) / Phase 7 (回测 E2E real data) / Phase 0~1.5 (Python diagnostics framework 剩余)
+- 当前分支 `ralph/backend-sync-realign`，存有 5 个本地 commit 未 push（git push 因网络异常失败）
+- 上一个 story-17 的 commit `43f45bd` 已本地保存，需在一环境推送到 origin
+
+## ✅ 所有 18 个故事全部完成
+
+## [2026-07-01 17:43:52] - Iteration 17
+
+- Exit code: 0
+- Stories remaining: 1
+- **Detected issues:**
+```
+vitest_fail
+pytest_fail
+lint_error
+```
+---

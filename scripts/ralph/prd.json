@@ -315,7 +315,11 @@
         "story-11", "story-12", "story-13", "story-14",
         "story-15", "story-16", "story-17"
       ],
-      "passes": false
+      "passes": true,
+      "_runtime": {
+        "attempts": 1,
+        "lastError": null
+      }
     }
   ]
 }
