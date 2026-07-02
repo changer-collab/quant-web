@@ -53,7 +53,7 @@ AI 引擎 Agent        -> packages/ai-engine（含 report_analysis 子模块）
 
 ## 协作接口
 
-- 前端 Agent 通过 API Agent 获取策略、任务、报告和数据摘要；当前阶段用前端模拟数据。
+- 前端 Agent 通过 API Agent 获取策略、任务、报告和数据摘要；当前阶段消费真实 API 数据，部分空态场景仍用 mock 占位。
 - 前端 Agent 通过因子工坊页面展示因子定义、评估结果和因子引用；当前阶段用前端模拟数据。
 - API Agent 可以提供因子 CRUD 和评估触发的 HTTP 入口，因子计算逻辑由 Worker 编排。
 - Worker Agent 可以编排因子批量计算和因子评估任务，调用 AI 引擎做特征提取。
@@ -97,6 +97,16 @@ AI 引擎 Agent        -> packages/ai-engine（含 report_analysis 子模块）
   LoopType, LoopStatus, IterationStatus,
   LoopConfig, IterationRecord, LoopRecord,
   LoopCondition, LoopSummary
+
+策略运行时（strategy-runtime，Python）另拥有：
+  StrategyCategory, StrategySubcategory（canonical 枚举值，TS 层镜像）
+
+API（apps/api，TypeScript）拥有：
+  ConfigSnapshot, ConfigSchemaVersion,
+  FactorBasedConfigParams, NonFactorConfigParams, TransitionalConfigParams,
+  TaskResultEnvelope, DiagnosticsTaskPayload, BacktestTaskPayload,
+  DiagnosticResultWire,
+  ResultProcessor, ResultProcessorContext, ResultProcessorOutput
 ```
 
 TS 层（api/worker）需要的类型在各自 `types.ts` 中内联，与 Python 侧保持值对齐。
