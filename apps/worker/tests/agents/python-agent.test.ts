@@ -28,7 +28,9 @@ describe('PythonAgent', () => {
 
   it('handles bridge error', async () => {
     const bridge = {
-      call: vi.fn().mockResolvedValue({ ok: false, error: { code: 'PYTHON_ERROR', message: 'Failed' } }),
+      call: vi
+        .fn()
+        .mockResolvedValue({ ok: false, error: { code: 'PYTHON_ERROR', message: 'Failed' } }),
       streamCall: vi.fn(),
     } as unknown as PythonBridge;
     const agent = new PythonAgent(bridge);

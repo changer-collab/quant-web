@@ -25,10 +25,13 @@ import buttons from './styles/buttons.module.css';
 import infoPanelStyles from './styles/info-panel.module.css';
 import './styles/tokens.css';
 
-const FullReport = lazy(() => import('./components/report').then((module) => ({ default: module.FullReport })));
+const FullReport = lazy(() =>
+  import('./components/report').then((module) => ({ default: module.FullReport }))
+);
 
 export default function App() {
-  const { language, handleLanguageChange, navItems, ui, factorEvalResults, reportUiCopy } = useLanguage();
+  const { language, handleLanguageChange, navItems, ui, factorEvalResults, reportUiCopy } =
+    useLanguage();
   const { strategies: apiStrategies } = useStrategies();
   const { tasks: apiTasks } = useTasks();
   const { factors: apiFactors } = useFactors();
@@ -85,10 +88,26 @@ export default function App() {
       const rm = activeBacktestReport.returnMetrics;
       const rs = activeBacktestReport.riskAdjMetrics;
       return [
-        { label: '年化收益', value: `${(rm.annualizedReturn * 100).toFixed(1)}%`, tone: rm.annualizedReturn > 0 ? 'good' as const : 'warn' as const },
-        { label: '最大回撤', value: `${(activeBacktestReport.riskMetrics.maxDrawdown * 100).toFixed(1)}%`, tone: 'warn' as const },
-        { label: '夏普比率', value: rs.sharpeRatio.toFixed(2), tone: rs.sharpeRatio > 1 ? 'good' as const : 'warn' as const },
-        { label: '交易次数', value: activeBacktestReport.tradeStats.totalTrades.toLocaleString(), tone: 'info' as const },
+        {
+          label: '年化收益',
+          value: `${(rm.annualizedReturn * 100).toFixed(1)}%`,
+          tone: rm.annualizedReturn > 0 ? ('good' as const) : ('warn' as const),
+        },
+        {
+          label: '最大回撤',
+          value: `${(activeBacktestReport.riskMetrics.maxDrawdown * 100).toFixed(1)}%`,
+          tone: 'warn' as const,
+        },
+        {
+          label: '夏普比率',
+          value: rs.sharpeRatio.toFixed(2),
+          tone: rs.sharpeRatio > 1 ? ('good' as const) : ('warn' as const),
+        },
+        {
+          label: '交易次数',
+          value: activeBacktestReport.tradeStats.totalTrades.toLocaleString(),
+          tone: 'info' as const,
+        },
       ];
     }
     return activePage.heroMetrics;
@@ -102,125 +121,147 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-    <div id="app" className={`${layout.shell} ${layout.pageTransition}`} key={state.activePage}>
-      <aside className={layout.sidebar}>
-        <div className={layout.brand}>
-          <span className={`${layout.brandIcon} pulseGlow`}>Q</span>
-          <div>
-            <strong className={layout.brandName}>QuantForge</strong>
-            <small className={layout.brandTagline}>{ui.brandTagline}</small>
+      <div id="app" className={`${layout.shell} ${layout.pageTransition}`} key={state.activePage}>
+        <aside className={layout.sidebar}>
+          <div className={layout.brand}>
+            <span className={`${layout.brandIcon} pulseGlow`}>Q</span>
+            <div>
+              <strong className={layout.brandName}>QuantForge</strong>
+              <small className={layout.brandTagline}>{ui.brandTagline}</small>
+            </div>
           </div>
-        </div>
-        <nav aria-label={ui.navAriaLabel} className={nav.navList}>
-          {navItems.map((item) => (
+          <nav aria-label={ui.navAriaLabel} className={nav.navList}>
+            {navItems.map((item) => (
+              <button
+                className={`${nav.navItem} ${item.id === state.activePage ? nav.navItemActive : ''}`}
+                data-page={item.id}
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                type="button"
+              >
+                <small className={nav.navEyebrow}>{item.eyebrow}</small>
+                <span className={nav.navLabel}>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+        <main className={layout.mainShell}>
+          <header className={layout.topbar}>
+            <div className={layout.topbarStatus}>
+              <span className={`${layout.statusLight} statusPulse`} />
+              <span>{pageStatus}</span>
+            </div>
             <button
-              className={`${nav.navItem} ${item.id === state.activePage ? nav.navItemActive : ''}`}
-              data-page={item.id}
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
+              className={buttons.primaryAction}
+              data-testid="run-research"
+              onClick={handleRunResearch}
               type="button"
             >
-              <small className={nav.navEyebrow}>{item.eyebrow}</small>
-              <span className={nav.navLabel}>{item.label}</span>
+              {ui.runResearch}
             </button>
-          ))}
-        </nav>
-      </aside>
-      <main className={layout.mainShell}>
-        <header className={layout.topbar}>
-          <div className={layout.topbarStatus}>
-            <span className={`${layout.statusLight} statusPulse`} />
-            <span>{pageStatus}</span>
-          </div>
-          <button className={buttons.primaryAction} data-testid="run-research" onClick={handleRunResearch} type="button">
-            {ui.runResearch}
-          </button>
-        </header>
-        <section className={hero.hero}>
-          <div>
-            <p className={hero.heroEyebrow}>{ui.heroEyebrow}</p>
-            <h1 className={hero.heroTitle}>{pageTitle}</h1>
-            <span className={hero.heroSubtitle}>{activePage.subtitle}</span>
-          </div>
-          <div className={hero.metricGrid}>
-            {heroMetrics.map((metric) => (
-              <MetricCard key={metric.label} metric={metric} />
-            ))}
-          </div>
-        </section>
-        {state.activePage === 'settings' && (
-          <LanguageSettings language={language} onChange={handleLanguageChange} ui={ui} />
-        )}
-        <section className={layout.contentGrid}>
-          <div className={layout.primaryColumn}>
-            {state.activePage === 'factor-lab' ? (
-              <FactorLabContent factors={factors} factorEvalResults={factorEvalResults} ui={ui} language={language} />
-            ) : isGeneratedReportPage && activeReport ? (
-              activeBacktestReport ? (
-                <Suspense fallback={<ReportSummary report={activeReport} ui={ui} />}>
-                  <FullReport report={activeBacktestReport} ui={reportUiCopy} allReports={backtestReports} onSwitchReport={handleSwitchBacktestReport} />
-                </Suspense>
+          </header>
+          <section className={hero.hero}>
+            <div>
+              <p className={hero.heroEyebrow}>{ui.heroEyebrow}</p>
+              <h1 className={hero.heroTitle}>{pageTitle}</h1>
+              <span className={hero.heroSubtitle}>{activePage.subtitle}</span>
+            </div>
+            <div className={hero.metricGrid}>
+              {heroMetrics.map((metric) => (
+                <MetricCard key={metric.label} metric={metric} />
+              ))}
+            </div>
+          </section>
+          {state.activePage === 'settings' && (
+            <LanguageSettings language={language} onChange={handleLanguageChange} ui={ui} />
+          )}
+          <section className={layout.contentGrid}>
+            <div className={layout.primaryColumn}>
+              {state.activePage === 'factor-lab' ? (
+                <FactorLabContent
+                  factors={factors}
+                  factorEvalResults={factorEvalResults}
+                  ui={ui}
+                  language={language}
+                />
+              ) : isGeneratedReportPage && activeReport ? (
+                activeBacktestReport ? (
+                  <Suspense fallback={<ReportSummary report={activeReport} ui={ui} />}>
+                    <FullReport
+                      report={activeBacktestReport}
+                      ui={reportUiCopy}
+                      allReports={backtestReports}
+                      onSwitchReport={handleSwitchBacktestReport}
+                    />
+                  </Suspense>
+                ) : (
+                  <>
+                    <ReportSummary report={activeReport} ui={ui} />
+                    <ChartMockup
+                      ariaLabel={ui.chartAriaLabel}
+                      priceUp={reportUiCopy.chartLabels.priceUp}
+                      priceDown={reportUiCopy.chartLabels.priceDown}
+                    />
+                  </>
+                )
+              ) : state.activePage === 'workspace' && workspaceEntryStrategy ? (
+                <WorkspacePage
+                  strategy={workspaceEntryStrategy}
+                  onBack={() => {
+                    setWorkspaceEntryStrategy(null);
+                    handleNavClick('strategy');
+                  }}
+                  language={language}
+                  ui={ui}
+                />
               ) : (
                 <>
-                  <ReportSummary report={activeReport} ui={ui} />
-                  <ChartMockup ariaLabel={ui.chartAriaLabel} priceUp={reportUiCopy.chartLabels.priceUp} priceDown={reportUiCopy.chartLabels.priceDown} />
+                  <ChartMockup
+                    ariaLabel={ui.chartAriaLabel}
+                    priceUp={reportUiCopy.chartLabels.priceUp}
+                    priceDown={reportUiCopy.chartLabels.priceDown}
+                  />
+                  {state.activePage === 'dashboard' && <ActivityFeed jobs={allJobs} ui={ui} />}
+                  {state.activePage === 'strategy' && (
+                    <StrategyPage
+                      strategies={strategies}
+                      onEnterWorkspace={(strategy) => {
+                        setWorkspaceEntryStrategy(strategy);
+                        handleNavClick('workspace');
+                      }}
+                      ui={ui}
+                      language={language}
+                    />
+                  )}
+                  {state.activePage === 'backtest' && !activeReport && (
+                    <BacktestHistory
+                      jobs={allJobs}
+                      onViewReport={handleViewReport}
+                      reportJobIds={reportJobIds}
+                      ui={ui}
+                    />
+                  )}
+                  {state.activePage === 'experiments' && <ExperimentTable ui={ui} />}
+                  {state.activePage === 'data' && <DataCoveragePanel ui={ui} />}
+                  {state.activePage === 'jobs' && (
+                    <JobList
+                      jobs={allJobs}
+                      onViewReport={handleViewReport}
+                      reportJobIds={reportJobIds}
+                      ui={ui}
+                    />
+                  )}
                 </>
-              )
-            ) : state.activePage === 'workspace' && workspaceEntryStrategy ? (
-              <WorkspacePage
-                strategy={workspaceEntryStrategy}
-                onBack={() => {
-                  setWorkspaceEntryStrategy(null);
-                  handleNavClick('strategy');
-                }}
-                language={language}
-                ui={ui}
-              />
-            ) : (
-              <>
-                <ChartMockup ariaLabel={ui.chartAriaLabel} priceUp={reportUiCopy.chartLabels.priceUp} priceDown={reportUiCopy.chartLabels.priceDown} />
-                {state.activePage === 'dashboard' && (
-                  <ActivityFeed jobs={allJobs} ui={ui} />
-                )}
-                {state.activePage === 'strategy' && (
-                  <StrategyPage
-                    strategies={strategies}
-                    onEnterWorkspace={(strategy) => {
-                      setWorkspaceEntryStrategy(strategy);
-                      handleNavClick('workspace');
-                    }}
-                    ui={ui}
-                    language={language}
-                  />
-                )}
-                {state.activePage === 'backtest' && !activeReport && (
-                  <BacktestHistory
-                    jobs={allJobs}
-                    onViewReport={handleViewReport}
-                    reportJobIds={reportJobIds}
-                    ui={ui}
-                  />
-                )}
-                {state.activePage === 'experiments' && (
-                  <ExperimentTable ui={ui} />
-                )}
-                {state.activePage === 'data' && (
-                  <DataCoveragePanel ui={ui} />
-                )}
-                {state.activePage === 'jobs' && (
-                  <JobList jobs={allJobs} onViewReport={handleViewReport} reportJobIds={reportJobIds} ui={ui} />
-                )}
-              </>
-            )}
-          </div>
-          <div className={layout.secondaryColumn}>
-            {sections.map((section) => (
-              <InfoPanel key={section.title} section={section} />
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+              )}
+            </div>
+            <div className={layout.secondaryColumn}>
+              {sections.map((section) => (
+                <InfoPanel key={section.title} section={section} />
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
     </ErrorBoundary>
   );
 }

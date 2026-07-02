@@ -3,12 +3,7 @@
  */
 import { eq, and, gte, lte } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
-import {
-  instruments,
-  tradingCalendars,
-  indexConstituents,
-  adjustmentFactors,
-} from '../schema.js';
+import { instruments, tradingCalendars, indexConstituents, adjustmentFactors } from '../schema.js';
 import type {
   InstrumentRepository,
   CalendarRepository,
@@ -86,7 +81,9 @@ export class SqliteInstrumentRepository implements InstrumentRepository {
       if (query?.status) conditions.push(eq(instruments.status, query.status));
       if (query?.industry) conditions.push(eq(instruments.industry, query.industry));
       if (query?.sector) conditions.push(eq(instruments.sector, query.sector));
-      const rows = await this.db.select().from(instruments)
+      const rows = await this.db
+        .select()
+        .from(instruments)
         .where(conditions.length > 0 ? and(...conditions) : undefined);
       return rows.map(instrumentToModel);
     } catch (err) {
@@ -96,7 +93,9 @@ export class SqliteInstrumentRepository implements InstrumentRepository {
 
   async getBySymbol(symbol: string): Promise<ExtendedInstrument | undefined> {
     try {
-      const rows = await this.db.select().from(instruments)
+      const rows = await this.db
+        .select()
+        .from(instruments)
         .where(eq(instruments.symbol, symbol))
         .limit(1);
       return rows.length > 0 ? instrumentToModel(rows[0]) : undefined;
@@ -120,7 +119,8 @@ export class SqliteCalendarRepository implements CalendarRepository {
         holidays: JSON.stringify(calendar.holidays),
         sessionType: calendar.sessionType ?? null,
       };
-      await this.db.insert(tradingCalendars)
+      await this.db
+        .insert(tradingCalendars)
         .values(row)
         .onConflictDoUpdate({
           target: [tradingCalendars.exchange, tradingCalendars.year],
@@ -133,7 +133,9 @@ export class SqliteCalendarRepository implements CalendarRepository {
 
   async get(exchange: string, year: number): Promise<TradingCalendar | undefined> {
     try {
-      const rows = await this.db.select().from(tradingCalendars)
+      const rows = await this.db
+        .select()
+        .from(tradingCalendars)
         .where(and(eq(tradingCalendars.exchange, exchange), eq(tradingCalendars.year, year)))
         .limit(1);
       if (rows.length === 0) return undefined;
@@ -168,7 +170,11 @@ export class SqliteIndexCompositionRepository implements IndexCompositionReposit
               weight: c.weight,
             })
             .onConflictDoUpdate({
-              target: [indexConstituents.indexSymbol, indexConstituents.asOfDate, indexConstituents.symbol],
+              target: [
+                indexConstituents.indexSymbol,
+                indexConstituents.asOfDate,
+                indexConstituents.symbol,
+              ],
               set: { weight: c.weight },
             })
             .run();
@@ -181,8 +187,15 @@ export class SqliteIndexCompositionRepository implements IndexCompositionReposit
 
   async get(indexSymbol: string, asOfDate: number): Promise<IndexComposition | undefined> {
     try {
-      const rows = await this.db.select().from(indexConstituents)
-        .where(and(eq(indexConstituents.indexSymbol, indexSymbol), eq(indexConstituents.asOfDate, asOfDate)));
+      const rows = await this.db
+        .select()
+        .from(indexConstituents)
+        .where(
+          and(
+            eq(indexConstituents.indexSymbol, indexSymbol),
+            eq(indexConstituents.asOfDate, asOfDate)
+          )
+        );
       if (rows.length === 0) return undefined;
       return {
         indexSymbol,
@@ -224,7 +237,9 @@ export class SqliteAdjustmentFactorRepository implements AdjustmentFactorReposit
       const conditions = [eq(adjustmentFactors.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(adjustmentFactors.date, start));
       if (end !== undefined) conditions.push(lte(adjustmentFactors.date, end));
-      const rows = await this.db.select().from(adjustmentFactors)
+      const rows = await this.db
+        .select()
+        .from(adjustmentFactors)
         .where(and(...conditions))
         .orderBy(adjustmentFactors.date);
       return rows.map((r) => ({

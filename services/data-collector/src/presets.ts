@@ -48,7 +48,11 @@ export class CollectorPresets {
   }
 
   /** 日K线采集 */
-  static dailyBar(symbol: string, source: string, options?: { start?: number; end?: number }): CollectorTask {
+  static dailyBar(
+    symbol: string,
+    source: string,
+    options?: { start?: number; end?: number }
+  ): CollectorTask {
     return CollectorPresets.createTask({
       domain: CollectorDomain.Market,
       dataType: 'bar',
@@ -60,7 +64,12 @@ export class CollectorPresets {
   }
 
   /** 分钟K线采集 */
-  static minuteBar(symbol: string, source: string, timeframe: string, options?: { start?: number; end?: number }): CollectorTask {
+  static minuteBar(
+    symbol: string,
+    source: string,
+    timeframe: string,
+    options?: { start?: number; end?: number }
+  ): CollectorTask {
     return CollectorPresets.createTask({
       domain: CollectorDomain.Market,
       dataType: 'bar',
@@ -91,7 +100,11 @@ export class CollectorPresets {
   }
 
   /** 复权因子采集 */
-  static adjustmentFactor(symbol: string, source: string, options?: { start?: number; end?: number }): CollectorTask {
+  static adjustmentFactor(
+    symbol: string,
+    source: string,
+    options?: { start?: number; end?: number }
+  ): CollectorTask {
     return CollectorPresets.createTask({
       domain: CollectorDomain.Reference,
       dataType: 'adjustment_factor',
@@ -102,7 +115,11 @@ export class CollectorPresets {
   }
 
   /** 财务报告采集 */
-  static financialReport(symbol: string, source: string, options?: { start?: number; end?: number }): CollectorTask {
+  static financialReport(
+    symbol: string,
+    source: string,
+    options?: { start?: number; end?: number }
+  ): CollectorTask {
     return CollectorPresets.createTask({
       domain: CollectorDomain.Fundamental,
       dataType: 'financial_report',
@@ -113,7 +130,11 @@ export class CollectorPresets {
   }
 
   /** 股东人数采集 */
-  static shareholderMetrics(symbol: string, source: string, options?: { start?: number; end?: number }): CollectorTask {
+  static shareholderMetrics(
+    symbol: string,
+    source: string,
+    options?: { start?: number; end?: number }
+  ): CollectorTask {
     return CollectorPresets.createTask({
       domain: CollectorDomain.Fundamental,
       dataType: 'shareholder_metrics',
@@ -124,7 +145,11 @@ export class CollectorPresets {
   }
 
   /** 估值数据采集 */
-  static valuation(symbol: string, source: string, options?: { start?: number; end?: number }): CollectorTask {
+  static valuation(
+    symbol: string,
+    source: string,
+    options?: { start?: number; end?: number }
+  ): CollectorTask {
     return CollectorPresets.createTask({
       domain: CollectorDomain.Fundamental,
       dataType: 'valuation',

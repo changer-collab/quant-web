@@ -30,15 +30,15 @@
 
 ## 子模块规划
 
-| 子模块 | 目录 | 职责 |
-|--------|------|------|
-| 采集层公共类型 | `src/types.ts` | CollectorTask、CollectorResult、Watermark、CollectorDomain |
-| 采集调度器 | `src/scheduler.ts` | 任务提交、水位管理、分批写入 |
-| 数据源适配器 | `src/adapters/` | DataSourceAdapter 接口 + CSV/Tushare/AKShare/Baostock/efinance/yfinance |
-| 适配器注册中心 | `src/registry/` | AdapterRegistry 接口、适配器注册/查找/列表 |
-| 预设任务 | `src/presets.ts` | CollectorPresets 工厂 |
-| 启动入口 | `src/bootstrap.ts` | createCollector |
-| 数据源选择 | `src/source-selector.ts` | 优先级配置 + 回退执行 |
+| 子模块         | 目录                     | 职责                                                                    |
+| -------------- | ------------------------ | ----------------------------------------------------------------------- |
+| 采集层公共类型 | `src/types.ts`           | CollectorTask、CollectorResult、Watermark、CollectorDomain              |
+| 采集调度器     | `src/scheduler.ts`       | 任务提交、水位管理、分批写入                                            |
+| 数据源适配器   | `src/adapters/`          | DataSourceAdapter 接口 + CSV/Tushare/AKShare/Baostock/efinance/yfinance |
+| 适配器注册中心 | `src/registry/`          | AdapterRegistry 接口、适配器注册/查找/列表                              |
+| 预设任务       | `src/presets.ts`         | CollectorPresets 工厂                                                   |
+| 启动入口       | `src/bootstrap.ts`       | createCollector                                                         |
+| 数据源选择     | `src/source-selector.ts` | 优先级配置 + 回退执行                                                   |
 
 ## 核心设计
 

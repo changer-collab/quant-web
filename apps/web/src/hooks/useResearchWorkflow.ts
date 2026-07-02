@@ -40,7 +40,10 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value);
 }
 
-function formatParamSummary(strategy: StrategyRow | undefined, params: Record<string, unknown>): string {
+function formatParamSummary(
+  strategy: StrategyRow | undefined,
+  params: Record<string, unknown>
+): string {
   const entries = (strategy?.params ?? []).map((param) => {
     const value = params[param.key] ?? param.default;
     return `${param.label}=${String(value)}`;
@@ -53,26 +56,74 @@ function createBacktestDiagnostics(
   strategy: StrategyRow | undefined,
   config: BacktestConfig,
   taskResult: { backtestResult?: unknown } | undefined,
-  language: LanguageCode,
+  language: LanguageCode
 ): PageSection[] {
-  const bt = taskResult?.backtestResult as { metrics?: Record<string, number>; config?: Record<string, unknown> } | undefined;
+  const bt = taskResult?.backtestResult as
+    | { metrics?: Record<string, number>; config?: Record<string, unknown> }
+    | undefined;
   const metrics = bt?.metrics ?? {};
   const paramSummary = formatParamSummary(strategy, config.params);
 
   if (language === 'zh') {
     return [
       { title: '运行配置', items: configSummary },
-      { title: '策略类型', items: [`策略类型: ${strategy?.type ?? String(bt?.config?.strategyKind ?? '传统量化')}`, `策略标识: ${strategy?.id ?? ''}`] },
-      { title: '研究配置', items: [`标的: ${config.symbol}`, `频率: ${config.timeframe}`, `参数: ${paramSummary || '默认参数'}`, `回测日期: ${formatDate(config.startTs)} ~ ${formatDate(config.endTs)}`] },
-      { title: '诊断指标', items: [`总收益: ${(((metrics.totalReturn ?? 0) as number) * 100).toFixed(2)}%`, `最大回撤: ${(((metrics.maxDrawdown ?? 0) as number) * 100).toFixed(2)}%`, `夏普: ${((metrics.sharpeRatio ?? 0) as number).toFixed(2)}`, `胜率: ${(((metrics.winRate ?? 0) as number) * 100).toFixed(2)}%`, `交易次数: ${Math.round((metrics.totalTrades ?? 0) as number)}`] },
+      {
+        title: '策略类型',
+        items: [
+          `策略类型: ${strategy?.type ?? String(bt?.config?.strategyKind ?? '传统量化')}`,
+          `策略标识: ${strategy?.id ?? ''}`,
+        ],
+      },
+      {
+        title: '研究配置',
+        items: [
+          `标的: ${config.symbol}`,
+          `频率: ${config.timeframe}`,
+          `参数: ${paramSummary || '默认参数'}`,
+          `回测日期: ${formatDate(config.startTs)} ~ ${formatDate(config.endTs)}`,
+        ],
+      },
+      {
+        title: '诊断指标',
+        items: [
+          `总收益: ${(((metrics.totalReturn ?? 0) as number) * 100).toFixed(2)}%`,
+          `最大回撤: ${(((metrics.maxDrawdown ?? 0) as number) * 100).toFixed(2)}%`,
+          `夏普: ${((metrics.sharpeRatio ?? 0) as number).toFixed(2)}`,
+          `胜率: ${(((metrics.winRate ?? 0) as number) * 100).toFixed(2)}%`,
+          `交易次数: ${Math.round((metrics.totalTrades ?? 0) as number)}`,
+        ],
+      },
     ];
   }
 
   return [
     { title: 'Run Configuration', items: configSummary },
-    { title: 'Strategy Type', items: [`Strategy Type: ${strategy?.type ?? String(bt?.config?.strategyKind ?? 'Traditional Quant')}`, `Strategy ID: ${strategy?.id ?? ''}`] },
-    { title: 'Research Setup', items: [`Symbol: ${config.symbol}`, `Frequency: ${config.timeframe}`, `Params: ${paramSummary || 'Default Params'}`, `Backtest Dates: ${formatDate(config.startTs)} ~ ${formatDate(config.endTs)}`] },
-    { title: 'Diagnostics', items: [`Total Return: ${(((metrics.totalReturn ?? 0) as number) * 100).toFixed(2)}%`, `Max Drawdown: ${(((metrics.maxDrawdown ?? 0) as number) * 100).toFixed(2)}%`, `Sharpe: ${((metrics.sharpeRatio ?? 0) as number).toFixed(2)}`, `Win Rate: ${(((metrics.winRate ?? 0) as number) * 100).toFixed(2)}%`, `Trades: ${Math.round((metrics.totalTrades ?? 0) as number)}`] },
+    {
+      title: 'Strategy Type',
+      items: [
+        `Strategy Type: ${strategy?.type ?? String(bt?.config?.strategyKind ?? 'Traditional Quant')}`,
+        `Strategy ID: ${strategy?.id ?? ''}`,
+      ],
+    },
+    {
+      title: 'Research Setup',
+      items: [
+        `Symbol: ${config.symbol}`,
+        `Frequency: ${config.timeframe}`,
+        `Params: ${paramSummary || 'Default Params'}`,
+        `Backtest Dates: ${formatDate(config.startTs)} ~ ${formatDate(config.endTs)}`,
+      ],
+    },
+    {
+      title: 'Diagnostics',
+      items: [
+        `Total Return: ${(((metrics.totalReturn ?? 0) as number) * 100).toFixed(2)}%`,
+        `Max Drawdown: ${(((metrics.maxDrawdown ?? 0) as number) * 100).toFixed(2)}%`,
+        `Sharpe: ${((metrics.sharpeRatio ?? 0) as number).toFixed(2)}`,
+        `Win Rate: ${(((metrics.winRate ?? 0) as number) * 100).toFixed(2)}%`,
+        `Trades: ${Math.round((metrics.totalTrades ?? 0) as number)}`,
+      ],
+    },
   ];
 }
 
@@ -121,9 +172,7 @@ export function useResearchWorkflow(language: LanguageCode) {
         const locale = language === 'zh' ? 'zh-CN' : 'en-US';
 
         // 批量获取完整报告数据（并行请求，失败时降级到摘要）
-        const detailPromises = summaries.map((s) =>
-          fetchReport(s.id).catch(() => null),
-        );
+        const detailPromises = summaries.map((s) => fetchReport(s.id).catch(() => null));
         const details = await Promise.all(detailPromises);
         if (cancelled) return;
 
@@ -134,14 +183,16 @@ export function useResearchWorkflow(language: LanguageCode) {
           historicalResearchReports.push(
             createResearchReport(
               { id: reportId, jobId: s.taskId, sequence: index + 1, generatedAt },
-              language,
-            ),
+              language
+            )
           );
 
           const detail = details[index];
           if (detail?.reportData) {
             // 有完整 reportData，直接使用
-            const { id: _apiId, ...rdRest } = detail.reportData as Partial<BacktestReportFull> & { id?: string };
+            const { id: _apiId, ...rdRest } = detail.reportData as Partial<BacktestReportFull> & {
+              id?: string;
+            };
             historicalReports.push(
               createBacktestReportFull({
                 id: `backtest-full-${reportId}`,
@@ -150,7 +201,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                 generatedAt,
                 strategyName: s.strategyName,
                 ...rdRest,
-              }),
+              })
             );
           } else {
             // 无完整数据，用摘要构建（降级）
@@ -190,7 +241,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                   winRate: s.winRate,
                   totalTrades: s.totalTrades,
                 },
-              }),
+              })
             );
           }
         });
@@ -225,32 +276,55 @@ export function useResearchWorkflow(language: LanguageCode) {
       .catch(() => {
         // API 不可用，忽略
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [language]);
 
-  const localizedJobs = useMemo(() => jobs.map((job) => localizeResearchJob(job, language)), [jobs, language]);
+  const localizedJobs = useMemo(
+    () => jobs.map((job) => localizeResearchJob(job, language)),
+    [jobs, language]
+  );
   const selectedStrategyForLanguage = useMemo(
     () => getStrategies(language).find((strategy) => strategy.id === selectedStrategy?.id),
-    [language, selectedStrategy?.id],
+    [language, selectedStrategy?.id]
   );
   const activeReport = useMemo(
     () => reports.find((report) => report.id === activeReportId),
-    [activeReportId, reports],
+    [activeReportId, reports]
   );
   const activeBacktestReport = useMemo(
     () => backtestReports.find((r) => r.id === `backtest-full-${activeReportId}`),
-    [activeReportId, backtestReports],
+    [activeReportId, backtestReports]
   );
   const reportJobIds = useMemo(() => reports.map((report) => report.jobId), [reports]);
   const activeConfigSummary = useMemo(() => {
-    const labels = language === 'zh'
-      ? {
-          symbol: '标的代码', timeframe: '时间周期', window: '回测区间', dateRange: '起止日期', cash: '初始资金', slippage: '滑点', params: '参数', noParams: '默认参数',
-        }
-      : {
-          symbol: 'Symbol', timeframe: 'Timeframe', window: 'Backtest Window', dateRange: 'Date Range', cash: 'Initial Cash', slippage: 'Slippage', params: 'Params', noParams: 'Default Params',
-        };
-    const paramSummary = formatParamSummary(selectedStrategyForLanguage ?? selectedStrategy, backtestConfig.params);
+    const labels =
+      language === 'zh'
+        ? {
+            symbol: '标的代码',
+            timeframe: '时间周期',
+            window: '回测区间',
+            dateRange: '起止日期',
+            cash: '初始资金',
+            slippage: '滑点',
+            params: '参数',
+            noParams: '默认参数',
+          }
+        : {
+            symbol: 'Symbol',
+            timeframe: 'Timeframe',
+            window: 'Backtest Window',
+            dateRange: 'Date Range',
+            cash: 'Initial Cash',
+            slippage: 'Slippage',
+            params: 'Params',
+            noParams: 'Default Params',
+          };
+    const paramSummary = formatParamSummary(
+      selectedStrategyForLanguage ?? selectedStrategy,
+      backtestConfig.params
+    );
     return [
       `${labels.symbol}: ${backtestConfig.symbol}`,
       `${labels.timeframe}: ${backtestConfig.timeframe}`,
@@ -297,8 +371,14 @@ export function useResearchWorkflow(language: LanguageCode) {
         .then((taskId) => {
           // 创建本地 job 跟踪进度（初始 progress=0）
           const nextJob = createResearchJob(
-            { id: taskId, mode: selectedStrategy?.category ?? 'non_factor', sequence, strategy: selectedStrategyForLanguage, configSummary: activeConfigSummary },
-            language,
+            {
+              id: taskId,
+              mode: selectedStrategy?.category ?? 'non_factor',
+              sequence,
+              strategy: selectedStrategyForLanguage,
+              configSummary: activeConfigSummary,
+            },
+            language
           );
           setJobs((current) => [nextJob, ...current]);
 
@@ -314,23 +394,33 @@ export function useResearchWorkflow(language: LanguageCode) {
               };
               const nextState = statusMap[event.message ?? ''] ?? 'Running';
               setJobs((current) =>
-                current.map((j) => j.id === taskId ? { ...j, state: nextState, progress: event.percent ?? j.progress } : j),
+                current.map((j) =>
+                  j.id === taskId
+                    ? { ...j, state: nextState, progress: event.percent ?? j.progress }
+                    : j
+                )
               );
             }
             if (event.type === 'progress') {
               // 实时更新 job 进度
               setJobs((current) =>
-                current.map((j) => j.id === taskId ? { ...j, progress: event.percent ?? j.progress } : j),
+                current.map((j) =>
+                  j.id === taskId ? { ...j, progress: event.percent ?? j.progress } : j
+                )
               );
             }
             if (event.type === 'result') {
               // 任务完成，更新 job 状态
               setJobs((current) =>
-                current.map((j) => j.id === taskId ? { ...j, state: 'Completed', progress: 100 } : j),
+                current.map((j) =>
+                  j.id === taskId ? { ...j, state: 'Completed', progress: 100 } : j
+                )
               );
               // 创建报告 — 用真实回测结果映射
               const generatedAt = formatReportTime(language);
-              const taskResult = event.data as { taskId?: string; backtestResult?: unknown } | undefined;
+              const taskResult = event.data as
+                | { taskId?: string; backtestResult?: unknown }
+                | undefined;
               const reportId = `report-${Date.now()}`;
               const fullReportId = `backtest-full-${reportId}`;
               const diagnosticSections = createBacktestDiagnostics(
@@ -338,43 +428,62 @@ export function useResearchWorkflow(language: LanguageCode) {
                 selectedStrategyForLanguage ?? selectedStrategy,
                 backtestConfig,
                 taskResult,
-                language,
+                language
               );
               const nextReport = createResearchReport(
-                { id: reportId, jobId: taskId, mode: selectedStrategy?.category ?? 'non_factor', sequence, strategy: selectedStrategyForLanguage, generatedAt, configSummary: activeConfigSummary, diagnosticSections },
-                language,
-              );
-              const nextBacktestReport = mapBacktestResultToReport(
-                taskResult,
                 {
-                  id: fullReportId,
-                  taskId,
-                  status: 'completed',
+                  id: reportId,
+                  jobId: taskId,
+                  mode: selectedStrategy?.category ?? 'non_factor',
+                  sequence,
+                  strategy: selectedStrategyForLanguage,
                   generatedAt,
-                  strategyName: selectedStrategyForLanguage?.name ?? selectedStrategy?.name ?? '',
-                  overview: {
-                    name: selectedStrategyForLanguage?.name ?? selectedStrategy?.name ?? '',
-                    version: selectedStrategyForLanguage?.version ?? selectedStrategy?.version ?? '',
-                    logic: selectedStrategyForLanguage?.description ?? selectedStrategy?.description ?? '',
-                    instruments: [backtestConfig.symbol],
-                    timeRange: { start: formatDate(backtestConfig.startTs), end: formatDate(backtestConfig.endTs) },
-                    frequency: backtestConfig.timeframe,
-                    benchmark: '',
-                    strategyCategory: selectedStrategyForLanguage?.kind ?? selectedStrategy?.kind ?? 'timing',
-                  },
-                  dataParams: {
-                    dataSource: 'local',
-                    adjustmentType: '',
-                    fee: { commission: 0, stampTax: 0 },
-                    slippage: { model: 'fixed', value: backtestConfig.slippage },
-                    capital: { initialCash: backtestConfig.initialCash, maxLeverage: 1.0, positionLimit: 0.95 },
-                    params: (selectedStrategyForLanguage?.params ?? selectedStrategy?.params ?? []).map((param) => ({
-                      label: param.label,
-                      value: String(backtestConfig.params[param.key] ?? param.default),
-                    })),
-                  },
+                  configSummary: activeConfigSummary,
+                  diagnosticSections,
                 },
+                language
               );
+              const nextBacktestReport = mapBacktestResultToReport(taskResult, {
+                id: fullReportId,
+                taskId,
+                status: 'completed',
+                generatedAt,
+                strategyName: selectedStrategyForLanguage?.name ?? selectedStrategy?.name ?? '',
+                overview: {
+                  name: selectedStrategyForLanguage?.name ?? selectedStrategy?.name ?? '',
+                  version: selectedStrategyForLanguage?.version ?? selectedStrategy?.version ?? '',
+                  logic:
+                    selectedStrategyForLanguage?.description ?? selectedStrategy?.description ?? '',
+                  instruments: [backtestConfig.symbol],
+                  timeRange: {
+                    start: formatDate(backtestConfig.startTs),
+                    end: formatDate(backtestConfig.endTs),
+                  },
+                  frequency: backtestConfig.timeframe,
+                  benchmark: '',
+                  strategyCategory:
+                    selectedStrategyForLanguage?.kind ?? selectedStrategy?.kind ?? 'timing',
+                },
+                dataParams: {
+                  dataSource: 'local',
+                  adjustmentType: '',
+                  fee: { commission: 0, stampTax: 0 },
+                  slippage: { model: 'fixed', value: backtestConfig.slippage },
+                  capital: {
+                    initialCash: backtestConfig.initialCash,
+                    maxLeverage: 1.0,
+                    positionLimit: 0.95,
+                  },
+                  params: (
+                    selectedStrategyForLanguage?.params ??
+                    selectedStrategy?.params ??
+                    []
+                  ).map((param) => ({
+                    label: param.label,
+                    value: String(backtestConfig.params[param.key] ?? param.default),
+                  })),
+                },
+              });
               setReports((current) => [nextReport, ...current]);
               setBacktestReports((current) => [nextBacktestReport, ...current]);
               setActiveReportId(nextReport.id);
@@ -383,7 +492,11 @@ export function useResearchWorkflow(language: LanguageCode) {
               // 任务失败，标记原 job 为失败状态，带上错误信息
               const errMsg = event.error?.message || event.message || 'Unknown error';
               setJobs((current) =>
-                current.map((j) => j.id === taskId ? { ...j, state: 'Failed', progress: j.progress, errorMessage: errMsg } : j),
+                current.map((j) =>
+                  j.id === taskId
+                    ? { ...j, state: 'Failed', progress: j.progress, errorMessage: errMsg }
+                    : j
+                )
               );
             }
           });
@@ -394,7 +507,16 @@ export function useResearchWorkflow(language: LanguageCode) {
     }
 
     setState((current) => ({ ...current, activePage: 'jobs' }));
-  }, [jobs.length, selectedStrategy, selectedStrategyForLanguage, activeConfigSummary, language, submitBacktestTask, submitAndStream, backtestConfig]);
+  }, [
+    jobs.length,
+    selectedStrategy,
+    selectedStrategyForLanguage,
+    activeConfigSummary,
+    language,
+    submitBacktestTask,
+    submitAndStream,
+    backtestConfig,
+  ]);
 
   function handleViewReport(job: ResearchJob) {
     const report = reports.find((item) => item.jobId === job.id);

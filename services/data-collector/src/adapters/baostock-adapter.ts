@@ -1,6 +1,11 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions, BaostockExtra } from './types.js';
+import type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+  BaostockExtra,
+} from './types.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -19,7 +24,14 @@ const execFileAsync = promisify(execFile);
 export class BaostockAdapter implements DataSourceAdapter {
   name = 'baostock';
   supportedDomains = ['market', 'reference', 'fundamental'];
-  supportedDataTypes = ['bar', 'instrument', 'adjustment_factor', 'financial_report', 'shareholder_metrics', 'valuation'];
+  supportedDataTypes = [
+    'bar',
+    'instrument',
+    'adjustment_factor',
+    'financial_report',
+    'shareholder_metrics',
+    'valuation',
+  ];
 
   async *fetch(options: AdapterFetchOptions): AsyncIterable<RawDataRecord> {
     const extra = options.extra as BaostockExtra | undefined;
@@ -199,7 +211,11 @@ ${this.scriptExcept}
 `;
   }
 
-  private buildShareholderMetricsScript(symbol: string, startDate: string, endDate: string): string {
+  private buildShareholderMetricsScript(
+    symbol: string,
+    startDate: string,
+    endDate: string
+  ): string {
     const bsCode = this.toBsCode(symbol);
     return `
 ${this.scriptHeader}

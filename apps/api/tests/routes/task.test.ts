@@ -11,7 +11,11 @@ function createMockDataCenter(): DataCenter {
       reference: {
         getTradingCalendar: async () => ({ exchange: 'SSE', year: 2024, tradingDays: [] }),
         getInstruments: async () => [],
-        getIndexComposition: async () => ({ indexSymbol: 'CSI500', asOfDate: 20240101, constituents: [] }),
+        getIndexComposition: async () => ({
+          indexSymbol: 'CSI500',
+          asOfDate: 20240101,
+          constituents: [],
+        }),
         getAdjustmentFactors: async () => [],
         isTradingDay: async () => true,
         getPreviousTradingDay: async () => 20240101,
@@ -45,19 +49,34 @@ function createMockDataCenter(): DataCenter {
       },
       quality: {
         checkCompleteness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkConsistency: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkFreshness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
       },
     },
@@ -76,7 +95,8 @@ function createMockDataCenter(): DataCenter {
 const mockDiagnosticsProcessor: ResultProcessor = {
   async process(ctx) {
     const payload = ctx.task.payload as Record<string, unknown>;
-    const diagData = (ctx.result as { diagnostics?: Record<string, unknown> }).diagnostics ?? ctx.result;
+    const diagData =
+      (ctx.result as { diagnostics?: Record<string, unknown> }).diagnostics ?? ctx.result;
     const resultId = `diag-${ctx.task.id}-${Date.now()}`;
     return {
       resultId,
@@ -102,7 +122,10 @@ describe('Task Routes', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/tasks',
-      payload: { type: 'backtest', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+      payload: {
+        type: 'backtest',
+        payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } },
+      },
     });
     expect(res.statusCode).toBe(202);
     expect(res.json()).toHaveProperty('id');
@@ -120,7 +143,13 @@ describe('Task Routes', () => {
     const submit = await app.inject({
       method: 'POST',
       url: '/api/tasks',
-      payload: { type: 'backtest', payload: { strategy: 'test-strategy', configSnapshot: { strategy: 'test-strategy', params: {} } } },
+      payload: {
+        type: 'backtest',
+        payload: {
+          strategy: 'test-strategy',
+          configSnapshot: { strategy: 'test-strategy', params: {} },
+        },
+      },
     });
     const { id } = submit.json();
 
@@ -155,7 +184,14 @@ describe('Task Routes', () => {
     const submit = await app.inject({
       method: 'POST',
       url: '/api/tasks',
-      payload: { type: 'diagnostics', payload: { strategy: 'test-strategy', category: 'factor_based', configSnapshot: { strategy: 'test-strategy', params: {} } } },
+      payload: {
+        type: 'diagnostics',
+        payload: {
+          strategy: 'test-strategy',
+          category: 'factor_based',
+          configSnapshot: { strategy: 'test-strategy', params: {} },
+        },
+      },
     });
     expect(submit.statusCode).toBe(202);
     const { id } = submit.json();
@@ -177,15 +213,19 @@ describe('Task Routes', () => {
       url: `/api/internal/tasks/${id}/complete`,
       payload: {
         result: {
-          diagnostics: { type: 'factor_based', ic_series: [{ period: '2024-01', ic: 0.05, rank_ic: 0.04 }] },
+          diagnostics: {
+            type: 'factor_based',
+            ic_series: [{ period: '2024-01', ic: 0.05, rank_ic: 0.04 }],
+          },
         },
       },
     });
     expect(complete.statusCode).toBe(200);
 
     // 找到 result 事件，验证顶层字段
-    const resultEvents = (events as Array<{ type: string; resultId?: string; resultType?: string }>)
-      .filter((e) => e.type === 'result');
+    const resultEvents = (
+      events as Array<{ type: string; resultId?: string; resultType?: string }>
+    ).filter((e) => e.type === 'result');
     expect(resultEvents.length).toBeGreaterThanOrEqual(1);
     const result = resultEvents[resultEvents.length - 1];
     expect(result.resultType).toBe('diagnostics');
@@ -208,11 +248,16 @@ describe('Task Routes', () => {
     });
 
     await app.inject({
-      method: 'POST', url: '/api/tasks',
-      payload: { type: 'backtest', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+      method: 'POST',
+      url: '/api/tasks',
+      payload: {
+        type: 'backtest',
+        payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } },
+      },
     });
     await app.inject({
-      method: 'POST', url: '/api/tasks',
+      method: 'POST',
+      url: '/api/tasks',
       payload: { type: 'collect', payload: {} },
     });
 
@@ -232,7 +277,10 @@ describe('Task Routes', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'factor_compute', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+        payload: {
+          type: 'factor_compute',
+          payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } },
+        },
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toContain('not supported');
@@ -247,7 +295,10 @@ describe('Task Routes', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'factor_eval', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+        payload: {
+          type: 'factor_eval',
+          payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } },
+        },
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toContain('not supported');
@@ -262,7 +313,10 @@ describe('Task Routes', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'ai_train', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } } },
+        payload: {
+          type: 'ai_train',
+          payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', params: {} } },
+        },
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toContain('not supported');
@@ -307,7 +361,10 @@ describe('Task Routes', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: '', configSnapshot: { strategy: '', params: {} } } },
+        payload: {
+          type: 'backtest',
+          payload: { strategy: '', configSnapshot: { strategy: '', params: {} } },
+        },
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toBe('configSnapshot.strategy must be a non-empty string');
@@ -322,10 +379,15 @@ describe('Task Routes', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', configSnapshot: { strategy: 'macd', params: {} } } },
+        payload: {
+          type: 'backtest',
+          payload: { strategy: 'dual_ma', configSnapshot: { strategy: 'macd', params: {} } },
+        },
       });
       expect(res.statusCode).toBe(400);
-      expect(res.json().error).toBe('strategy mismatch: payload.strategy does not match configSnapshot.strategy');
+      expect(res.json().error).toBe(
+        'strategy mismatch: payload.strategy does not match configSnapshot.strategy'
+      );
       await app.close();
     });
 
@@ -337,7 +399,13 @@ describe('Task Routes', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual-ma', configSnapshot: { strategy: 'dual-ma', category: 'mean_reversion', params: {} } } },
+        payload: {
+          type: 'backtest',
+          payload: {
+            strategy: 'dual-ma',
+            configSnapshot: { strategy: 'dual-ma', category: 'mean_reversion', params: {} },
+          },
+        },
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toContain('invalid configSnapshot.category');

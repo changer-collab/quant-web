@@ -29,7 +29,8 @@ export function FactorReportHeader({ report, ui, onBack }: FactorReportHeaderPro
         <h2 className={s.reportTitle}>{report.factorName}</h2>
         <p className={s.reportMeta}>
           {ui.basicInfo.reportDate}: {report.generatedAt} &nbsp;|&nbsp;
-          {ui.basicInfo.backtestRange}: {report.basicInfo.backtestRange.start} ~ {report.basicInfo.backtestRange.end}
+          {ui.basicInfo.backtestRange}: {report.basicInfo.backtestRange.start} ~{' '}
+          {report.basicInfo.backtestRange.end}
         </p>
       </div>
       <div className={`${s.gradeBadge} ${gradeClass[grade]}`}>{grade}</div>

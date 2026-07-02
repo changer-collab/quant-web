@@ -26,30 +26,30 @@
 
 ## 0. 只读扫描结论：现状 vs 06-28 目标差距矩阵
 
-| 维度 | 06-28 目标 | 当前现状 | 差距/风险 | 计划落点 |
-|---|---|---|---|---|
-| 一级分类 | `factor_based` / `non_factor` / `transitional` | Python 已有三值：`packages/strategy-runtime/quantforge_strategy/types.py:82-86`；API/前端也有三值：`apps/api/src/types.ts:332-333`, `apps/web/src/data/types.ts:120-122` | 一级分类值一致 | Task 1 固化为 canonical contract |
-| 子分类：因子型 | `linear_multi_factor`, `index_enhancement`, `ml_nonlinear_factor` | 当前为 `linear_multi_factor`, `nonlinear_ml`：`types.py:91-94`, `apps/api/src/types.ts:336-339` | 缺 `index_enhancement`；`nonlinear_ml` 需更名为 `ml_nonlinear_factor` | Task 1 + Task 8 |
-| 子分类：非因子型 | `trend_cta`, `arbitrage`, `hft_microstructure`, `macro_quant`, `event_driven`, `e2e_ai_timeseries` | 当前还有 `mean_reversion`, `high_frequency`, `tail_risk_hedging`：`types.py:95-102` | `high_frequency` 需更名为 `hft_microstructure`；`mean_reversion` / `tail_risk_hedging` 不在 06-28，已拍板 quarantine/fail，不静默合并 | Task 1 + Task 2 |
-| 子分类：过渡型 | `event_sentiment_factor` | 当前无 transitional 子分类，`transitional` 前端列表为空：`apps/web/src/components/config-panel.tsx:16-29` | 过渡形态无法精确表达 06-28 的“事件/舆情标准化因子” | Task 1 + Task 6 + Task 8 |
-| `StrategyMeta` | `name/category/subcategory/description/params/version`，因子型含 `required_factors/factor_pool` | 当前 `StrategyMeta` 仍要求 `modes`，保留 `kind`，`subcategory` 可空：`meta.py:32-42`；部分策略如 `equal_weight` 未显式分类，会落默认 `NON_FACTOR/None` | 旧 `ResearchMode` 仍在元数据中；分类覆盖不完整 | Task 1 + Task 2 |
-| `workflowReady` | 06-28 写明由后端判断“策略已注册 + 有可用标的” | 当前 API 计算为 `subcategory !== null`：`routes/strategy.ts:24-26`；06-29 文档也仅记录这个现状 | 不能用“有子分类”替代产品可工作判断；已拍板使用“注册策略 + canonical 子分类 + 至少一个 active instrument 具备默认 timeframe 的最低 bar 覆盖”作为首版规则 | Task 1 |
-| `StrategyKind` | 06-28 兼容性说明保留 | 当前保留：`StrategyKind` 定义在 `types.py:66-72`，API 返回 `kind`：`routes/strategy.ts:21-23` | 容易被误用为分类体系 | Task 1：明确仅为执行/组合语义，不参与导航分类 |
-| `StrategyParamDef` identity | 06-28 Python 用 `name`，TS 前端用 `name/type/default/range/options/chartRelevant/uiConstraints` | 当前 Python/API/前端用 `key/label/type/default/min/max/chart_relevant/ui_constraints`：`meta.py:20-29`, `apps/api/src/types.ts:356-367`, `apps/web/src/data/types.ts:185-197` | wire 命名与目标不一致；snake/camel 边界未定义 | Task 1 + Task 13 |
-| `chartRelevant/uiConstraints` wire | 前端目标为 camelCase，UIConstraint 支持 `require_when/disable_when/set_default_when/range_when` | 当前 API 输出 snake：`routes/strategy.ts:10-20`，前端手动映射：`useStrategies.ts:7-18`；前端只实现 `disable_when/require_when`：`config-panel.tsx:56-82` | API public contract 未对齐 06-28 TS；前端对约束 DSL 支持不完整 | Task 1 + Task 13；过渡期可同时输出 deprecated snake |
-| Config API | GET/PUT `/api/strategies/:name/config`，保存全量拍平配置，hash 乐观锁 | 路由已存在但只保存任意 `config` + `hash`：`routes/config.ts:20-23`；Service 无校验：`services/config-service.ts:12-20` | `ConfigSnapshot` 当前只有 `{strategy, params}` 类型：`apps/api/src/types.ts:369-373`；无法覆盖三类配置 | Task 3 |
-| Config DB | `strategy_configs`, `config_history` | 表已存在但列名为 `strategy`，无 category/subcategory/schemaVersion：`schema.ts:43-58`, `connection.ts:124-139` | 无分类索引、无迁移校验、history 不能按目标审计 | Task 4 |
-| API/任务存储边界 | 工作流状态要能追踪配置、任务、诊断、回测结果 | 当前 API 自有 sql.js DB 默认 `data/api.db`，data-center/task 主库是 `data/quant.db`；ReportRepository 在 task route 内直接 `new`，未走 service/DI | 已拍板短期保持双库，但必须文档化跨库写入顺序和补偿，不做隐式原子性假设 | Task 4 + Task 6 + Task 12 |
-| Preview API | `POST /api/strategies/:name/preview`，`preview_params`，cursor pagination，`fingerprint`, `engine_version` | 路由和 TS PreviewService 已存在：`routes/preview.ts:17-53`, `services/preview-service.ts:40-136`；`:name` 当前未使用：`routes/preview.ts:18` | 当前不校验 strategy/config/category；pagination 缺 `total_count`；overlay/signal shape 与 06-28/前端互相不一致 | Task 5 + Task 13 |
-| Task payload | `configSnapshot` 唯一真相源，无顶层 `params` | Backtest handler 仍接受 `payload.params` fallback：`apps/worker/src/handlers/backtest-handler.ts:17-18,45`；API 保存报告仍按顶层 payload 字段理解：`routes/task.ts:149-168`；Workspace 提交 diagnostics 空 params：`workspace-page.tsx:326-334` | params 漂移风险；诊断/回测/报告记录可能不一致 | Task 6 + Task 7 + Task 12 + Task 13 |
-| SSE result | result 事件含 `resultId/resultType` | API complete 对 diagnostics 把 resultId/resultType 塞入 `data`，但 SSE 顶层事件没有 resultId：`routes/task.ts:118-143` | 页面恢复依赖解析 data 内字段；backtest 无 resultId/resultType | Task 6 + Task 12 |
-| Diagnostics API | `GET /api/diagnostics/:resultId` 和 `GET /api/diagnostics?strategy=...` | 路由已存在：`routes/diagnostics.ts:10-25`；返回 current `DiagnosticResult` | response shape 是 `id/dataJson`，无 category/subcategory/resultType/expiresAt；列表只能按 strategy 查 | Task 6 |
-| Worker task surface | Worker 应明确支持或拒绝每个 API task type | Worker enum 有 `factor_compute/factor_eval/ai_train`，但 `main.ts` 只接 `backtest/collect/diagnostics`：`main.ts:18-33` | 类型声明与实际处理能力不一致，未来任务会进入 unsupported 失败 | Task 7；如非本轮范围需显式标为 out-of-scope |
-| Worker diagnostics | Worker 传 category/configSnapshot 给 Python diagnostics；无 echo fallback | 当前 `DiagnosticsHandler` 对 UNKNOWN/失败回显成功：`handlers/diagnostics-handler.ts:44-52`；请求只传 `{config:{strategyParams}}`：`handlers/diagnostics-handler.ts:29-35` | 假阳性，前端以为诊断完成 | Task 7 |
-| Python CLI | 支持 `backtest` / `diagnostics` NDJSON | CLI `_COMMANDS` 无 diagnostics：`cli.py:69-75` | diagnostics task 必然 UNKNOWN_COMMAND，Worker 又 echo | Task 8 |
-| Python backtest input | 从 `configSnapshot` 读取配置 | 当前 `commands/backtest.py` 读 `params.config.strategyParams`：`backtest.py:25-27,67`；runner/backtest config 只保留 `strategyKind`，未带 category/subcategory | Worker 必须转换，CLI 必须升级；报告/Obsidian 如需分类也要补 | Task 7 + Task 8 + Task 12 |
-| Python diagnostics algorithms | 因子型 IC/分层/相关性；非因子参数敏感/信号/滑点；过渡型事件/舆情→标准化因子映射 | 无 `commands/diagnostics.py` 文件 | 最大缺口，需要算法设计先行；06-28 没锁死每个 subtype JSON 细节，Phase 0 必须补 | Phase 0 + Task 9-11 |
-| Frontend consumption | 06-28 StrategyRow + ConfigSnapshot + Preview + Diagnostics | 当前仍有 `ResearchModeId` 和旧子分类：`apps/web/src/data/types.ts:115,123-134`；ConfigPanel 有前端本地配置但保存 shape 不等于目标：`config-panel.tsx:246-272`；Workspace 图表大量 mock：`workspace-page.tsx:29-81,245-294`；`strategy.name`/`strategy.id` 混用 | 后端完成后前端需二次接线；不能把现状前端当完成 | Task 13 |
+| 维度                               | 06-28 目标                                                                                                 | 当前现状                                                                                                                                                                                                                                                       | 差距/风险                                                                                                                                               | 计划落点                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 一级分类                           | `factor_based` / `non_factor` / `transitional`                                                             | Python 已有三值：`packages/strategy-runtime/quantforge_strategy/types.py:82-86`；API/前端也有三值：`apps/api/src/types.ts:332-333`, `apps/web/src/data/types.ts:120-122`                                                                                       | 一级分类值一致                                                                                                                                          | Task 1 固化为 canonical contract                    |
+| 子分类：因子型                     | `linear_multi_factor`, `index_enhancement`, `ml_nonlinear_factor`                                          | 当前为 `linear_multi_factor`, `nonlinear_ml`：`types.py:91-94`, `apps/api/src/types.ts:336-339`                                                                                                                                                                | 缺 `index_enhancement`；`nonlinear_ml` 需更名为 `ml_nonlinear_factor`                                                                                   | Task 1 + Task 8                                     |
+| 子分类：非因子型                   | `trend_cta`, `arbitrage`, `hft_microstructure`, `macro_quant`, `event_driven`, `e2e_ai_timeseries`         | 当前还有 `mean_reversion`, `high_frequency`, `tail_risk_hedging`：`types.py:95-102`                                                                                                                                                                            | `high_frequency` 需更名为 `hft_microstructure`；`mean_reversion` / `tail_risk_hedging` 不在 06-28，已拍板 quarantine/fail，不静默合并                   | Task 1 + Task 2                                     |
+| 子分类：过渡型                     | `event_sentiment_factor`                                                                                   | 当前无 transitional 子分类，`transitional` 前端列表为空：`apps/web/src/components/config-panel.tsx:16-29`                                                                                                                                                      | 过渡形态无法精确表达 06-28 的“事件/舆情标准化因子”                                                                                                      | Task 1 + Task 6 + Task 8                            |
+| `StrategyMeta`                     | `name/category/subcategory/description/params/version`，因子型含 `required_factors/factor_pool`            | 当前 `StrategyMeta` 仍要求 `modes`，保留 `kind`，`subcategory` 可空：`meta.py:32-42`；部分策略如 `equal_weight` 未显式分类，会落默认 `NON_FACTOR/None`                                                                                                         | 旧 `ResearchMode` 仍在元数据中；分类覆盖不完整                                                                                                          | Task 1 + Task 2                                     |
+| `workflowReady`                    | 06-28 写明由后端判断“策略已注册 + 有可用标的”                                                              | 当前 API 计算为 `subcategory !== null`：`routes/strategy.ts:24-26`；06-29 文档也仅记录这个现状                                                                                                                                                                 | 不能用“有子分类”替代产品可工作判断；已拍板使用“注册策略 + canonical 子分类 + 至少一个 active instrument 具备默认 timeframe 的最低 bar 覆盖”作为首版规则 | Task 1                                              |
+| `StrategyKind`                     | 06-28 兼容性说明保留                                                                                       | 当前保留：`StrategyKind` 定义在 `types.py:66-72`，API 返回 `kind`：`routes/strategy.ts:21-23`                                                                                                                                                                  | 容易被误用为分类体系                                                                                                                                    | Task 1：明确仅为执行/组合语义，不参与导航分类       |
+| `StrategyParamDef` identity        | 06-28 Python 用 `name`，TS 前端用 `name/type/default/range/options/chartRelevant/uiConstraints`            | 当前 Python/API/前端用 `key/label/type/default/min/max/chart_relevant/ui_constraints`：`meta.py:20-29`, `apps/api/src/types.ts:356-367`, `apps/web/src/data/types.ts:185-197`                                                                                  | wire 命名与目标不一致；snake/camel 边界未定义                                                                                                           | Task 1 + Task 13                                    |
+| `chartRelevant/uiConstraints` wire | 前端目标为 camelCase，UIConstraint 支持 `require_when/disable_when/set_default_when/range_when`            | 当前 API 输出 snake：`routes/strategy.ts:10-20`，前端手动映射：`useStrategies.ts:7-18`；前端只实现 `disable_when/require_when`：`config-panel.tsx:56-82`                                                                                                       | API public contract 未对齐 06-28 TS；前端对约束 DSL 支持不完整                                                                                          | Task 1 + Task 13；过渡期可同时输出 deprecated snake |
+| Config API                         | GET/PUT `/api/strategies/:name/config`，保存全量拍平配置，hash 乐观锁                                      | 路由已存在但只保存任意 `config` + `hash`：`routes/config.ts:20-23`；Service 无校验：`services/config-service.ts:12-20`                                                                                                                                         | `ConfigSnapshot` 当前只有 `{strategy, params}` 类型：`apps/api/src/types.ts:369-373`；无法覆盖三类配置                                                  | Task 3                                              |
+| Config DB                          | `strategy_configs`, `config_history`                                                                       | 表已存在但列名为 `strategy`，无 category/subcategory/schemaVersion：`schema.ts:43-58`, `connection.ts:124-139`                                                                                                                                                 | 无分类索引、无迁移校验、history 不能按目标审计                                                                                                          | Task 4                                              |
+| API/任务存储边界                   | 工作流状态要能追踪配置、任务、诊断、回测结果                                                               | 当前 API 自有 sql.js DB 默认 `data/api.db`，data-center/task 主库是 `data/quant.db`；ReportRepository 在 task route 内直接 `new`，未走 service/DI                                                                                                              | 已拍板短期保持双库，但必须文档化跨库写入顺序和补偿，不做隐式原子性假设                                                                                  | Task 4 + Task 6 + Task 12                           |
+| Preview API                        | `POST /api/strategies/:name/preview`，`preview_params`，cursor pagination，`fingerprint`, `engine_version` | 路由和 TS PreviewService 已存在：`routes/preview.ts:17-53`, `services/preview-service.ts:40-136`；`:name` 当前未使用：`routes/preview.ts:18`                                                                                                                   | 当前不校验 strategy/config/category；pagination 缺 `total_count`；overlay/signal shape 与 06-28/前端互相不一致                                          | Task 5 + Task 13                                    |
+| Task payload                       | `configSnapshot` 唯一真相源，无顶层 `params`                                                               | Backtest handler 仍接受 `payload.params` fallback：`apps/worker/src/handlers/backtest-handler.ts:17-18,45`；API 保存报告仍按顶层 payload 字段理解：`routes/task.ts:149-168`；Workspace 提交 diagnostics 空 params：`workspace-page.tsx:326-334`                | params 漂移风险；诊断/回测/报告记录可能不一致                                                                                                           | Task 6 + Task 7 + Task 12 + Task 13                 |
+| SSE result                         | result 事件含 `resultId/resultType`                                                                        | API complete 对 diagnostics 把 resultId/resultType 塞入 `data`，但 SSE 顶层事件没有 resultId：`routes/task.ts:118-143`                                                                                                                                         | 页面恢复依赖解析 data 内字段；backtest 无 resultId/resultType                                                                                           | Task 6 + Task 12                                    |
+| Diagnostics API                    | `GET /api/diagnostics/:resultId` 和 `GET /api/diagnostics?strategy=...`                                    | 路由已存在：`routes/diagnostics.ts:10-25`；返回 current `DiagnosticResult`                                                                                                                                                                                     | response shape 是 `id/dataJson`，无 category/subcategory/resultType/expiresAt；列表只能按 strategy 查                                                   | Task 6                                              |
+| Worker task surface                | Worker 应明确支持或拒绝每个 API task type                                                                  | Worker enum 有 `factor_compute/factor_eval/ai_train`，但 `main.ts` 只接 `backtest/collect/diagnostics`：`main.ts:18-33`                                                                                                                                        | 类型声明与实际处理能力不一致，未来任务会进入 unsupported 失败                                                                                           | Task 7；如非本轮范围需显式标为 out-of-scope         |
+| Worker diagnostics                 | Worker 传 category/configSnapshot 给 Python diagnostics；无 echo fallback                                  | 当前 `DiagnosticsHandler` 对 UNKNOWN/失败回显成功：`handlers/diagnostics-handler.ts:44-52`；请求只传 `{config:{strategyParams}}`：`handlers/diagnostics-handler.ts:29-35`                                                                                      | 假阳性，前端以为诊断完成                                                                                                                                | Task 7                                              |
+| Python CLI                         | 支持 `backtest` / `diagnostics` NDJSON                                                                     | CLI `_COMMANDS` 无 diagnostics：`cli.py:69-75`                                                                                                                                                                                                                 | diagnostics task 必然 UNKNOWN_COMMAND，Worker 又 echo                                                                                                   | Task 8                                              |
+| Python backtest input              | 从 `configSnapshot` 读取配置                                                                               | 当前 `commands/backtest.py` 读 `params.config.strategyParams`：`backtest.py:25-27,67`；runner/backtest config 只保留 `strategyKind`，未带 category/subcategory                                                                                                 | Worker 必须转换，CLI 必须升级；报告/Obsidian 如需分类也要补                                                                                             | Task 7 + Task 8 + Task 12                           |
+| Python diagnostics algorithms      | 因子型 IC/分层/相关性；非因子参数敏感/信号/滑点；过渡型事件/舆情→标准化因子映射                            | 无 `commands/diagnostics.py` 文件                                                                                                                                                                                                                              | 最大缺口，需要算法设计先行；06-28 没锁死每个 subtype JSON 细节，Phase 0 必须补                                                                          | Phase 0 + Task 9-11                                 |
+| Frontend consumption               | 06-28 StrategyRow + ConfigSnapshot + Preview + Diagnostics                                                 | 当前仍有 `ResearchModeId` 和旧子分类：`apps/web/src/data/types.ts:115,123-134`；ConfigPanel 有前端本地配置但保存 shape 不等于目标：`config-panel.tsx:246-272`；Workspace 图表大量 mock：`workspace-page.tsx:29-81,245-294`；`strategy.name`/`strategy.id` 混用 | 后端完成后前端需二次接线；不能把现状前端当完成                                                                                                          | Task 13                                             |
 
 ---
 
@@ -77,14 +77,14 @@ export type StrategySubcategory =
 
 **旧值迁移策略：**
 
-| 当前值 | 目标动作 | 输出到前端/API | DB 迁移建议 |
-|---|---|---|---|
-| `nonlinear_ml` | 更名为 `ml_nonlinear_factor` | 不再输出旧值 | 安全自动改名 |
-| `high_frequency` | 更名为 `hft_microstructure` | 不再输出旧值 | 安全自动改名 |
-| `mean_reversion` | 非 06-28 目标值 | 不输出；迁移脚本标记 incompatible | 已拍板：不静默合并；迁移 quarantine/fail 并输出审计清单 |
-| `tail_risk_hedging` | 非 06-28 目标值 | 不输出；迁移脚本标记 incompatible | 已拍板：不静默合并；迁移 quarantine/fail 并输出审计清单 |
-| 缺失 `index_enhancement` | 新增 | 输出 | 需要策略元数据补齐 |
-| 缺失 `event_sentiment_factor` | 新增 | 输出 | transitional 默认子分类 |
+| 当前值                        | 目标动作                     | 输出到前端/API                    | DB 迁移建议                                             |
+| ----------------------------- | ---------------------------- | --------------------------------- | ------------------------------------------------------- |
+| `nonlinear_ml`                | 更名为 `ml_nonlinear_factor` | 不再输出旧值                      | 安全自动改名                                            |
+| `high_frequency`              | 更名为 `hft_microstructure`  | 不再输出旧值                      | 安全自动改名                                            |
+| `mean_reversion`              | 非 06-28 目标值              | 不输出；迁移脚本标记 incompatible | 已拍板：不静默合并；迁移 quarantine/fail 并输出审计清单 |
+| `tail_risk_hedging`           | 非 06-28 目标值              | 不输出；迁移脚本标记 incompatible | 已拍板：不静默合并；迁移 quarantine/fail 并输出审计清单 |
+| 缺失 `index_enhancement`      | 新增                         | 输出                              | 需要策略元数据补齐                                      |
+| 缺失 `event_sentiment_factor` | 新增                         | 输出                              | transitional 默认子分类                                 |
 
 ### 1.2 `StrategyMeta` / `StrategyParamDef` contract
 
@@ -199,11 +199,16 @@ interface TransitionalConfigParams {
   target_factor_pool: string;
 }
 
-type ConfigSnapshot = ConfigSnapshotBase & (
-  | { category: 'factor_based'; params: FactorBasedConfigParams & Record<string, unknown> }
-  | { category: 'non_factor'; params: NonFactorConfigParams & Record<string, unknown> }
-  | { category: 'transitional'; subcategory: 'event_sentiment_factor'; params: TransitionalConfigParams & Record<string, unknown> }
-);
+type ConfigSnapshot = ConfigSnapshotBase &
+  (
+    | { category: 'factor_based'; params: FactorBasedConfigParams & Record<string, unknown> }
+    | { category: 'non_factor'; params: NonFactorConfigParams & Record<string, unknown> }
+    | {
+        category: 'transitional';
+        subcategory: 'event_sentiment_factor';
+        params: TransitionalConfigParams & Record<string, unknown>;
+      }
+  );
 ```
 
 **Config API target：**
@@ -362,8 +367,23 @@ interface DiagnosticResultWire {
 {
   "command": "diagnostics",
   "strategy": "dual_ma",
-  "configSnapshot": { "schemaVersion": 1, "strategy": "dual_ma", "category": "non_factor", "subcategory": "trend_cta", "params": {}, "hash": "sha256:...", "strategyVersion": "0.1.0", "updatedAt": 1717200000000 },
-  "dataRange": { "dbPath": "data/quant.db", "symbol": "600519", "timeframe": "1d", "startTs": 1672531200, "endTs": 1717200000 }
+  "configSnapshot": {
+    "schemaVersion": 1,
+    "strategy": "dual_ma",
+    "category": "non_factor",
+    "subcategory": "trend_cta",
+    "params": {},
+    "hash": "sha256:...",
+    "strategyVersion": "0.1.0",
+    "updatedAt": 1717200000000
+  },
+  "dataRange": {
+    "dbPath": "data/quant.db",
+    "symbol": "600519",
+    "timeframe": "1d",
+    "startTs": 1672531200,
+    "endTs": 1717200000
+  }
 }
 ```
 
@@ -373,9 +393,24 @@ interface DiagnosticResultWire {
 {
   "command": "backtest",
   "strategy": "dual_ma",
-  "configSnapshot": { "schemaVersion": 1, "strategy": "dual_ma", "category": "non_factor", "subcategory": "trend_cta", "params": {}, "hash": "sha256:...", "strategyVersion": "0.1.0", "updatedAt": 1717200000000 },
+  "configSnapshot": {
+    "schemaVersion": 1,
+    "strategy": "dual_ma",
+    "category": "non_factor",
+    "subcategory": "trend_cta",
+    "params": {},
+    "hash": "sha256:...",
+    "strategyVersion": "0.1.0",
+    "updatedAt": 1717200000000
+  },
   "execution": { "initialCash": 1000000, "slippage": 0.0001 },
-  "dataRange": { "dbPath": "data/quant.db", "symbol": "600519", "timeframe": "1d", "startTs": 1672531200, "endTs": 1717200000 }
+  "dataRange": {
+    "dbPath": "data/quant.db",
+    "symbol": "600519",
+    "timeframe": "1d",
+    "startTs": 1672531200,
+    "endTs": 1717200000
+  }
 }
 ```
 
@@ -402,26 +437,77 @@ interface FactorDiagnosticsResult {
   type: 'factor_based';
   subcategory: 'linear_multi_factor' | 'index_enhancement' | 'ml_nonlinear_factor';
   ic_series: Array<{ ts: number; factor: string; ic: number; rank_ic: number }>;
-  layered_returns: Array<{ factor: string; group: string; return: number; benchmark_return?: number }>;
+  layered_returns: Array<{
+    factor: string;
+    group: string;
+    return: number;
+    benchmark_return?: number;
+  }>;
   correlation_matrix: { labels: string[]; values: number[][]; method: 'pearson' | 'spearman' };
-  summary: { mean_ic: number; ic_std: number; ic_ir: number; mean_rank_ic: number; coverage: number };
+  summary: {
+    mean_ic: number;
+    ic_std: number;
+    ic_ir: number;
+    mean_rank_ic: number;
+    coverage: number;
+  };
 }
 
 interface NonFactorDiagnosticsResult {
   type: 'non_factor';
-  subcategory: 'trend_cta' | 'arbitrage' | 'hft_microstructure' | 'macro_quant' | 'event_driven' | 'e2e_ai_timeseries';
-  param_sensitivity: Array<{ param: string; values: number[]; returns: number[]; sharpe: number[]; max_drawdown?: number[] }>;
-  signal_quality: { total_signals: number; win_rate: number; avg_holding_bars: number; profit_factor: number; max_consecutive_losses: number };
+  subcategory:
+    | 'trend_cta'
+    | 'arbitrage'
+    | 'hft_microstructure'
+    | 'macro_quant'
+    | 'event_driven'
+    | 'e2e_ai_timeseries';
+  param_sensitivity: Array<{
+    param: string;
+    values: number[];
+    returns: number[];
+    sharpe: number[];
+    max_drawdown?: number[];
+  }>;
+  signal_quality: {
+    total_signals: number;
+    win_rate: number;
+    avg_holding_bars: number;
+    profit_factor: number;
+    max_consecutive_losses: number;
+  };
   slippage_stress: Array<{ bps: number; return: number; sharpe: number; trade_count: number }>;
 }
 
 interface TransitionalDiagnosticsResult {
   type: 'transitional';
   subcategory: 'event_sentiment_factor';
-  sentiment_decay: Array<{ half_life: number; ic: number; signal_count: number; effective_window: number }>;
-  mapping_targets: Array<{ target_factor: string; coverage: number; correlation: number; stability: number }>;
-  standardized_factor_quality: { missing_ratio: number; outlier_ratio: number; mean: number; std: number; rank_ic: number; monotonicity: number };
-  mapping_validation: Array<{ check: 'lead_lag' | 'cross_sectional_coverage' | 'factor_library_attach' | 'decay_robustness'; passed: boolean; value: number | string; threshold: number | string }>;
+  sentiment_decay: Array<{
+    half_life: number;
+    ic: number;
+    signal_count: number;
+    effective_window: number;
+  }>;
+  mapping_targets: Array<{
+    target_factor: string;
+    coverage: number;
+    correlation: number;
+    stability: number;
+  }>;
+  standardized_factor_quality: {
+    missing_ratio: number;
+    outlier_ratio: number;
+    mean: number;
+    std: number;
+    rank_ic: number;
+    monotonicity: number;
+  };
+  mapping_validation: Array<{
+    check: 'lead_lag' | 'cross_sectional_coverage' | 'factor_library_attach' | 'decay_robustness';
+    passed: boolean;
+    value: number | string;
+    threshold: number | string;
+  }>;
 }
 ```
 
@@ -491,22 +577,26 @@ interface TransitionalDiagnosticsResult {
 **Goal:** 在写 Python diagnostics 代码前，冻结因子型、非因子型、过渡型诊断算法、输入数据要求、输出字段和错误策略。
 
 **Files:**
+
 - Create: `docs/superpowers/specs/2026-06-29-diagnostics-algorithm-contract.md`
 - Read for context: `docs/superpowers/specs/2026-06-28-strategy-classification-and-config-design.md`
 - Read for context: `packages/strategy-runtime/quantforge_strategy/commands/factor_eval.py`
 - Read for context: `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`
 
 **Input/Output Interfaces:**
+
 - Consumes: `ConfigSnapshot`, `dataRange`, strategy registry meta.
 - Produces: `FactorDiagnosticsResult`, `NonFactorDiagnosticsResult`, `TransitionalDiagnosticsResult` schemas exactly matching section 1.7.
 
 **Test Method:**
+
 - Documentation review checklist in the new spec:
   - Each result field has a formula or derivation rule.
   - Each category has at least one no-data error code and one partial-data degradation rule.
   - Transitional diagnostics includes sentiment decay, mapping target factors, standardized factor quality, and mapping validation.
 
 **Acceptance Criteria:**
+
 - The document explicitly defines IC windowing, forward return horizon, layer count, correlation method, parameter scan grid, slippage bps grid, event sentiment decay formula, and factor-library attach validation.
 - The document states which data source each calculation reads and how missing data is reported.
 - User reviews and approves the design before Task 6 begins.
@@ -514,6 +604,7 @@ interface TransitionalDiagnosticsResult {
 **Dependencies:** None.
 
 **Steps:**
+
 - [ ] Read 06-28 target diagnostics sections and current factor/backtest command code.
 - [ ] Create the algorithm contract document with sections: inputs, outputs, factor_based, non_factor, transitional, error codes, performance limits.
 - [ ] Include a concrete JSON example for each diagnostics result type.
@@ -529,6 +620,7 @@ interface TransitionalDiagnosticsResult {
 **Goal:** 让 Python registry 和 API `/api/strategies` 只输出 06-28 canonical category/subcategory 和 target parameter wire shape。
 
 **Files:**
+
 - Modify: `packages/strategy-runtime/quantforge_strategy/types.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/meta.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/__init__.py`
@@ -539,15 +631,18 @@ interface TransitionalDiagnosticsResult {
 - Modify/Create: `apps/api/tests/routes/strategy.test.ts`
 
 **Input/Output Interfaces:**
+
 - Consumes: Python strategy classes exposing `.meta`.
 - Produces: `GET /api/strategies` and `GET /api/strategies/:name` response using `StrategyRowWire` from section 1.2.
 
 **Test Method:**
+
 - `cd packages/strategy-runtime && pytest tests/test_strategy_categories.py -v`
 - `cd apps/api && pnpm test -- tests/routes/strategy.test.ts`
 - Add API test assertion that no response contains `nonlinear_ml`, `high_frequency`, `mean_reversion`, or `tail_risk_hedging`.
 
 **Acceptance Criteria:**
+
 - Python enum includes exactly 10 target subcategory values from 06-28.
 - API `StrategySubcategory` type includes exactly the same 10 target values.
 - Strategy route maps `chart_relevant/ui_constraints/target_field` to `chartRelevant/uiConstraints/targetField` on public wire.
@@ -558,6 +653,7 @@ interface TransitionalDiagnosticsResult {
 **Dependencies:** None.
 
 **Steps:**
+
 - [ ] Update Python enum values to 06-28 target, keeping no canonical members for old subcategories.
 - [ ] Update `StrategyParamDef` to expose canonical `name/range` while providing compatibility properties for existing strategy code that still uses `key/min/max` during migration.
 - [ ] Update `StrategyMeta` so `category` and `subcategory` are required for new strategies; keep `kind` as execution-only field.
@@ -572,6 +668,7 @@ interface TransitionalDiagnosticsResult {
 **Goal:** 所有实际注册策略输出 canonical 06-28 子分类；旧子分类只作为迁移输入，不作为 registry/API 输出。
 
 **Files:**
+
 - Modify: `packages/strategies/quantforge_strategies/combined/*.py`
 - Modify: `packages/strategies/quantforge_strategies/selectors/*.py`
 - Modify: `packages/strategies/quantforge_strategies/timers/*.py`
@@ -579,14 +676,17 @@ interface TransitionalDiagnosticsResult {
 - Create/Modify: `packages/strategies/tests/test_strategy_meta_contract.py`
 
 **Input/Output Interfaces:**
+
 - Consumes: `StrategyCategory`, `StrategySubcategory`, `StrategyMeta`.
 - Produces: `quantforge_strategies.list_all()` entries whose meta subcategory is in the 06-28 set.
 
 **Test Method:**
+
 - `cd packages/strategies && pytest tests/test_strategy_meta_contract.py -v`
 - `cd apps/api && pnpm test -- tests/routes/strategy.test.ts`
 
 **Acceptance Criteria:**
+
 - `momentum_selector` remains `factor_based/linear_multi_factor` unless explicitly redesigned.
 - `ai_predictor` remains `non_factor/e2e_ai_timeseries`.
 - `dual_ma`, `rsi`, `bollinger_band`, `macd`, `kdj`, `ma_crossover` remain `non_factor/trend_cta`.
@@ -596,6 +696,7 @@ interface TransitionalDiagnosticsResult {
 **Dependencies:** Task 1.
 
 **Steps:**
+
 - [ ] Update imports and enum references in strategy files.
 - [ ] Replace any `NONLINEAR_ML` references with `ML_NONLINEAR_FACTOR`.
 - [ ] Replace any `HIGH_FREQUENCY` references with `HFT_MICROSTRUCTURE`.
@@ -612,6 +713,7 @@ interface TransitionalDiagnosticsResult {
 **Goal:** `GET/PUT /api/strategies/:name/config` 返回/保存完整 `ConfigSnapshot`，覆盖 FactorBasedConfig、NonFactorConfig、TransitionalConfig，并通过 hash 乐观锁防止覆盖漂移。
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/api/src/services/config-service.ts`
 - Modify: `apps/api/src/routes/config.ts`
@@ -620,21 +722,47 @@ interface TransitionalDiagnosticsResult {
 - Modify/Create: `apps/api/tests/services/config-service.test.ts`
 
 **Input/Output Interfaces:**
+
 - Consumes PUT request:
   ```json
-  {"category":"non_factor","subcategory":"trend_cta","params":{"lookback_window":20,"hold_period":5,"indicators":["macd"],"indicator_params":{"macd_fast":12},"dynamic_params":{}},"expectedHash":"sha256:old"}
+  {
+    "category": "non_factor",
+    "subcategory": "trend_cta",
+    "params": {
+      "lookback_window": 20,
+      "hold_period": 5,
+      "indicators": ["macd"],
+      "indicator_params": { "macd_fast": 12 },
+      "dynamic_params": {}
+    },
+    "expectedHash": "sha256:old"
+  }
   ```
 - Produces GET/PUT response:
   ```json
-  {"persisted":true,"configSnapshot":{"schemaVersion":1,"strategy":"dual_ma","strategyVersion":"0.1.0","category":"non_factor","subcategory":"trend_cta","params":{},"hash":"sha256:new","updatedAt":1717200000000}}
+  {
+    "persisted": true,
+    "configSnapshot": {
+      "schemaVersion": 1,
+      "strategy": "dual_ma",
+      "strategyVersion": "0.1.0",
+      "category": "non_factor",
+      "subcategory": "trend_cta",
+      "params": {},
+      "hash": "sha256:new",
+      "updatedAt": 1717200000000
+    }
+  }
   ```
 
 **Test Method:**
+
 - `cd apps/api && pnpm test -- tests/services/config-service.test.ts tests/routes/config.test.ts`
 - Test 409 conflict by saving once, then PUT with stale `expectedHash`.
 - Test default snapshot behavior for no saved config according to user-approved policy.
 
 **Acceptance Criteria:**
+
 - `ConfigSnapshot` contains `schemaVersion`, `strategy`, `strategyVersion`, `category`, `subcategory`, `params`, `hash`, `updatedAt`.
 - PUT rejects category/subcategory mismatch with strategy registry.
 - PUT rejects missing required fields for each category:
@@ -647,6 +775,7 @@ interface TransitionalDiagnosticsResult {
 **Dependencies:** Task 1.
 
 **Steps:**
+
 - [ ] Define `ConfigSnapshot` and category-specific config param types in API `types.ts`.
 - [ ] Implement canonical JSON stringify and `sha256:` hash helper in `config-service.ts` or a focused utility file.
 - [ ] Implement category-specific validation functions.
@@ -661,6 +790,7 @@ interface TransitionalDiagnosticsResult {
 **Goal:** SQLite schema and repositories preserve target config/diagnostic metadata, enable history audit, strategy listing, result recovery, and purge.
 
 **Files:**
+
 - Modify: `apps/api/src/storage/schema.ts`
 - Modify: `apps/api/src/storage/connection.ts`
 - Modify: `apps/api/src/repositories/sqlite-config-repo.ts`
@@ -670,6 +800,7 @@ interface TransitionalDiagnosticsResult {
 - Modify/Create: `apps/api/tests/storage/diagnostic-repo.test.ts`
 
 **Input/Output Interfaces:**
+
 - `IConfigRepo.get(strategyName): Promise<ConfigSnapshot | null>`
 - `IConfigRepo.save(snapshot, expectedHash?): Promise<ConfigSnapshot>`
 - `IConfigHistoryRepo.list(strategyName, limit, offset)` returns history entries with category/subcategory/hash/createdAt.
@@ -728,10 +859,12 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 ```
 
 **Test Method:**
+
 - `cd apps/api && pnpm test -- tests/storage/config-repo.test.ts tests/storage/diagnostic-repo.test.ts`
 - Migration probe: start with old tables from current `connection.ts`, insert representative rows, initialize DB, verify rows are migrated or rejected with an audit error.
 
 **Acceptance Criteria:**
+
 - DB has category/subcategory indexes for config and diagnostics.
 - Diagnostics table has `result_type` and `task_id` as first-class fields.
 - The plan for API `data/api.db` vs data-center `data/quant.db` is explicit: either keep dual DB with documented cross-write ordering and compensation, or consolidate target workflow tables into one DB. No implicit cross-DB transaction assumptions.
@@ -743,6 +876,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 3.
 
 **Steps:**
+
 - [ ] Update Drizzle schema definitions.
 - [ ] Decide and document the API DB vs data-center DB ownership boundary for strategy_configs/config_history/diagnostic_results/backtest_reports/tasks.
 - [ ] Update SQL table creation and idempotent migration path in `connection.ts`.
@@ -762,6 +896,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** `POST /api/strategies/:name/preview` 对齐 06-28 response shape，并按 category/subcategory/config 选择轻量 preview 逻辑。
 
 **Files:**
+
 - Modify: `apps/api/src/services/preview-service.ts`
 - Modify: `apps/api/src/routes/preview.ts`
 - Modify: `apps/api/src/types.ts`
@@ -769,15 +904,18 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 - Modify/Create: `apps/api/tests/services/preview-service.test.ts`
 
 **Input/Output Interfaces:**
+
 - Consumes: strategy name, saved/default `ConfigSnapshot`, `preview_params`, bars from data-center.
 - Produces: target preview response in section 1.4 with `total_count` and `engine_version`.
 
 **Test Method:**
+
 - `cd apps/api && pnpm test -- tests/services/preview-service.test.ts tests/routes/preview.test.ts`
 - Tests for first page `cursor:null`, older page cursor, stable fingerprint, changed params changing fingerprint.
 - Tests for factor_based/non_factor/transitional branch labels.
 
 **Acceptance Criteria:**
+
 - Route 404s unknown strategy.
 - Route validates `symbol` and `timeframe`.
 - Route rejects non-chart-relevant `preview_params` with an explicit 422 error; no silent ignore or best-effort mutation.
@@ -788,6 +926,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 1, Task 3.
 
 **Steps:**
+
 - [ ] Define preview wire types in API `types.ts`.
 - [ ] Update route to load strategy meta and optional saved/default config snapshot.
 - [ ] Normalize bar shape to `{ts,o,h,l,c,v}`.
@@ -806,6 +945,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** API task submission enforces `configSnapshot` as唯一真相源，并让 diagnostics/backtest result SSE 都包含恢复所需 `resultId/resultType`。
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/api/src/routes/task.ts`
 - Modify: `apps/api/src/plugins/task-service.ts`
@@ -816,17 +956,20 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 - Modify/Create: `apps/api/tests/routes/diagnostics.test.ts`
 
 **Input/Output Interfaces:**
+
 - Consumes: target diagnostics/backtest task payloads from section 1.5.
 - Produces: SSE `result` event with top-level `resultId` and `resultType`.
 - Produces: diagnostics API response shape from section 1.5.
 
 **Test Method:**
+
 - `cd apps/api && pnpm test -- tests/routes/task.test.ts tests/routes/diagnostics.test.ts`
 - SSE test using `app.inject` or task service subscription to assert event payload.
 - Complete-route test for diagnostics stores diagnostic result before emitting final event.
 - Complete-route test for backtest saves report before emitting result event and uses report id as `resultId`.
 
 **Acceptance Criteria:**
+
 - `POST /api/tasks` rejects payloads containing top-level `params`.
 - `payload.strategy` must equal `payload.configSnapshot.strategy`.
 - `payload.configSnapshot.category/subcategory` must be canonical.
@@ -838,6 +981,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 3, Task 4.
 
 **Steps:**
+
 - [ ] Add task payload validation helpers.
 - [ ] Update `POST /api/tasks` to validate diagnostics/backtest payloads.
 - [ ] Update complete route to persist diagnostics before final SSE event.
@@ -857,6 +1001,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** Worker 将 API task payload 无漂移地转成 Python CLI request；删除 diagnostics echo fallback。
 
 **Files:**
+
 - Modify: `apps/worker/src/types.ts`
 - Modify: `apps/worker/src/handlers/diagnostics-handler.ts`
 - Modify: `apps/worker/src/handlers/backtest-handler.ts`
@@ -866,15 +1011,18 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 - Modify: `apps/worker/tests/backtest-handler.test.ts`
 
 **Input/Output Interfaces:**
+
 - Consumes: API `TaskRecord.payload` with target `configSnapshot`.
 - Produces: Python CLI request from section 1.6.
 - Forwards: `progress/log` events to API internal event endpoint.
 
 **Test Method:**
+
 - `cd apps/worker && pnpm test -- tests/diagnostics-handler.test.ts tests/backtest-handler.test.ts`
 - Mock `PythonBridge.streamCall` to capture request and return success/error.
 
 **Acceptance Criteria:**
+
 - Backtest handler never reads `payload.params`.
 - Diagnostics handler passes `configSnapshot`, `dataRange`, and no legacy `config.strategyParams` wrapper as the canonical request.
 - Diagnostics `UNKNOWN_COMMAND` or `{ok:false}` throws and marks task failed through Worker main.
@@ -884,6 +1032,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 6.
 
 **Steps:**
+
 - [ ] Update worker types for `ConfigSnapshot`, diagnostics payload, backtest payload, and result event.
 - [ ] Rewrite diagnostics handler request builder to target CLI request.
 - [ ] Remove echo fallback branches from diagnostics handler.
@@ -898,6 +1047,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** Python CLI 接收 target `configSnapshot` contract，返回规范 NDJSON result/error。
 
 **Files:**
+
 - Modify: `packages/strategy-runtime/quantforge_strategy/cli.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
@@ -907,15 +1057,18 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 - Modify: `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
 
 **Input/Output Interfaces:**
+
 - Consumes CLI requests from section 1.6.
 - Produces NDJSON progress/log/result/error events.
 
 **Test Method:**
+
 - `cd packages/strategy-runtime && pytest tests/test_cli.py tests/test_diagnostics_command.py tests/test_backtest_command_market_rules.py -v`
 - CLI subprocess test for `{"command":"diagnostics",...}` returns `event: result` or known `NO_DATA` error, not `UNKNOWN_COMMAND`.
 - Backtest command unit test verifies `configSnapshot.params` is passed to strategy construction.
 
 **Acceptance Criteria:**
+
 - `_COMMANDS` includes `diagnostics`.
 - `backtest.py` supports target `configSnapshot` and execution fields while retaining compatibility with current `config.strategyParams` only inside a clearly marked compatibility path.
 - `diagnostics.py` dispatches by `configSnapshot.category` and `configSnapshot.subcategory`.
@@ -925,6 +1078,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 7.
 
 **Steps:**
+
 - [ ] Add CLI command registration for `diagnostics`.
 - [ ] Add request parsing helpers for `configSnapshot`, `execution`, and `dataRange`.
 - [ ] Update backtest command to use `configSnapshot.params` as strategy params.
@@ -942,19 +1096,23 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** 因子型诊断输出 IC 序列、分层收益、因子相关性矩阵。
 
 **Files:**
+
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/factor.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
 - Create/Modify: `packages/strategy-runtime/tests/test_diagnostics_factor.py`
 
 **Input/Output Interfaces:**
+
 - Consumes: factor_based `ConfigSnapshot.params.factor_pool`, `dataRange` bars/factor data.
 - Produces: `FactorDiagnosticsResult` from section 1.7.
 
 **Test Method:**
+
 - `cd packages/strategy-runtime && pytest tests/test_diagnostics_factor.py -v`
 - Fixture with deterministic bars and two factors.
 
 **Acceptance Criteria:**
+
 - Computes forward returns and IC/rankIC over documented windows from Phase 0 spec.
 - Returns layered returns for the documented group count.
 - Returns symmetric correlation matrix with labels matching factor order.
@@ -964,6 +1122,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 0, Task 8.
 
 **Steps:**
+
 - [ ] Implement data loading adapter for price/factor input defined in Phase 0.
 - [ ] Implement IC/rankIC calculation.
 - [ ] Implement layered returns calculation.
@@ -977,19 +1136,23 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** 非因子型诊断输出参数敏感性、信号质量、滑点压力测试。
 
 **Files:**
+
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
 - Create/Modify: `packages/strategy-runtime/tests/test_diagnostics_non_factor.py`
 
 **Input/Output Interfaces:**
+
 - Consumes: non_factor `ConfigSnapshot.params`, `dataRange`, strategy registry.
 - Produces: `NonFactorDiagnosticsResult` from section 1.7.
 
 **Test Method:**
+
 - `cd packages/strategy-runtime && pytest tests/test_diagnostics_non_factor.py -v`
 - Fixture with deterministic dual MA bars and param grid.
 
 **Acceptance Criteria:**
+
 - Parameter sensitivity uses documented grid from Phase 0 and caps total runs to documented max.
 - Signal quality includes total signals, win rate, average holding bars, profit factor, max consecutive losses.
 - Slippage stress evaluates documented bps grid.
@@ -999,6 +1162,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 0, Task 8.
 
 **Steps:**
+
 - [ ] Implement parameter grid generation from `StrategyParamDef.range` and Phase 0 limits.
 - [ ] Implement simplified backtest/signal collection adapter.
 - [ ] Implement signal quality statistics.
@@ -1012,19 +1176,23 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** 过渡型诊断围绕“事件/舆情 → 标准化因子映射 → 挂载到因子库”输出情感衰减、映射目标、标准化因子质量、映射验证。
 
 **Files:**
+
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/transitional.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
 - Create/Modify: `packages/strategy-runtime/tests/test_diagnostics_transitional.py`
 
 **Input/Output Interfaces:**
+
 - Consumes: transitional `ConfigSnapshot.params.data_source`, `sentiment_decay_half_life`, `target_factor_pool`, event/sentiment records, price/factor data.
 - Produces: `TransitionalDiagnosticsResult` from section 1.7.
 
 **Test Method:**
+
 - `cd packages/strategy-runtime && pytest tests/test_diagnostics_transitional.py -v`
 - Fixture with deterministic event sentiment series, target factor series, and forward returns.
 
 **Acceptance Criteria:**
+
 - Does not return only data-source completeness.
 - Computes sentiment decay curve for documented half-life candidates.
 - Computes mapping target metrics for target factors.
@@ -1035,6 +1203,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 0, Task 8.
 
 **Steps:**
+
 - [ ] Implement sentiment event loading adapter from Phase 0 spec.
 - [ ] Implement exponential decay scoring.
 - [ ] Implement standardization and outlier checks.
@@ -1053,6 +1222,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** 回测任务从 API → Worker → Python → report persistence 全链路只使用 `configSnapshot`，并在 SSE 返回 report resultId。
 
 **Files:**
+
 - Modify: `apps/api/src/routes/task.ts`
 - Modify: `apps/api/src/services/report-mapper.ts`
 - Modify: `apps/worker/src/handlers/backtest-handler.ts`
@@ -1062,15 +1232,18 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 - Modify/Create: `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
 
 **Input/Output Interfaces:**
+
 - Consumes: Backtest task payload from section 1.5.
 - Produces: `BacktestTaskResult`, persisted `BacktestReportFull`, SSE result with `resultId` = report id and `resultType='backtest'`.
 
 **Test Method:**
+
 - `cd apps/worker && pnpm test -- tests/backtest-handler.test.ts`
 - `cd apps/api && pnpm test -- tests/routes/report.test.ts tests/routes/task.test.ts`
 - `cd packages/strategy-runtime && pytest tests/test_backtest_command_market_rules.py -v`
 
 **Acceptance Criteria:**
+
 - Backtest handler has no `payload.params` fallback.
 - Python backtest command constructs strategy from `configSnapshot.params`.
 - Report mapper includes config snapshot metadata in report data params or overview where appropriate.
@@ -1080,6 +1253,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 6, Task 7, Task 8.
 
 **Steps:**
+
 - [ ] Remove top-level params from backtest API tests and types.
 - [ ] Ensure Worker backtest request includes `configSnapshot` and execution fields.
 - [ ] Ensure Python command uses `configSnapshot.params`.
@@ -1097,6 +1271,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Goal:** 前端只作为消费方对接新后端 contract；不再把旧 10 个 subcategory、ResearchMode、mock diagnostics 当目标依据。
 
 **Files:**
+
 - Modify: `apps/web/src/data/types.ts`
 - Modify: `apps/web/src/hooks/useStrategies.ts`
 - Modify: `apps/web/src/api/strategies.ts`
@@ -1110,14 +1285,17 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 - Modify/Create: `apps/web/tests/*.ts`
 
 **Input/Output Interfaces:**
+
 - Consumes: API wire contracts from sections 1.2–1.5.
 - Produces: frontend task submissions with `configSnapshot`, preview requests with chart-relevant params, real diagnostics rendering.
 
 **Test Method:**
+
 - `cd apps/web && pnpm test`
 - TypeScript build: `cd apps/web && pnpm build`
 
 **Acceptance Criteria:**
+
 - `StrategySubcategory` frontend type matches the 10 target values from 06-28.
 - `ResearchModeId` is not used for Strategy/Workspace classification.
 - `useStrategies` consumes camelCase API response and does not need snake mapping for new fields.
@@ -1129,6 +1307,7 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 **Dependencies:** Task 1, Task 3, Task 5, Task 6.
 
 **Steps:**
+
 - [ ] Update frontend type unions to target subcategories.
 - [ ] Update API client response/request types.
 - [ ] Update ConfigPanel save payload to `{category, subcategory, params, expectedHash}`.
@@ -1163,15 +1342,15 @@ CREATE INDEX idx_diag_expires ON diagnostic_results(expires_at);
 
 ## 5. Frontend 对接检查：当前期待 vs 后端目标差距
 
-| Frontend file | Current expectation | Backend target impact | When to change |
-|---|---|---|---|
-| `apps/web/src/data/types.ts` | Subcategories include `nonlinear_ml/mean_reversion/high_frequency/tail_risk_hedging`; `ResearchModeId` still exists | Replace with 06-28 target; remove strategy classification dependence on ResearchMode | After Task 1 API output stable |
-| `apps/web/src/hooks/useStrategies.ts` | Maps snake `chart_relevant/ui_constraints` to camel; sets `mode` from category cast to `ResearchModeId` | Consume camel API directly; no `mode` cast | After Task 1 |
-| `apps/web/src/components/config-panel.tsx` | Saves nested mix `{strategy, params, factorPool, preprocessing, lookbackWindow...}` | Save full flattened `params` in `ConfigSnapshot` contract | After Task 3 |
-| `apps/web/src/components/workspace-page.tsx` | Diagnostics submits empty params; backtest submits no configSnapshot; charts are deterministic mock | Fetch config first; submit configSnapshot; render real diagnostics by result `type` | After Task 6 and Task 9-11 |
-| `apps/web/src/api/tasks.ts` | `ApiTaskType` excludes diagnostics; `TaskStreamEvent` has result only in `data` | Include diagnostics and top-level `resultId/resultType` | After Task 6 |
-| `apps/web/src/api/diagnostics.ts` | Expects current `DiagnosticResult {id,dataJson}` | Consume `DiagnosticResultWire {resultId,data}` | After Task 6 |
-| `apps/web/src/api/preview.ts` + `kline-chart.tsx` | Current frontend expects bars `timestamp/open/high/low/close/volume`, overlays `values`, signals `bar_index` | Either add frontend adapter or update KlineChart to 06-28 `{ts,o,h,l,c,v}` + overlay data points | After Task 5 |
+| Frontend file                                     | Current expectation                                                                                                 | Backend target impact                                                                            | When to change                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------ |
+| `apps/web/src/data/types.ts`                      | Subcategories include `nonlinear_ml/mean_reversion/high_frequency/tail_risk_hedging`; `ResearchModeId` still exists | Replace with 06-28 target; remove strategy classification dependence on ResearchMode             | After Task 1 API output stable |
+| `apps/web/src/hooks/useStrategies.ts`             | Maps snake `chart_relevant/ui_constraints` to camel; sets `mode` from category cast to `ResearchModeId`             | Consume camel API directly; no `mode` cast                                                       | After Task 1                   |
+| `apps/web/src/components/config-panel.tsx`        | Saves nested mix `{strategy, params, factorPool, preprocessing, lookbackWindow...}`                                 | Save full flattened `params` in `ConfigSnapshot` contract                                        | After Task 3                   |
+| `apps/web/src/components/workspace-page.tsx`      | Diagnostics submits empty params; backtest submits no configSnapshot; charts are deterministic mock                 | Fetch config first; submit configSnapshot; render real diagnostics by result `type`              | After Task 6 and Task 9-11     |
+| `apps/web/src/api/tasks.ts`                       | `ApiTaskType` excludes diagnostics; `TaskStreamEvent` has result only in `data`                                     | Include diagnostics and top-level `resultId/resultType`                                          | After Task 6                   |
+| `apps/web/src/api/diagnostics.ts`                 | Expects current `DiagnosticResult {id,dataJson}`                                                                    | Consume `DiagnosticResultWire {resultId,data}`                                                   | After Task 6                   |
+| `apps/web/src/api/preview.ts` + `kline-chart.tsx` | Current frontend expects bars `timestamp/open/high/low/close/volume`, overlays `values`, signals `bar_index`        | Either add frontend adapter or update KlineChart to 06-28 `{ts,o,h,l,c,v}` + overlay data points | After Task 5                   |
 
 **Important:** `workspace-page.tsx` deterministic chart generators and `det()` are UI placeholders only. They are not evidence that diagnostics, factor evaluation, signal quality, or backtest result rendering is complete.
 

@@ -1,6 +1,11 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions, YfinanceExtra } from './types.js';
+import type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+  YfinanceExtra,
+} from './types.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -41,7 +46,8 @@ export class YfinanceAdapter implements DataSourceAdapter {
   private toYahooSymbol(symbol: string): string {
     if (symbol.includes('.')) return symbol;
     if (symbol.startsWith('6') || symbol.startsWith('9')) return `${symbol}.SS`;
-    if (symbol.startsWith('0') || symbol.startsWith('3') || symbol.startsWith('2')) return `${symbol}.SZ`;
+    if (symbol.startsWith('0') || symbol.startsWith('3') || symbol.startsWith('2'))
+      return `${symbol}.SZ`;
     return symbol;
   }
 
@@ -66,7 +72,12 @@ export class YfinanceAdapter implements DataSourceAdapter {
     return d.toISOString().slice(0, 10);
   }
 
-  private buildDailyBarScript(yahooSymbol: string, symbol: string, startDate: string, endDate: string): string {
+  private buildDailyBarScript(
+    yahooSymbol: string,
+    symbol: string,
+    startDate: string,
+    endDate: string
+  ): string {
     return `
 import json, sys
 try:
@@ -93,7 +104,13 @@ except Exception as e:
 `;
   }
 
-  private buildMinuteBarScript(yahooSymbol: string, symbol: string, timeframe: string, startDate: string, endDate: string): string {
+  private buildMinuteBarScript(
+    yahooSymbol: string,
+    symbol: string,
+    timeframe: string,
+    startDate: string,
+    endDate: string
+  ): string {
     const interval = timeframe === '5m' ? '5m' : timeframe === '15m' ? '15m' : '1m';
     return `
 import json, sys

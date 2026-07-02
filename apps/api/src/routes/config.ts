@@ -24,7 +24,7 @@ export async function configRoutes(app: FastifyInstance) {
     const result = await app.configService.getOrDefault(
       meta.name,
       meta.version,
-      meta.category as StrategyCategory,
+      meta.category as StrategyCategory
     );
 
     // result = { persisted: boolean, configSnapshot: ConfigSnapshot }
@@ -65,7 +65,9 @@ export async function configRoutes(app: FastifyInstance) {
         strategy: req.params.name,
         schemaVersion: 1,
         strategyVersion: meta.version,
-        category: (body.category as StrategyCategory) ?? (meta.category ?? 'non_factor') as StrategyCategory,
+        category:
+          (body.category as StrategyCategory) ??
+          ((meta.category ?? 'non_factor') as StrategyCategory),
         subcategory: body.subcategory as string | undefined,
         params: (body.params as Record<string, unknown>) ?? {},
         hash: '',

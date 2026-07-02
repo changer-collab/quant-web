@@ -16,11 +16,11 @@
 
 > 本节为 2026-06-29 当时的文档治理关系。当前执行入口已改为 `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`。
 
-| 用途 | 权威文件 | 更新频率 |
-|---|---|---|
-| 策略分类全栈目标契约 | `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` | 历史关系；现在仅作背景参考 |
-| 策略分类当前施工路线 | `docs/plans/2026-06-29-frontend-workflow-reconciliation.md` | 历史关系；现在仅作背景参考 |
-| Ralph / Agent 执行收敛规则 | `.skills/ralph-harness/` 与 `scripts/ralph/AGENT_PROMPT.md` | 中频：当执行闭环发现可复用规则或反模式时更新 |
+| 用途                       | 权威文件                                                                    | 更新频率                                     |
+| -------------------------- | --------------------------------------------------------------------------- | -------------------------------------------- |
+| 策略分类全栈目标契约       | `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` | 历史关系；现在仅作背景参考                   |
+| 策略分类当前施工路线       | `docs/plans/2026-06-29-frontend-workflow-reconciliation.md`                 | 历史关系；现在仅作背景参考                   |
+| Ralph / Agent 执行收敛规则 | `.skills/ralph-harness/` 与 `scripts/ralph/AGENT_PROMPT.md`                 | 中频：当执行闭环发现可复用规则或反模式时更新 |
 
 ### 0.2 当前执行状态（2026-06-29）
 
@@ -32,27 +32,27 @@
 
 ### 0.3 Decision Log
 
-| 日期 | 决策 | 原因 | 影响 |
-|---|---|---|---|
-| 2026-06-29 | `frontend-workflow-reconciliation.md` 作为动态施工路线图，`strategy-classification-architecture.md` 作为稳定目标契约 | 避免 plan/spec 都被当作进度日志，导致后续 agent 判断混乱 | plan 高频更新，architecture 低频更新 |
-| 2026-06-29 | Phase 1 配置链路优先于 Phase 2 死代码清理 | 配置链路未通时，清理旧入口容易扩大不确定性 | 先验证 `configSnapshot` 闭环，再清理旧体系 |
-| 2026-06-29 | Phase 3 diagnostics 后端先按 MVP 推进，不一次性铺完整算法 | IC、参数敏感性、滑点压力需要算法口径评审 | 先跑通 factor/non-factor 主路径，`transitional` 可轻量占位或暂缓 |
-| 2026-06-29 | hooks 只做提醒/拦截，不自动改 docs | docs 更新需要语义判断，脚本自动写容易制造错误权威 | Ralph/agent 显式执行 Doc Sync，hook 只防忘记 |
-| 2026-06-29 | 暂不直接新增 Claude Code hook；先记录建议并依赖 Ralph Doc Sync Gate | 当前 `.claude/settings.json` 已存在多组 Session/Tool/Stop hooks，贸然新增阻断逻辑可能与现有 clawd-on-desk / claude-mem hook 叠加 | 若后续仍发生 docs 漏同步，再增量添加非阻断 Stop 提醒 hook |
-| 2026-06-29 | `workflowReady` 逻辑已改为 `category==='transitional' \|\| subcategory!==null`（`strategy.ts:26,54`） | spec §8.3 描述了 transitional 完整工作流，但原逻辑因 subcategory=null 而永远 false | transitional 策略现可进入 WorkspacePage |
-| 2026-06-29 | `diagnostic_results` 表已存在（`connection.ts:140`），Phase 3 前补 `category` 列，`diagnostics_type` 列暂缓 | 表已建，Open Question #1 已解除；category 列用于按分类过滤历史诊断 | story-17b 实施 migration |
-| 2026-06-29 | Python CLI 请求格式统一用 `configSnapshot`，废弃旧 `config` 字段 | Worker 和 Python handler 已约定 configSnapshot；spec §6.1 已同步更正 | 无代码变更，仅文档对齐 |
+| 日期       | 决策                                                                                                                 | 原因                                                                                                                             | 影响                                                             |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 2026-06-29 | `frontend-workflow-reconciliation.md` 作为动态施工路线图，`strategy-classification-architecture.md` 作为稳定目标契约 | 避免 plan/spec 都被当作进度日志，导致后续 agent 判断混乱                                                                         | plan 高频更新，architecture 低频更新                             |
+| 2026-06-29 | Phase 1 配置链路优先于 Phase 2 死代码清理                                                                            | 配置链路未通时，清理旧入口容易扩大不确定性                                                                                       | 先验证 `configSnapshot` 闭环，再清理旧体系                       |
+| 2026-06-29 | Phase 3 diagnostics 后端先按 MVP 推进，不一次性铺完整算法                                                            | IC、参数敏感性、滑点压力需要算法口径评审                                                                                         | 先跑通 factor/non-factor 主路径，`transitional` 可轻量占位或暂缓 |
+| 2026-06-29 | hooks 只做提醒/拦截，不自动改 docs                                                                                   | docs 更新需要语义判断，脚本自动写容易制造错误权威                                                                                | Ralph/agent 显式执行 Doc Sync，hook 只防忘记                     |
+| 2026-06-29 | 暂不直接新增 Claude Code hook；先记录建议并依赖 Ralph Doc Sync Gate                                                  | 当前 `.claude/settings.json` 已存在多组 Session/Tool/Stop hooks，贸然新增阻断逻辑可能与现有 clawd-on-desk / claude-mem hook 叠加 | 若后续仍发生 docs 漏同步，再增量添加非阻断 Stop 提醒 hook        |
+| 2026-06-29 | `workflowReady` 逻辑已改为 `category==='transitional' \|\| subcategory!==null`（`strategy.ts:26,54`）                | spec §8.3 描述了 transitional 完整工作流，但原逻辑因 subcategory=null 而永远 false                                               | transitional 策略现可进入 WorkspacePage                          |
+| 2026-06-29 | `diagnostic_results` 表已存在（`connection.ts:140`），Phase 3 前补 `category` 列，`diagnostics_type` 列暂缓          | 表已建，Open Question #1 已解除；category 列用于按分类过滤历史诊断                                                               | story-17b 实施 migration                                         |
+| 2026-06-29 | Python CLI 请求格式统一用 `configSnapshot`，废弃旧 `config` 字段                                                     | Worker 和 Python handler 已约定 configSnapshot；spec §6.1 已同步更正                                                             | 无代码变更，仅文档对齐                                           |
 
 ### 0.4 Open Questions
 
 1. ~~诊断结果短期是否继续存 `dataJson` / JSON 字段，还是立即做 `diagnostic_results` schema migration？~~ **已决策**：表已存在，Phase 3 前（story-17b）补加 `category` 列，`diagnostics_type` 暂缓。
-2. ~~Worker → Python diagnostics 的最终字段名是否统一为 `configSnapshot`~~  **已决策**：统一用 `configSnapshot`，spec §6.1 已更正。
+2. ~~Worker → Python diagnostics 的最终字段名是否统一为 `configSnapshot`~~ **已决策**：统一用 `configSnapshot`，spec §6.1 已更正。
 3. Phase 3 MVP 是否只覆盖 `factor_based` / `non_factor`，`transitional` 先返回轻量评估或 not implemented？（维持 story-18 现有设计：transitional stub 先占位）
 
 ### 0.5 Doc Sync Log
 
-| 日期 | 变化 | 已同步 | 待同步 |
-|---|---|---|---|
+| 日期       | 变化                                                                                                      | 已同步                                | 待同步                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------- |
 | 2026-06-29 | 建立 strategy-classification 文档治理规则：动态 plan、稳定 architecture、Ralph Doc Sync Gate、hook 只提醒 | 本文件、架构 spec、Ralph harness 规则 | 后续每个 Phase 完成后追加状态与决策记录 |
 
 ### 0.6 Hook 边界与后续蓝图
@@ -89,14 +89,14 @@ graph TB
     %% ── 前端 ──
     subgraph Frontend["🖥️ 前端 (apps/web/src/components/)"]
         direction TB
-        
+
         B1[StrategyGridNew<br/>策略总览] --> B2[ConfigPanel<br/>配置面板]
         B2 --> B3[KlineChart<br/>预览图表]
         B2 --> B4[WorkspacePage<br/>两步工作流]
-        
+
         B4 --> B5[Step 1: 诊断]
         B4 --> B7[Step 2: 回测]
-        
+
         B5 --> B6{策略分类}
         B6 --> B6a[因子型<br/>IC/分层/相关性]
         B6 --> B6b[非因子型<br/>参数敏感/信号/滑点]
@@ -138,17 +138,17 @@ graph TB
     B2 -->|"PUT /strategies/:name/config<br/>保存配置"| C2
     B5 -->|"POST /tasks {type:'diagnostics'}"| C4
     B7 -->|"POST /tasks {type:'backtest'}"| C4
-    
+
     C4 -->|"轮询 pending"| D1
     D1 -->|"type=diagnostics"| D3
     D1 -->|"type=backtest"| D2
-    
+
     D3 -->|"streamCall → {command:'diagnostics',...}"| E1
     D2 -->|"streamCall → {command:'backtest',...}"| E1
-    
+
     E1 --> E3
     E1 --> E2
-    
+
     E3 --> E7
     E2 --> E6
 
@@ -209,7 +209,7 @@ sequenceDiagram
     Note over CP,B: 🔴 当前状态：断裂的
     CP->>API: PUT /strategies/dual_ma/config (保存配置)
     API-->>CP: 201 { saved: true, hash }
-    
+
     Note over WP: 用户点击 "进入工作区"
     WP->>WP: handleRunDiagnostics()
     WP->>D: POST /tasks { params: {} } ← ❌ 空参数
@@ -217,15 +217,15 @@ sequenceDiagram
     Note over CP,B: ✅ 修复后状态
     CP->>API: PUT /strategies/dual_ma/config
     API-->>CP: 201 { saved: true, hash }
-    
+
     Note over WP: 挂载时读取配置
     WP->>API: GET /strategies/dual_ma/config ← ✅ 新增读取
     API-->>WP: { config_json: { params: {...} }, hash }
     Note over WP: configSnapshot 存入 state
-    
+
     WP->>D: POST /tasks { <br/>  strategy: "dual_ma",<br/>  configSnapshot: { params: {...} }<br/>} ← ✅ 带真实参数
     D-->>WP: SSE: 诊断完成
-    
+
     WP->>B: POST /tasks { <br/>  strategy: "dual_ma",<br/>  configSnapshot: { params: {...} },<br/>  symbol: "600519", ...<br/>} ← ✅ 带配置
     B-->>WP: SSE: 回测完成
 ```
@@ -236,14 +236,14 @@ sequenceDiagram
 
 ### 2.1 当前后端结构 vs 需要的结构
 
-| 维度 | 当前状态 | 需要改造成 |
-|------|---------|-----------|
-| Python CLI 命令 | 5 个命令，无 `diagnostics` | 新增 `diagnostics` 命令，内部分支 |
-| DiagnosticsHandler | 通用空壳，echo 模式 | 分类感知，按 category 传参 |
-| 诊断结果类型 | `DiagnosticResult { dataJson: result }` 无结构 | 因子型/非因子型各自的结构化类型 |
-| API 响应 | `strategy()` 已返回 `category/subcategory` | ✅ 已满足，无需改动 |
-| Config 服务 | 存 `config_json` 不校验结构 | ✅ 已满足，无需改动 |
-| Mock 数据 | `workspace-page.tsx` 中 `det()` 函数 | 逐步替换为真实后端数据 |
+| 维度               | 当前状态                                       | 需要改造成                        |
+| ------------------ | ---------------------------------------------- | --------------------------------- |
+| Python CLI 命令    | 5 个命令，无 `diagnostics`                     | 新增 `diagnostics` 命令，内部分支 |
+| DiagnosticsHandler | 通用空壳，echo 模式                            | 分类感知，按 category 传参        |
+| 诊断结果类型       | `DiagnosticResult { dataJson: result }` 无结构 | 因子型/非因子型各自的结构化类型   |
+| API 响应           | `strategy()` 已返回 `category/subcategory`     | ✅ 已满足，无需改动               |
+| Config 服务        | 存 `config_json` 不校验结构                    | ✅ 已满足，无需改动               |
+| Mock 数据          | `workspace-page.tsx` 中 `det()` 函数           | 逐步替换为真实后端数据            |
 
 ### 2.2 Python CLI 新增 `diagnostics` 命令
 
@@ -253,7 +253,7 @@ sequenceDiagram
 def run_diagnostics(params: dict, emit: Callable) -> dict:
     """
     策略诊断入口 — 根据 category 分支到不同诊断算法
-    
+
     输入 params:
       strategy: str          — 策略名
       category: str          — "factor_based" | "non_factor" | "transitional"
@@ -261,13 +261,13 @@ def run_diagnostics(params: dict, emit: Callable) -> dict:
       symbol: str            — 回测/分析标的
       timeframe: str         — 时间粒度
       dataRange: dict        — { startTs, endTs }
-    
+
     输出结构（按 category 分支）:
     """
     strategy_name = params["strategy"]
     category = params.get("category", "non_factor")
     config = params.get("configSnapshot", {})
-    
+
     if category == "factor_based":
         return _diagnose_factor_based(strategy_name, config, params, emit)
     elif category == "non_factor":
@@ -345,6 +345,7 @@ export interface TransitionalDiagnosticsResult {
 ### 2.4 Worker DiagnosticsHandler 改造
 
 当前：
+
 ```
 handler → PythonBridge.streamCall({ command: 'diagnostics', strategy, config })
         → Python CLI 无此命令 → echo 回输入
@@ -352,6 +353,7 @@ handler → PythonBridge.streamCall({ command: 'diagnostics', strategy, config }
 ```
 
 改造后：
+
 ```
 handler → 读取 task.payload 中的 category / configSnapshot
         → PythonBridge.streamCall({
@@ -370,6 +372,7 @@ handler → 读取 task.payload 中的 category / configSnapshot
 ### 2.5 API task.ts 完成回调改造
 
 当前 `POST /tasks/:id/complete` 中 Diagnostics 结果的存储方式：
+
 ```typescript
 if (task.type === TaskType.Diagnostics) {
   const diagnosticResult: DiagnosticResult = {
@@ -377,7 +380,7 @@ if (task.type === TaskType.Diagnostics) {
     taskId: task.id,
     strategy: payload.strategy,
     configSnapshot: payload.configSnapshot,
-    dataJson: result,       // ← 原样存，无结构
+    dataJson: result, // ← 原样存，无结构
     createdAt: Date.now(),
   };
 }
@@ -408,6 +411,7 @@ packages/strategy-runtime/quantforge_strategy/commands/
 ## 三、实施计划（结合前序 Block 成果）
 
 ### Phase 0：已完成 ✅
+
 - Block 1 — 三层枚举对齐（Python/API/Frontend 10 个 subcategory 值一致）
 - 前端双流程骨架（ConfigPanel 分支渲染 + WorkspacePage 分支渲染）
 
@@ -415,14 +419,14 @@ packages/strategy-runtime/quantforge_strategy/commands/
 
 > **核心改动**：WorkspacePage 挂载时读取已保存配置，传给诊断和回测。
 
-| # | 任务 | 层 | 文件 | 改动量 |
-|---|------|---|------|--------|
-| 1.1 | 挂载时读取策略配置 | 前端 | `workspace-page.tsx` | +15 行 |
-| 1.2 | 诊断提交带真实 params | 前端 | `workspace-page.tsx` | 改 1 行 |
-| 1.3 | 回测提交带 configSnapshot | 前端 | `workspace-page.tsx` + `tasks.ts` | +5 行 |
-| 1.4 | 统一 strategy 标识 | 前端 | `workspace-page.tsx` | 改 1 行 |
-| 1.5 | 导出 ConfigSnapshot 类型 | 前端 | `types.ts` | +5 行 |
-| 1.6 | 新增 diagnostics POST 接受 category | API | `task.ts` | +3 行 |
+| #   | 任务                                | 层   | 文件                              | 改动量  |
+| --- | ----------------------------------- | ---- | --------------------------------- | ------- |
+| 1.1 | 挂载时读取策略配置                  | 前端 | `workspace-page.tsx`              | +15 行  |
+| 1.2 | 诊断提交带真实 params               | 前端 | `workspace-page.tsx`              | 改 1 行 |
+| 1.3 | 回测提交带 configSnapshot           | 前端 | `workspace-page.tsx` + `tasks.ts` | +5 行   |
+| 1.4 | 统一 strategy 标识                  | 前端 | `workspace-page.tsx`              | 改 1 行 |
+| 1.5 | 导出 ConfigSnapshot 类型            | 前端 | `types.ts`                        | +5 行   |
+| 1.6 | 新增 diagnostics POST 接受 category | API  | `task.ts`                         | +3 行   |
 
 **耗时**：半天
 
@@ -430,14 +434,14 @@ packages/strategy-runtime/quantforge_strategy/commands/
 
 > **核心改动**：删除 ResearchMode 旧体系、旧组件。
 
-| # | 任务 | 文件 | 改动量 |
-|---|------|------|--------|
-| 2.1 | 删除 `strategy-grid.tsx` | 删除 | 安全（已标记 deprecated） |
-| 2.2 | 删除/替换 `workspace.tsx` 引用 | `App.tsx` | 数行 |
-| 2.3 | 删除 ResearchMode 类型 | `types.ts`, `appData.ts` | -30 行 |
-| 2.4 | 清理 researchModes 数据 | `en.ts`, `zh.ts`, `accessors.ts` | -120 行 |
-| 2.5 | 清理 useResearchWorkflow.ts | `useResearchWorkflow.ts` | 重写 |
-| 2.6 | 清理 i18n 引用 | `localization.ts`, `factories.ts` | 数行 |
+| #   | 任务                           | 文件                              | 改动量                    |
+| --- | ------------------------------ | --------------------------------- | ------------------------- |
+| 2.1 | 删除 `strategy-grid.tsx`       | 删除                              | 安全（已标记 deprecated） |
+| 2.2 | 删除/替换 `workspace.tsx` 引用 | `App.tsx`                         | 数行                      |
+| 2.3 | 删除 ResearchMode 类型         | `types.ts`, `appData.ts`          | -30 行                    |
+| 2.4 | 清理 researchModes 数据        | `en.ts`, `zh.ts`, `accessors.ts`  | -120 行                   |
+| 2.5 | 清理 useResearchWorkflow.ts    | `useResearchWorkflow.ts`          | 重写                      |
+| 2.6 | 清理 i18n 引用                 | `localization.ts`, `factories.ts` | 数行                      |
 
 **耗时**：半天
 
@@ -447,37 +451,37 @@ packages/strategy-runtime/quantforge_strategy/commands/
 
 #### 3a. 算法设计（先出设计文档）
 
-| 策略类型 | 诊断指标 | 算法简述 | 依赖 |
-|---------|---------|---------|------|
-| 因子型 | IC 序列 | 计算因子值与下期收益的相关系数时间序列 | factor-lab |
-| 因子型 | 分层收益 | 按因子值分 5 层，计算各层累积收益 | factor-lab |
-| 因子型 | 相关性矩阵 | 多因子间 Pearson/Spearman 相关 | factor-lab |
+| 策略类型 | 诊断指标   | 算法简述                                            | 依赖            |
+| -------- | ---------- | --------------------------------------------------- | --------------- |
+| 因子型   | IC 序列    | 计算因子值与下期收益的相关系数时间序列              | factor-lab      |
+| 因子型   | 分层收益   | 按因子值分 5 层，计算各层累积收益                   | factor-lab      |
+| 因子型   | 相关性矩阵 | 多因子间 Pearson/Spearman 相关                      | factor-lab      |
 | 非因子型 | 参数敏感性 | 对每个参数在范围内扫描，运行简化回测，记录收益/夏普 | backtest-engine |
-| 非因子型 | 信号质量 | 统计信号频率、胜率、持仓期、盈亏比 | backtest-engine |
-| 非因子型 | 滑点压力 | 在不同滑点假设下运行回测，观察收益衰减 | backtest-engine |
-| 过渡型 | 数据源评估 | 检查数据源的完整性、滞后度、质量 | data-client |
+| 非因子型 | 信号质量   | 统计信号频率、胜率、持仓期、盈亏比                  | backtest-engine |
+| 非因子型 | 滑点压力   | 在不同滑点假设下运行回测，观察收益衰减              | backtest-engine |
+| 过渡型   | 数据源评估 | 检查数据源的完整性、滞后度、质量                    | data-client     |
 
 #### 3b. 实现任务
 
-| # | 任务 | 层 | 文件 | 说明 |
-|---|------|---|------|------|
-| 3.1 | 算法设计文档 | 文档 | `docs/superpowers/specs/` | 先出设计，**你评审后再动手写代码** |
-| 3.2 | Python diagnostics 入口 | Python | `commands/diagnostics.py` | 按 category 分支调度 |
-| 3.3 | 因子型诊断算法 | Python | `commands/diagnostics/factor.py` | IC/分层/相关性 |
-| 3.4 | 非因子型诊断算法 | Python | `commands/diagnostics/non_factor.py` | 参数敏感/信号/滑点 |
-| 3.5 | CLI 注册新命令 | Python | `cli.py` | 加一行 `_COMMANDS["diagnostics"]` |
-| 3.6 | 诊断结果类型定义 | API | `types.ts` | FactorDiagnosticsResult / NonFactorDiagnosticsResult |
-| 3.7 | DiagnosticsHandler 改造 | Worker | `diagnostics-handler.ts` | 传递 category、结构化结果 |
-| 3.8 | 前端替换 mock 数据 | 前端 | `workspace-page.tsx` | 删除 `det()` 和 `mockData` |
-| 3.9 | API 诊断路由扩展现有逻辑 | API | `task.ts` | 存储结构化结果 |
+| #   | 任务                     | 层     | 文件                                 | 说明                                                 |
+| --- | ------------------------ | ------ | ------------------------------------ | ---------------------------------------------------- |
+| 3.1 | 算法设计文档             | 文档   | `docs/superpowers/specs/`            | 先出设计，**你评审后再动手写代码**                   |
+| 3.2 | Python diagnostics 入口  | Python | `commands/diagnostics.py`            | 按 category 分支调度                                 |
+| 3.3 | 因子型诊断算法           | Python | `commands/diagnostics/factor.py`     | IC/分层/相关性                                       |
+| 3.4 | 非因子型诊断算法         | Python | `commands/diagnostics/non_factor.py` | 参数敏感/信号/滑点                                   |
+| 3.5 | CLI 注册新命令           | Python | `cli.py`                             | 加一行 `_COMMANDS["diagnostics"]`                    |
+| 3.6 | 诊断结果类型定义         | API    | `types.ts`                           | FactorDiagnosticsResult / NonFactorDiagnosticsResult |
+| 3.7 | DiagnosticsHandler 改造  | Worker | `diagnostics-handler.ts`             | 传递 category、结构化结果                            |
+| 3.8 | 前端替换 mock 数据       | 前端   | `workspace-page.tsx`                 | 删除 `det()` 和 `mockData`                           |
+| 3.9 | API 诊断路由扩展现有逻辑 | API    | `task.ts`                            | 存储结构化结果                                       |
 
 **耗时**：2-3 天
 
 ### Phase 4：回测参数 UI（P3）
 
-| # | 任务 | 层 | 文件 | 说明 |
-|---|------|---|------|--------|
-| 4.1 | 回测参数表单 | 前端 | `workspace-page.tsx` | symbol/timeframe/资金/日期输入 |
+| #   | 任务                       | 层   | 文件                 | 说明                            |
+| --- | -------------------------- | ---- | -------------------- | ------------------------------- |
+| 4.1 | 回测参数表单               | 前端 | `workspace-page.tsx` | symbol/timeframe/资金/日期输入  |
 | 4.2 | 默认值从 saved config 推断 | 前端 | `workspace-page.tsx` | 使用 configSnapshot 中的 symbol |
 
 **耗时**：半天
@@ -492,7 +496,7 @@ graph TB
     P2[Phase 2: 死代码清理 P1] -.->|无依赖| P1
     P1 --> P4[Phase 4: 回测参数UI P3]
     P3 --> P4
-    
+
     style P1 fill:#ff6b6b,color:#fff
     style P2 fill:#ffa94d,color:#fff
     style P3 fill:#ffa94d,color:#fff

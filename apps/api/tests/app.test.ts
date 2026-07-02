@@ -12,14 +12,22 @@ function createMockDataCenter(): DataCenter {
           if (query?.symbol) return [{ symbol: 'CSI500', name: '中证500', exchange: 'SSE' }];
           return [{ symbol: 'CSI500', name: '中证500', exchange: 'SSE' }];
         },
-        getIndexComposition: async () => ({ indexSymbol: 'CSI500', asOfDate: 20240101, constituents: [] }),
+        getIndexComposition: async () => ({
+          indexSymbol: 'CSI500',
+          asOfDate: 20240101,
+          constituents: [],
+        }),
         getAdjustmentFactors: async () => [],
         isTradingDay: async () => true,
         getPreviousTradingDay: async () => 20240101,
       },
       market: {
-        async *loadBars() { /* no bars */ },
-        async *loadTicks() { /* no ticks */ },
+        async *loadBars() {
+          /* no bars */
+        },
+        async *loadTicks() {
+          /* no ticks */
+        },
         getLatestBar: async () => undefined,
         getAvailableSymbols: async () => ['CSI500'],
         getBarsPaged: async () => ({ data: [], hasMore: false, total: 0 }),
@@ -40,25 +48,46 @@ function createMockDataCenter(): DataCenter {
         hasAdverseEvents: async () => false,
       },
       l2: {
-        async *loadSnapshots() { /* no snapshots */ },
-        async *loadTradeRecords() { /* no trades */ },
-        async *loadOrderRecords() { /* no orders */ },
+        async *loadSnapshots() {
+          /* no snapshots */
+        },
+        async *loadTradeRecords() {
+          /* no trades */
+        },
+        async *loadOrderRecords() {
+          /* no orders */
+        },
       },
       quality: {
         checkCompleteness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkConsistency: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkFreshness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
       },
     },

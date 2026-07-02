@@ -1,6 +1,11 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions, AkshareExtra } from './types.js';
+import type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+  AkshareExtra,
+} from './types.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -16,7 +21,14 @@ const execFileAsync = promisify(execFile);
 export class AkshareAdapter implements DataSourceAdapter {
   name = 'akshare';
   supportedDomains = ['market', 'event', 'fundamental'];
-  supportedDataTypes = ['bar', 'tick', 'instrument', 'news', 'financial_report', 'shareholder_metrics'];
+  supportedDataTypes = [
+    'bar',
+    'tick',
+    'instrument',
+    'news',
+    'financial_report',
+    'shareholder_metrics',
+  ];
 
   async *fetch(options: AdapterFetchOptions): AsyncIterable<RawDataRecord> {
     const extra = options.extra as AkshareExtra | undefined;
@@ -68,10 +80,19 @@ export class AkshareAdapter implements DataSourceAdapter {
   }
 
   /** K 线数据脚本 */
-  private buildBarScript(symbol: string, timeframe: string, startDate: string, endDate: string): string {
+  private buildBarScript(
+    symbol: string,
+    timeframe: string,
+    startDate: string,
+    endDate: string
+  ): string {
     // AKShare 的 period 映射
     const periodMap: Record<string, string> = {
-      '1m': '1', '5m': '5', '15m': '15', '1h': '60', '1d': 'daily',
+      '1m': '1',
+      '5m': '5',
+      '15m': '15',
+      '1h': '60',
+      '1d': 'daily',
     };
     const period = periodMap[timeframe] ?? 'daily';
     const adjust = 'qfq'; // 前复权

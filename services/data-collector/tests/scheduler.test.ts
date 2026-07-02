@@ -21,7 +21,7 @@ class InMemoryWatermarkRepo {
   }
   async list(source: string, dataType?: string): Promise<Watermark[]> {
     return [...this.data.values()].filter(
-      (w) => w.source === source && (dataType === undefined || w.dataType === dataType),
+      (w) => w.source === source && (dataType === undefined || w.dataType === dataType)
     );
   }
 }
@@ -32,7 +32,9 @@ class InMemoryBarRepo {
   async save(bars: any[]): Promise<void> {
     this.bars.push(...bars);
   }
-  getBars() { return this.bars; }
+  getBars() {
+    return this.bars;
+  }
 }
 
 function createMockRepos() {
@@ -103,8 +105,11 @@ CSI500,1700086400000,5050,5200,5000,5150,120000,600000000`;
   it('增量采集：水位之后的 start', async () => {
     // 先设置水位
     await repos.watermarks.upsert({
-      source: 'csv', dataType: 'bar', symbol: 'CSI500',
-      lastTimestamp: 1700000000000, updatedAt: Date.now(),
+      source: 'csv',
+      dataType: 'bar',
+      symbol: 'CSI500',
+      lastTimestamp: 1700000000000,
+      updatedAt: Date.now(),
     });
 
     const start = await scheduler.resolveStart('csv', 'bar', 'CSI500', 1600000000000);

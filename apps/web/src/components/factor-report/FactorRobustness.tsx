@@ -16,16 +16,24 @@ export function FactorRobustness({ report, ui }: Props) {
       <FactorReportSection title={u.parameterSensitivity} defaultOpen={true}>
         {rob.paramSensitivity.map((param) => (
           <div key={param.paramName} style={{ marginBottom: 'var(--space-md)' }}>
-            <h4 style={{ color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 8 }}>{param.paramName}</h4>
+            <h4 style={{ color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 8 }}>
+              {param.paramName}
+            </h4>
             <table className={s.dataTable}>
               <thead>
-                <tr><th>Value</th><th>IC</th><th>Group Return</th></tr>
+                <tr>
+                  <th>Value</th>
+                  <th>IC</th>
+                  <th>Group Return</th>
+                </tr>
               </thead>
               <tbody>
                 {param.variations.map((v, i) => (
                   <tr key={i}>
                     <td>{v.value}</td>
-                    <td className={v.ic > 0 ? s.alertNormal : s.alertCritical}>{v.ic.toFixed(3)}</td>
+                    <td className={v.ic > 0 ? s.alertNormal : s.alertCritical}>
+                      {v.ic.toFixed(3)}
+                    </td>
                     <td className={v.groupReturn >= 0 ? s.alertNormal : s.alertCritical}>
                       {(v.groupReturn * 100).toFixed(1)}%
                     </td>
@@ -40,14 +48,20 @@ export function FactorRobustness({ report, ui }: Props) {
       <FactorReportSection title={u.inSampleVsOutOfSample} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>Metric</th><th>In-Sample</th><th>Out-of-Sample</th></tr>
+            <tr>
+              <th>Metric</th>
+              <th>In-Sample</th>
+              <th>Out-of-Sample</th>
+            </tr>
           </thead>
           <tbody>
             {rob.inSampleVsOutOfSample.map((row, i) => (
               <tr key={i}>
                 <td>{row.metric}</td>
                 <td>{row.inSample.toFixed(3)}</td>
-                <td className={row.outOfSample >= row.inSample * 0.7 ? s.alertNormal : s.alertWarning}>
+                <td
+                  className={row.outOfSample >= row.inSample * 0.7 ? s.alertNormal : s.alertWarning}
+                >
                   {row.outOfSample.toFixed(3)}
                 </td>
               </tr>
@@ -59,7 +73,11 @@ export function FactorRobustness({ report, ui }: Props) {
       <FactorReportSection title={u.benchmarkComparison} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>Benchmark</th><th>IC</th><th>Group Return</th></tr>
+            <tr>
+              <th>Benchmark</th>
+              <th>IC</th>
+              <th>Group Return</th>
+            </tr>
           </thead>
           <tbody>
             {rob.benchmarkComparison.map((b, i) => (
@@ -78,7 +96,11 @@ export function FactorRobustness({ report, ui }: Props) {
       <FactorReportSection title={u.weightingComparison} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>Method</th><th>IC</th><th>Group Return</th></tr>
+            <tr>
+              <th>Method</th>
+              <th>IC</th>
+              <th>Group Return</th>
+            </tr>
           </thead>
           <tbody>
             {rob.weightingComparison.map((w, i) => (
@@ -98,7 +120,9 @@ export function FactorRobustness({ report, ui }: Props) {
         <div className={s.kpiGrid}>
           <div className={s.kpiCard}>
             <div className={s.kpiLabel}>Survivorship Bias Handled</div>
-            <div className={`${s.kpiValue} ${rob.survivorshipBiasHandled ? s.positive : s.negative}`}>
+            <div
+              className={`${s.kpiValue} ${rob.survivorshipBiasHandled ? s.positive : s.negative}`}
+            >
               {rob.survivorshipBiasHandled ? 'Yes' : 'No'}
             </div>
           </div>

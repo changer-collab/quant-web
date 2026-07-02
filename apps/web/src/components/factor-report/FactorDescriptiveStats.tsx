@@ -52,7 +52,12 @@ export function FactorDescriptiveStats({ report, ui }: Props) {
       <FactorReportSection title={u.percentiles} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>P5</th><th>P25</th><th>P75</th><th>P95</th></tr>
+            <tr>
+              <th>P5</th>
+              <th>P25</th>
+              <th>P75</th>
+              <th>P95</th>
+            </tr>
           </thead>
           <tbody>
             <tr>

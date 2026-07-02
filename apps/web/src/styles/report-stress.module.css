@@ -115,5 +115,9 @@
   color: var(--text);
 }
 
-.mcGood { color: var(--green); }
-.mcWarn { color: var(--red, #ff6b6b); }
+.mcGood {
+  color: var(--green);
+}
+.mcWarn {
+  color: var(--red, #ff6b6b);
+}

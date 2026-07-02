@@ -14,7 +14,7 @@ export class ReferenceDataProviderImpl implements ReferenceDataProvider {
     private instrumentRepo: InstrumentRepository,
     private calendarRepo: CalendarRepository,
     private indexCompRepo: IndexCompositionRepository,
-    private adjFactorRepo: AdjustmentFactorRepository,
+    private adjFactorRepo: AdjustmentFactorRepository
   ) {}
 
   async getTradingCalendar(exchange: string, year: number) {

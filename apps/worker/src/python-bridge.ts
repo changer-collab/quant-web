@@ -5,10 +5,10 @@
  * 通信协议: stdin JSON → stdout NDJSON 事件流
  */
 
-import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import type { StreamEvent } from "./types.js";
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import type { StreamEvent } from './types.js';
 
 export interface PythonBridgeConfig {
   /** Python 可执行文件路径，默认 "python" */
@@ -32,7 +32,7 @@ export interface PythonResult {
 function resolveProjectRoot(): string {
   let dir = process.cwd();
   while (true) {
-    if (existsSync(join(dir, "pnpm-workspace.yaml"))) return dir;
+    if (existsSync(join(dir, 'pnpm-workspace.yaml'))) return dir;
     const parent = dirname(dir);
     if (parent === dir) break; // 到达根目录
     dir = parent;
@@ -46,7 +46,7 @@ export class PythonBridge {
   private readonly cwd: string;
 
   constructor(config?: PythonBridgeConfig) {
-    this.pythonPath = config?.pythonPath ?? "python";
+    this.pythonPath = config?.pythonPath ?? 'python';
     this.timeout = config?.timeout ?? 60_000;
     this.cwd = config?.cwd ?? resolveProjectRoot();
   }
@@ -60,23 +60,23 @@ export class PythonBridge {
     const input = JSON.stringify(request);
 
     return new Promise<PythonResult>((resolve, reject) => {
-      const proc = spawn(this.pythonPath, ["-m", "quantforge_strategy"], {
-        stdio: ["pipe", "pipe", "pipe"],
+      const proc = spawn(this.pythonPath, ['-m', 'quantforge_strategy'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
         cwd: this.cwd,
         env: {
           ...process.env,
-          PYTHONIOENCODING: "utf-8",
+          PYTHONIOENCODING: 'utf-8',
         },
       });
-      let stdout = "";
-      let stderr = "";
+      let stdout = '';
+      let stderr = '';
 
-      proc.stdout.on("data", (chunk: Buffer) => {
-        stdout += chunk.toString("utf-8");
+      proc.stdout.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString('utf-8');
       });
 
-      proc.stderr.on("data", (chunk: Buffer) => {
-        stderr += chunk.toString("utf-8");
+      proc.stderr.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf-8');
       });
 
       const timer = setTimeout(() => {
@@ -84,7 +84,7 @@ export class PythonBridge {
         reject(new Error(`Python CLI timed out after ${this.timeout}ms`));
       }, this.timeout);
 
-      proc.on("close", (code) => {
+      proc.on('close', (code) => {
         clearTimeout(timer);
         if (code !== 0 && !stdout.trim()) {
           reject(new Error(`Python CLI exited with code ${code}: ${stderr.trim()}`));
@@ -95,7 +95,7 @@ export class PythonBridge {
         resolve(result);
       });
 
-      proc.on("error", (err) => {
+      proc.on('error', (err) => {
         clearTimeout(timer);
         reject(err);
       });
@@ -113,28 +113,28 @@ export class PythonBridge {
    */
   async streamCall(
     request: Record<string, unknown>,
-    onEvent: (event: StreamEvent) => void,
+    onEvent: (event: StreamEvent) => void
   ): Promise<PythonResult> {
     const input = JSON.stringify(request);
 
     return new Promise<PythonResult>((resolve, reject) => {
-      const proc = spawn(this.pythonPath, ["-m", "quantforge_strategy"], {
-        stdio: ["pipe", "pipe", "pipe"],
+      const proc = spawn(this.pythonPath, ['-m', 'quantforge_strategy'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
         cwd: this.cwd,
         env: {
           ...process.env,
-          PYTHONIOENCODING: "utf-8",
+          PYTHONIOENCODING: 'utf-8',
         },
       });
-      let buffer = "";
-      let stderr = "";
+      let buffer = '';
+      let stderr = '';
       let finalResult: PythonResult | null = null;
 
-      proc.stdout.on("data", (chunk: Buffer) => {
-        buffer += chunk.toString("utf-8");
+      proc.stdout.on('data', (chunk: Buffer) => {
+        buffer += chunk.toString('utf-8');
         // 逐行解析 NDJSON
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? ""; // 保留未完成的行
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? ''; // 保留未完成的行
 
         for (const line of lines) {
           const trimmed = line.trim();
@@ -144,9 +144,9 @@ export class PythonBridge {
             onEvent(event);
 
             // 捕获终态事件
-            if (event.event === "result") {
+            if (event.event === 'result') {
               finalResult = { ok: true, data: event.data };
-            } else if (event.event === "error") {
+            } else if (event.event === 'error') {
               finalResult = { ok: false, error: event.error };
             }
           } catch {
@@ -155,8 +155,8 @@ export class PythonBridge {
         }
       });
 
-      proc.stderr.on("data", (chunk: Buffer) => {
-        stderr += chunk.toString("utf-8");
+      proc.stderr.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf-8');
       });
 
       const timer = setTimeout(() => {
@@ -164,7 +164,7 @@ export class PythonBridge {
         reject(new Error(`Python CLI timed out after ${this.timeout}ms`));
       }, this.timeout);
 
-      proc.on("close", (code) => {
+      proc.on('close', (code) => {
         clearTimeout(timer);
 
         // 处理 buffer 中剩余内容
@@ -172,9 +172,9 @@ export class PythonBridge {
           try {
             const event = JSON.parse(buffer.trim()) as StreamEvent;
             onEvent(event);
-            if (event.event === "result") {
+            if (event.event === 'result') {
               finalResult = { ok: true, data: event.data };
-            } else if (event.event === "error") {
+            } else if (event.event === 'error') {
               finalResult = { ok: false, error: event.error };
             }
           } catch {
@@ -191,7 +191,7 @@ export class PythonBridge {
         }
       });
 
-      proc.on("error", (err) => {
+      proc.on('error', (err) => {
         clearTimeout(timer);
         reject(err);
       });
@@ -203,14 +203,14 @@ export class PythonBridge {
 
   /** 从 NDJSON 事件流中提取最终结果 */
   private _parseFinalEvent(stdout: string): PythonResult {
-    const lines = stdout.split("\n").filter((l) => l.trim());
+    const lines = stdout.split('\n').filter((l) => l.trim());
     for (let i = lines.length - 1; i >= 0; i--) {
       try {
         const event = JSON.parse(lines[i].trim()) as StreamEvent;
-        if (event.event === "result") {
+        if (event.event === 'result') {
           return { ok: true, data: event.data };
         }
-        if (event.event === "error") {
+        if (event.event === 'error') {
           return { ok: false, error: event.error };
         }
       } catch {
@@ -221,7 +221,13 @@ export class PythonBridge {
     try {
       return JSON.parse(stdout) as PythonResult;
     } catch {
-      return { ok: false, error: { code: "PARSE_ERROR", message: `Failed to parse Python output: ${stdout.substring(0, 200)}` } };
+      return {
+        ok: false,
+        error: {
+          code: 'PARSE_ERROR',
+          message: `Failed to parse Python output: ${stdout.substring(0, 200)}`,
+        },
+      };
     }
   }
 }

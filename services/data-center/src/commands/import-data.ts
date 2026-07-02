@@ -5,9 +5,25 @@
  *       默认拉取 10 只蓝筹股近 1 年日K线
  */
 import { createDataCenter } from '../storage/factory.js';
-import { AdapterRegistryImpl, CollectorScheduler, CollectorPresets, AkshareAdapter } from '@quant/data-collector';
+import {
+  AdapterRegistryImpl,
+  CollectorScheduler,
+  CollectorPresets,
+  AkshareAdapter,
+} from '@quant/data-collector';
 
-const DEFAULT_SYMBOLS = ['600519', '000001', '600036', '000858', '601318', '600276', '000333', '600900', '601166', '600887'];
+const DEFAULT_SYMBOLS = [
+  '600519',
+  '000001',
+  '600036',
+  '000858',
+  '601318',
+  '600276',
+  '000333',
+  '600900',
+  '601166',
+  '600887',
+];
 
 async function main() {
   console.log('[import-data] Initializing data-center...');
@@ -34,7 +50,10 @@ async function main() {
     const totalWritten = instrumentResults.reduce((sum, r) => sum + r.recordsWritten, 0);
     console.log(`[import-data] Instruments: ${totalWritten} records written`);
   } catch (err) {
-    console.warn('[import-data] Instruments fetch failed (may already exist):', err instanceof Error ? err.message : err);
+    console.warn(
+      '[import-data] Instruments fetch failed (may already exist):',
+      err instanceof Error ? err.message : err
+    );
   }
 
   // 5. 拉取日K线
@@ -49,7 +68,10 @@ async function main() {
       const totalWritten = barResults.reduce((sum, r) => sum + r.recordsWritten, 0);
       console.log(`[import-data] ${symbol}: ${totalWritten} bars written`);
     } catch (err) {
-      console.warn(`[import-data] ${symbol} bars fetch failed:`, err instanceof Error ? err.message : err);
+      console.warn(
+        `[import-data] ${symbol} bars fetch failed:`,
+        err instanceof Error ? err.message : err
+      );
     }
   }
 

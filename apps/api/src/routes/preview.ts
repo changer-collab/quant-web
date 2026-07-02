@@ -26,7 +26,7 @@ const MAX_INITIAL_BATCH = 10_000;
  */
 function getNonChartRelevantFields(
   paramDefs: Array<{ key: string; chart_relevant?: boolean }>,
-  previewParams: Record<string, unknown>,
+  previewParams: Record<string, unknown>
 ): string[] {
   const keys = Object.keys(previewParams);
   if (keys.length === 0) return [];
@@ -41,7 +41,13 @@ function getNonChartRelevantFields(
 export async function previewRoutes(app: FastifyInstance) {
   app.post<{ Params: { name: string } }>('/:name/preview', async (req, reply) => {
     const { name } = req.params;
-    const { symbol, timeframe, cursor, limit = DEFAULT_LIMIT, preview_params = {} } = req.body as {
+    const {
+      symbol,
+      timeframe,
+      cursor,
+      limit = DEFAULT_LIMIT,
+      preview_params = {},
+    } = req.body as {
       symbol: string;
       timeframe: string;
       cursor?: number | null;
@@ -76,11 +82,14 @@ export async function previewRoutes(app: FastifyInstance) {
         const { configSnapshot } = await app.configService.getOrDefault(
           name,
           meta.version,
-          meta.category as StrategyCategory,
+          meta.category as StrategyCategory
         );
         effectiveParams = { ...configSnapshot.params, ...preview_params };
       } catch (err) {
-        console.warn('[Preview] configService.getOrDefault falló, usando preview_params sin modificar:', err);
+        console.warn(
+          '[Preview] configService.getOrDefault falló, usando preview_params sin modificar:',
+          err
+        );
       }
     } else {
       console.warn('[Preview] configService no inyectado, usando preview_params sin modificar');
@@ -90,9 +99,7 @@ export async function previewRoutes(app: FastifyInstance) {
     const barRepo: BarRepository = app.dataCenter.repos.bars;
 
     // 加载 K 线（游标分页，向后翻页）
-    const { bars, hasMore, nextCursor } = await loadPreviewBars(
-      barRepo, symbol, tf, limit, cursor,
-    );
+    const { bars, hasMore, nextCursor } = await loadPreviewBars(barRepo, symbol, tf, limit, cursor);
 
     // 预览计算（使用合并后的参数）
     const preview = PreviewService.computePreview(bars, effectiveParams);
@@ -123,7 +130,7 @@ async function loadPreviewBars(
   symbol: string,
   timeframe: TimeFrame,
   limit: number,
-  cursor?: number | null,
+  cursor?: number | null
 ): Promise<{ bars: any[]; hasMore: boolean; nextCursor?: number }> {
   if (cursor) {
     // 后续页：加载 cursor 之前的 K 线（timestamp < cursor）

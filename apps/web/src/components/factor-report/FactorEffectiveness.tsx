@@ -45,7 +45,9 @@ function GroupBacktestView({ report }: Props) {
       <div className={s.kpiGrid}>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>Long-Short Return</div>
-          <div className={`${s.kpiValue} ${s.positive}`}>{(gb.longShortReturn * 100).toFixed(1)}%</div>
+          <div className={`${s.kpiValue} ${s.positive}`}>
+            {(gb.longShortReturn * 100).toFixed(1)}%
+          </div>
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>Long-Short Sharpe</div>
@@ -53,7 +55,9 @@ function GroupBacktestView({ report }: Props) {
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>Top Excess Return</div>
-          <div className={`${s.kpiValue} ${s.positive}`}>{(gb.topExcessReturn * 100).toFixed(1)}%</div>
+          <div className={`${s.kpiValue} ${s.positive}`}>
+            {(gb.topExcessReturn * 100).toFixed(1)}%
+          </div>
         </div>
       </div>
 
@@ -77,7 +81,12 @@ function GroupBacktestView({ report }: Props) {
       <FactorReportSection title="Group Metrics" defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>Group</th><th>Sharpe</th><th>Max DD</th><th>Win Rate</th></tr>
+            <tr>
+              <th>Group</th>
+              <th>Sharpe</th>
+              <th>Max DD</th>
+              <th>Win Rate</th>
+            </tr>
           </thead>
           <tbody>
             {gb.groupMetrics.map((g) => (
@@ -98,10 +107,12 @@ function GroupBacktestView({ report }: Props) {
             if (i === 0) return null;
             const prev = arr[i - 1];
             const x1 = prev.t * 380 + 10;
-            const y1 = 110 - (prev.nav - 0.9) / 0.4 * 100;
+            const y1 = 110 - ((prev.nav - 0.9) / 0.4) * 100;
             const x2 = point.t * 380 + 10;
-            const y2 = 110 - (point.nav - 0.9) / 0.4 * 100;
-            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--green)" strokeWidth="2" />;
+            const y2 = 110 - ((point.nav - 0.9) / 0.4) * 100;
+            return (
+              <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--green)" strokeWidth="2" />
+            );
           })}
         </svg>
       </FactorReportSection>
@@ -160,7 +171,10 @@ function IcAnalysisView({ report }: Props) {
             <div key={d.lag} className={s.barRow}>
               <span className={s.barLabel}>{d.lag}</span>
               <div className={s.barTrack}>
-                <div className={s.barFill} style={{ width: `${(Math.abs(d.ic) / maxDecay) * 100}%` }} />
+                <div
+                  className={s.barFill}
+                  style={{ width: `${(Math.abs(d.ic) / maxDecay) * 100}%` }}
+                />
               </div>
               <span className={s.barValue}>{d.ic.toFixed(3)}</span>
             </div>
@@ -194,15 +208,21 @@ function RegressionView({ report }: Props) {
       <div className={s.kpiGrid}>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>Factor Return</div>
-          <div className={`${s.kpiValue} ${s.positive}`}>{(reg.factorReturn * 100).toFixed(2)}%</div>
+          <div className={`${s.kpiValue} ${s.positive}`}>
+            {(reg.factorReturn * 100).toFixed(2)}%
+          </div>
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>t-Stat</div>
-          <div className={`${s.kpiValue} ${Math.abs(reg.tStat) > 2 ? s.positive : ''}`}>{reg.tStat.toFixed(2)}</div>
+          <div className={`${s.kpiValue} ${Math.abs(reg.tStat) > 2 ? s.positive : ''}`}>
+            {reg.tStat.toFixed(2)}
+          </div>
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>Newey-West t</div>
-          <div className={`${s.kpiValue} ${Math.abs(reg.neweyWestT) > 2 ? s.positive : ''}`}>{reg.neweyWestT.toFixed(2)}</div>
+          <div className={`${s.kpiValue} ${Math.abs(reg.neweyWestT) > 2 ? s.positive : ''}`}>
+            {reg.neweyWestT.toFixed(2)}
+          </div>
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>R-Squared</div>
@@ -231,9 +251,19 @@ function RegressionView({ report }: Props) {
             const y1 = 60 - (prev.ret / 0.006) * 50;
             const x2 = (i / (arr.length - 1)) * 380 + 10;
             const y2 = 60 - (point.ret / 0.006) * 50;
-            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--green)" strokeWidth="2" />;
+            return (
+              <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--green)" strokeWidth="2" />
+            );
           })}
-          <line x1="10" y1="60" x2="390" y2="60" stroke="var(--line)" strokeWidth="1" strokeDasharray="4" />
+          <line
+            x1="10"
+            y1="60"
+            x2="390"
+            y2="60"
+            stroke="var(--line)"
+            strokeWidth="1"
+            strokeDasharray="4"
+          />
         </svg>
       </FactorReportSection>
     </>

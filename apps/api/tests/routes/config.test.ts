@@ -15,7 +15,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildApp } from '../../src/app.js';
 import { InMemoryTaskService } from '../../src/plugins/task-service.js';
-import { StrategyConfigService, ConfigHashConflictError } from '../../src/services/config-service.js';
+import {
+  StrategyConfigService,
+  ConfigHashConflictError,
+} from '../../src/services/config-service.js';
 import { strategySyncService } from '../../src/services/strategy-sync.js';
 import type { DataCenter } from '@quant/data-center';
 import type { ConfigSnapshot } from '../../src/types.js';
@@ -28,7 +31,11 @@ function createMockDataCenter(): DataCenter {
       reference: {
         getTradingCalendar: async () => ({ exchange: 'SSE', year: 2024, tradingDays: [] }),
         getInstruments: async () => [],
-        getIndexComposition: async () => ({ indexSymbol: 'CSI500', asOfDate: 20240101, constituents: [] }),
+        getIndexComposition: async () => ({
+          indexSymbol: 'CSI500',
+          asOfDate: 20240101,
+          constituents: [],
+        }),
         getAdjustmentFactors: async () => [],
         isTradingDay: async () => true,
         getPreviousTradingDay: async () => 20240101,
@@ -62,19 +69,34 @@ function createMockDataCenter(): DataCenter {
       },
       quality: {
         checkCompleteness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkConsistency: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkFreshness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
       },
     },
@@ -93,8 +115,24 @@ const MOCK_STRATEGY_META = {
   name: 'dual_ma',
   description: '双均线策略',
   params: [
-    { key: 'period', label: '周期', type: 'number', default: 20, min: 2, max: 200, chart_relevant: true },
-    { key: 'offset', label: '偏移', type: 'number', default: 5, min: 0, max: 50, chart_relevant: false },
+    {
+      key: 'period',
+      label: '周期',
+      type: 'number',
+      default: 20,
+      min: 2,
+      max: 200,
+      chart_relevant: true,
+    },
+    {
+      key: 'offset',
+      label: '偏移',
+      type: 'number',
+      default: 5,
+      min: 0,
+      max: 50,
+      chart_relevant: false,
+    },
   ],
   version: '0.1.0',
   modes: ['traditional'],
@@ -297,7 +335,7 @@ describe('Config Routes', () => {
         new ConfigHashConflictError('expected_hash_v1', 'current_hash_v2', {
           strategy: 'dual_ma',
           params: { period: 20 },
-        }),
+        })
       );
 
       const app = await buildApp({
@@ -327,7 +365,9 @@ describe('Config Routes', () => {
     it('无效 category → 422', async () => {
       vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([MOCK_STRATEGY_META]);
       vi.spyOn(configService, 'save').mockRejectedValue(
-        new Error('Invalid category: "trash_cat". Must be one of: factor_based, non_factor, transitional'),
+        new Error(
+          'Invalid category: "trash_cat". Must be one of: factor_based, non_factor, transitional'
+        )
       );
 
       const app = await buildApp({

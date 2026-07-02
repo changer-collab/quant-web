@@ -16,7 +16,12 @@ const KEYWORDS: Record<Exclude<KeywordTileCategory, 'observation'>, string[]> = 
 };
 
 function isValidCategory(category: unknown): category is KeywordTileCategory {
-  return category === 'assumption' || category === 'limitation' || category === 'risk' || category === 'observation';
+  return (
+    category === 'assumption' ||
+    category === 'limitation' ||
+    category === 'risk' ||
+    category === 'observation'
+  );
 }
 
 export function splitKeywordText(text: string): string[] {

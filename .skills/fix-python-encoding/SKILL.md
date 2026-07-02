@@ -13,11 +13,11 @@ Windows 中文环境下，Python 子进程的 stdout/stderr pipe 输出使用系
 
 当出现以下症状时使用本 skill：
 
-| 症状 | 原因 | 修复 |
-|------|------|------|
-| 中文字段变为乱码字符（如 `�ò���`） | Python pipe 输出用 GBK，Node.js 用 UTF-8 解码 | 三处修复（见下文） |
-| Python CLI 测试在 Windows 上 `UnicodeDecodeError` 或中文断裂 | 父进程按系统默认编码读 stdout/stderr | 测试里显式 `encoding="utf-8"` |
-| `call()` 正常但 `streamCall()` 乱码 | 只改了同步路径 | 同步和流式路径都要设置编码 |
+| 症状                                                         | 原因                                          | 修复                          |
+| ------------------------------------------------------------ | --------------------------------------------- | ----------------------------- |
+| 中文字段变为乱码字符（如 `�ò���`）                           | Python pipe 输出用 GBK，Node.js 用 UTF-8 解码 | 三处修复（见下文）            |
+| Python CLI 测试在 Windows 上 `UnicodeDecodeError` 或中文断裂 | 父进程按系统默认编码读 stdout/stderr          | 测试里显式 `encoding="utf-8"` |
+| `call()` 正常但 `streamCall()` 乱码                          | 只改了同步路径                                | 同步和流式路径都要设置编码    |
 
 ## 编码乱码 — 根因修复
 
@@ -40,11 +40,11 @@ if sys.stderr.encoding is not None and sys.stderr.encoding.lower() != "utf-8":
 
 ```typescript
 const proc = spawn(pythonPath, args, {
-  stdio: ["pipe", "pipe", "pipe"],
+  stdio: ['pipe', 'pipe', 'pipe'],
   cwd: cwd,
   env: {
     ...process.env,
-    PYTHONIOENCODING: "utf-8",
+    PYTHONIOENCODING: 'utf-8',
   },
 });
 ```
@@ -56,12 +56,12 @@ const proc = spawn(pythonPath, args, {
 所有 `chunk.toString()` 改为 `chunk.toString("utf-8")`：
 
 ```typescript
-proc.stdout.on("data", (chunk: Buffer) => {
-  buffer += chunk.toString("utf-8");
+proc.stdout.on('data', (chunk: Buffer) => {
+  buffer += chunk.toString('utf-8');
 });
 
-proc.stderr.on("data", (chunk: Buffer) => {
-  stderr += chunk.toString("utf-8");
+proc.stderr.on('data', (chunk: Buffer) => {
+  stderr += chunk.toString('utf-8');
 });
 ```
 
@@ -77,10 +77,10 @@ subprocess.run(args, text=True, encoding="utf-8", check=True)
 
 ## 常见错误
 
-| 错误做法 | 后果 |
-|---------|------|
-| 只改 Python 端不改 Node.js 端 | 子进程仍用 PYTHONIOENCODING 默认值 |
-| 只改 `call()` 不改 `streamCall()` | 流式调用依然乱码 |
-| 只改 Python 端 `reconfigure` 不改 Node 端 `spawn` 的 `env` | 非直接子进程覆盖不到 |
-| `chunk.toString()` 不传 `'utf-8'` | 依赖系统默认编码，Windows 下仍为 GBK |
-| 测试里只写 `text=True` | Windows 中文环境可能按 GBK 解码 UTF-8 输出 |
+| 错误做法                                                   | 后果                                       |
+| ---------------------------------------------------------- | ------------------------------------------ |
+| 只改 Python 端不改 Node.js 端                              | 子进程仍用 PYTHONIOENCODING 默认值         |
+| 只改 `call()` 不改 `streamCall()`                          | 流式调用依然乱码                           |
+| 只改 Python 端 `reconfigure` 不改 Node 端 `spawn` 的 `env` | 非直接子进程覆盖不到                       |
+| `chunk.toString()` 不传 `'utf-8'`                          | 依赖系统默认编码，Windows 下仍为 GBK       |
+| 测试里只写 `text=True`                                     | Windows 中文环境可能按 GBK 解码 UTF-8 输出 |

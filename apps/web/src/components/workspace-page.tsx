@@ -44,7 +44,13 @@ interface BacktestResultView {
 
 // ── Chart subcomponents ──────────────────────────────────────
 
-function BarChart({ data, height = 120 }: { data: { label: string; value: number }[]; height?: number }) {
+function BarChart({
+  data,
+  height = 120,
+}: {
+  data: { label: string; value: number }[];
+  height?: number;
+}) {
   const maxVal = Math.max(...data.map((d) => Math.abs(d.value)), 0.001);
   const negVals = data.some((d) => d.value < 0);
   const range = negVals ? maxVal * 2 : maxVal;
@@ -52,11 +58,12 @@ function BarChart({ data, height = 120 }: { data: { label: string; value: number
   return (
     <div className={s.barChart} style={{ height }}>
       {data.map((d, i) => {
-        const h = negVals
-          ? (Math.abs(d.value) / range) * 100
-          : (d.value / range) * 100;
+        const h = negVals ? (Math.abs(d.value) / range) * 100 : (d.value / range) * 100;
         return (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+          <div
+            key={i}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}
+          >
             <div className={s.barValue}>{d.value.toFixed(3)}</div>
             <div
               className={`${s.bar} ${d.value < 0 ? s.barNegative : ''}`}
@@ -90,17 +97,32 @@ function HBarChart({ data }: { data: { label: string; value: number }[] }) {
   );
 }
 
-function HeatmapChart({ grid, rowLabels, colLabels }: { grid: number[][]; rowLabels: string[]; colLabels: string[] }) {
+function HeatmapChart({
+  grid,
+  rowLabels,
+  colLabels,
+}: {
+  grid: number[][];
+  rowLabels: string[];
+  colLabels: string[];
+}) {
   const maxAbs = Math.max(...grid.flat().map(Math.abs), 0.01);
   return (
-    <div className={s.heatmapGrid} style={{ gridTemplateColumns: `auto repeat(${colLabels.length}, 1fr)` }}>
+    <div
+      className={s.heatmapGrid}
+      style={{ gridTemplateColumns: `auto repeat(${colLabels.length}, 1fr)` }}
+    >
       <div />
       {colLabels.map((cl, ci) => (
-        <div className={s.heatmapLabel} key={ci}>{cl}</div>
+        <div className={s.heatmapLabel} key={ci}>
+          {cl}
+        </div>
       ))}
       {grid.map((row, ri) => (
         <>
-          <div className={s.heatmapLabel} key={`rl-${ri}`}>{rowLabels[ri]}</div>
+          <div className={s.heatmapLabel} key={`rl-${ri}`}>
+            {rowLabels[ri]}
+          </div>
           {row.map((cell, ci) => {
             const intensity = Math.abs(cell) / maxAbs;
             return (
@@ -108,7 +130,10 @@ function HeatmapChart({ grid, rowLabels, colLabels }: { grid: number[][]; rowLab
                 className={s.heatmapCell}
                 key={`${ri}-${ci}`}
                 style={{
-                  background: cell >= 0 ? `rgba(77, 240, 160, ${intensity * 0.7 + 0.1})` : `rgba(255, 80, 80, ${intensity * 0.7 + 0.1})`,
+                  background:
+                    cell >= 0
+                      ? `rgba(77, 240, 160, ${intensity * 0.7 + 0.1})`
+                      : `rgba(255, 80, 80, ${intensity * 0.7 + 0.1})`,
                   color: intensity > 0.5 ? '#0a0f0e' : 'var(--text)',
                 }}
               >
@@ -167,12 +192,12 @@ function getNestedNumber(record: Record<string, unknown>, keys: string[]): numbe
 
 function extractBacktestResult(data: Record<string, unknown> | null): BacktestResultView | null {
   if (!data) return null;
-  const raw = data.backtestResult && typeof data.backtestResult === 'object'
-    ? data.backtestResult as Record<string, unknown>
-    : data;
-  const metricsRaw = raw.metrics && typeof raw.metrics === 'object'
-    ? raw.metrics as Record<string, unknown>
-    : {};
+  const raw =
+    data.backtestResult && typeof data.backtestResult === 'object'
+      ? (data.backtestResult as Record<string, unknown>)
+      : data;
+  const metricsRaw =
+    raw.metrics && typeof raw.metrics === 'object' ? (raw.metrics as Record<string, unknown>) : {};
   const equityCurve = Array.isArray(raw.equityCurve)
     ? raw.equityCurve
         .map((point) => {
@@ -185,7 +210,9 @@ function extractBacktestResult(data: Record<string, unknown> | null): BacktestRe
         .filter((point): point is { timestamp: number; equity: number } => point !== null)
     : [];
   const trades = Array.isArray(raw.trades)
-    ? raw.trades.filter((trade): trade is BacktestTradeView => Boolean(trade && typeof trade === 'object'))
+    ? raw.trades.filter((trade): trade is BacktestTradeView =>
+        Boolean(trade && typeof trade === 'object')
+      )
     : [];
 
   return {
@@ -329,11 +356,12 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       /* eslint-disable react-hooks/set-state-in-effect */
       if (typeof p.symbol === 'string') setBacktestSymbol(p.symbol);
       if (typeof p.timeframe === 'string') setBacktestTimeframe(p.timeframe);
-      const initialCash = typeof p.initialCash === 'number'
-        ? p.initialCash
-        : typeof p.initialCapital === 'number'
-          ? p.initialCapital
-          : undefined;
+      const initialCash =
+        typeof p.initialCash === 'number'
+          ? p.initialCash
+          : typeof p.initialCapital === 'number'
+            ? p.initialCapital
+            : undefined;
       if (initialCash !== undefined) setBacktestInitialCapital(initialCash);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -343,7 +371,10 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   const handleRunDiagnostics = useCallback(async () => {
     setDiagnosticLoading(true);
     setDiagnosticError(null);
-    setDiagnosticProgress({ percent: 0, message: language === 'zh' ? '启动诊断任务…' : 'Starting diagnostics…' });
+    setDiagnosticProgress({
+      percent: 0,
+      message: language === 'zh' ? '启动诊断任务…' : 'Starting diagnostics…',
+    });
 
     try {
       const { id: taskId } = await apiPost<{ id: string; status: string }>('/tasks', {
@@ -383,7 +414,10 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
               setDiagnosticData(diagnostics);
               setDiagnosticReady(true);
             }
-            setDiagnosticProgress({ percent: 100, message: language === 'zh' ? '诊断完成' : 'Diagnostics complete' });
+            setDiagnosticProgress({
+              percent: 100,
+              message: language === 'zh' ? '诊断完成' : 'Diagnostics complete',
+            });
             close();
           } else if (event.type === 'error') {
             setDiagnosticError(event.error?.message ?? ui.workspaceDiagnosticsFailed);
@@ -392,7 +426,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         },
         () => {
           setDiagnosticError('SSE connection failed');
-        },
+        }
       );
     } catch (err) {
       setDiagnosticError(err instanceof Error ? err.message : ui.workspaceDiagnosticsFailed);
@@ -405,7 +439,10 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   const handleRunBacktest = useCallback(async () => {
     setBacktestLoading(true);
     setBacktestError(null);
-    setBacktestProgress({ percent: 0, message: language === 'zh' ? '启动回测…' : 'Starting backtest…' });
+    setBacktestProgress({
+      percent: 0,
+      message: language === 'zh' ? '启动回测…' : 'Starting backtest…',
+    });
 
     try {
       const { id: taskId } = await submitBacktest({
@@ -429,7 +466,10 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
               setBacktestResult(data);
             }
             setBacktestSubmitted(true);
-            setBacktestProgress({ percent: 100, message: language === 'zh' ? '回测完成' : 'Backtest complete' });
+            setBacktestProgress({
+              percent: 100,
+              message: language === 'zh' ? '回测完成' : 'Backtest complete',
+            });
             close();
           } else if (event.type === 'error') {
             setBacktestError(event.error?.message ?? ui.workspaceBacktestFailed);
@@ -438,14 +478,24 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         },
         () => {
           setBacktestError('SSE connection failed');
-        },
+        }
       );
     } catch (err) {
       setBacktestError(err instanceof Error ? err.message : ui.workspaceBacktestFailed);
     } finally {
       setBacktestLoading(false);
     }
-  }, [strategy.name, configSnapshot, language, ui.workspaceBacktestFailed, backtestSymbol, backtestTimeframe, backtestInitialCapital, backtestStartDate, backtestEndDate]);
+  }, [
+    strategy.name,
+    configSnapshot,
+    language,
+    ui.workspaceBacktestFailed,
+    backtestSymbol,
+    backtestTimeframe,
+    backtestInitialCapital,
+    backtestStartDate,
+    backtestEndDate,
+  ]);
 
   // ── Helpers: parse real diagnostic data for chart rendering ──
   function parseFactorDiagnostics(data: Record<string, unknown>) {
@@ -458,9 +508,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     const icData = icSeries.map((item) => ({ label: item.period, value: item.ic }));
     const layerData = Object.entries(layeredReturns).map(([group, vals]) => ({
       label: group,
-      value: vals.length > 1
-        ? Math.round(((vals[vals.length - 1] - 1) * 100) * 100) / 100
-        : 0,
+      value: vals.length > 1 ? Math.round((vals[vals.length - 1] - 1) * 100 * 100) / 100 : 0,
     }));
     const summaryItems = [
       { label: 'Mean IC', value: (summary.mean_ic ?? 0).toFixed(4) },
@@ -469,13 +517,32 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       { label: 'Mean Rank IC', value: (summary.mean_rank_ic ?? 0).toFixed(4) },
     ];
 
-    return { icData, layerData, corrMatrix, factorLabels, summaryItems, hasData: icSeries.length > 0 };
+    return {
+      icData,
+      layerData,
+      corrMatrix,
+      factorLabels,
+      summaryItems,
+      hasData: icSeries.length > 0,
+    };
   }
 
   function parseNonFactorDiagnostics(data: Record<string, unknown>) {
-    const paramSens = (data.param_sensitivity as Array<{ param: string; values: number[]; returns: number[]; sharpe: number[] }>) ?? [];
+    const paramSens =
+      (data.param_sensitivity as Array<{
+        param: string;
+        values: number[];
+        returns: number[];
+        sharpe: number[];
+      }>) ?? [];
     const signalQuality = (data.signal_quality as Record<string, number>) ?? {};
-    const slippageStress = (data.slippage_stress as Array<{ bps: number; return: number; sharpe: number; trade_count: number }>) ?? [];
+    const slippageStress =
+      (data.slippage_stress as Array<{
+        bps: number;
+        return: number;
+        sharpe: number;
+        trade_count: number;
+      }>) ?? [];
 
     const sensSharpeGrid = paramSens.map((p) => p.sharpe ?? []);
     const sensLabels = paramSens.map((p) => p.param);
@@ -489,15 +556,27 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     ];
 
     const slippageReturns = slippageStress.map((s) => s.return as number);
-    const costItems = slippageStress.length >= 4
-      ? [
-          { label: '1 bp Return', value: `${(slippageStress[0].return * 100).toFixed(2)}%` },
-          { label: '10 bp Return', value: `${(slippageStress[3].return * 100).toFixed(2)}%` },
-          { label: 'Cost Drag', value: `${((slippageStress[0].return - slippageStress[3].return) * 100).toFixed(2)}%` },
-        ]
-      : [];
+    const costItems =
+      slippageStress.length >= 4
+        ? [
+            { label: '1 bp Return', value: `${(slippageStress[0].return * 100).toFixed(2)}%` },
+            { label: '10 bp Return', value: `${(slippageStress[3].return * 100).toFixed(2)}%` },
+            {
+              label: 'Cost Drag',
+              value: `${((slippageStress[0].return - slippageStress[3].return) * 100).toFixed(2)}%`,
+            },
+          ]
+        : [];
 
-    return { sensSharpeGrid, sensLabels, hasSens, signalItems, slippageReturns, costItems, hasData: true };
+    return {
+      sensSharpeGrid,
+      sensLabels,
+      hasSens,
+      signalItems,
+      slippageReturns,
+      costItems,
+      hasData: true,
+    };
   }
 
   // ── Step 1 Diagnostics Content ──
@@ -520,7 +599,8 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
     // Factor-based diagnostics (also covers transitional which has same structure)
     if (diagType === 'factor_based' || diagType === 'transitional') {
-      const { icData, layerData, corrMatrix, factorLabels, summaryItems, hasData } = parseFactorDiagnostics(data);
+      const { icData, layerData, corrMatrix, factorLabels, summaryItems, hasData } =
+        parseFactorDiagnostics(data);
 
       return (
         <div className={s.diagnosticGrid}>
@@ -530,13 +610,19 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceLayeredReturns}</div>
-            {layerData.length > 0 ? <HBarChart data={layerData} /> : <div className={s.emptyState}>No layer data</div>}
+            {layerData.length > 0 ? (
+              <HBarChart data={layerData} />
+            ) : (
+              <div className={s.emptyState}>No layer data</div>
+            )}
           </div>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceCorrelationHeatmap}</div>
-            {corrMatrix.length > 0 && factorLabels.length > 0
-              ? <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
-              : <div className={s.emptyState}>No correlation data</div>}
+            {corrMatrix.length > 0 && factorLabels.length > 0 ? (
+              <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
+            ) : (
+              <div className={s.emptyState}>No correlation data</div>
+            )}
           </div>
           <div className={s.chartCardFull}>
             <MiniGrid items={summaryItems} />
@@ -547,15 +633,18 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
     // Non-factor diagnostics
     if (diagType === 'non_factor') {
-      const { sensSharpeGrid, sensLabels, hasSens, signalItems, slippageReturns, costItems } = parseNonFactorDiagnostics(data);
+      const { sensSharpeGrid, sensLabels, hasSens, signalItems, slippageReturns, costItems } =
+        parseNonFactorDiagnostics(data);
 
       return (
         <div className={s.diagnosticGrid}>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceParamSensitivity}</div>
-            {hasSens
-              ? <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
-              : <div className={s.emptyState}>No param sensitivity data</div>}
+            {hasSens ? (
+              <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
+            ) : (
+              <div className={s.emptyState}>No param sensitivity data</div>
+            )}
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSignalDist}</div>
@@ -563,9 +652,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSlippageStress}</div>
-            {slippageReturns.length > 0
-              ? <LineChart points={slippageReturns} color="#ffa94d" />
-              : <div className={s.emptyState}>No slippage data</div>}
+            {slippageReturns.length > 0 ? (
+              <LineChart points={slippageReturns} color="#ffa94d" />
+            ) : (
+              <div className={s.emptyState}>No slippage data</div>
+            )}
             {costItems.length > 0 && (
               <div style={{ marginTop: 8 }}>
                 <MiniGrid items={costItems} />
@@ -695,9 +786,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
         {/* Backtest progress */}
         <ProgressBar progress={backtestProgress} />
-        {backtestError && (
-          <ErrorBox message={backtestError} onRetry={handleRunBacktest} />
-        )}
+        {backtestError && <ErrorBox message={backtestError} onRetry={handleRunBacktest} />}
 
         {/* Performance metrics */}
         {(backtestSubmitted || backtestResult) && (
@@ -705,22 +794,32 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
             <div className={s.chartCardTitle}>{ui.workspacePerformanceTitle}</div>
             <div className={s.perfGrid}>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}>
+                <div
+                  className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}
+                >
                   {formatPercent(metrics?.totalReturn)}
                 </div>
-                <div className={s.perfCardLabel}>{language === 'zh' ? '总收益' : 'Total Return'}</div>
+                <div className={s.perfCardLabel}>
+                  {language === 'zh' ? '总收益' : 'Total Return'}
+                </div>
               </div>
               <div className={s.perfCard}>
                 <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
                   {formatPercent(metrics?.maxDrawdown)}
                 </div>
-                <div className={s.perfCardLabel}>{language === 'zh' ? '最大回撤' : 'Max Drawdown'}</div>
+                <div className={s.perfCardLabel}>
+                  {language === 'zh' ? '最大回撤' : 'Max Drawdown'}
+                </div>
               </div>
               <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
+                <div
+                  className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}
+                >
                   {formatNumber(metrics?.sharpeRatio)}
                 </div>
-                <div className={s.perfCardLabel}>{language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}</div>
+                <div className={s.perfCardLabel}>
+                  {language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}
+                </div>
               </div>
             </div>
 
@@ -755,8 +854,13 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                         </td>
                         <td>{formatNumber(t.price)}</td>
                         <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
-                        <td style={{ color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)' }}>
-                          {(t.pnl ?? 0) >= 0 ? '+' : ''}{formatNumber(t.pnl)}
+                        <td
+                          style={{
+                            color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)',
+                          }}
+                        >
+                          {(t.pnl ?? 0) >= 0 ? '+' : ''}
+                          {formatNumber(t.pnl)}
                         </td>
                         <td>{t.reason ?? '--'}</td>
                       </tr>
@@ -771,7 +875,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
         {!backtestSubmitted && !backtestLoading && !backtestResult && (
           <div className={s.emptyState}>
-            <span>{language === 'zh' ? '填写上方参数后点击「提交回测」' : 'Fill in the parameters and click "Submit Backtest"'}</span>
+            <span>
+              {language === 'zh'
+                ? '填写上方参数后点击「提交回测」'
+                : 'Fill in the parameters and click "Submit Backtest"'}
+            </span>
           </div>
         )}
       </>
@@ -827,25 +935,23 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
           </div>
 
           <ProgressBar progress={diagnosticProgress} />
-          {diagnosticError && (
-            <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />
-          )}
+          {diagnosticError && <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />}
 
           {renderDiagnosticContent()}
 
           {diagnosticReady && (
-            <button
-              className={s.confirmButton}
-              onClick={() => setStep(2)}
-              type="button"
-            >
+            <button className={s.confirmButton} onClick={() => setStep(2)} type="button">
               {ui.workspaceConfirmStep2}
             </button>
           )}
 
           {!diagnosticLoading && !diagnosticError && !diagnosticReady && !diagnosticData && (
             <div className={s.emptyState}>
-              <span>{language === 'zh' ? '点击「开始诊断」分析策略特征' : 'Click "Run Diagnostics" to analyze'}</span>
+              <span>
+                {language === 'zh'
+                  ? '点击「开始诊断」分析策略特征'
+                  : 'Click "Run Diagnostics" to analyze'}
+              </span>
             </div>
           )}
         </div>

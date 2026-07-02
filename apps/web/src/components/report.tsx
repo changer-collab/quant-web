@@ -34,19 +34,33 @@ interface FullReportProps {
 
 /** 始终显示的核心 tab */
 const ALWAYS_VISIBLE_TABS: ReportTabId[] = [
-  'executiveSummary', 'overview', 'dataParams',
-  'returnMetrics', 'riskMetrics', 'riskAdjMetrics', 'tradeStats', 'equity',
-  'issues', 'conclusion', 'riskWarnings',
+  'executiveSummary',
+  'overview',
+  'dataParams',
+  'returnMetrics',
+  'riskMetrics',
+  'riskAdjMetrics',
+  'tradeStats',
+  'equity',
+  'issues',
+  'conclusion',
+  'riskWarnings',
 ];
 
 /** 检查可选 tab 是否有数据 */
 function getVisibleOptionalTabs(report: BacktestReportFull): ReportTabId[] {
   const tabs: ReportTabId[] = [];
 
-  if (report.robustness.paramSensitivity.length > 0 || report.robustness.rollingWindows.length > 0) {
+  if (
+    report.robustness.paramSensitivity.length > 0 ||
+    report.robustness.rollingWindows.length > 0
+  ) {
     tabs.push('robustness');
   }
-  if (report.attribution.industryExposures.length > 0 || report.attribution.factorExposures.length > 0) {
+  if (
+    report.attribution.industryExposures.length > 0 ||
+    report.attribution.factorExposures.length > 0
+  ) {
     tabs.push('attribution');
   }
   if (report.positionAnalysis.positionDistribution.length > 0) {
@@ -72,7 +86,11 @@ function getVisibleOptionalTabs(report: BacktestReportFull): ReportTabId[] {
 
 /** 获取所有应显示的 tab（核心 tab + 有数据的可选 tab） */
 function getVisibleTabs(report: BacktestReportFull): ReportTabId[] {
-  return [...ALWAYS_VISIBLE_TABS.slice(0, 8), ...getVisibleOptionalTabs(report), ...ALWAYS_VISIBLE_TABS.slice(8)];
+  return [
+    ...ALWAYS_VISIBLE_TABS.slice(0, 8),
+    ...getVisibleOptionalTabs(report),
+    ...ALWAYS_VISIBLE_TABS.slice(8),
+  ];
 }
 
 export function FullReport({ report, ui, allReports, onSwitchReport }: FullReportProps) {
@@ -80,7 +98,9 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
   const [activeTab, setActiveTab] = useState<ReportTabId>('executiveSummary');
 
   // 当 activeTab 不在 visibleTabs 中时（如切换报告后数据减少），回退到第一个 tab
-  const effectiveTab: ReportTabId = visibleTabs.includes(activeTab) ? activeTab : visibleTabs[0] ?? 'executiveSummary';
+  const effectiveTab: ReportTabId = visibleTabs.includes(activeTab)
+    ? activeTab
+    : (visibleTabs[0] ?? 'executiveSummary');
 
   function renderTabContent() {
     switch (effectiveTab) {
@@ -172,9 +192,7 @@ export function FullReport({ report, ui, allReports, onSwitchReport }: FullRepor
 
       {/* Tab content */}
       <div className={reportStyles.tabContent}>
-        <div className={reportStyles.contentInner}>
-          {renderTabContent()}
-        </div>
+        <div className={reportStyles.contentInner}>{renderTabContent()}</div>
       </div>
     </section>
   );

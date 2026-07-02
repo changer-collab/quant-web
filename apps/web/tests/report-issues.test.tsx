@@ -26,7 +26,9 @@ describe('ReportIssues keyword tiles', () => {
     expect(screen.getByText('容量受成交额约束')).toBeInTheDocument();
     expect(screen.getByText('大资金需要分批建仓')).toBeInTheDocument();
 
-    expect(container.querySelectorAll('[data-keyword-tile="true"]').length).toBeGreaterThanOrEqual(6);
+    expect(container.querySelectorAll('[data-keyword-tile="true"]').length).toBeGreaterThanOrEqual(
+      6
+    );
     expect(container.querySelector('[data-testid="liquidity-assessment-paragraph"]')).toBeNull();
   });
 });

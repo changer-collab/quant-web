@@ -86,10 +86,7 @@ export class LoopHandler implements TaskHandler {
   }
 
   /** 执行单次迭代（骨架） */
-  private async runIteration(
-    config: LoopPayload,
-    sequence: number,
-  ): Promise<IterationRecord> {
+  private async runIteration(config: LoopPayload, sequence: number): Promise<IterationRecord> {
     const request: AgentRequest = {
       agentType: 'backtest',
       taskId: `${config.id}-iter-${sequence}`,

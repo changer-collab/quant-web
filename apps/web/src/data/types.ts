@@ -1344,7 +1344,10 @@ export interface FactorReportEconomicLogic {
 
 /** 模块11：稳健性检验 */
 export interface FactorReportRobustness {
-  paramSensitivity: { paramName: string; variations: { value: string; ic: number; groupReturn: number }[] }[];
+  paramSensitivity: {
+    paramName: string;
+    variations: { value: string; ic: number; groupReturn: number }[];
+  }[];
   inSampleVsOutOfSample: { metric: string; inSample: number; outOfSample: number }[];
   benchmarkComparison: { benchmark: string; ic: number; groupReturn: number }[];
   weightingComparison: { method: string; ic: number; groupReturn: number }[];
@@ -1363,7 +1366,12 @@ export interface FactorReportMonitoring {
   extremeValueThreshold: number;
   dataDelay: string;
   dataDelayThreshold: string;
-  alerts: { metric: string; value: string; threshold: string; status: 'normal' | 'warning' | 'critical' }[];
+  alerts: {
+    metric: string;
+    value: string;
+    threshold: string;
+    status: 'normal' | 'warning' | 'critical';
+  }[];
 }
 
 /** 模块13：结论与建议 */

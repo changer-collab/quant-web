@@ -17,7 +17,9 @@ export function FactorMultiFactor({ report, ui }: Props) {
         <div className={s.kpiGrid}>
           <div className={s.kpiCard}>
             <div className={s.kpiLabel}>Weight in Model</div>
-            <div className={`${s.kpiValue} ${s.positive}`}>{(mf.weightInModel * 100).toFixed(1)}%</div>
+            <div className={`${s.kpiValue} ${s.positive}`}>
+              {(mf.weightInModel * 100).toFixed(1)}%
+            </div>
           </div>
         </div>
       </FactorReportSection>
@@ -26,14 +28,20 @@ export function FactorMultiFactor({ report, ui }: Props) {
         <div className={s.kpiGrid}>
           <div className={s.kpiCard}>
             <div className={s.kpiLabel}>IC Improvement</div>
-            <div className={`${s.kpiValue} ${mf.marginalIcImprovement > 0 ? s.positive : s.negative}`}>
-              {mf.marginalIcImprovement > 0 ? '+' : ''}{mf.marginalIcImprovement.toFixed(3)}
+            <div
+              className={`${s.kpiValue} ${mf.marginalIcImprovement > 0 ? s.positive : s.negative}`}
+            >
+              {mf.marginalIcImprovement > 0 ? '+' : ''}
+              {mf.marginalIcImprovement.toFixed(3)}
             </div>
           </div>
           <div className={s.kpiCard}>
             <div className={s.kpiLabel}>Sharpe Improvement</div>
-            <div className={`${s.kpiValue} ${mf.marginalSharpeImprovement > 0 ? s.positive : s.negative}`}>
-              {mf.marginalSharpeImprovement > 0 ? '+' : ''}{mf.marginalSharpeImprovement.toFixed(2)}
+            <div
+              className={`${s.kpiValue} ${mf.marginalSharpeImprovement > 0 ? s.positive : s.negative}`}
+            >
+              {mf.marginalSharpeImprovement > 0 ? '+' : ''}
+              {mf.marginalSharpeImprovement.toFixed(2)}
             </div>
           </div>
         </div>
@@ -42,7 +50,10 @@ export function FactorMultiFactor({ report, ui }: Props) {
       <FactorReportSection title={u.interactionEffects} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>With Factor</th><th>Interaction Effect</th></tr>
+            <tr>
+              <th>With Factor</th>
+              <th>Interaction Effect</th>
+            </tr>
           </thead>
           <tbody>
             {mf.interactionEffects.map((ie, i) => (

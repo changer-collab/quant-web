@@ -8,20 +8,10 @@ export class SqliteFactorRepository {
 
   async save(factor: FactorDefinition): Promise<void> {
     const now = Date.now();
-    await this.db.insert(factorDefinitions).values({
-      id: factor.id,
-      name: factor.name,
-      formula: factor.formula,
-      category: factor.category,
-      modes: JSON.stringify(factor.modes),
-      frequency: factor.frequency,
-      status: factor.status,
-      version: factor.version,
-      createdAt: now,
-      updatedAt: now,
-    }).onConflictDoUpdate({
-      target: factorDefinitions.id,
-      set: {
+    await this.db
+      .insert(factorDefinitions)
+      .values({
+        id: factor.id,
         name: factor.name,
         formula: factor.formula,
         category: factor.category,
@@ -29,9 +19,22 @@ export class SqliteFactorRepository {
         frequency: factor.frequency,
         status: factor.status,
         version: factor.version,
+        createdAt: now,
         updatedAt: now,
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: factorDefinitions.id,
+        set: {
+          name: factor.name,
+          formula: factor.formula,
+          category: factor.category,
+          modes: JSON.stringify(factor.modes),
+          frequency: factor.frequency,
+          status: factor.status,
+          version: factor.version,
+          updatedAt: now,
+        },
+      });
   }
 
   async getAll(): Promise<FactorDefinition[]> {
@@ -49,12 +52,14 @@ export class SqliteFactorRepository {
   }
 
   async getById(id: string): Promise<FactorDefinition | undefined> {
-    const rows = await this.db.select().from(factorDefinitions)
+    const rows = await this.db
+      .select()
+      .from(factorDefinitions)
       .where(eq(factorDefinitions.id, id))
       .limit(1);
-    
+
     if (rows.length === 0) return undefined;
-    
+
     const row = rows[0];
     return {
       id: row.id,

@@ -102,7 +102,9 @@
   border-bottom: 2px solid transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .tabButton:hover {
@@ -284,7 +286,9 @@
   flex: 1;
   min-width: 24px;
   background: rgba(77, 240, 160, 0.5);
-  transition: background 0.15s, transform 0.15s;
+  transition:
+    background 0.15s,
+    transform 0.15s;
   transform-origin: bottom;
   position: relative;
 }
@@ -370,7 +374,9 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .backButton:hover {
@@ -388,7 +394,9 @@
   border: 1px solid rgba(77, 240, 160, 0.2);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .viewReportBtn:hover {

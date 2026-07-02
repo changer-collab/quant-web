@@ -32,7 +32,9 @@ function PositionCurveChart({ report }: Props) {
       grid: { top: 16, right: 16, bottom: 32, left: 48 },
       xAxis: {
         type: 'category',
-        data: curve.map((d) => new Date(d.timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })),
+        data: curve.map((d) =>
+          new Date(d.timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+        ),
         axisLabel: { fontSize: 9, color: '#8fa29b', rotate: 30 },
         axisTick: { show: false },
       },
@@ -40,7 +42,11 @@ function PositionCurveChart({ report }: Props) {
         type: 'value',
         min: 0,
         max: 1,
-        axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${(v * 100).toFixed(0)}%` },
+        axisLabel: {
+          fontSize: 10,
+          color: '#8fa29b',
+          formatter: (v: number) => `${(v * 100).toFixed(0)}%`,
+        },
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       dataZoom: [{ type: 'inside', start: 0, end: 100 }],
@@ -60,7 +66,14 @@ function PositionCurveChart({ report }: Props) {
   if (curve.length === 0) return null;
   return (
     <div className={styles.chartSection}>
-      <ReactEChartsCore echarts={echarts} option={option} theme="quant-dark" style={{ height: 200 }} notMerge lazyUpdate />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 200 }}
+        notMerge
+        lazyUpdate
+      />
     </div>
   );
 }
@@ -93,7 +106,14 @@ function PositionDistributionChart({ report }: Props) {
   if (dist.length === 0) return null;
   return (
     <div className={styles.chartSection}>
-      <ReactEChartsCore echarts={echarts} option={option} theme="quant-dark" style={{ height: 200 }} notMerge lazyUpdate />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 200 }}
+        notMerge
+        lazyUpdate
+      />
     </div>
   );
 }
@@ -145,7 +165,9 @@ export function ReportPositionAnalysis({ report, ui }: Props) {
           <div className={styles.adjustItem}>
             <span className={styles.adjustLabel}>{labels.profitAdd}</span>
             <span className={styles.adjustValue}>{p.positionAdjustments.profitAddCount} 次</span>
-            <span className={styles.adjustEffect}>+{pct(p.positionAdjustments.profitAddEffect)}</span>
+            <span className={styles.adjustEffect}>
+              +{pct(p.positionAdjustments.profitAddEffect)}
+            </span>
           </div>
           <div className={styles.adjustItem}>
             <span className={styles.adjustLabel}>{labels.lossAdd}</span>

@@ -75,7 +75,9 @@
   padding: var(--space-md);
   border: 1px solid var(--line);
   background: rgba(17, 25, 23, 0.64);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .configItem:hover {

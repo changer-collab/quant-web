@@ -22,7 +22,11 @@ function ScenariosChart({ report, ui }: Props) {
     if (scenarios.length === 0) return {};
     return {
       tooltip: { ...CHART_DEFAULTS.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { data: [labels.strategyDrawdown, labels.benchmarkDrawdown], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
+      legend: {
+        data: [labels.strategyDrawdown, labels.benchmarkDrawdown],
+        textStyle: { color: '#8fa29b', fontSize: 10 },
+        top: 0,
+      },
       grid: { top: 32, right: 16, bottom: 24, left: 56 },
       xAxis: {
         type: 'category',
@@ -36,8 +40,18 @@ function ScenariosChart({ report, ui }: Props) {
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       series: [
-        { name: labels.strategyDrawdown, type: 'bar', data: scenarios.map((s) => +(s.strategyDrawdown * 100).toFixed(1)), itemStyle: { color: '#4df0a0' } },
-        { name: labels.benchmarkDrawdown, type: 'bar', data: scenarios.map((s) => +(s.benchmarkDrawdown * 100).toFixed(1)), itemStyle: { color: '#ff6b6b' } },
+        {
+          name: labels.strategyDrawdown,
+          type: 'bar',
+          data: scenarios.map((s) => +(s.strategyDrawdown * 100).toFixed(1)),
+          itemStyle: { color: '#4df0a0' },
+        },
+        {
+          name: labels.benchmarkDrawdown,
+          type: 'bar',
+          data: scenarios.map((s) => +(s.benchmarkDrawdown * 100).toFixed(1)),
+          itemStyle: { color: '#ff6b6b' },
+        },
       ],
     };
   }, [scenarios, labels]);
@@ -45,7 +59,14 @@ function ScenariosChart({ report, ui }: Props) {
   if (scenarios.length === 0) return null;
   return (
     <div className={styles.chartSection}>
-      <ReactEChartsCore echarts={echarts} option={option} theme="quant-dark" style={{ height: 240 }} notMerge lazyUpdate />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 240 }}
+        notMerge
+        lazyUpdate
+      />
     </div>
   );
 }
@@ -88,8 +109,12 @@ export function ReportStressTest({ report, ui }: Props) {
                   <tr key={sc.name}>
                     <td className={styles.nameCell}>{sc.name}</td>
                     <td>{sc.period}</td>
-                    <td className={`${styles.numCell} ${styles.cellRisk}`}>{pct(sc.strategyDrawdown)}</td>
-                    <td className={`${styles.numCell} ${styles.cellRisk}`}>{pct(sc.benchmarkDrawdown)}</td>
+                    <td className={`${styles.numCell} ${styles.cellRisk}`}>
+                      {pct(sc.strategyDrawdown)}
+                    </td>
+                    <td className={`${styles.numCell} ${styles.cellRisk}`}>
+                      {pct(sc.benchmarkDrawdown)}
+                    </td>
                     <td className={styles.numCell}>{sc.recoveryDays}</td>
                     <td className={styles.noteCell}>{sc.note}</td>
                   </tr>
@@ -111,15 +136,21 @@ export function ReportStressTest({ report, ui }: Props) {
             </div>
             <div className={styles.mcCard}>
               <span className={styles.mcLabel}>{labels.medianReturn}</span>
-              <strong className={`${styles.mcValue} ${styles.mcGood}`}>{pct(mc.medianReturn)}</strong>
+              <strong className={`${styles.mcValue} ${styles.mcGood}`}>
+                {pct(mc.medianReturn)}
+              </strong>
             </div>
             <div className={styles.mcCard}>
               <span className={styles.mcLabel}>{labels.percentile5}</span>
-              <strong className={`${styles.mcValue} ${styles.mcWarn}`}>{pct(mc.percentile5)}</strong>
+              <strong className={`${styles.mcValue} ${styles.mcWarn}`}>
+                {pct(mc.percentile5)}
+              </strong>
             </div>
             <div className={styles.mcCard}>
               <span className={styles.mcLabel}>{labels.percentile95}</span>
-              <strong className={`${styles.mcValue} ${styles.mcGood}`}>{pct(mc.percentile95)}</strong>
+              <strong className={`${styles.mcValue} ${styles.mcGood}`}>
+                {pct(mc.percentile95)}
+              </strong>
             </div>
             <div className={styles.mcCard}>
               <span className={styles.mcLabel}>{labels.probPositiveReturn}</span>

@@ -46,7 +46,11 @@ function FactorDefinitionTable({
             >
               <td>
                 <strong>{f.name}</strong>
-                <span style={{ display: 'block', marginTop: 2, color: 'var(--muted)', fontSize: 12 }}>{f.description}</span>
+                <span
+                  style={{ display: 'block', marginTop: 2, color: 'var(--muted)', fontSize: 12 }}
+                >
+                  {f.description}
+                </span>
               </td>
               <td>{f.category}</td>
               <td>{f.ic}</td>
@@ -56,7 +60,9 @@ function FactorDefinitionTable({
               <td>
                 {f.referencedBy.length > 0
                   ? f.referencedBy.map((r) => (
-                      <span key={r} className={s.refTag}>{r}</span>
+                      <span key={r} className={s.refTag}>
+                        {r}
+                      </span>
                     ))
                   : '—'}
               </td>
@@ -67,7 +73,14 @@ function FactorDefinitionTable({
               </td>
               <td>
                 {onViewReport && (
-                  <button className={fr.viewReportBtn} onClick={(e) => { e.stopPropagation(); onViewReport(f.id); }} type="button">
+                  <button
+                    className={fr.viewReportBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewReport(f.id);
+                    }}
+                    type="button"
+                  >
                     View Report
                   </button>
                 )}
@@ -87,7 +100,7 @@ function IcCurveChart({ icSeries }: { icSeries: string[] }) {
   return (
     <div className={s.icSeries}>
       {values.map((v, i) => {
-        const height = Math.abs(v) / maxAbs * 100;
+        const height = (Math.abs(v) / maxAbs) * 100;
         return (
           <div
             key={i}
@@ -101,7 +114,11 @@ function IcCurveChart({ icSeries }: { icSeries: string[] }) {
   );
 }
 
-function GroupReturnGrid({ groupReturns }: { groupReturns: FactorEvalDisplayResult['groupReturns'] }) {
+function GroupReturnGrid({
+  groupReturns,
+}: {
+  groupReturns: FactorEvalDisplayResult['groupReturns'];
+}) {
   return (
     <div className={s.groupGrid}>
       {groupReturns.map((g) => (
@@ -157,7 +174,9 @@ function FactorEvalPanel({
 
   return (
     <section className={s.evalPanel}>
-      <h3>{ui.factorEvalTitle} — {result.factorName}</h3>
+      <h3>
+        {ui.factorEvalTitle} — {result.factorName}
+      </h3>
       <div className={s.evalTabs}>
         {EVAL_TABS.map((tab) => (
           <button
@@ -176,13 +195,7 @@ function FactorEvalPanel({
   );
 }
 
-function FactorReferencePanel({
-  factors,
-  ui,
-}: {
-  factors: FactorDisplayRow[];
-  ui: UiCopy;
-}) {
+function FactorReferencePanel({ factors, ui }: { factors: FactorDisplayRow[]; ui: UiCopy }) {
   const referenced = factors.filter((f) => f.referencedBy.length > 0);
 
   return (
@@ -197,7 +210,9 @@ function FactorReferencePanel({
               <span className={s.refFactorName}>{f.name}</span>
               <div className={s.refStrategyList}>
                 {f.referencedBy.map((r) => (
-                  <span key={r} className={s.refTag}>{r}</span>
+                  <span key={r} className={s.refTag}>
+                    {r}
+                  </span>
                 ))}
               </div>
             </div>

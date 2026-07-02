@@ -123,7 +123,11 @@ print(json.dumps(strategies))
       return this.cache ?? [];
     } finally {
       if (tmpPath) {
-        try { unlinkSync(tmpPath); } catch { /* ignore cleanup errors */ }
+        try {
+          unlinkSync(tmpPath);
+        } catch {
+          /* ignore cleanup errors */
+        }
       }
     }
   }

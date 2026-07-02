@@ -33,7 +33,11 @@ function createMockDataCenter(): DataCenter {
       reference: {
         getTradingCalendar: async () => ({ exchange: 'SSE', year: 2024, tradingDays: [] }),
         getInstruments: async () => [],
-        getIndexComposition: async () => ({ indexSymbol: 'CSI500', asOfDate: 20240101, constituents: [] }),
+        getIndexComposition: async () => ({
+          indexSymbol: 'CSI500',
+          asOfDate: 20240101,
+          constituents: [],
+        }),
         getAdjustmentFactors: async () => [],
         isTradingDay: async () => true,
         getPreviousTradingDay: async () => 20240101,
@@ -67,19 +71,34 @@ function createMockDataCenter(): DataCenter {
       },
       quality: {
         checkCompleteness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkConsistency: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkFreshness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
       },
     },
@@ -104,8 +123,24 @@ const MOCK_DUAL_MA_META = {
   name: 'dual_ma',
   description: '双均线策略',
   params: [
-    { key: 'period', label: '周期', type: 'number', default: 20, min: 2, max: 200, chart_relevant: true },
-    { key: 'offset', label: '偏移', type: 'number', default: 5, min: 0, max: 50, chart_relevant: false },
+    {
+      key: 'period',
+      label: '周期',
+      type: 'number',
+      default: 20,
+      min: 2,
+      max: 200,
+      chart_relevant: true,
+    },
+    {
+      key: 'offset',
+      label: '偏移',
+      type: 'number',
+      default: 5,
+      min: 0,
+      max: 50,
+      chart_relevant: false,
+    },
   ],
   version: '0.1.0',
   modes: ['traditional'],
@@ -120,9 +155,33 @@ const MOCK_MACD_META = {
   name: 'macd_strategy',
   description: 'MACD 策略',
   params: [
-    { key: 'fast_period', label: '快线周期', type: 'number', default: 12, min: 2, max: 100, chart_relevant: true },
-    { key: 'slow_period', label: '慢线周期', type: 'number', default: 26, min: 5, max: 200, chart_relevant: true },
-    { key: 'signal_period', label: '信号周期', type: 'number', default: 9, min: 2, max: 50, chart_relevant: true },
+    {
+      key: 'fast_period',
+      label: '快线周期',
+      type: 'number',
+      default: 12,
+      min: 2,
+      max: 100,
+      chart_relevant: true,
+    },
+    {
+      key: 'slow_period',
+      label: '慢线周期',
+      type: 'number',
+      default: 26,
+      min: 5,
+      max: 200,
+      chart_relevant: true,
+    },
+    {
+      key: 'signal_period',
+      label: '信号周期',
+      type: 'number',
+      default: 9,
+      min: 2,
+      max: 50,
+      chart_relevant: true,
+    },
   ],
   version: '1.0.0',
   modes: ['traditional'],
@@ -322,7 +381,7 @@ describe('Preview Routes — chart_relevant validation', () => {
     // 合并结果: baseline {period:20,offset:5} + preview_params {period:10} → {period:10,offset:5}
     expect(computePreviewSpy).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ period: 10, offset: 5 }),
+      expect.objectContaining({ period: 10, offset: 5 })
     );
 
     computePreviewSpy.mockRestore();
@@ -357,7 +416,7 @@ describe('Preview Routes — chart_relevant validation', () => {
     // 无保存 config → baseline params={} → 只有 preview_params 生效
     expect(computePreviewSpy).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ period: 20 }),
+      expect.objectContaining({ period: 20 })
     );
 
     computePreviewSpy.mockRestore();
@@ -399,7 +458,7 @@ describe('Preview Routes — chart_relevant validation', () => {
     // 空 preview_params → 使用 baseline {period:20,offset:5}
     expect(computePreviewSpy).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.objectContaining({ period: 20, offset: 5 }),
+      expect.objectContaining({ period: 20, offset: 5 })
     );
 
     computePreviewSpy.mockRestore();

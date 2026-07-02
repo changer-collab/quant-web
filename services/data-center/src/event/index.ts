@@ -1,8 +1,4 @@
-export {
-  AnnouncementEventType,
-  EventImpact,
-  MacroFrequency,
-} from './types.js';
+export { AnnouncementEventType, EventImpact, MacroFrequency } from './types.js';
 export type {
   AnnouncementEvent,
   NewsArticle,

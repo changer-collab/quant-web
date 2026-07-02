@@ -64,12 +64,19 @@ export class SqliteBarRepository implements BarRepository {
     }
   }
 
-  async query(symbol: string, timeframe: TimeFrame, start?: number, end?: number): Promise<ExtendedBar[]> {
+  async query(
+    symbol: string,
+    timeframe: TimeFrame,
+    start?: number,
+    end?: number
+  ): Promise<ExtendedBar[]> {
     try {
       const conditions = [eq(bars.symbol, symbol), eq(bars.timeframe, timeframe)];
       if (start !== undefined) conditions.push(gte(bars.timestamp, start));
       if (end !== undefined) conditions.push(lte(bars.timestamp, end));
-      const rows = await this.db.select().from(bars)
+      const rows = await this.db
+        .select()
+        .from(bars)
         .where(and(...conditions))
         .orderBy(bars.timestamp);
       return rows.map(toModel);
@@ -80,7 +87,9 @@ export class SqliteBarRepository implements BarRepository {
 
   async getLatest(symbol: string, timeframe: TimeFrame): Promise<ExtendedBar | undefined> {
     try {
-      const rows = await this.db.select().from(bars)
+      const rows = await this.db
+        .select()
+        .from(bars)
         .where(and(eq(bars.symbol, symbol), eq(bars.timeframe, timeframe)))
         .orderBy(desc(bars.timestamp))
         .limit(1);
@@ -93,7 +102,9 @@ export class SqliteBarRepository implements BarRepository {
   async getAvailableSymbols(timeframe?: TimeFrame): Promise<string[]> {
     try {
       const conditions = timeframe ? [eq(bars.timeframe, timeframe)] : [];
-      const rows = await this.db.selectDistinct({ symbol: bars.symbol }).from(bars)
+      const rows = await this.db
+        .selectDistinct({ symbol: bars.symbol })
+        .from(bars)
         .where(conditions.length > 0 ? and(...conditions) : undefined);
       return rows.map((r) => r.symbol);
     } catch (err) {
@@ -106,7 +117,9 @@ export class SqliteBarRepository implements BarRepository {
       const conditions = [eq(bars.symbol, symbol), eq(bars.timeframe, timeframe)];
       if (start !== undefined) conditions.push(gte(bars.timestamp, start));
       if (end !== undefined) conditions.push(lte(bars.timestamp, end));
-      const result = await this.db.select({ count: sql<number>`count(*)` }).from(bars)
+      const result = await this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(bars)
         .where(and(...conditions));
       return result[0]?.count ?? 0;
     } catch (err) {
@@ -114,7 +127,11 @@ export class SqliteBarRepository implements BarRepository {
     }
   }
 
-  async queryPaged(symbol: string, timeframe: TimeFrame, params?: PageParams): Promise<PageResult<ExtendedBar>> {
+  async queryPaged(
+    symbol: string,
+    timeframe: TimeFrame,
+    params?: PageParams
+  ): Promise<PageResult<ExtendedBar>> {
     try {
       const limit = params?.limit ?? 1000;
       const conditions = [eq(bars.symbol, symbol), eq(bars.timeframe, timeframe)];
@@ -122,7 +139,9 @@ export class SqliteBarRepository implements BarRepository {
         conditions.push(gt(bars.timestamp, params.afterTimestamp));
       }
       // 多取 1 条判断 hasMore
-      const rows = await this.db.select().from(bars)
+      const rows = await this.db
+        .select()
+        .from(bars)
         .where(and(...conditions))
         .orderBy(bars.timestamp)
         .limit(limit + 1);

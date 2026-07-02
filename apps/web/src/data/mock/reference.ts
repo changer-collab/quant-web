@@ -1,8 +1,5 @@
 // apps/web/src/data/mock/reference.ts
-import {
-  InstrumentStatus,
-  AdjustmentType,
-} from '../types.js';
+import { InstrumentStatus, AdjustmentType } from '../types.js';
 
 /** Mock 标的列表 */
 export const MOCK_INSTRUMENTS = [
@@ -133,7 +130,7 @@ export const MOCK_INDEX_COMPOSITION_CSI500 = {
   asOfDate: Date.UTC(2025, 5, 15),
   constituents: [
     { symbol: '000001.SZ', weight: 0.015 },
-    { symbol: '000333.SZ', weight: 0.020 },
+    { symbol: '000333.SZ', weight: 0.02 },
     { symbol: '002415.SZ', weight: 0.018 },
     { symbol: '300750.SZ', weight: 0.025 },
     { symbol: '600276.SH', weight: 0.022 },
@@ -158,8 +155,11 @@ function generateTradingDays(year: number): number[] {
   const start = new Date(Date.UTC(year, 0, 1));
   const end = new Date(Date.UTC(year, 11, 31));
   const holidays = new Set([
-    `${year}-01-01`, `${year}-05-01`, `${year}-10-01`,
-    `${year}-10-02`, `${year}-10-03`,
+    `${year}-01-01`,
+    `${year}-05-01`,
+    `${year}-10-01`,
+    `${year}-10-02`,
+    `${year}-10-03`,
   ]);
 
   for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {

@@ -21,18 +21,31 @@ export class EventDataProviderImpl implements EventDataProvider {
     private announcementRepo: AnnouncementEventRepository,
     private newsRepo: NewsRepository,
     private sentimentRepo: SentimentRepository,
-    private macroRepo: MacroIndicatorRepository,
+    private macroRepo: MacroIndicatorRepository
   ) {}
 
-  async getAnnouncementEvents(symbol: string, start?: number, end?: number): Promise<AnnouncementEvent[]> {
+  async getAnnouncementEvents(
+    symbol: string,
+    start?: number,
+    end?: number
+  ): Promise<AnnouncementEvent[]> {
     return this.announcementRepo.query(symbol, start, end);
   }
 
-  async getNewsArticles(symbols: string[], start?: number, end?: number, limit?: number): Promise<NewsArticle[]> {
+  async getNewsArticles(
+    symbols: string[],
+    start?: number,
+    end?: number,
+    limit?: number
+  ): Promise<NewsArticle[]> {
     return this.newsRepo.query(symbols, start, end, limit);
   }
 
-  async getSentimentSeries(symbol: string, start?: number, end?: number): Promise<SentimentPoint[]> {
+  async getSentimentSeries(
+    symbol: string,
+    start?: number,
+    end?: number
+  ): Promise<SentimentPoint[]> {
     return this.sentimentRepo.query(symbol, start, end);
   }
 
@@ -40,7 +53,11 @@ export class EventDataProviderImpl implements EventDataProvider {
     return this.macroRepo.getDefinitions();
   }
 
-  async getMacroIndicatorSeries(indicatorId: string, start?: number, end?: number): Promise<MacroPoint[]> {
+  async getMacroIndicatorSeries(
+    indicatorId: string,
+    start?: number,
+    end?: number
+  ): Promise<MacroPoint[]> {
     return this.macroRepo.getPoints(indicatorId, start, end);
   }
 

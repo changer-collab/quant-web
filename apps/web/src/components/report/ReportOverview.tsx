@@ -29,7 +29,10 @@ export function ReportOverview({ report, ui }: Props) {
       </div>
 
       {/* 策略类型与适用市场 */}
-      {(o.strategyCategory || (o.suitableMarketRegime && Array.isArray(o.suitableMarketRegime) && o.suitableMarketRegime.length > 0)) && (
+      {(o.strategyCategory ||
+        (o.suitableMarketRegime &&
+          Array.isArray(o.suitableMarketRegime) &&
+          o.suitableMarketRegime.length > 0)) && (
         <div className={overview.metaGrid}>
           {o.strategyCategory && (
             <div className={overview.metaItem}>
@@ -37,16 +40,20 @@ export function ReportOverview({ report, ui }: Props) {
               <span className={overview.metaValue}>{o.strategyCategory}</span>
             </div>
           )}
-          {o.suitableMarketRegime && Array.isArray(o.suitableMarketRegime) && o.suitableMarketRegime.length > 0 && (
-            <div className={overview.metaItem}>
-              <span className={overview.metaLabel}>{labels.suitableMarketRegime}</span>
-              <div className={overview.chipRow}>
-                {o.suitableMarketRegime.map((r, i) => (
-                  <span key={i} className={overview.chip}>{r}</span>
-                ))}
+          {o.suitableMarketRegime &&
+            Array.isArray(o.suitableMarketRegime) &&
+            o.suitableMarketRegime.length > 0 && (
+              <div className={overview.metaItem}>
+                <span className={overview.metaLabel}>{labels.suitableMarketRegime}</span>
+                <div className={overview.chipRow}>
+                  {o.suitableMarketRegime.map((r, i) => (
+                    <span key={i} className={overview.chip}>
+                      {r}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       )}
 
@@ -63,13 +70,17 @@ export function ReportOverview({ report, ui }: Props) {
           <span className={overview.metaLabel}>{labels.instruments}</span>
           <div className={overview.chipRow}>
             {o.instruments.map((inst) => (
-              <span key={inst} className={overview.chip}>{inst}</span>
+              <span key={inst} className={overview.chip}>
+                {inst}
+              </span>
             ))}
           </div>
         </div>
         <div className={overview.metaItem}>
           <span className={overview.metaLabel}>{labels.timeRange}</span>
-          <span className={overview.metaValue}>{o.timeRange.start} ~ {o.timeRange.end}</span>
+          <span className={overview.metaValue}>
+            {o.timeRange.start} ~ {o.timeRange.end}
+          </span>
         </div>
         <div className={overview.metaItem}>
           <span className={overview.metaLabel}>{labels.frequency}</span>

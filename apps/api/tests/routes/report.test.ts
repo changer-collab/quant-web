@@ -12,7 +12,10 @@ import { unlinkSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
 /** 创建仅含回测处理器的注册表，配合测试 DB 验证报告持久化 */
-function createBacktestOnlyRegistry(): { reportRepository: ReportRepository; resultProcessorRegistry: Map<TaskType, ResultProcessor> } {
+function createBacktestOnlyRegistry(): {
+  reportRepository: ReportRepository;
+  resultProcessorRegistry: Map<TaskType, ResultProcessor>;
+} {
   const reportRepo = new ReportRepository();
   const registry = new Map<TaskType, ResultProcessor>();
   registry.set(TaskType.Backtest, new BacktestResultProcessor(reportRepo));
@@ -25,7 +28,11 @@ function createMockDataCenter(): DataCenter {
       reference: {
         getTradingCalendar: async () => ({ exchange: 'SSE', year: 2024, tradingDays: [] }),
         getInstruments: async () => [],
-        getIndexComposition: async () => ({ indexSymbol: 'CSI500', asOfDate: 20240101, constituents: [] }),
+        getIndexComposition: async () => ({
+          indexSymbol: 'CSI500',
+          asOfDate: 20240101,
+          constituents: [],
+        }),
         getAdjustmentFactors: async () => [],
         isTradingDay: async () => true,
         getPreviousTradingDay: async () => 20240101,
@@ -59,19 +66,34 @@ function createMockDataCenter(): DataCenter {
       },
       quality: {
         checkCompleteness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkConsistency: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkFreshness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
       },
     },
@@ -132,10 +154,30 @@ describe('Report Routes', () => {
 
   describe('回测任务完成 -> 报告自动保存 -> 读取验证', () => {
     const mockBacktestResult: BacktestResult = {
-      config: { initialCash: 1000000, slippage: 0.001, version: '1.0.0', logic: 'dual_ma', strategyKind: 'timing' },
+      config: {
+        initialCash: 1000000,
+        slippage: 0.001,
+        version: '1.0.0',
+        logic: 'dual_ma',
+        strategyKind: 'timing',
+      },
       trades: [
-        { symbol: '600519', direction: 'buy', fillPrice: 100, fillVolume: 100, commission: 5, timestamp: 1704067200000 },
-        { symbol: '600519', direction: 'sell', fillPrice: 110, fillVolume: 100, commission: 5, timestamp: 1704153600000 },
+        {
+          symbol: '600519',
+          direction: 'buy',
+          fillPrice: 100,
+          fillVolume: 100,
+          commission: 5,
+          timestamp: 1704067200000,
+        },
+        {
+          symbol: '600519',
+          direction: 'sell',
+          fillPrice: 110,
+          fillVolume: 100,
+          commission: 5,
+          timestamp: 1704153600000,
+        },
       ],
       equityCurve: [
         { timestamp: 1704067200000, equity: 1000000 },
@@ -145,12 +187,8 @@ describe('Report Routes', () => {
         { timestamp: 1704067200000, drawdown: 0 },
         { timestamp: 1704153600000, drawdown: -0.02 },
       ],
-      monthlyReturns: [
-        { year: 2024, month: 1, return_pct: 0.01 },
-      ],
-      annualReturns: [
-        { year: 2024, return_pct: 0.1 },
-      ],
+      monthlyReturns: [{ year: 2024, month: 1, return_pct: 0.01 }],
+      annualReturns: [{ year: 2024, return_pct: 0.1 }],
       metrics: {
         totalReturn: 0.1,
         annualizedReturn: 0.15,
@@ -182,7 +220,15 @@ describe('Report Routes', () => {
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
+        payload: {
+          type: 'backtest',
+          payload: {
+            strategy: 'dual_ma',
+            symbol: '600519',
+            timeframe: '1d',
+            configSnapshot: { strategy: 'dual_ma', params: {} },
+          },
+        },
       });
       const taskId = submitRes.json().id;
 
@@ -228,7 +274,14 @@ describe('Report Routes', () => {
         url: '/api/tasks',
         payload: {
           type: 'backtest',
-          payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', startTs, endTs, configSnapshot: { strategy: 'dual_ma', params: {} } },
+          payload: {
+            strategy: 'dual_ma',
+            symbol: '600519',
+            timeframe: '1d',
+            startTs,
+            endTs,
+            configSnapshot: { strategy: 'dual_ma', params: {} },
+          },
         },
       });
       const taskId = submitRes.json().id;
@@ -248,7 +301,10 @@ describe('Report Routes', () => {
       const report = detailRes.json();
       expect(report.startTime).toBe(startTs);
       expect(report.endTime).toBe(endTs);
-      expect(report.reportData.overview.timeRange).toEqual({ start: '2023-01-02', end: '2024-12-30' });
+      expect(report.reportData.overview.timeRange).toEqual({
+        start: '2023-01-02',
+        end: '2024-12-30',
+      });
 
       await app.close();
     });
@@ -265,7 +321,15 @@ describe('Report Routes', () => {
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
+        payload: {
+          type: 'backtest',
+          payload: {
+            strategy: 'dual_ma',
+            symbol: '600519',
+            timeframe: '1d',
+            configSnapshot: { strategy: 'dual_ma', params: {} },
+          },
+        },
       });
       const taskId = submitRes.json().id;
 
@@ -276,7 +340,10 @@ describe('Report Routes', () => {
       });
 
       const listRes = await app.inject({ method: 'GET', url: '/api/reports' });
-      const detailRes = await app.inject({ method: 'GET', url: `/api/reports/${listRes.json()[0].id}` });
+      const detailRes = await app.inject({
+        method: 'GET',
+        url: `/api/reports/${listRes.json()[0].id}`,
+      });
       const report = detailRes.json();
 
       // 验证 monthlyReturns（非空数组）
@@ -304,7 +371,15 @@ describe('Report Routes', () => {
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
+        payload: {
+          type: 'backtest',
+          payload: {
+            strategy: 'dual_ma',
+            symbol: '600519',
+            timeframe: '1d',
+            configSnapshot: { strategy: 'dual_ma', params: {} },
+          },
+        },
       });
       const taskId = submitRes.json().id;
 
@@ -315,7 +390,10 @@ describe('Report Routes', () => {
       });
 
       const listRes = await app.inject({ method: 'GET', url: '/api/reports' });
-      const detailRes = await app.inject({ method: 'GET', url: `/api/reports/${listRes.json()[0].id}` });
+      const detailRes = await app.inject({
+        method: 'GET',
+        url: `/api/reports/${listRes.json()[0].id}`,
+      });
       const report = detailRes.json();
 
       // 验证衍生统计指标在 reportData 中的非零值

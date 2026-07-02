@@ -17,12 +17,8 @@ describe('mapBacktestResultToReport', () => {
       { timestamp: 1704067200000, drawdown: 0 },
       { timestamp: 1706745600000, drawdown: -0.08 },
     ],
-    monthlyReturns: [
-      { year: 2024, month: 1, return_pct: 0.05 },
-    ],
-    annualReturns: [
-      { year: 2024, return_pct: 0.1 },
-    ],
+    monthlyReturns: [{ year: 2024, month: 1, return_pct: 0.05 }],
+    annualReturns: [{ year: 2024, return_pct: 0.1 }],
     metrics: {
       totalReturn: 0.1,
       annualizedReturn: 0.15,

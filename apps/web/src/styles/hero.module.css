@@ -9,8 +9,13 @@
     linear-gradient(90deg, rgba(230, 238, 233, 0.02) 1px, transparent 1px),
     linear-gradient(rgba(230, 238, 233, 0.02) 1px, transparent 1px),
     linear-gradient(135deg, rgba(17, 25, 23, 0.96), rgba(22, 33, 31, 0.82)) padding-box,
-    linear-gradient(135deg, rgba(77, 240, 160, 0.15), rgba(98, 216, 255, 0.05), transparent) border-box;
-  background-size: 40px 40px, 40px 40px, auto, auto;
+    linear-gradient(135deg, rgba(77, 240, 160, 0.15), rgba(98, 216, 255, 0.05), transparent)
+      border-box;
+  background-size:
+    40px 40px,
+    40px 40px,
+    auto,
+    auto;
   animation: heroFadeIn 0.5s ease-out both;
   position: relative;
   overflow: hidden;
@@ -28,8 +33,14 @@
 }
 
 @keyframes heroFadeIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .heroEyebrow {
@@ -77,7 +88,10 @@
   padding: var(--space-lg);
   border: 1px solid var(--line);
   background: rgba(8, 16, 15, 0.64);
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
   border-radius: var(--radius-sm);
   position: relative;
   overflow: hidden;

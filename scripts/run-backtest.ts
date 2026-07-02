@@ -12,10 +12,10 @@
  * - 字段映射（camelCase）与 Python CLI 输出对齐
  * - 合理化检查：交易数 > 0、指标非 NaN、权益曲线非平坦
  */
-import { PythonBridge } from "@quant/worker";
-import { resolve } from "node:path";
+import { PythonBridge } from '@quant/worker';
+import { resolve } from 'node:path';
 
-const DB_PATH = resolve(import.meta.dirname, "..", "data", "quant.db");
+const DB_PATH = resolve(import.meta.dirname, '..', 'data', 'quant.db');
 
 interface BacktestMetrics {
   totalReturn: number;
@@ -63,12 +63,12 @@ interface StrategyCase {
 }
 
 const STRATEGIES: StrategyCase[] = [
-  { name: "dual_ma", params: { short_period: 5, long_period: 20 } },
-  { name: "rsi", params: { period: 14, oversold: 30, overbought: 70 } },
-  { name: "bollinger_band", params: { period: 20, num_std: 2.0 } },
+  { name: 'dual_ma', params: { short_period: 5, long_period: 20 } },
+  { name: 'rsi', params: { period: 14, oversold: 30, overbought: 70 } },
+  { name: 'bollinger_band', params: { period: 20, num_std: 2.0 } },
 ];
 
-const SYMBOLS = ["600519", "000001", "300750"];
+const SYMBOLS = ['600519', '000001', '300750'];
 
 interface VerifyResult {
   strategy: string;
@@ -84,22 +84,22 @@ async function runBacktest(
   symbol: string,
   params: Record<string, unknown>,
   initialCash = 1000000,
-  slippage = 0.001,
+  slippage = 0.001
 ): Promise<BacktestData> {
   const request = {
-    command: "backtest",
+    command: 'backtest',
     strategy,
     config: {
       initialCash,
       slippage,
       strategyParams: params,
     },
-    dataRange: { dbPath: DB_PATH, symbol, timeframe: "1d" },
+    dataRange: { dbPath: DB_PATH, symbol, timeframe: '1d' },
   };
 
   const result = await bridge.call(request);
   if (!result.ok) {
-    throw new Error(result.error?.message ?? "Python backtest failed");
+    throw new Error(result.error?.message ?? 'Python backtest failed');
   }
   return result.data as BacktestData;
 }
@@ -111,7 +111,7 @@ function sanityCheck(strategy: string, symbol: string, data: BacktestData): stri
   const ec = data.equityCurve;
 
   if (!m) {
-    errors.push("metrics 为 undefined");
+    errors.push('metrics 为 undefined');
     return errors;
   }
 
@@ -123,14 +123,14 @@ function sanityCheck(strategy: string, symbol: string, data: BacktestData): stri
 
   // 指标非 NaN/Infinity
   const metricFields: Array<[string, number]> = [
-    ["totalReturn", m.totalReturn],
-    ["annualizedReturn", m.annualizedReturn],
-    ["sharpeRatio", m.sharpeRatio],
-    ["maxDrawdown", m.maxDrawdown],
-    ["winRate", m.winRate],
+    ['totalReturn', m.totalReturn],
+    ['annualizedReturn', m.annualizedReturn],
+    ['sharpeRatio', m.sharpeRatio],
+    ['maxDrawdown', m.maxDrawdown],
+    ['winRate', m.winRate],
   ];
   for (const [field, val] of metricFields) {
-    if (typeof val !== "number" || Number.isNaN(val) || !Number.isFinite(val)) {
+    if (typeof val !== 'number' || Number.isNaN(val) || !Number.isFinite(val)) {
       errors.push(`metrics.${field} 无效: ${val}`);
     }
   }
@@ -147,7 +147,7 @@ function sanityCheck(strategy: string, symbol: string, data: BacktestData): stri
   }
 
   // 最大回撤应 > 0（有交易就有波动）
-  if (typeof m.maxDrawdown === "number" && m.maxDrawdown <= 0 && tradeCount > 0) {
+  if (typeof m.maxDrawdown === 'number' && m.maxDrawdown <= 0 && tradeCount > 0) {
     errors.push(`maxDrawdown=${m.maxDrawdown}，有交易但无回撤（异常）`);
   }
 
@@ -159,7 +159,7 @@ function formatPct(v: number): string {
 }
 
 async function main(): Promise<void> {
-  console.log("=== 端到端回测验证（PythonBridge）===\n");
+  console.log('=== 端到端回测验证（PythonBridge）===\n');
   console.log(`数据库: ${DB_PATH}\n`);
 
   const bridge = new PythonBridge({ timeout: 120_000 });
@@ -209,30 +209,32 @@ async function main(): Promise<void> {
   }
 
   // 汇总
-  console.log("\n========== 验证汇总 ==========");
-  console.log("策略            标的      交易数  总收益    年化      最大回撤  夏普    胜率    状态");
-  console.log("--------------- --------  ------  -------- -------- --------  ------  ------  ----");
+  console.log('\n========== 验证汇总 ==========');
+  console.log(
+    '策略            标的      交易数  总收益    年化      最大回撤  夏普    胜率    状态'
+  );
+  console.log('--------------- --------  ------  -------- -------- --------  ------  ------  ----');
   let allOk = true;
   for (const r of results) {
     const m = r.data?.metrics;
     const tc = r.data?.trades?.length ?? 0;
-    const tr = m ? formatPct(m.totalReturn) : "N/A";
-    const ar = m ? formatPct(m.annualizedReturn) : "N/A";
-    const md = m ? formatPct(m.maxDrawdown) : "N/A";
-    const sr = m ? m.sharpeRatio.toFixed(2) : "N/A";
-    const wr = m ? formatPct(m.winRate) : "N/A";
-    const status = r.ok ? "✓ 通过" : "✗ 失败";
+    const tr = m ? formatPct(m.totalReturn) : 'N/A';
+    const ar = m ? formatPct(m.annualizedReturn) : 'N/A';
+    const md = m ? formatPct(m.maxDrawdown) : 'N/A';
+    const sr = m ? m.sharpeRatio.toFixed(2) : 'N/A';
+    const wr = m ? formatPct(m.winRate) : 'N/A';
+    const status = r.ok ? '✓ 通过' : '✗ 失败';
     if (!r.ok) allOk = false;
     console.log(
-      `${r.strategy.padEnd(15)} ${r.symbol.padEnd(8)}  ${String(tc).padEnd(6)}  ${tr.padEnd(8)} ${ar.padEnd(8)} ${md.padEnd(8)}  ${sr.padEnd(6)}  ${wr.padEnd(6)}  ${status}`,
+      `${r.strategy.padEnd(15)} ${r.symbol.padEnd(8)}  ${String(tc).padEnd(6)}  ${tr.padEnd(8)} ${ar.padEnd(8)} ${md.padEnd(8)}  ${sr.padEnd(6)}  ${wr.padEnd(6)}  ${status}`
     );
   }
 
-  console.log("");
+  console.log('');
   if (allOk) {
-    console.log("=== 端到端回测验证全部通过 ===");
+    console.log('=== 端到端回测验证全部通过 ===');
   } else {
-    console.log("=== 端到端回测验证存在问题，请检查上方 ⚠/✗ 标记 ===");
+    console.log('=== 端到端回测验证存在问题，请检查上方 ⚠/✗ 标记 ===');
     process.exitCode = 1;
   }
 }

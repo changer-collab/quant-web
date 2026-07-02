@@ -14,7 +14,11 @@ function pct(v: number): string {
 }
 
 function currency(v: number): string {
-  return v.toLocaleString('zh-CN', { style: 'currency', currency: 'CNY', minimumFractionDigits: 0 });
+  return v.toLocaleString('zh-CN', {
+    style: 'currency',
+    currency: 'CNY',
+    minimumFractionDigits: 0,
+  });
 }
 
 /** 盈亏分布直方图 */
@@ -102,15 +106,71 @@ export function ReportTradeStats({ report, ui }: Props) {
 
   const stats = [
     { label: labels.totalTrades, value: (ts.totalTrades ?? 0).toString(), tone: 'info' },
-    { label: labels.winRate, value: pct(ts.winRate ?? 0), tone: (ts.winRate ?? 0) > 0.5 ? 'good' : 'warn' },
-    ...(ts.profitLossRatio != null ? [{ label: labels.profitLossRatio, value: ts.profitLossRatio.toFixed(2), tone: ts.profitLossRatio > 1.5 ? 'good' as const : 'info' as const }] : []),
-    ...(ts.avgHoldingDays != null ? [{ label: labels.avgHolding, value: `${ts.avgHoldingDays} 天`, tone: 'info' as const }] : []),
-    ...(ts.turnoverRate != null ? [{ label: labels.turnover, value: pct(ts.turnoverRate), tone: ts.turnoverRate > 0.5 ? 'warn' as const : 'info' as const }] : []),
-    ...(ts.maxSingleProfit != null ? [{ label: labels.maxProfit, value: currency(ts.maxSingleProfit), tone: 'good' as const }] : []),
-    ...(ts.maxSingleLoss != null ? [{ label: labels.maxLoss, value: currency(Math.abs(ts.maxSingleLoss)), tone: 'warn' as const }] : []),
-    ...(ts.maxConsecutiveWins !== undefined && ts.maxConsecutiveWins != null ? [{ label: labels.maxConsecutiveWins, value: `${ts.maxConsecutiveWins} 次`, tone: 'good' as const }] : []),
-    ...(ts.maxConsecutiveLosses !== undefined && ts.maxConsecutiveLosses != null ? [{ label: labels.maxConsecutiveLosses, value: `${ts.maxConsecutiveLosses} 次`, tone: 'warn' as const }] : []),
-    ...(ts.concentrationIndex !== undefined && ts.concentrationIndex != null ? [{ label: labels.concentrationIndex, value: ts.concentrationIndex.toFixed(2), tone: ts.concentrationIndex > 0.5 ? 'warn' as const : 'info' as const }] : []),
+    {
+      label: labels.winRate,
+      value: pct(ts.winRate ?? 0),
+      tone: (ts.winRate ?? 0) > 0.5 ? 'good' : 'warn',
+    },
+    ...(ts.profitLossRatio != null
+      ? [
+          {
+            label: labels.profitLossRatio,
+            value: ts.profitLossRatio.toFixed(2),
+            tone: ts.profitLossRatio > 1.5 ? ('good' as const) : ('info' as const),
+          },
+        ]
+      : []),
+    ...(ts.avgHoldingDays != null
+      ? [{ label: labels.avgHolding, value: `${ts.avgHoldingDays} 天`, tone: 'info' as const }]
+      : []),
+    ...(ts.turnoverRate != null
+      ? [
+          {
+            label: labels.turnover,
+            value: pct(ts.turnoverRate),
+            tone: ts.turnoverRate > 0.5 ? ('warn' as const) : ('info' as const),
+          },
+        ]
+      : []),
+    ...(ts.maxSingleProfit != null
+      ? [{ label: labels.maxProfit, value: currency(ts.maxSingleProfit), tone: 'good' as const }]
+      : []),
+    ...(ts.maxSingleLoss != null
+      ? [
+          {
+            label: labels.maxLoss,
+            value: currency(Math.abs(ts.maxSingleLoss)),
+            tone: 'warn' as const,
+          },
+        ]
+      : []),
+    ...(ts.maxConsecutiveWins !== undefined && ts.maxConsecutiveWins != null
+      ? [
+          {
+            label: labels.maxConsecutiveWins,
+            value: `${ts.maxConsecutiveWins} 次`,
+            tone: 'good' as const,
+          },
+        ]
+      : []),
+    ...(ts.maxConsecutiveLosses !== undefined && ts.maxConsecutiveLosses != null
+      ? [
+          {
+            label: labels.maxConsecutiveLosses,
+            value: `${ts.maxConsecutiveLosses} 次`,
+            tone: 'warn' as const,
+          },
+        ]
+      : []),
+    ...(ts.concentrationIndex !== undefined && ts.concentrationIndex != null
+      ? [
+          {
+            label: labels.concentrationIndex,
+            value: ts.concentrationIndex.toFixed(2),
+            tone: ts.concentrationIndex > 0.5 ? ('warn' as const) : ('info' as const),
+          },
+        ]
+      : []),
   ];
 
   const winCount = ts.winningTrades ?? 0;

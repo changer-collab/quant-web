@@ -13,18 +13,28 @@ export class Level2DataProviderImpl implements Level2DataProvider {
   constructor(
     private snapshotRepo: Level2SnapshotRepository,
     private tradeRepo: TradeRecordRepository,
-    private orderRepo: OrderRecordRepository,
+    private orderRepo: OrderRecordRepository
   ) {}
 
-  async *loadSnapshots(symbol: string, start?: number, end?: number): AsyncIterable<Level2Snapshot> {
+  async *loadSnapshots(
+    symbol: string,
+    start?: number,
+    end?: number
+  ): AsyncIterable<Level2Snapshot> {
     const CHUNK_SIZE = 500;
     let afterTimestamp = start !== undefined ? start - 1 : undefined;
     let hasMore = true;
 
     while (hasMore) {
-      const page = await this.snapshotRepo.queryPaged(symbol, { limit: CHUNK_SIZE, afterTimestamp });
+      const page = await this.snapshotRepo.queryPaged(symbol, {
+        limit: CHUNK_SIZE,
+        afterTimestamp,
+      });
       for (const s of page.data) {
-        if (end !== undefined && s.timestamp > end) { hasMore = false; break; }
+        if (end !== undefined && s.timestamp > end) {
+          hasMore = false;
+          break;
+        }
         yield s;
       }
       hasMore = hasMore && page.hasMore;
@@ -33,7 +43,11 @@ export class Level2DataProviderImpl implements Level2DataProvider {
     }
   }
 
-  async *loadTradeRecords(symbol: string, start?: number, end?: number): AsyncIterable<TradeRecord> {
+  async *loadTradeRecords(
+    symbol: string,
+    start?: number,
+    end?: number
+  ): AsyncIterable<TradeRecord> {
     const CHUNK_SIZE = 1000;
     let afterTimestamp = start !== undefined ? start - 1 : undefined;
     let hasMore = true;
@@ -41,7 +55,10 @@ export class Level2DataProviderImpl implements Level2DataProvider {
     while (hasMore) {
       const page = await this.tradeRepo.queryPaged(symbol, { limit: CHUNK_SIZE, afterTimestamp });
       for (const r of page.data) {
-        if (end !== undefined && r.timestamp > end) { hasMore = false; break; }
+        if (end !== undefined && r.timestamp > end) {
+          hasMore = false;
+          break;
+        }
         yield r;
       }
       hasMore = hasMore && page.hasMore;
@@ -50,7 +67,11 @@ export class Level2DataProviderImpl implements Level2DataProvider {
     }
   }
 
-  async *loadOrderRecords(symbol: string, start?: number, end?: number): AsyncIterable<OrderRecord> {
+  async *loadOrderRecords(
+    symbol: string,
+    start?: number,
+    end?: number
+  ): AsyncIterable<OrderRecord> {
     const CHUNK_SIZE = 1000;
     let afterTimestamp = start !== undefined ? start - 1 : undefined;
     let hasMore = true;
@@ -58,7 +79,10 @@ export class Level2DataProviderImpl implements Level2DataProvider {
     while (hasMore) {
       const page = await this.orderRepo.queryPaged(symbol, { limit: CHUNK_SIZE, afterTimestamp });
       for (const r of page.data) {
-        if (end !== undefined && r.timestamp > end) { hasMore = false; break; }
+        if (end !== undefined && r.timestamp > end) {
+          hasMore = false;
+          break;
+        }
         yield r;
       }
       hasMore = hasMore && page.hasMore;

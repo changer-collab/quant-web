@@ -15,12 +15,7 @@ interface StrategyPageProps {
   language: LanguageCode;
 }
 
-export function StrategyPage({
-  strategies,
-  onEnterWorkspace,
-  ui,
-  language,
-}: StrategyPageProps) {
+export function StrategyPage({ strategies, onEnterWorkspace, ui, language }: StrategyPageProps) {
   const [view, setView] = useState<ViewMode>('grid');
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyRow | null>(null);
   const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
@@ -42,48 +37,54 @@ export function StrategyPage({
     setPreviewData(data);
   }
 
-  const handleSymbolChange = useCallback(async (newSymbol: string) => {
-    if (!selectedStrategy) return;
-    setSymbol(newSymbol);
-    setKlineLoading(true);
-    try {
-      const data = await fetchPreview(selectedStrategy.name, {
-        symbol: newSymbol,
-        timeframe: '1d',
-        limit: 100,
-        preview_params: {},
-      });
-      setPreviewData(data);
-    } catch {
-      // 静默失败，保持现有数据
-    } finally {
-      setKlineLoading(false);
-    }
-  }, [selectedStrategy]);
-
-  const handleLoadMore = useCallback(async (cursor: number) => {
-    if (!selectedStrategy || !previewData) return;
-    setKlineLoading(true);
-    try {
-      const data = await fetchPreview(selectedStrategy.name, {
-        symbol,
-        timeframe: '1d',
-        cursor,
-        limit: 50,
-        preview_params: {},
-      });
-      if (data.bars.length > 0) {
-        setPreviewData({
-          ...data,
-          bars: [...data.bars, ...previewData.bars],
+  const handleSymbolChange = useCallback(
+    async (newSymbol: string) => {
+      if (!selectedStrategy) return;
+      setSymbol(newSymbol);
+      setKlineLoading(true);
+      try {
+        const data = await fetchPreview(selectedStrategy.name, {
+          symbol: newSymbol,
+          timeframe: '1d',
+          limit: 100,
+          preview_params: {},
         });
+        setPreviewData(data);
+      } catch {
+        // 静默失败，保持现有数据
+      } finally {
+        setKlineLoading(false);
       }
-    } catch {
-      // 静默失败
-    } finally {
-      setKlineLoading(false);
-    }
-  }, [selectedStrategy, symbol, previewData]);
+    },
+    [selectedStrategy]
+  );
+
+  const handleLoadMore = useCallback(
+    async (cursor: number) => {
+      if (!selectedStrategy || !previewData) return;
+      setKlineLoading(true);
+      try {
+        const data = await fetchPreview(selectedStrategy.name, {
+          symbol,
+          timeframe: '1d',
+          cursor,
+          limit: 50,
+          preview_params: {},
+        });
+        if (data.bars.length > 0) {
+          setPreviewData({
+            ...data,
+            bars: [...data.bars, ...previewData.bars],
+          });
+        }
+      } catch {
+        // 静默失败
+      } finally {
+        setKlineLoading(false);
+      }
+    },
+    [selectedStrategy, symbol, previewData]
+  );
 
   if (view === 'config' && selectedStrategy) {
     return (
@@ -98,11 +99,19 @@ export function StrategyPage({
           <span className={s.strategySelectorName}>{selectedStrategy.name}</span>
           <div className={s.strategySelectorMeta}>
             <span>
-              {(ui.strategyCategoryLabels as Record<string, string>)[selectedStrategy.category ?? 'non_factor']}
+              {
+                (ui.strategyCategoryLabels as Record<string, string>)[
+                  selectedStrategy.category ?? 'non_factor'
+                ]
+              }
             </span>
             <span>·</span>
             <span>
-              {(ui.strategySubcategoryLabels as Record<string, string>)[selectedStrategy.subcategory ?? '']}
+              {
+                (ui.strategySubcategoryLabels as Record<string, string>)[
+                  selectedStrategy.subcategory ?? ''
+                ]
+              }
             </span>
           </div>
         </div>
@@ -117,9 +126,7 @@ export function StrategyPage({
             />
           </div>
           <div className={s.klinePanel}>
-            <div className={s.panelHeader}>
-              {language === 'zh' ? 'K 线图' : 'K-Line Chart'}
-            </div>
+            <div className={s.panelHeader}>{language === 'zh' ? 'K 线图' : 'K-Line Chart'}</div>
             <KlineChart
               previewData={previewData}
               subcategory={selectedStrategy.subcategory}

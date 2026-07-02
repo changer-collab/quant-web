@@ -9,7 +9,13 @@ interface ReportSectionProps {
   className?: string;
 }
 
-export function ReportSection({ title, subtitle, children, defaultOpen = true, className = '' }: ReportSectionProps) {
+export function ReportSection({
+  title,
+  subtitle,
+  children,
+  defaultOpen = true,
+  className = '',
+}: ReportSectionProps) {
   return (
     <details className={`${section.section} ${className}`} open={defaultOpen}>
       <summary className={section.summary}>
@@ -19,9 +25,7 @@ export function ReportSection({ title, subtitle, children, defaultOpen = true, c
         </div>
         <span className={section.chevron} aria-hidden="true" />
       </summary>
-      <div className={section.content}>
-        {children}
-      </div>
+      <div className={section.content}>{children}</div>
     </details>
   );
 }

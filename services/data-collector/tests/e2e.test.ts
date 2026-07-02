@@ -7,7 +7,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createDataCenter, type DataCenter } from '@quant/data-center/storage';
 import { TimeFrame } from '@quant/data-center';
-import { AdapterRegistryImpl, CsvAdapter, CollectorScheduler, CollectorDomain } from '../src/index.js';
+import {
+  AdapterRegistryImpl,
+  CsvAdapter,
+  CollectorScheduler,
+  CollectorDomain,
+} from '../src/index.js';
 import type { CollectorTask } from '../src/types.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -73,8 +78,11 @@ CSI500,1700172800000,5150,5300,5100,5250,150000,750000000`;
 
     // 模拟水位在第二条记录
     await dc.repos.watermarks.upsert({
-      source: 'csv', dataType: 'bar', symbol: 'CSI500',
-      lastTimestamp: 1700086400000, updatedAt: Date.now(),
+      source: 'csv',
+      dataType: 'bar',
+      symbol: 'CSI500',
+      lastTimestamp: 1700086400000,
+      updatedAt: Date.now(),
     });
 
     const csvContent = `symbol,timestamp,open,high,low,close,volume,turnover

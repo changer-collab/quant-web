@@ -14,34 +14,41 @@ export class SqliteConfigHistoryRepo implements IConfigHistoryRepo {
   constructor(private db: ApiDb) {}
 
   async append(snapshot: ConfigSnapshot): Promise<void> {
-    await this.db.insert(configHistory).values({
-      strategy: snapshot.strategy,
-      configJson: JSON.stringify(snapshot.params),
-      hash: snapshot.hash ?? '',
-      createdAt: Date.now(),
-      strategyVersion: snapshot.strategyVersion ?? null,
-      category: snapshot.category ?? null,
-      subcategory: snapshot.subcategory ?? null,
-      schemaVersion: snapshot.schemaVersion ?? null,
-    }).run();
+    await this.db
+      .insert(configHistory)
+      .values({
+        strategy: snapshot.strategy,
+        configJson: JSON.stringify(snapshot.params),
+        hash: snapshot.hash ?? '',
+        createdAt: Date.now(),
+        strategyVersion: snapshot.strategyVersion ?? null,
+        category: snapshot.category ?? null,
+        subcategory: snapshot.subcategory ?? null,
+        schemaVersion: snapshot.schemaVersion ?? null,
+      })
+      .run();
   }
 
   async list(
     strategy: string,
     limit = 20,
-    offset = 0,
-  ): Promise<Array<{
-    id: number;
-    strategy: string;
-    configJson: Record<string, unknown>;
-    hash: string;
-    createdAt: number;
-    strategyVersion?: string;
-    category?: string;
-    subcategory?: string;
-    schemaVersion?: number;
-  }>> {
-    const rows = await this.db.select().from(configHistory)
+    offset = 0
+  ): Promise<
+    Array<{
+      id: number;
+      strategy: string;
+      configJson: Record<string, unknown>;
+      hash: string;
+      createdAt: number;
+      strategyVersion?: string;
+      category?: string;
+      subcategory?: string;
+      schemaVersion?: number;
+    }>
+  > {
+    const rows = await this.db
+      .select()
+      .from(configHistory)
       .where(eq(configHistory.strategy, strategy))
       .orderBy(desc(configHistory.createdAt))
       .limit(limit)
@@ -63,11 +70,13 @@ export class SqliteConfigHistoryRepo implements IConfigHistoryRepo {
 export class SqliteConfigRepo implements IConfigRepo {
   constructor(
     private db: ApiDb,
-    private historyRepo: IConfigHistoryRepo,
+    private historyRepo: IConfigHistoryRepo
   ) {}
 
   async get(strategy: string): Promise<ConfigSnapshot | null> {
-    const rows = await this.db.select().from(strategyConfigs)
+    const rows = await this.db
+      .select()
+      .from(strategyConfigs)
       .where(eq(strategyConfigs.strategy, strategy))
       .limit(1);
     if (rows.length === 0) return null;
@@ -86,25 +95,29 @@ export class SqliteConfigRepo implements IConfigRepo {
   async save(snapshot: ConfigSnapshot): Promise<void> {
     const now = Date.now();
     const json = JSON.stringify(snapshot.params ?? {});
-    await this.db.insert(strategyConfigs).values({
-      strategy: snapshot.strategy,
-      configJson: json,
-      hash: snapshot.hash ?? '',
-      updatedAt: now,
-      category: snapshot.category ?? 'non_factor',
-      subcategory: snapshot.subcategory ?? null,
-      schemaVersion: snapshot.schemaVersion ?? 1,
-    }).onConflictDoUpdate({
-      target: strategyConfigs.strategy,
-      set: {
+    await this.db
+      .insert(strategyConfigs)
+      .values({
+        strategy: snapshot.strategy,
         configJson: json,
         hash: snapshot.hash ?? '',
         updatedAt: now,
         category: snapshot.category ?? 'non_factor',
         subcategory: snapshot.subcategory ?? null,
         schemaVersion: snapshot.schemaVersion ?? 1,
-      },
-    }).run();
+      })
+      .onConflictDoUpdate({
+        target: strategyConfigs.strategy,
+        set: {
+          configJson: json,
+          hash: snapshot.hash ?? '',
+          updatedAt: now,
+          category: snapshot.category ?? 'non_factor',
+          subcategory: snapshot.subcategory ?? null,
+          schemaVersion: snapshot.schemaVersion ?? 1,
+        },
+      })
+      .run();
     // 透明写入配置历史
     await this.historyRepo.append(snapshot);
   }

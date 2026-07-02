@@ -68,7 +68,7 @@ export async function createSqliteContext(dbPath?: string): Promise<SqliteContex
     throw new DataCenterError(
       `创建 SQLite 连接失败${dbPath ? ` (dbPath=${dbPath})` : ''}`,
       'CONNECTION_ERROR',
-      err,
+      err
     );
   }
 }
@@ -293,9 +293,6 @@ export function saveDbToFile(db: SqliteDatabase, dbPath?: string): void {
   try {
     db.pragma('wal_checkpoint(TRUNCATE)');
   } catch (err) {
-    throw new WriteError(
-      `WAL 检查点失败: ${resolveDbPath(dbPath)}`,
-      err,
-    );
+    throw new WriteError(`WAL 检查点失败: ${resolveDbPath(dbPath)}`, err);
   }
 }

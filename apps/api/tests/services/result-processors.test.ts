@@ -73,22 +73,41 @@ describe('BacktestResultProcessor', () => {
     const mockRepo = { save: mockSave } as unknown as ReportRepository;
     const processor = new BacktestResultProcessor(mockRepo);
 
-    await expect(processor.process({
-      task: { id: 'task-2', type: TaskType.Backtest, payload: { strategy: 'test', symbol: 'A', timeframe: '1d' } },
-      result: {
-        backtestResult: {
-          config: {},
-          trades: [],
-          equityCurve: [],
-          metrics: {
-            totalReturn: 0, annualizedReturn: 0, sharpeRatio: 0, maxDrawdown: 0, winRate: 0, totalTrades: 0,
-            sortinoRatio: 0, calmarRatio: 0, annualizedVolatility: 0, maxDrawdownDuration: 0,
-          },
-          profitLossRatio: 0, avgHoldingDays: 0, maxSingleProfit: 0, maxSingleLoss: 0,
-          drawdownCurve: [], monthlyReturns: [], annualReturns: [],
+    await expect(
+      processor.process({
+        task: {
+          id: 'task-2',
+          type: TaskType.Backtest,
+          payload: { strategy: 'test', symbol: 'A', timeframe: '1d' },
         },
-      },
-    })).rejects.toThrow('DB error');
+        result: {
+          backtestResult: {
+            config: {},
+            trades: [],
+            equityCurve: [],
+            metrics: {
+              totalReturn: 0,
+              annualizedReturn: 0,
+              sharpeRatio: 0,
+              maxDrawdown: 0,
+              winRate: 0,
+              totalTrades: 0,
+              sortinoRatio: 0,
+              calmarRatio: 0,
+              annualizedVolatility: 0,
+              maxDrawdownDuration: 0,
+            },
+            profitLossRatio: 0,
+            avgHoldingDays: 0,
+            maxSingleProfit: 0,
+            maxSingleLoss: 0,
+            drawdownCurve: [],
+            monthlyReturns: [],
+            annualReturns: [],
+          },
+        },
+      })
+    ).rejects.toThrow('DB error');
   });
 });
 
@@ -102,10 +121,17 @@ describe('DiagnosticsResultProcessor', () => {
       task: {
         id: 'task-3',
         type: TaskType.Diagnostics,
-        payload: { strategy: 'test-strat', category: 'factor_based', configSnapshot: { strategy: 'test-strat', params: {} } },
+        payload: {
+          strategy: 'test-strat',
+          category: 'factor_based',
+          configSnapshot: { strategy: 'test-strat', params: {} },
+        },
       },
       result: {
-        diagnostics: { type: 'factor_based', ic_series: [{ period: '2024-01', ic: 0.05, rank_ic: 0.04 }] },
+        diagnostics: {
+          type: 'factor_based',
+          ic_series: [{ period: '2024-01', ic: 0.05, rank_ic: 0.04 }],
+        },
       },
     });
 
@@ -122,19 +148,23 @@ describe('DiagnosticsResultProcessor', () => {
     const mockDiagService = { storeResult: mockStore } as unknown as DiagnosticService;
     const processor = new DiagnosticsResultProcessor(mockDiagService);
 
-    await expect(processor.process({
-      task: {
-        id: 'task-4',
-        type: TaskType.Diagnostics,
-        payload: { strategy: 'test', category: 'non_factor' },
-      },
-      result: { diagnostics: { type: 'non_factor' } },
-    })).rejects.toThrow('Storage error');
+    await expect(
+      processor.process({
+        task: {
+          id: 'task-4',
+          type: TaskType.Diagnostics,
+          payload: { strategy: 'test', category: 'non_factor' },
+        },
+        result: { diagnostics: { type: 'non_factor' } },
+      })
+    ).rejects.toThrow('Storage error');
   });
 
   it('falls back to default category when payload has none', async () => {
     const saved: unknown[] = [];
-    const mockStore = vi.fn().mockImplementation((r: unknown) => { saved.push(r); });
+    const mockStore = vi.fn().mockImplementation((r: unknown) => {
+      saved.push(r);
+    });
     const mockDiagService = { storeResult: mockStore } as unknown as DiagnosticService;
     const processor = new DiagnosticsResultProcessor(mockDiagService);
 
@@ -181,16 +211,35 @@ describe('createResultProcessorRegistry', () => {
     // Backtest processor via registry
     const backtestProc = registry.get(TaskType.Backtest)!;
     const btEnvelope = await backtestProc.process({
-      task: { id: 'bt-1', type: TaskType.Backtest, payload: { strategy: 's', symbol: 'A', timeframe: '1d' } },
+      task: {
+        id: 'bt-1',
+        type: TaskType.Backtest,
+        payload: { strategy: 's', symbol: 'A', timeframe: '1d' },
+      },
       result: {
         backtestResult: {
-          config: {}, trades: [], equityCurve: [],
+          config: {},
+          trades: [],
+          equityCurve: [],
           metrics: {
-            totalReturn: 0, annualizedReturn: 0, sharpeRatio: 0, maxDrawdown: 0, winRate: 0, totalTrades: 0,
-            sortinoRatio: 0, calmarRatio: 0, annualizedVolatility: 0, maxDrawdownDuration: 0,
+            totalReturn: 0,
+            annualizedReturn: 0,
+            sharpeRatio: 0,
+            maxDrawdown: 0,
+            winRate: 0,
+            totalTrades: 0,
+            sortinoRatio: 0,
+            calmarRatio: 0,
+            annualizedVolatility: 0,
+            maxDrawdownDuration: 0,
           },
-          profitLossRatio: 0, avgHoldingDays: 0, maxSingleProfit: 0, maxSingleLoss: 0,
-          drawdownCurve: [], monthlyReturns: [], annualReturns: [],
+          profitLossRatio: 0,
+          avgHoldingDays: 0,
+          maxSingleProfit: 0,
+          maxSingleLoss: 0,
+          drawdownCurve: [],
+          monthlyReturns: [],
+          annualReturns: [],
         },
       },
     });
@@ -200,7 +249,11 @@ describe('createResultProcessorRegistry', () => {
     // Diagnostics processor via registry
     const diagProc = registry.get(TaskType.Diagnostics)!;
     const diagEnvelope = await diagProc.process({
-      task: { id: 'diag-1', type: TaskType.Diagnostics, payload: { strategy: 's', category: 'factor_based' } },
+      task: {
+        id: 'diag-1',
+        type: TaskType.Diagnostics,
+        payload: { strategy: 's', category: 'factor_based' },
+      },
       result: { diagnostics: { type: 'factor_based', ic_series: [] } },
     });
     expect(diagEnvelope.resultType).toBe('diagnostics');

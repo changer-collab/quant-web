@@ -25,7 +25,7 @@ export function getSourcePriority(dataType: string): string[] {
 /** 尝试执行采集，自动按优先级回退 */
 export async function executeWithFallback<T>(
   sources: string[],
-  fn: (source: string) => Promise<T>,
+  fn: (source: string) => Promise<T>
 ): Promise<{ source: string; result: T }> {
   const errors: { source: string; error: Error }[] = [];
   for (const source of sources) {
@@ -36,5 +36,7 @@ export async function executeWithFallback<T>(
       errors.push({ source, error: err instanceof Error ? err : new Error(String(err)) });
     }
   }
-  throw new Error(`所有数据源均失败: ${errors.map(e => `${e.source}: ${e.error.message}`).join('; ')}`);
+  throw new Error(
+    `所有数据源均失败: ${errors.map((e) => `${e.source}: ${e.error.message}`).join('; ')}`
+  );
 }

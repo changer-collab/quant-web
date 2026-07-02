@@ -9,10 +9,15 @@ import type { BarRepository, TickRepository, PageParams, PageResult } from '../r
 export class MarketDataProviderImpl implements MarketDataProvider {
   constructor(
     private barRepo: BarRepository,
-    private tickRepo: TickRepository,
+    private tickRepo: TickRepository
   ) {}
 
-  async *loadBars(symbol: string, timeframe: TimeFrame, start?: number, end?: number): AsyncIterable<ExtendedBar> {
+  async *loadBars(
+    symbol: string,
+    timeframe: TimeFrame,
+    start?: number,
+    end?: number
+  ): AsyncIterable<ExtendedBar> {
     const CHUNK_SIZE = 1000;
     let afterTimestamp = start !== undefined ? start - 1 : undefined;
     let hasMore = true;
@@ -50,7 +55,11 @@ export class MarketDataProviderImpl implements MarketDataProvider {
     return this.barRepo.getAvailableSymbols(timeframe);
   }
 
-  async getBarsPaged(symbol: string, timeframe: TimeFrame, params?: PageParams): Promise<PageResult<ExtendedBar>> {
+  async getBarsPaged(
+    symbol: string,
+    timeframe: TimeFrame,
+    params?: PageParams
+  ): Promise<PageResult<ExtendedBar>> {
     return this.barRepo.queryPaged(symbol, timeframe, params);
   }
 }

@@ -103,7 +103,7 @@ describe('useResearchWorkflow', () => {
 
     expect(result.current.reportJobIds.length).toBeGreaterThan(0);
     const jobWithReport = result.current.localizedJobs.find((job) =>
-      result.current.reportJobIds.includes(job.id),
+      result.current.reportJobIds.includes(job.id)
     );
     expect(jobWithReport).toBeDefined();
     act(() => result.current.handleViewReport(jobWithReport!));
@@ -133,7 +133,9 @@ describe('useResearchWorkflow', () => {
 
     expect(result.current.activeReport).toBeDefined();
     const activeReport = result.current.activeReport!;
-    const runConfigSection = activeReport.diagnostics.find((section) => section.title === '运行配置');
+    const runConfigSection = activeReport.diagnostics.find(
+      (section) => section.title === '运行配置'
+    );
     const flattenedDiagnostics = activeReport.diagnostics.flatMap((section) => section.items);
 
     expect(runConfigSection?.items).toContain('回测区间: 2023-2024');
@@ -143,7 +145,10 @@ describe('useResearchWorkflow', () => {
     expect(runConfigSection?.items).not.toContain('回测区间: 2021-2025');
     expect(flattenedDiagnostics).toContain('策略类型: 趋势跟踪策略');
     expect(flattenedDiagnostics).toContain('参数: 短均线周期=7, 长均线周期=30');
-    expect(result.current.activeBacktestReport?.overview.timeRange).toEqual({ start: '2023-01-02', end: '2024-12-30' });
+    expect(result.current.activeBacktestReport?.overview.timeRange).toEqual({
+      start: '2023-01-02',
+      end: '2024-12-30',
+    });
     expect(result.current.activeBacktestReport?.dataParams.capital.initialCash).toBe(2_000_000);
     expect(result.current.activeBacktestReport?.dataParams.params).toEqual([
       { label: '短均线周期', value: '7' },

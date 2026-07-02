@@ -104,7 +104,9 @@
   border: 1px solid var(--line);
   background: var(--gradient-panel);
   border-radius: var(--radius-sm);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .infoCard:hover {
@@ -220,9 +222,15 @@
   text-align: right;
 }
 
-.tonegood .statValue { color: var(--green); }
-.tonewarn .statValue { color: var(--red); }
-.toneinfo .statValue { color: var(--cyan); }
+.tonegood .statValue {
+  color: var(--green);
+}
+.tonewarn .statValue {
+  color: var(--red);
+}
+.toneinfo .statValue {
+  color: var(--cyan);
+}
 
 /* Bar Chart (win/loss) */
 

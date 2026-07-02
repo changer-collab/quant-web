@@ -10,7 +10,7 @@ interface Props {
 }
 
 function pct(v: number): string {
-  return `${(v >= 0 ? '+' : '')}${(v * 100).toFixed(1)}%`;
+  return `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
 }
 
 /** 参数敏感性热力图 */
@@ -143,7 +143,11 @@ function RollingWindowChart({ report, ui }: Props) {
       yAxis: [
         {
           type: 'value',
-          axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${(v * 100).toFixed(0)}%` },
+          axisLabel: {
+            fontSize: 10,
+            color: '#8fa29b',
+            formatter: (v: number) => `${(v * 100).toFixed(0)}%`,
+          },
           splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
         },
       ],
@@ -290,31 +294,36 @@ export function ReportRobustness({ report, ui }: Props) {
       <ParamSensitivityHeatmap report={report} ui={ui} />
 
       {/* 参数敏感性表格（保留完整数据） */}
-      {rb.paramSensitivity.length > 1 && rb.paramSensitivity.slice(1).map((ps) => (
-        <div key={ps.paramName} className={styles.sensitivityBlock}>
-          <span className={styles.sensitivityParam}>{ps.paramName}</span>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>值</th>
-                <th>收益率</th>
-                <th>夏普</th>
-                <th>最大回撤</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ps.variations.map((v) => (
-                <tr key={v.value}>
-                  <td>{v.value}</td>
-                  <td className={v.return >= 0.1 ? styles.toneGood : styles.toneWarn}>{pct(v.return)}</td>
-                  <td className={v.sharpe >= 0.8 ? styles.toneGood : styles.toneWarn}>{v.sharpe.toFixed(2)}</td>
-                  <td className={styles.toneWarn}>{pct(v.drawdown)}</td>
+      {rb.paramSensitivity.length > 1 &&
+        rb.paramSensitivity.slice(1).map((ps) => (
+          <div key={ps.paramName} className={styles.sensitivityBlock}>
+            <span className={styles.sensitivityParam}>{ps.paramName}</span>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>值</th>
+                  <th>收益率</th>
+                  <th>夏普</th>
+                  <th>最大回撤</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+              </thead>
+              <tbody>
+                {ps.variations.map((v) => (
+                  <tr key={v.value}>
+                    <td>{v.value}</td>
+                    <td className={v.return >= 0.1 ? styles.toneGood : styles.toneWarn}>
+                      {pct(v.return)}
+                    </td>
+                    <td className={v.sharpe >= 0.8 ? styles.toneGood : styles.toneWarn}>
+                      {v.sharpe.toFixed(2)}
+                    </td>
+                    <td className={styles.toneWarn}>{pct(v.drawdown)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
 
       {/* 滚动窗口折线图 */}
       <RollingWindowChart report={report} ui={ui} />
@@ -341,7 +350,9 @@ export function ReportRobustness({ report, ui }: Props) {
                   <td>{w.period}</td>
                   <td className={styles.toneGood}>{pct(w.inSampleReturn)}</td>
                   <td className={styles.toneGood}>{pct(w.outOfSampleReturn)}</td>
-                  <td className={w.decay > 0.2 ? styles.toneWarn : styles.toneGood}>{(w.decay * 100).toFixed(0)}%</td>
+                  <td className={w.decay > 0.2 ? styles.toneWarn : styles.toneGood}>
+                    {(w.decay * 100).toFixed(0)}%
+                  </td>
                 </tr>
               ))}
             </tbody>

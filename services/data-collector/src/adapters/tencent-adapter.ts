@@ -1,4 +1,9 @@
-import type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions, TencentExtra } from './types.js';
+import type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+  TencentExtra,
+} from './types.js';
 
 /**
  * 腾讯财经适配器 — 通过 HTTP 拉取实时估值数据
@@ -24,9 +29,12 @@ export class TencentAdapter implements DataSourceAdapter {
     const timeout = extra?.timeout ?? 10_000;
 
     // 6位代码 → 市场前缀
-    const prefix = symbol.startsWith('6') || symbol.startsWith('9') ? 'sh'
-      : symbol.startsWith('8') ? 'bj'
-      : 'sz';
+    const prefix =
+      symbol.startsWith('6') || symbol.startsWith('9')
+        ? 'sh'
+        : symbol.startsWith('8')
+          ? 'bj'
+          : 'sz';
     const code = symbol.replace(/^(sh|sz|SH|SZ|bj|BJ)/, '');
 
     const url = `https://qt.gtimg.cn/q=${prefix}${code}`;

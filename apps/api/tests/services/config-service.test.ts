@@ -8,7 +8,10 @@
  * - ConfigHashConflictError 类和状态码
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StrategyConfigService, ConfigHashConflictError } from '../../src/services/config-service.js';
+import {
+  StrategyConfigService,
+  ConfigHashConflictError,
+} from '../../src/services/config-service.js';
 import type { IConfigRepo } from '../../src/repositories/interfaces.js';
 import type { ConfigSnapshot, StrategyCategory } from '../../src/types.js';
 
@@ -71,7 +74,7 @@ describe('StrategyConfigService', () => {
 
     it('无效 category 抛出错误', () => {
       expect(() =>
-        service.buildDefaultSnapshot('test', '1.0', 'trash_cat' as StrategyCategory),
+        service.buildDefaultSnapshot('test', '1.0', 'trash_cat' as StrategyCategory)
       ).toThrow('Invalid category');
     });
 
@@ -191,7 +194,7 @@ describe('StrategyConfigService', () => {
           params: { period: 20, offset: 5 },
           hash: 'hash_v2',
         },
-        'hash_v1',
+        'hash_v1'
       );
 
       expect(result.hash).toBe('hash_v2');
@@ -213,7 +216,7 @@ describe('StrategyConfigService', () => {
           params: { period: 10 },
           hash: 'hash_v2',
         },
-        'wrong_hash',
+        'wrong_hash'
       );
 
       await expect(promise).rejects.toThrow(ConfigHashConflictError);
@@ -239,7 +242,7 @@ describe('StrategyConfigService', () => {
           params: { alpha: 1 },
           hash: 'hash_new',
         },
-        'some_hash',
+        'some_hash'
       );
 
       expect(result.strategy).toBe('new_strategy');
@@ -251,7 +254,7 @@ describe('StrategyConfigService', () => {
         service.save({
           strategy: '',
           params: {},
-        }),
+        })
       ).rejects.toThrow('strategy is required');
     });
 
@@ -261,7 +264,7 @@ describe('StrategyConfigService', () => {
           strategy: 'test',
           params: {},
           category: 'trash_cat' as StrategyCategory,
-        }),
+        })
       ).rejects.toThrow('Invalid category');
     });
   });
@@ -270,11 +273,10 @@ describe('StrategyConfigService', () => {
 
   describe('ConfigHashConflictError', () => {
     it('是 Error 的子类且 statusCode=409', () => {
-      const err = new ConfigHashConflictError(
-        'expected',
-        'current',
-        { strategy: 'test', params: {} },
-      );
+      const err = new ConfigHashConflictError('expected', 'current', {
+        strategy: 'test',
+        params: {},
+      });
 
       expect(err).toBeInstanceOf(Error);
       expect(err).toBeInstanceOf(ConfigHashConflictError);
@@ -286,11 +288,7 @@ describe('StrategyConfigService', () => {
     });
 
     it('错误消息包含预期和当前 hash', () => {
-      const err = new ConfigHashConflictError(
-        'abc',
-        'xyz',
-        { strategy: 'test', params: {} },
-      );
+      const err = new ConfigHashConflictError('abc', 'xyz', { strategy: 'test', params: {} });
       expect(err.message).toContain('abc');
       expect(err.message).toContain('xyz');
     });

@@ -100,9 +100,13 @@ export function StrategyGridNew({
                     onClick={() => toggleSubcategory(groupKey)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleSubcategory(groupKey); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') toggleSubcategory(groupKey);
+                    }}
                   >
-                    <span className={`${s.subcategoryToggle} ${isCollapsed ? '' : s.subcategoryToggleOpen}`}>
+                    <span
+                      className={`${s.subcategoryToggle} ${isCollapsed ? '' : s.subcategoryToggleOpen}`}
+                    >
                       ▶
                     </span>
                     <span className={s.subcategoryLabel}>{subcategoryLabel(sub)}</span>
@@ -119,7 +123,9 @@ export function StrategyGridNew({
                         >
                           <div className={s.cardName}>{strategy.name}</div>
                           <div className={s.cardMeta}>
-                            <span className={`${s.subcategoryTag} ${subcategoryClass(category, s)}`}>
+                            <span
+                              className={`${s.subcategoryTag} ${subcategoryClass(category, s)}`}
+                            >
                               {subcategoryLabel(strategy.subcategory ?? 'other')}
                             </span>
                           </div>
@@ -149,7 +155,7 @@ export function StrategyGridNew({
               );
             })}
           </div>
-        ) : null,
+        ) : null
       )}
     </div>
   );

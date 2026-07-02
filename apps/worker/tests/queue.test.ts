@@ -4,11 +4,21 @@ import type { TaskHandler } from '../src/queue.js';
 import { TaskType, TaskStatus } from '../src/types.js';
 
 function makeHandler(type: TaskType, result: Record<string, unknown> = {}): TaskHandler {
-  return { type, async handle() { return result; } };
+  return {
+    type,
+    async handle() {
+      return result;
+    },
+  };
 }
 
 function makeFailingHandler(type: TaskType): TaskHandler {
-  return { type, async handle() { throw new Error('处理失败'); } };
+  return {
+    type,
+    async handle() {
+      throw new Error('处理失败');
+    },
+  };
 }
 
 describe('TaskQueue', () => {

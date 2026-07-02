@@ -18,10 +18,10 @@ function findProjectRoot(): string {
 async function main() {
   const projectRoot = findProjectRoot();
   const dbPath = resolve(projectRoot, 'data', 'quant.db');
-  
+
   console.log('Initializing DataCenter...');
   const dataCenter = await createDataCenter({ dbPath });
-  
+
   console.log('Importing instruments...');
   const instruments = [
     {
@@ -80,15 +80,15 @@ async function main() {
       status: 'active',
     },
   ];
-  
+
   await dataCenter.repos.instruments.save(instruments);
   console.log(`Imported ${instruments.length} instruments`);
-  
+
   console.log('Importing sample bars...');
   const now = Date.now();
   const oneDay = 24 * 60 * 60 * 1000;
   const bars = [];
-  
+
   // 为贵州茅台生成 30 天的示例 K 线数据
   let basePrice = 1800;
   for (let i = 30; i >= 0; i--) {
@@ -99,7 +99,7 @@ async function main() {
     const low = Math.min(open, close) - Math.random() * 20;
     const volume = 10000 + Math.random() * 5000;
     const turnover = volume * close;
-    
+
     bars.push({
       symbol: '600519',
       timeframe: '1d',
@@ -111,13 +111,13 @@ async function main() {
       volume,
       turnover,
     });
-    
+
     basePrice = close;
   }
-  
+
   await dataCenter.repos.bars.save(bars);
   console.log(`Imported ${bars.length} bars for 600519`);
-  
+
   console.log('Data import completed!');
   await dataCenter.close();
 }

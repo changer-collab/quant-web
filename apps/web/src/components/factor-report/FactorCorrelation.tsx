@@ -40,20 +40,32 @@ export function FactorCorrelation({ report, ui }: Props) {
   return (
     <>
       <FactorReportSection title={u.correlationMatrix} defaultOpen={true}>
-        <div className={s.heatmapGrid} style={{ gridTemplateColumns: `100px repeat(${factors.length}, 1fr)` }}>
+        <div
+          className={s.heatmapGrid}
+          style={{ gridTemplateColumns: `100px repeat(${factors.length}, 1fr)` }}
+        >
           <div className={s.heatmapCell} style={{ background: 'transparent' }} />
           {factors.map((f) => (
-            <div key={f} className={s.heatmapCell} style={{ background: 'transparent', color: 'var(--muted)', fontSize: '10px' }}>
+            <div
+              key={f}
+              className={s.heatmapCell}
+              style={{ background: 'transparent', color: 'var(--muted)', fontSize: '10px' }}
+            >
               {f}
             </div>
           ))}
           {factors.map((rowFactor) => (
             <>
-              <div key={`label-${rowFactor}`} className={s.heatmapCell} style={{ background: 'transparent', color: 'var(--muted)', fontSize: '10px' }}>
+              <div
+                key={`label-${rowFactor}`}
+                className={s.heatmapCell}
+                style={{ background: 'transparent', color: 'var(--muted)', fontSize: '10px' }}
+              >
                 {rowFactor}
               </div>
               {factors.map((colFactor) => {
-                const v = matrixMap.get(`${rowFactor}-${colFactor}`) ?? (rowFactor === colFactor ? 1 : 0);
+                const v =
+                  matrixMap.get(`${rowFactor}-${colFactor}`) ?? (rowFactor === colFactor ? 1 : 0);
                 return (
                   <div
                     key={`${rowFactor}-${colFactor}`}
@@ -75,7 +87,9 @@ export function FactorCorrelation({ report, ui }: Props) {
             const maxCorr = Math.max(...corr.returnCorrelation.map((x) => Math.abs(x.corr)), 0.001);
             return (
               <div key={i} className={s.barRow}>
-                <span className={s.barLabel}>{r.factorA} ↔ {r.factorB}</span>
+                <span className={s.barLabel}>
+                  {r.factorA} ↔ {r.factorB}
+                </span>
                 <div className={s.barTrack}>
                   <div
                     className={`${s.barFill} ${r.corr < 0 ? s.negative : ''}`}
@@ -94,13 +108,26 @@ export function FactorCorrelation({ report, ui }: Props) {
           {corr.clusters.map((cluster) => (
             <div key={cluster.cluster} className={s.clusterCard}>
               <div className={s.clusterCardTitle}>
-                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: getClusterColor(cluster.cluster), marginRight: 8, verticalAlign: 'middle' }} />
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: getClusterColor(cluster.cluster),
+                    marginRight: 8,
+                    verticalAlign: 'middle',
+                  }}
+                />
                 {cluster.cluster}
               </div>
               <div className={s.clusterFactorList}>
                 {cluster.factors.map((f) => (
                   <div key={f} className={s.clusterFactorItem}>
-                    <span className={s.clusterFactorDot} style={{ background: getClusterColor(cluster.cluster) }} />
+                    <span
+                      className={s.clusterFactorDot}
+                      style={{ background: getClusterColor(cluster.cluster) }}
+                    />
                     {f}
                   </div>
                 ))}

@@ -117,7 +117,7 @@ export function mapBacktestResultToReport(
     },
 
     equityData: {
-      equityCurve: result.equityCurve.map(p => ({
+      equityCurve: result.equityCurve.map((p) => ({
         timestamp: p.timestamp,
         equity: p.equity,
       })),

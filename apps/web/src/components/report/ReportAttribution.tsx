@@ -10,7 +10,7 @@ interface Props {
 }
 
 function pct(v: number): string {
-  return `${(v >= 0 ? '+' : '')}${(v * 100).toFixed(1)}%`;
+  return `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
 }
 
 /** 行业暴露环形图 */
@@ -213,7 +213,11 @@ function ContributionWaterfall({ report, ui }: Props) {
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${(v * 100).toFixed(0)}%` },
+        axisLabel: {
+          fontSize: 10,
+          color: '#8fa29b',
+          formatter: (v: number) => `${(v * 100).toFixed(0)}%`,
+        },
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       series: [
@@ -234,9 +238,12 @@ function ContributionWaterfall({ report, ui }: Props) {
           data: data.map((d, i) => ({
             value: d.value,
             itemStyle: {
-              color: i === data.length - 1
-                ? '#62d8ff'  // 总计用 cyan
-                : d.rawValue >= 0 ? '#4df0a0' : '#ff6b6b',
+              color:
+                i === data.length - 1
+                  ? '#62d8ff' // 总计用 cyan
+                  : d.rawValue >= 0
+                    ? '#4df0a0'
+                    : '#ff6b6b',
               borderRadius: d.rawValue >= 0 ? [2, 2, 0, 0] : [0, 0, 2, 2],
             },
           })),
@@ -302,13 +309,17 @@ export function ReportAttribution({ report, ui }: Props) {
             </div>
             <div className={styles.testCard}>
               <span className={styles.testLabel}>{labels.interactionEffect}</span>
-              <strong className={brinson.interactionEffect >= 0 ? styles.toneGood : styles.toneWarn}>
+              <strong
+                className={brinson.interactionEffect >= 0 ? styles.toneGood : styles.toneWarn}
+              >
                 {pct(brinson.interactionEffect)}
               </strong>
             </div>
             <div className={styles.testCard}>
               <span className={styles.testLabel}>{labels.totalActiveReturn}</span>
-              <strong className={brinson.totalActiveReturn >= 0 ? styles.toneGood : styles.toneWarn}>
+              <strong
+                className={brinson.totalActiveReturn >= 0 ? styles.toneGood : styles.toneWarn}
+              >
                 {pct(brinson.totalActiveReturn)}
               </strong>
             </div>
@@ -334,7 +345,9 @@ export function ReportAttribution({ report, ui }: Props) {
               <tr key={ind.industry}>
                 <td>{ind.industry}</td>
                 <td>{(ind.weight * 100).toFixed(0)}%</td>
-                <td className={ind.contribution >= 0 ? styles.toneGood : styles.toneWarn}>{pct(ind.contribution)}</td>
+                <td className={ind.contribution >= 0 ? styles.toneGood : styles.toneWarn}>
+                  {pct(ind.contribution)}
+                </td>
               </tr>
             ))}
           </tbody>

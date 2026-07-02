@@ -29,7 +29,10 @@ export class BacktestResultProcessor implements ResultProcessor {
 
   async process(ctx: ResultProcessorContext): Promise<ResultProcessorOutput> {
     const { task, result } = ctx;
-    const taskResult = result as { backtestResult: BacktestResult; analysis?: Record<string, unknown> };
+    const taskResult = result as {
+      backtestResult: BacktestResult;
+      analysis?: Record<string, unknown>;
+    };
     const backtestResult = taskResult.backtestResult;
     const payload = task.payload as {
       strategy: string;
@@ -58,10 +61,15 @@ export class BacktestResultProcessor implements ResultProcessor {
         const es = ai.executiveSummary as Record<string, unknown>;
         report.executiveSummary = {
           ...report.executiveSummary,
-          oneLineConclusion: cleanStr(es.oneLineConclusion) || report.executiveSummary.oneLineConclusion,
-          recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
-          recommendationReason: cleanStr(es.recommendationReason) || report.executiveSummary.recommendationReason,
-          mainRisks: cleanArray(es.mainRisks).length ? cleanArray(es.mainRisks) : report.executiveSummary.mainRisks,
+          oneLineConclusion:
+            cleanStr(es.oneLineConclusion) || report.executiveSummary.oneLineConclusion,
+          recommendedForLive:
+            (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
+          recommendationReason:
+            cleanStr(es.recommendationReason) || report.executiveSummary.recommendationReason,
+          mainRisks: cleanArray(es.mainRisks).length
+            ? cleanArray(es.mainRisks)
+            : report.executiveSummary.mainRisks,
         };
       }
       if (ai.overview) {
@@ -85,11 +93,13 @@ export class BacktestResultProcessor implements ResultProcessor {
         const iss = ai.issues as Record<string, unknown>;
         report.issues = {
           ...report.issues,
-          overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+          overfittingRisk:
+            (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
           survivorshipBias: (iss.survivorshipBias as boolean) ?? report.issues.survivorshipBias,
           lookAheadBias: (iss.lookAheadBias as boolean) ?? report.issues.lookAheadBias,
           enableMarketRules: (iss.enableMarketRules as boolean) ?? report.issues.enableMarketRules,
-          liquidityAssessment: cleanStr(iss.liquidityAssessment) || report.issues.liquidityAssessment,
+          liquidityAssessment:
+            cleanStr(iss.liquidityAssessment) || report.issues.liquidityAssessment,
           capacityEstimate: cleanStr(iss.capacityEstimate) || report.issues.capacityEstimate,
         };
       }
@@ -97,18 +107,29 @@ export class BacktestResultProcessor implements ResultProcessor {
         const con = ai.conclusion as Record<string, unknown>;
         report.conclusion = {
           ...report.conclusion,
-          advantages: cleanArray(con.advantages).length ? cleanArray(con.advantages) : report.conclusion.advantages,
-          potentialRisks: cleanArray(con.potentialRisks).length ? cleanArray(con.potentialRisks) : report.conclusion.potentialRisks,
-          improvements: cleanArray(con.improvements).length ? cleanArray(con.improvements) : report.conclusion.improvements,
-          liveTradingAdvice: (con.liveTradingAdvice as typeof report.conclusion.liveTradingAdvice) ?? report.conclusion.liveTradingAdvice,
+          advantages: cleanArray(con.advantages).length
+            ? cleanArray(con.advantages)
+            : report.conclusion.advantages,
+          potentialRisks: cleanArray(con.potentialRisks).length
+            ? cleanArray(con.potentialRisks)
+            : report.conclusion.potentialRisks,
+          improvements: cleanArray(con.improvements).length
+            ? cleanArray(con.improvements)
+            : report.conclusion.improvements,
+          liveTradingAdvice:
+            (con.liveTradingAdvice as typeof report.conclusion.liveTradingAdvice) ??
+            report.conclusion.liveTradingAdvice,
         };
       }
       if (ai.riskWarnings) {
         const rw = ai.riskWarnings as Record<string, unknown>;
         report.riskWarnings = {
           ...report.riskWarnings,
-          limitations: (rw.limitations as typeof report.riskWarnings.limitations) ?? report.riskWarnings.limitations,
-          redLines: (rw.redLines as typeof report.riskWarnings.redLines) ?? report.riskWarnings.redLines,
+          limitations:
+            (rw.limitations as typeof report.riskWarnings.limitations) ??
+            report.riskWarnings.limitations,
+          redLines:
+            (rw.redLines as typeof report.riskWarnings.redLines) ?? report.riskWarnings.redLines,
         };
       }
     }
