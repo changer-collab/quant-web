@@ -3,7 +3,7 @@
 ## 项目概述
 
 - 项目名：QuantForge，面向个人量化研究者的策略研究平台。
-- 当前阶段：前端研究原型稳定，前后端端到端闭环已打通（前端提交回测 → API → Worker → Python CLI → 真实回测指标 → SSE 推送 → 前端报告显示）。
+- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)。
 - 核心闭环：选择策略 → 配置参数 → 运行回测/训练 → 查看任务和报告 → 迭代策略。
 - 后续规划：稳定前端 → AI 引擎 → 高频增强 → 实盘执行层。
 
@@ -54,3 +54,5 @@
 - 前端 MOCK fallback 陷阱：`useResearchWorkflow` 在 SSE 连接错误、任务失败或未选择策略时会 fallback 到模拟数据，界面不报错但结果是假的。验证回测结果是否真实时，必须对比 API 返回的 `metrics` 和前端显示的数值。
 - Turborepo `outputs` 警告：stub 包没有 `dist/` 产物，turbo 会报 "no output files found" 警告，这是预期行为。
 - `apps/web` 构建时 Vite 会 externalize `node:path` 和 `node:fs`（浏览器兼容性预期行为，不影响运行）。
+- ConfigSnapshot 唯一真相源：任务 payload 必须带 configSnapshot，顶层 params 被拒绝（400）。Worker backtest-handler 保留 payload.params fallback 但标记 deprecated。
+- ResultProcessor 注册表：API complete handler 通过 registry 分派，BacktestResultProcessor 保存失败会标记任务 failed（不再静默 console.error）。新加任务类型需注册对应 processor。
