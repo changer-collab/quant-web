@@ -5,23 +5,33 @@
  * Service 层只依赖这些接口，不依赖具体实现。
  */
 
-import type { StrategyConfig, ConfigSnapshot, DiagnosticResult } from '../types.js';
+import type { ConfigSnapshot, DiagnosticResult } from '../types.js';
 import type { StrategyParamDef } from '../types.js';
 
 export interface IConfigRepo {
-  /** 获取策略最新配置，不存在时返回 null */
-  get(strategy: string): Promise<StrategyConfig | null>;
+  /** 获取策略最新配置，不存在时返回 null（返回 ConfigSnapshot，含 category/subcategory/schemaVersion） */
+  get(strategy: string): Promise<ConfigSnapshot | null>;
 
-  /** 保存策略配置（同时写入历史记录） */
-  save(strategy: string, configJson: Record<string, unknown>, hash: string): Promise<void>;
+  /** 保存策略配置（同时写入历史记录），接收完整 ConfigSnapshot */
+  save(snapshot: ConfigSnapshot): Promise<void>;
 }
 
 export interface IConfigHistoryRepo {
   /** 追加一条历史记录 */
-  append(strategy: string, configJson: Record<string, unknown>, hash: string): Promise<void>;
+  append(snapshot: ConfigSnapshot): Promise<void>;
 
-  /** 列出策略的配置历史（按时间倒序） */
-  list(strategy: string, limit?: number, offset?: number): Promise<Array<{ id: number; strategy: string; configJson: Record<string, unknown>; hash: string; createdAt: number }>>;
+  /** 列出策略的配置历史（按时间倒序，含 strategyVersion/category/subcategory/schemaVersion） */
+  list(strategy: string, limit?: number, offset?: number): Promise<Array<{
+    id: number;
+    strategy: string;
+    configJson: Record<string, unknown>;
+    hash: string;
+    createdAt: number;
+    strategyVersion?: string;
+    category?: string;
+    subcategory?: string;
+    schemaVersion?: number;
+  }>>;
 }
 
 export interface IDiagnosticRepo {

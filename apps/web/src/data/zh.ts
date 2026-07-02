@@ -201,7 +201,7 @@ export const zhContent: LanguageContent = {
         version: '0.1.0',
         kind: 'combined',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: true,
         params: [
           { key: 'period', label: 'RSI 周期', type: 'number', default: 14, min: 2, max: 50 },
@@ -222,7 +222,7 @@ export const zhContent: LanguageContent = {
         version: '0.1.0',
         kind: 'combined',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: true,
         params: [
           { key: 'period', label: '周期', type: 'number', default: 20, min: 5, max: 100 },
@@ -263,7 +263,7 @@ export const zhContent: LanguageContent = {
         version: '0.1.0',
         kind: 'combined',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: true,
         params: [
           { key: 'period', label: 'KDJ 周期', type: 'number', default: 9, min: 2, max: 100 },
@@ -281,7 +281,7 @@ export const zhContent: LanguageContent = {
         sharpe: '2.18',
         status: '研究中',
         category: 'non_factor',
-        subcategory: 'high_frequency',
+        subcategory: 'hft_microstructure',
         workflowReady: true,
       },
       {
@@ -333,7 +333,7 @@ export const zhContent: LanguageContent = {
         sharpe: '0.89',
         status: '草稿',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: false,
       },
       {
@@ -346,7 +346,7 @@ export const zhContent: LanguageContent = {
         sharpe: '2.05',
         status: '稳定',
         category: 'non_factor',
-        subcategory: 'high_frequency',
+        subcategory: 'hft_microstructure',
         workflowReady: true,
       },
       {
@@ -359,7 +359,7 @@ export const zhContent: LanguageContent = {
         sharpe: '1.78',
         status: '研究中',
         category: 'non_factor',
-        subcategory: 'high_frequency',
+        subcategory: 'hft_microstructure',
         workflowReady: true,
       },
       {
@@ -385,7 +385,7 @@ export const zhContent: LanguageContent = {
         sharpe: '2.32',
         status: '训练中',
         category: 'factor_based',
-        subcategory: 'nonlinear_ml',
+        subcategory: 'ml_nonlinear_factor',
         workflowReady: true,
       },
       {
@@ -642,15 +642,15 @@ export const zhContent: LanguageContent = {
       },
       strategySubcategoryLabels: {
         linear_multi_factor: '线性多因子',
-        nonlinear_ml: '非线性 ML',
+        index_enhancement: '指数增强',
+        ml_nonlinear_factor: 'ML 非线性因子',
         trend_cta: '趋势 / CTA',
-        mean_reversion: '均值回归',
         arbitrage: '套利',
-        high_frequency: '高频',
+        hft_microstructure: 'HFT 微观结构',
         macro_quant: '宏观量化',
         event_driven: '事件驱动',
         e2e_ai_timeseries: 'E2E AI 时序',
-        tail_risk_hedging: '尾部风险对冲',
+        event_sentiment_factor: '事件情感因子',
       },
       configPanelPlaceholder: '配置面板 — 将在下一轮迭代中实现',
       klineChartPlaceholder: 'K 线图 — 将在下一轮迭代中实现',

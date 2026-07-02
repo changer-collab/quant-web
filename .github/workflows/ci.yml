@@ -21,6 +21,10 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -35,6 +39,12 @@ jobs:
 
       - name: Format check
         run: pnpm format:check
+
+      - name: Install smoke Python packages
+        run: |
+          pip install -e packages/strategy-runtime \
+            -e packages/ai-engine \
+            -e packages/strategies
 
       - name: API smoke test
         run: bash scripts/smoke-test.sh
@@ -51,6 +61,7 @@ jobs:
 
       - name: Install Python packages
         run: |
+          pip install "pytest>=8.0" respx
           pip install -e packages/strategy-runtime \
             -e packages/data-client \
             -e packages/backtest-engine \

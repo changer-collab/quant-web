@@ -46,6 +46,9 @@ export const strategyConfigs = sqliteTable('strategy_configs', {
   configJson: text('config_json').notNull(),
   hash: text('hash').notNull(),
   updatedAt: integer('updated_at').notNull(),
+  category: text('category').notNull().default('non_factor'),
+  subcategory: text('subcategory'),
+  schemaVersion: integer('schema_version').notNull().default(1),
 });
 
 /** 策略配置历史表 */
@@ -55,6 +58,10 @@ export const configHistory = sqliteTable('config_history', {
   configJson: text('config_json').notNull(),
   hash: text('hash').notNull(),
   createdAt: integer('created_at').notNull(),
+  strategyVersion: text('strategy_version'),
+  category: text('category'),
+  subcategory: text('subcategory'),
+  schemaVersion: integer('schema_version'),
 });
 
 /** 诊断结果表 */
@@ -66,6 +73,9 @@ export const diagnosticResults = sqliteTable('diagnostic_results', {
   configSnapshot: text('config_snapshot').notNull(),
   dataJson: text('data_json').notNull(),
   createdAt: integer('created_at').notNull(),
+  subcategory: text('subcategory'),
+  engineVersion: text('engine_version').notNull().default('legacy'),
+  expiresAt: integer('expires_at').notNull().default(0),
 });
 
 // ─── 索引 ─────────────────────────────────────────────────────────────

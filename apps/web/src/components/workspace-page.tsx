@@ -299,7 +299,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       fetchDiagnostic(id)
         .then((data) => {
           if (data) {
-            setDiagnosticData(data.dataJson);
+            setDiagnosticData(data.data);
             setDiagnosticReady(true);
           } else {
             setDiagnosticError(ui.workspaceDiagnosticExpired);
@@ -373,7 +373,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
               window.history.replaceState({}, '', url.toString());
               fetchDiagnostic(result.resultId).then((data) => {
                 if (data) {
-                  setDiagnosticData(data.dataJson);
+                  setDiagnosticData(data.data);
                   setDiagnosticReady(true);
                 }
               });

@@ -332,18 +332,18 @@ export interface FactorEvaluation extends FactorEvaluationSummary {
 /** 策略分类（与 Python StrategyCategory 值对齐） */
 export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
 
-/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+/** 策略子分类（与 Python StrategySubcategory 值对齐，canonical 10 值） */
 export type StrategySubcategory =
   | 'linear_multi_factor'
-  | 'nonlinear_ml'
+  | 'index_enhancement'
+  | 'ml_nonlinear_factor'
   | 'trend_cta'
-  | 'mean_reversion'
   | 'arbitrage'
-  | 'high_frequency'
+  | 'hft_microstructure'
   | 'macro_quant'
   | 'event_driven'
   | 'e2e_ai_timeseries'
-  | 'tail_risk_hedging';
+  | 'event_sentiment_factor';
 
 /** 约束条件 */
 export interface UIConstraint {
@@ -366,11 +366,86 @@ export interface StrategyParamDef {
   ui_constraints?: UIConstraint[];
 }
 
-/** 策略配置快照 */
+/** 配置快照 Schema 版本 */
+export const ConfigSchemaVersion = 1;
+
+/** 因子型配置参数 */
+export interface FactorBasedConfigParams {
+  factor_pool?: string[];
+  winsorize?: [number, number];
+  neutralization?: string[];
+  standardization?: 'zscore' | 'quantile' | 'rank';
+  interaction_terms?: string[];
+  max_interaction_order?: number;
+}
+
+/** 非因子型配置参数 */
+export interface NonFactorConfigParams {
+  lookback_window?: number;
+  hold_period?: number;
+  indicators?: string[];
+  indicator_params?: Record<string, unknown>;
+  dynamic_params?: Record<string, unknown>;
+}
+
+/** 过渡形态配置参数 */
+export interface TransitionalConfigParams {
+  data_source?: string;
+  sentiment_decay_half_life?: number;
+  target_factor_pool?: string[];
+}
+
+/** 策略配置快照（富化后，新字段均为 ? 可选以兼容现有引用） */
 export interface ConfigSnapshot {
   strategy: string;
+  schemaVersion?: number;
+  strategyVersion?: string;
+  category?: StrategyCategory;
+  subcategory?: string;
   params: Record<string, unknown>;
+  hash?: string;
+  updatedAt?: number;
 }
+
+/** 诊断任务载荷 */
+export interface DiagnosticsTaskPayload {
+  strategy: string;
+  category?: StrategyCategory;
+  configSnapshot?: ConfigSnapshot;
+  symbol?: string;
+  timeframe?: string;
+  dataRange?: string;
+}
+
+/** 回测任务载荷 */
+export interface BacktestTaskPayload {
+  strategy: string;
+  symbol: string;
+  timeframe: string;
+  initialCash?: number;
+  slippage?: number;
+  startTs?: number;
+  endTs?: number;
+  params?: Record<string, unknown>;
+  configSnapshot?: ConfigSnapshot;
+}
+
+/**
+ * 任务结果信封（判别联合）
+ * - diagnostics 分支 data 先用 Record<string, unknown>，Phase 6 按 story-1 契约收紧
+ * - backtest 分支 data 当前为完整 result 对象，story-5 抽 processor 时固定
+ */
+export type TaskResultEnvelope =
+  | {
+      resultType: 'diagnostics';
+      resultId: string;
+      data: Record<string, unknown>;
+    }
+  | {
+      resultType: 'backtest';
+      resultId: string;
+      data: Record<string, unknown>;
+    };
 
 /** 策略配置 */
 export interface StrategyConfig {
@@ -424,7 +499,29 @@ export interface DiagnosticResult {
   taskId: string;
   strategy: string;
   category: StrategyCategory;
+  subcategory: string | null;
   configSnapshot: ConfigSnapshot;
   dataJson: Record<string, unknown>;
   createdAt: number;
+  engineVersion: string;
+  expiresAt: number;
+}
+
+/**
+ * DiagnosticResultWire — API 响应投射格式
+ * 与 apps/web/src/data/types.ts DiagnosticResult 逐字段对齐
+ * id→resultId, dataJson→data, 补 resultType/expiresAt/engineVersion/subcategory
+ */
+export interface DiagnosticResultWire {
+  resultId: string;
+  resultType: 'diagnostics';
+  taskId: string;
+  strategy: string;
+  category: StrategyCategory;
+  subcategory: string | null;
+  configSnapshot: ConfigSnapshot;
+  data: Record<string, unknown>;
+  createdAt: number;
+  expiresAt: number;
+  engineVersion: string;
 }

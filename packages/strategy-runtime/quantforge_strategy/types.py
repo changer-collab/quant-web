@@ -87,16 +87,16 @@ class StrategyCategory(str, Enum):
 
 
 class StrategySubcategory(str, Enum):
-    """策略子分类 — 值与前端/API StrategySubcategory 严格对齐"""
+    """策略子分类 — canonical 10 值，与前端/API StrategySubcategory 严格对齐"""
     # 因子型
     LINEAR_MULTI_FACTOR = "linear_multi_factor"
-    NONLINEAR_ML = "nonlinear_ml"
+    INDEX_ENHANCEMENT = "index_enhancement"
+    ML_NONLINEAR_FACTOR = "ml_nonlinear_factor"
     # 非因子型
     TREND_CTA = "trend_cta"
-    MEAN_REVERSION = "mean_reversion"
     ARBITRAGE = "arbitrage"
-    HIGH_FREQUENCY = "high_frequency"
+    HFT_MICROSTRUCTURE = "hft_microstructure"
     MACRO_QUANT = "macro_quant"
     EVENT_DRIVEN = "event_driven"
     E2E_AI_TIMESERIES = "e2e_ai_timeseries"
-    TAIL_RISK_HEDGING = "tail_risk_hedging"
+    EVENT_SENTIMENT_FACTOR = "event_sentiment_factor"

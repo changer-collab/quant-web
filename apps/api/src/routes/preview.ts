@@ -2,20 +2,45 @@
  * Preview 端点
  *
  * POST /api/strategies/:name/preview
- * 加载 K 线 → 计算预览叠加层和信号 → 返回
+ * 加载 K 线 → 校验 preview_params 全为 chart_relevant → 计算预览叠加层和信号 → 返回
+ *
+ * Phase 4a 改造：
+ * - preview_params 含非 chart_relevant 字段 → 422
+ * - 策略不存在 → 404
+ * - preview_params 为空 → 跳过校验
  */
 import type { FastifyInstance } from 'fastify';
 import { TimeFrame } from '@quant/data-center';
 import type { BarRepository } from '@quant/data-center';
 import { PreviewService } from '../services/preview-service.js';
+import { strategySyncService } from '../services/strategy-sync.js';
+import type { StrategyCategory } from '../types.js';
 
 const DEFAULT_LIMIT = 200;
 /** 首次加载最大批量（条）— 从最早到最新扫描，取最后 limit 条作为最近 K 线 */
 const MAX_INITIAL_BATCH = 10_000;
 
+/**
+ * 校验 preview_params 是否全为 chart_relevant 参数
+ * 返回非法字段名数组（空数组 = 全部合法）
+ */
+function getNonChartRelevantFields(
+  paramDefs: Array<{ key: string; chart_relevant?: boolean }>,
+  previewParams: Record<string, unknown>,
+): string[] {
+  const keys = Object.keys(previewParams);
+  if (keys.length === 0) return [];
+
+  return keys.filter((key) => {
+    const paramDef = paramDefs.find((p) => p.key === key);
+    // 参数未在注册表中定义 或 定义了但 chart_relevant !== true → 非法
+    return !paramDef || paramDef.chart_relevant !== true;
+  });
+}
+
 export async function previewRoutes(app: FastifyInstance) {
   app.post<{ Params: { name: string } }>('/:name/preview', async (req, reply) => {
-    const { name: _name } = req.params;
+    const { name } = req.params;
     const { symbol, timeframe, cursor, limit = DEFAULT_LIMIT, preview_params = {} } = req.body as {
       symbol: string;
       timeframe: string;
@@ -28,6 +53,39 @@ export async function previewRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: 'symbol and timeframe are required' });
     }
 
+    // Phase 4a: 校验 preview_params 全为 chart_relevant 参数
+    const strategies = await strategySyncService.syncFromPython();
+    const meta = strategies.find((m) => m.name === name);
+    if (!meta) {
+      return reply.code(404).send({ error: 'Strategy not found' });
+    }
+
+    const nonChartFields = getNonChartRelevantFields(meta.params, preview_params);
+    if (nonChartFields.length > 0) {
+      return reply.code(422).send({
+        error: 'preview_params contains non-chart-relevant fields',
+        fields: nonChartFields,
+      });
+    }
+
+    // Phase 4b: 合并已保存/默认配置参数
+    // saved/default configSnapshot.params 为 baseline，preview_params 浅覆盖
+    let effectiveParams = preview_params;
+    if (app.configService) {
+      try {
+        const { configSnapshot } = await app.configService.getOrDefault(
+          name,
+          meta.version,
+          meta.category as StrategyCategory,
+        );
+        effectiveParams = { ...configSnapshot.params, ...preview_params };
+      } catch (err) {
+        console.warn('[Preview] configService.getOrDefault falló, usando preview_params sin modificar:', err);
+      }
+    } else {
+      console.warn('[Preview] configService no inyectado, usando preview_params sin modificar');
+    }
+
     const tf = timeframe as TimeFrame;
     const barRepo: BarRepository = app.dataCenter.repos.bars;
 
@@ -36,8 +94,8 @@ export async function previewRoutes(app: FastifyInstance) {
       barRepo, symbol, tf, limit, cursor,
     );
 
-    // 预览计算
-    const preview = PreviewService.computePreview(bars, preview_params);
+    // 预览计算（使用合并后的参数）
+    const preview = PreviewService.computePreview(bars, effectiveParams);
 
     return {
       symbol,

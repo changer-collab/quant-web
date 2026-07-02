@@ -149,4 +149,113 @@ describe('Strategy Routes', () => {
 
     await app.close();
   });
+
+  it('workflowReady=true 当 canonical category + canonical subcategory', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([
+      {
+        name: 'dual_ma',
+        description: '双均线策略',
+        params: [],
+        version: '0.1.0',
+        modes: ['traditional'],
+        kind: 'combined',
+        backtestable: true,
+        category: 'non_factor',
+        subcategory: 'trend_cta',
+      },
+    ]);
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/strategies' });
+    const body = res.json();
+    expect(body[0].workflowReady).toBe(true);
+    expect(body[0].category).toBe('non_factor');
+    expect(body[0].subcategory).toBe('trend_cta');
+
+    await app.close();
+  });
+
+  it('workflowReady=false 当 subcategory=null（sizer 等组件策略）', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([
+      {
+        name: 'equal_weight_sizer',
+        description: '等权仓位器',
+        params: [],
+        version: '0.1.0',
+        modes: ['traditional'],
+        kind: 'sizer',
+        backtestable: false,
+        category: 'non_factor',
+        subcategory: null,
+      },
+    ]);
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/strategies' });
+    expect(res.json()[0].workflowReady).toBe(false);
+
+    await app.close();
+  });
+
+  it('GET /:name workflowReady 跟随子分类', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([
+      {
+        name: 'dual_ma',
+        description: '双均线策略',
+        params: [],
+        version: '0.1.0',
+        modes: ['traditional'],
+        kind: 'combined',
+        backtestable: true,
+        category: 'non_factor',
+        subcategory: 'trend_cta',
+      },
+    ]);
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/strategies/dual_ma' });
+    expect(res.json().workflowReady).toBe(true);
+
+    await app.close();
+  });
+
+  it('未知 subcategory 值 → workflowReady=false，不抛异常', async () => {
+    vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue([
+      {
+        name: 'bogus',
+        description: '未知分类策略',
+        params: [],
+        version: '0.1.0',
+        modes: [],
+        kind: 'combined',
+        backtestable: true,
+        category: 'non_factor',
+        subcategory: 'non_existent_subcat' as never,
+      },
+    ]);
+
+    const app = await buildApp({
+      dataCenter: createMockDataCenter(),
+      taskService: new InMemoryTaskService(),
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/strategies' });
+    const body = res.json();
+    expect(body[0].workflowReady).toBe(false);
+    expect(res.statusCode).toBe(200);
+
+    await app.close();
+  });
 });

@@ -201,7 +201,7 @@ export const enContent: LanguageContent = {
         version: '0.1.0',
         kind: 'combined',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: true,
         params: [
           { key: 'period', label: 'RSI Period', type: 'number', default: 14, min: 2, max: 50 },
@@ -222,7 +222,7 @@ export const enContent: LanguageContent = {
         version: '0.1.0',
         kind: 'combined',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: true,
         params: [
           { key: 'period', label: 'Period', type: 'number', default: 20, min: 5, max: 100 },
@@ -263,7 +263,7 @@ export const enContent: LanguageContent = {
         version: '0.1.0',
         kind: 'combined',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: true,
         params: [
           { key: 'period', label: 'KDJ Period', type: 'number', default: 9, min: 2, max: 100 },
@@ -281,7 +281,7 @@ export const enContent: LanguageContent = {
         sharpe: '2.18',
         status: 'In Research',
         category: 'non_factor',
-        subcategory: 'high_frequency',
+        subcategory: 'hft_microstructure',
         workflowReady: true,
       },
       {
@@ -333,7 +333,7 @@ export const enContent: LanguageContent = {
         sharpe: '0.89',
         status: 'Draft',
         category: 'non_factor',
-        subcategory: 'mean_reversion',
+        subcategory: 'trend_cta',
         workflowReady: false,
       },
       {
@@ -346,7 +346,7 @@ export const enContent: LanguageContent = {
         sharpe: '2.05',
         status: 'Stable',
         category: 'non_factor',
-        subcategory: 'high_frequency',
+        subcategory: 'hft_microstructure',
         workflowReady: true,
       },
       {
@@ -359,7 +359,7 @@ export const enContent: LanguageContent = {
         sharpe: '1.78',
         status: 'In Research',
         category: 'non_factor',
-        subcategory: 'high_frequency',
+        subcategory: 'hft_microstructure',
         workflowReady: true,
       },
       {
@@ -385,7 +385,7 @@ export const enContent: LanguageContent = {
         sharpe: '2.32',
         status: 'Training',
         category: 'factor_based',
-        subcategory: 'nonlinear_ml',
+        subcategory: 'ml_nonlinear_factor',
         workflowReady: true,
       },
       {
@@ -642,15 +642,15 @@ export const enContent: LanguageContent = {
       },
       strategySubcategoryLabels: {
         linear_multi_factor: 'Linear Multi-Factor',
-        nonlinear_ml: 'Non-Linear ML',
+        index_enhancement: 'Index Enhancement',
+        ml_nonlinear_factor: 'ML Non-Linear Factor',
         trend_cta: 'Trend / CTA',
-        mean_reversion: 'Mean Reversion',
         arbitrage: 'Arbitrage',
-        high_frequency: 'High-Frequency',
+        hft_microstructure: 'HFT Microstructure',
         macro_quant: 'Macro Quant',
         event_driven: 'Event-Driven',
         e2e_ai_timeseries: 'E2E AI Time Series',
-        tail_risk_hedging: 'Tail Risk Hedging',
+        event_sentiment_factor: 'Event Sentiment Factor',
       },
       configPanelPlaceholder: 'Config Panel — will be implemented in the next iteration',
       klineChartPlaceholder: 'K-Line Chart — will be implemented in the next iteration',

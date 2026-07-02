@@ -2,10 +2,22 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { buildApp } from '../../src/app.js';
 import { InMemoryTaskService } from '../../src/plugins/task-service.js';
 import { initApiDb, closeApiDb } from '../../src/storage/connection.js';
+import { ReportRepository } from '../../src/storage/report-repo.js';
+import { BacktestResultProcessor } from '../../src/services/result-processors/backtest-result-processor.js';
+import { TaskType } from '../../src/types.js';
+import type { ResultProcessor } from '../../src/services/result-processors/types.js';
 import type { DataCenter } from '@quant/data-center';
 import type { BacktestResult } from '../../src/types.js';
 import { unlinkSync, existsSync } from 'fs';
 import { resolve } from 'path';
+
+/** 创建仅含回测处理器的注册表，配合测试 DB 验证报告持久化 */
+function createBacktestOnlyRegistry(): { reportRepository: ReportRepository; resultProcessorRegistry: Map<TaskType, ResultProcessor> } {
+  const reportRepo = new ReportRepository();
+  const registry = new Map<TaskType, ResultProcessor>();
+  registry.set(TaskType.Backtest, new BacktestResultProcessor(reportRepo));
+  return { reportRepository: reportRepo, resultProcessorRegistry: registry };
+}
 
 function createMockDataCenter(): DataCenter {
   return {
@@ -158,16 +170,19 @@ describe('Report Routes', () => {
     };
 
     it('回测任务完成时自动保存报告，读取时 reportData 包含 drawdownCurve（非空数组）', async () => {
+      const { reportRepository: testRepo, resultProcessorRegistry } = createBacktestOnlyRegistry();
       const app = await buildApp({
         dataCenter: createMockDataCenter(),
         taskService: new InMemoryTaskService(),
+        reportRepository: testRepo,
+        resultProcessorRegistry,
       });
 
-      // 提交回测任务
+      // 提交回测任务（含有效 configSnapshot）
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d' } },
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
       });
       const taskId = submitRes.json().id;
 
@@ -198,9 +213,12 @@ describe('Report Routes', () => {
     });
 
     it('回测任务完成时使用提交 payload 的起止日期保存报告区间', async () => {
+      const { reportRepository: testRepo, resultProcessorRegistry } = createBacktestOnlyRegistry();
       const app = await buildApp({
         dataCenter: createMockDataCenter(),
         taskService: new InMemoryTaskService(),
+        reportRepository: testRepo,
+        resultProcessorRegistry,
       });
       const startTs = new Date('2023-01-02T00:00:00').getTime();
       const endTs = new Date('2024-12-30T00:00:00').getTime();
@@ -210,7 +228,7 @@ describe('Report Routes', () => {
         url: '/api/tasks',
         payload: {
           type: 'backtest',
-          payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', startTs, endTs },
+          payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', startTs, endTs, configSnapshot: { strategy: 'dual_ma', params: {} } },
         },
       });
       const taskId = submitRes.json().id;
@@ -236,15 +254,18 @@ describe('Report Routes', () => {
     });
 
     it('回测任务完成时自动保存报告，读取时 reportData 包含 monthlyReturns（非空数组）', async () => {
+      const { reportRepository: testRepo, resultProcessorRegistry } = createBacktestOnlyRegistry();
       const app = await buildApp({
         dataCenter: createMockDataCenter(),
         taskService: new InMemoryTaskService(),
+        reportRepository: testRepo,
+        resultProcessorRegistry,
       });
 
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d' } },
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
       });
       const taskId = submitRes.json().id;
 
@@ -272,15 +293,18 @@ describe('Report Routes', () => {
     });
 
     it('回测任务完成时自动保存报告，读取时 reportData 包含 sortinoRatio/calmarRatio（非零值）', async () => {
+      const { reportRepository: testRepo, resultProcessorRegistry } = createBacktestOnlyRegistry();
       const app = await buildApp({
         dataCenter: createMockDataCenter(),
         taskService: new InMemoryTaskService(),
+        reportRepository: testRepo,
+        resultProcessorRegistry,
       });
 
       const submitRes = await app.inject({
         method: 'POST',
         url: '/api/tasks',
-        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d' } },
+        payload: { type: 'backtest', payload: { strategy: 'dual_ma', symbol: '600519', timeframe: '1d', configSnapshot: { strategy: 'dual_ma', params: {} } } },
       });
       const taskId = submitRes.json().id;
 

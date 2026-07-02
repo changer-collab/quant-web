@@ -1,6 +1,6 @@
 ---
 name: fix-python-encoding
-description: Use when Python 子进程输出到 Node.js 的中文字段出现乱码（GBK 编码被 UTF-8 解码），或出现 "xxx.map is not a function" 错误（LLM 输出字符串而非数组）。适用于 Windows 中文环境下 Python → Node.js pipe 通信的场景。
+description: Use when Windows 中文环境下 Python 子进程输出到 Node.js pipe 后出现中文乱码、GBK/UTF-8 解码错位、PythonBridge stdout/stderr 乱码、CLI subprocess 文本解码失败。
 ---
 
 # 修复 Python 子进程编码乱码
@@ -9,15 +9,15 @@ description: Use when Python 子进程输出到 Node.js 的中文字段出现乱
 
 Windows 中文环境下，Python 子进程的 stdout/stderr pipe 输出使用系统默认编码（GBK/GB2312），而 Node.js 的 `chunk.toString()` 默认用 UTF-8 解码，导致中文字段全部变为乱码。
 
-## 修复清单
+## 快速判断
 
-当出现以下症状时，按顺序检查：
+当出现以下症状时使用本 skill：
 
 | 症状 | 原因 | 修复 |
 |------|------|------|
 | 中文字段变为乱码字符（如 `�ò���`） | Python pipe 输出用 GBK，Node.js 用 UTF-8 解码 | 三处修复（见下文） |
-| `xxx.map is not a function` | LLM/规则引擎输出的字段是字符串而非数组 | 类型保护（见下文） |
-| 策略名显示为 `...草稿 #N` | `mapBacktestResultToReport` 未传入 `strategyName` | 补充参数（见下文） |
+| Python CLI 测试在 Windows 上 `UnicodeDecodeError` 或中文断裂 | 父进程按系统默认编码读 stdout/stderr | 测试里显式 `encoding="utf-8"` |
+| `call()` 正常但 `streamCall()` 乱码 | 只改了同步路径 | 同步和流式路径都要设置编码 |
 
 ## 编码乱码 — 根因修复
 
@@ -67,59 +67,12 @@ proc.stderr.on("data", (chunk: Buffer) => {
 
 **注意：`call()` 和 `streamCall()` 中的 `stdout`、`stderr` handler 都需要改。**
 
-## 字符串→数组 类型保护
+### 4. Python 测试端：显式指定 UTF-8
 
-当 LLM 或规则引擎输出的字段本应是 `string[]` 但实际是 `string` 时，需要做类型保护。典型场景：`suitableMarketRegime`。
+如果测试用 `subprocess.run(..., text=True)` 读取 CLI 输出，也要指定编码：
 
-### API 侧（合并 AI 分析结果时）
-
-```typescript
-if (ai.overview) {
-  const ov = ai.overview as Record<string, unknown>;
-  let regime = report.overview.suitableMarketRegime;
-  if (ov.suitableMarketRegime !== undefined) {
-    if (Array.isArray(ov.suitableMarketRegime)) {
-      regime = ov.suitableMarketRegime as string[];
-    } else if (typeof ov.suitableMarketRegime === 'string') {
-      regime = [ov.suitableMarketRegime as string];
-    }
-  }
-  report.overview = {
-    ...report.overview,
-    logic: ov.logic as string ?? report.overview.logic,
-    suitableMarketRegime: regime,
-  };
-}
-```
-
-### 前端组件侧（渲染时防御）
-
-```tsx
-{(o.suitableMarketRegime && Array.isArray(o.suitableMarketRegime) && o.suitableMarketRegime.length > 0) && (
-  <div>
-    {o.suitableMarketRegime.map((r, i) => (
-      <span key={i}>{r}</span>
-    ))}
-  </div>
-)}
-```
-
-## 策略名显示异常
-
-当 `mapBacktestResultToReport` 未传递 `strategyName` 时，会 fallback 到 `"...草稿 #N"`。
-
-```typescript
-// 调用时补充 strategyName
-const nextBacktestReport = mapBacktestResultToReport(
-  event.data as { taskId?: string; backtestResult?: unknown } | undefined,
-  {
-    id: `backtest-full-report-${Date.now()}`,
-    taskId,
-    status: 'completed',
-    generatedAt: formatReportTime(language),
-    strategyName: selectedStrategyForLanguage?.name ?? selectedStrategy?.name ?? '',
-  },
-);
+```python
+subprocess.run(args, text=True, encoding="utf-8", check=True)
 ```
 
 ## 常见错误
@@ -130,3 +83,4 @@ const nextBacktestReport = mapBacktestResultToReport(
 | 只改 `call()` 不改 `streamCall()` | 流式调用依然乱码 |
 | 只改 Python 端 `reconfigure` 不改 Node 端 `spawn` 的 `env` | 非直接子进程覆盖不到 |
 | `chunk.toString()` 不传 `'utf-8'` | 依赖系统默认编码，Windows 下仍为 GBK |
+| 测试里只写 `text=True` | Windows 中文环境可能按 GBK 解码 UTF-8 输出 |

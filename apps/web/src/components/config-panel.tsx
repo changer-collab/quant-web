@@ -14,16 +14,14 @@ import s from '../styles/config-panel.module.css';
 // ─── 子分类隶属关系 ─────────────────────────────────────
 
 const CATEGORY_SUBCATEGORIES: Record<StrategyCategory, string[]> = {
-  factor_based: ['linear_multi_factor', 'nonlinear_ml'],
+  factor_based: ['linear_multi_factor', 'ml_nonlinear_factor'],
   non_factor: [
     'trend_cta',
-    'mean_reversion',
     'arbitrage',
-    'high_frequency',
+    'hft_microstructure',
     'macro_quant',
     'event_driven',
     'e2e_ai_timeseries',
-    'tail_risk_hedging',
   ],
   transitional: [],
 };
@@ -260,7 +258,7 @@ export function ConfigPanel({
           indicators: Object.entries(indicators)
             .filter(([, v]) => v)
             .map(([k]) => k),
-          ...(activeSubcategory === 'high_frequency' && { orderBookDepth }),
+          ...(activeSubcategory === 'hft_microstructure' && { orderBookDepth }),
           ...(activeSubcategory === 'e2e_ai_timeseries' && { featureSeqLength }),
           ...(activeSubcategory === 'event_driven' && { eventTN }),
         }),
@@ -617,7 +615,7 @@ export function ConfigPanel({
             {/* 动态参数区（按子类型） */}
             <div className={s.section}>
               <div className={s.sectionTitle}>{ui.configPanelDynamicParams}</div>
-              {activeSubcategory === 'high_frequency' && (
+              {activeSubcategory === 'hft_microstructure' && (
                 <div className={s.dynamicParamRow}>
                   <span className={s.dynamicParamLabel}>Order Book Depth</span>
                   <div className={s.sliderRow}>
@@ -703,7 +701,7 @@ export function ConfigPanel({
                   </div>
                 </div>
               )}
-              {!['high_frequency', 'e2e_ai_timeseries', 'event_driven'].includes(
+              {!['hft_microstructure', 'e2e_ai_timeseries', 'event_driven'].includes(
                 activeSubcategory,
               ) && (
                 <p style={{ color: 'var(--muted)', fontSize: 'var(--text-xs)', fontStyle: 'italic' }}>

@@ -1,13 +1,67 @@
 import { TaskType, TaskStatus } from '../types.js';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { ReportRepository } from '../storage/report-repo.js';
-import { mapBacktestResultToReport } from '../services/report-mapper.js';
-import type { BacktestResult, BacktestReportFull, ConfigSnapshot, DiagnosticResult } from '../types.js';
-import { randomUUID } from 'node:crypto';
+import type { FastifyInstance } from 'fastify';
+
+/** Canonical 策略分类值集（与 Python StrategyCategory 对齐） */
+const CANONICAL_CATEGORIES = ['factor_based', 'non_factor', 'transitional'];
+
+/**
+ * 校验任务 payload 的 configSnapshot 完整性
+ * - backtest/diagnostics: 必须有 configSnapshot，strategy 非空且与顶层一致，category ∈ canonical 3，拒绝顶层 params
+ * - collect: 放行
+ * - factor_compute/factor_eval/ai_train: 拒绝（此工作流不支持）
+ * - 返回 null 表示通过，返回 string 表示错误消息
+ */
+function validateTaskPayload(type: TaskType, payload: Record<string, unknown>): string | null {
+  // 拒绝不受支持的任务类型
+  if (type === TaskType.FactorCompute || type === TaskType.FactorEval || type === TaskType.AITrain) {
+    return 'not supported in this workflow';
+  }
+
+  // collect: 不作 configSnapshot 校验
+  if (type === TaskType.Collect) {
+    return null;
+  }
+
+  // backtest/diagnostics: 校验 configSnapshot
+  if (type === TaskType.Backtest || type === TaskType.Diagnostics) {
+    const configSnapshot = payload.configSnapshot as Record<string, unknown> | undefined;
+    if (!configSnapshot) {
+      return 'configSnapshot required';
+    }
+
+    const snapshotStrategy = configSnapshot.strategy;
+    if (typeof snapshotStrategy !== 'string' || snapshotStrategy.trim() === '') {
+      return 'configSnapshot.strategy must be a non-empty string';
+    }
+
+    if (payload.strategy !== snapshotStrategy) {
+      return 'strategy mismatch: payload.strategy does not match configSnapshot.strategy';
+    }
+
+    const category = configSnapshot.category;
+    if (category !== undefined && category !== null && typeof category === 'string' && !CANONICAL_CATEGORIES.includes(category)) {
+      return `invalid configSnapshot.category: ${category}`;
+    }
+
+    if (payload.params !== undefined) {
+      return 'params not allowed at top level, use configSnapshot.params instead';
+    }
+
+    return null;
+  }
+
+  return null;
+}
 
 export async function taskRoutes(app: FastifyInstance) {
   app.post('/', async (req, reply) => {
     const { type, payload } = req.body as { type: TaskType; payload: Record<string, unknown> };
+
+    const validationError = validateTaskPayload(type, payload);
+    if (validationError) {
+      return reply.code(400).send({ error: validationError });
+    }
+
     const task = await app.taskService.submit(type, payload);
     return reply.code(202).send({ id: task.id, status: task.status });
   });
@@ -24,7 +78,7 @@ export async function taskRoutes(app: FastifyInstance) {
   });
 
   /** SSE: 流式推送任务事件 */
-  app.get<{ Params: { id: string } }>('/:id/stream', async (req: FastifyRequest, reply: FastifyReply) => {
+  app.get<{ Params: { id: string } }>('/:id/stream', async (req, reply) => {
     const taskId = (req.params as { id: string }).id;
     const task = await app.taskService.get(taskId);
     if (!task) {
@@ -109,31 +163,42 @@ export async function internalTaskRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  /** Worker 完成任务 */
+  /**
+   * Worker 完成任务（退化为统一分派）
+   *
+   * 1) 查注册表获取 task.type 对应的 ResultProcessor
+   * 2) 有 processor → 调用 process() 产出信封 {resultId, resultType, data}
+   * 3) 无 processor → 原样完成
+   * 4) processor 抛异常 → 标记任务 failed
+   * 5) 统一更新 task + 推送 SSE result/error 事件
+   */
   app.post<{ Params: { id: string } }>('/:id/complete', async (req, reply) => {
     const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     const { result } = req.body as { result: Record<string, unknown> };
 
-    // 对于 diagnostics 类型任务，先存储诊断结果再发送 SSE 事件（确保 resultId 可用）
     let enrichedResult = result;
-    if (task.type === TaskType.Diagnostics) {
+    let sseResultId: string | undefined;
+    let sseResultType: string | undefined;
+
+    const processor = app.resultProcessorRegistry.get(task.type);
+    if (processor) {
       try {
-        const payload = task.payload as Record<string, unknown>;
-        const diagData = (result as { diagnostics?: Record<string, unknown> }).diagnostics ?? result;
-        const diagnosticResult: DiagnosticResult = {
-          id: randomUUID(),
-          taskId: task.id,
-          strategy: (payload.strategy as string) || 'unknown',
-          category: (payload.category as DiagnosticResult['category']) || 'non_factor',
-          configSnapshot: (payload.configSnapshot as ConfigSnapshot) ?? { strategy: (payload.strategy as string) || 'unknown', params: {} },
-          dataJson: diagData,
-          createdAt: Date.now(),
-        };
-        await app.diagnosticService.storeResult(diagnosticResult);
-        enrichedResult = { ...result, resultId: diagnosticResult.id, resultType: 'diagnostics' };
+        const envelope = await processor.process({
+          task: { id: task.id, type: task.type, payload: task.payload as Record<string, unknown> },
+          result,
+        });
+        enrichedResult = { ...result, resultId: envelope.resultId, resultType: envelope.resultType };
+        sseResultId = envelope.resultId;
+        sseResultType = envelope.resultType;
       } catch (err) {
-        console.error('[api] Failed to store diagnostic result:', err);
+        const msg = err instanceof Error ? err.message : String(err);
+        await app.taskService.updateTask(req.params.id, {
+          status: TaskStatus.Failed,
+          error: msg,
+          completedAt: Date.now(),
+        }, { type: 'error', taskId: req.params.id, error: { code: 'PROCESSOR_ERROR', message: msg } });
+        return { ok: true };
       }
     }
 
@@ -142,129 +207,7 @@ export async function internalTaskRoutes(app: FastifyInstance) {
       result: enrichedResult,
       completedAt: Date.now(),
       progress: 100,
-    }, { type: 'result', taskId: req.params.id, data: enrichedResult });
-
-    // 如果是回测任务，自动保存报告
-    if (task.type === TaskType.Backtest) {
-      try {
-        const reportRepo = new ReportRepository();
-        const taskResult = result as { backtestResult: BacktestResult; analysis?: Record<string, unknown> };
-        const backtestResult = taskResult.backtestResult;
-        const payload = task.payload as {
-          strategy: string;
-          symbol: string;
-          timeframe: string;
-          startTs?: number;
-          endTs?: number;
-          initialCash?: number;
-          slippage?: number;
-          params?: Record<string, unknown>;
-        };
-
-        const report = mapBacktestResultToReport(backtestResult, {
-          strategyName: payload.strategy,
-          symbol: payload.symbol,
-          timeframe: payload.timeframe,
-          startTime: payload.startTs,
-          endTime: payload.endTs,
-        });
-
-        // 合并 AI 分析结果到报告（覆盖结论性字段）
-        if (taskResult.analysis) {
-          const ai = taskResult.analysis as Record<string, unknown>;
-
-          // 清理所有字符串字段中的非法 surrogate 字符
-          function cleanStr(v: unknown): string {
-            if (typeof v !== 'string') return String(v ?? '');
-            return v.replace(/[\uDC00-\uDFFF]/g, '');
-          }
-          function cleanArray(arr: unknown): string[] {
-            if (!Array.isArray(arr)) return [];
-            return arr.map((item) => (typeof item === 'string' ? cleanStr(item) : String(item)));
-          }
-
-          if (ai.executiveSummary) {
-            const es = ai.executiveSummary as Record<string, unknown>;
-            report.executiveSummary = {
-              ...report.executiveSummary,
-              oneLineConclusion: cleanStr(es.oneLineConclusion) || report.executiveSummary.oneLineConclusion,
-              recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
-              recommendationReason: cleanStr(es.recommendationReason) || report.executiveSummary.recommendationReason,
-              mainRisks: cleanArray(es.mainRisks).length ? cleanArray(es.mainRisks) : report.executiveSummary.mainRisks,
-            };
-          }
-          if (ai.overview) {
-            const ov = ai.overview as Record<string, unknown>;
-            // 确保 suitableMarketRegime 为数组，兼容 LLM 可能输出字符串或单个值的情况
-            let regime = report.overview.suitableMarketRegime;
-            if (ov.suitableMarketRegime !== undefined) {
-              if (Array.isArray(ov.suitableMarketRegime)) {
-                regime = cleanArray(ov.suitableMarketRegime);
-              } else if (typeof ov.suitableMarketRegime === 'string') {
-                regime = [cleanStr(ov.suitableMarketRegime)];
-              }
-            }
-            report.overview = {
-              ...report.overview,
-              logic: cleanStr(ov.logic) || report.overview.logic,
-              coreLogic: cleanStr(ov.coreLogic) || report.overview.coreLogic,
-              suitableMarketRegime: regime,
-            };
-          }
-          if (ai.issues) {
-            const iss = ai.issues as Record<string, unknown>;
-            report.issues = {
-              ...report.issues,
-              overfittingRisk: (iss.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
-              survivorshipBias: (iss.survivorshipBias as boolean) ?? report.issues.survivorshipBias,
-              lookAheadBias: (iss.lookAheadBias as boolean) ?? report.issues.lookAheadBias,
-              enableMarketRules: (iss.enableMarketRules as boolean) ?? report.issues.enableMarketRules,
-              liquidityAssessment: cleanStr(iss.liquidityAssessment) || report.issues.liquidityAssessment,
-              capacityEstimate: cleanStr(iss.capacityEstimate) || report.issues.capacityEstimate,
-            };
-          }
-          if (ai.conclusion) {
-            const con = ai.conclusion as Record<string, unknown>;
-            report.conclusion = {
-              ...report.conclusion,
-              advantages: cleanArray(con.advantages).length ? cleanArray(con.advantages) : report.conclusion.advantages,
-              potentialRisks: cleanArray(con.potentialRisks).length ? cleanArray(con.potentialRisks) : report.conclusion.potentialRisks,
-              improvements: cleanArray(con.improvements).length ? cleanArray(con.improvements) : report.conclusion.improvements,
-              liveTradingAdvice: (con.liveTradingAdvice as { suggestedCapital: string; suggestedInitialPosition: string; riskControlRules: string[] }) ?? report.conclusion.liveTradingAdvice,
-            };
-          }
-          if (ai.riskWarnings) {
-            const rw = ai.riskWarnings as Record<string, unknown>;
-            report.riskWarnings = {
-              ...report.riskWarnings,
-              limitations: (rw.limitations as { category: string; description: string }[]) ?? report.riskWarnings.limitations,
-              redLines: (rw.redLines as { rule: string; threshold: string; actual: string; passed: boolean }[]) ?? report.riskWarnings.redLines,
-            };
-          }
-        }
-
-        await reportRepo.save({
-          id: report.id,
-          taskId: task.id,
-          strategyName: payload.strategy,
-          symbol: payload.symbol,
-          timeframe: payload.timeframe,
-          startTime: payload.startTs,
-          endTime: payload.endTs,
-          createdAt: Date.now(),
-          totalReturn: backtestResult.metrics.totalReturn,
-          annualizedReturn: backtestResult.metrics.annualizedReturn,
-          sharpeRatio: backtestResult.metrics.sharpeRatio,
-          maxDrawdown: backtestResult.metrics.maxDrawdown,
-          winRate: backtestResult.metrics.winRate,
-          totalTrades: backtestResult.metrics.totalTrades,
-          reportData: report,
-        });
-      } catch (err) {
-        // 报告保存失败不影响任务完成
-        console.error('[api] Failed to save backtest report:', err);
-      }
-    }
+    }, { type: 'result', taskId: req.params.id, resultId: sseResultId, resultType: sseResultType, data: enrichedResult });
 
     return { ok: true };
   });

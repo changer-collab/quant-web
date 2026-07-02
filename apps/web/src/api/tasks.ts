@@ -1,7 +1,7 @@
 import { apiGet, apiPost } from './client';
 import type { ConfigSnapshot } from '../data/types';
 
-export type ApiTaskType = 'backtest' | 'factor_compute' | 'factor_eval' | 'ai_train';
+export type ApiTaskType = 'backtest' | 'factor_compute' | 'factor_eval' | 'ai_train' | 'diagnostics' | 'collect';
 export type ApiTaskStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export interface ApiTask {
@@ -25,6 +25,10 @@ export interface TaskStreamEvent {
   percent?: number;
   message?: string;
   level?: string;
+  /** 任务结果 ID（诊断/回测），顶层透出供前端判别 */
+  resultId?: string;
+  /** 任务结果类型判别字段，顶层透出供前端分派渲染 */
+  resultType?: 'diagnostics' | 'backtest';
   data?: Record<string, unknown>;
   error?: { code: string; message: string };
 }

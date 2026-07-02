@@ -13,15 +13,13 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const DB_PATH = resolve(import.meta.dirname, '..', '..', '..', 'data', 'quant.db');
+const HAS_DB = existsSync(DB_PATH);
 
-describe('端到端管道测试', () => {
+describe.skipIf(!HAS_DB)('端到端管道测试', () => {
   let bridge: PythonBridge;
 
   beforeAll(() => {
     bridge = new PythonBridge({ timeout: 60_000 });
-    if (!existsSync(DB_PATH)) {
-      throw new Error(`数据库不存在: ${DB_PATH}，请先运行 npx tsx scripts/seed-data.ts`);
-    }
   });
 
   it('PythonBridge → 双均线策略回测 → 完整结果', async () => {

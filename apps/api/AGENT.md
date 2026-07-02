@@ -31,6 +31,30 @@
 - 策略列表扩展：返回 category/subcategory/workflowReady + 扩展 params（chart_relevant/ui_constraints）
 - Preview 端点（POST /api/strategies/:name/preview）：加载 K 线 → PreviewService 计算 SMA/EMA/RSI/MACD 叠加层 + 信号标注 → 返回 bars/overlays/signals/pagination/fingerprint
 - PreviewService：纯 TypeScript 预览引擎，不依赖外部数学库，支持反向分页（cursor 翻页）
+- ResultProcessor 注册表（services/result-processors/）：TaskType → ResultProcessor 映射，complete handler 退化为统一分派（≤25 行，无 per-type if/switch）
+- BacktestResultProcessor：报告映射 + AI analysis 合并 + surrogate 清洗 + ReportRepository 持久化，保存失败时抛异常（任务标记 failed）
+- DiagnosticsResultProcessor：诊断结果持久化 + resultId/resultType 信封输出
+- ReportRepository 通过 app.decorate 注入（app.reportRepository），与既有 Service 注入模式一致
+- StrategyConfigService Phase 3b：buildDefaultSnapshot（canonical SHA256 hash）、getOrDefault（无配置返回默认快照）、save（expectedHash 乐观锁，冲突 → ConfigHashConflictError → 409）
+- ConfigHashConflictError 类（statusCode=409, expectedHash/currentHash/currentSnapshot 供 route 返回 409 body）
+- Phase 3d DB Schema additive migration：
+  - strategy_configs 新增 category/subcategory/schema_version 列（全部 NOT NULL DEFAULT 或 nullable）
+  - diagnostic_results 新增 subcategory/engine_version/expires_at 列（全部 DEFAULT 或 nullable）
+  - 迁移模式：CREATE TABLE IF NOT EXISTS 后运行 PRAGMA table_info 检查列是否存在 → ALTER TABLE ADD COLUMN（兼容旧 DB 文件）
+  - Drizzle schema 新增列用 .notNull().default() 保持现有 repo insert 语句不报错
+- Phase 3e SqliteConfigRepo 读写新列：
+  - IConfigRepo 接口签名变更：save(snapshot: ConfigSnapshot) 替代旧 save(strategy, configJson, hash)；get() 返回 ConfigSnapshot | null
+  - SqliteConfigRepo.save() 写入 category/subcategory/schemaVersion/hash 全列（默认值：'non_factor'/null/1/''）
+  - SqliteConfigRepo.get() 读新列后回构 ConfigSnapshot（缺省补默认值）
+  - IConfigHistoryRepo.append() 更新为接受 ConfigSnapshot，写入 strategyVersion/category/subcategory/schemaVersion
+  - config_history Drizzle schema + CREATE TABLE 新增 strategy_version/category/subcategory/schema_version 列
+  - 迁移模式：PRAGMA table_info + ALTER TABLE ADD COLUMN 兼容旧 DB 文件
+- Phase 3f SqliteDiagnosticRepo 读写 subcategory/engineVersion/expiresAt 列：
+  - DiagnosticResult 接口新增 subcategory/engineVersion/expiresAt 字段
+  - SqliteDiagnosticRepo.save() 写入 subcategory/engineVersion/expiresAt（engineVersion 默认 'legacy'，expiresAt = createdAt + 7天）
+  - SqliteDiagnosticRepo.getById/listByStrategy 读新列，旧 row 缺省 engineVersion='legacy'/expiresAt=createdAt+7天/subcategory=null
+  - diagnostics.ts toWire() 直接投影 repo 返回值（不再静态 expiresAt=createdAt+7 和 engineVersion='legacy'）
+  - DiagnosticsResultProcessor 从 configSnapshot.subcategory 取 subcategory，从 result.engine_version 取 engineVersion（均降级 null/'legacy'）
 
 ## 边界
 

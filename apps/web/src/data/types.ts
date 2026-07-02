@@ -119,18 +119,18 @@ export type JobTemplate = 'backtest' | 'train' | 'experiment' | 'run';
 /** 策略分类（与 Python StrategyCategory 值对齐） */
 export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
 
-/** 策略子分类（与 Python StrategySubcategory 值对齐） */
+/** 策略子分类（与 Python StrategySubcategory 值对齐，canonical 10 值） */
 export type StrategySubcategory =
   | 'linear_multi_factor'
-  | 'nonlinear_ml'
+  | 'index_enhancement'
+  | 'ml_nonlinear_factor'
   | 'trend_cta'
-  | 'mean_reversion'
   | 'arbitrage'
-  | 'high_frequency'
+  | 'hft_microstructure'
   | 'macro_quant'
   | 'event_driven'
   | 'e2e_ai_timeseries'
-  | 'tail_risk_hedging';
+  | 'event_sentiment_factor';
 
 /** UI 约束条件（与 Python UIConstraint 对齐） */
 export interface UIConstraint {
@@ -256,20 +256,60 @@ export interface PreviewResponse {
   engine_version: string;
 }
 
-/** 策略配置快照 */
-export interface ConfigSnapshot {
-  strategy: string;
-  params: Record<string, unknown>;
+/** 配置快照 Schema 版本 */
+export const ConfigSchemaVersion = 1;
+
+/** 因子型配置参数 */
+export interface FactorBasedConfigParams {
+  factor_pool?: string[];
+  winsorize?: [number, number];
+  neutralization?: string[];
+  standardization?: 'zscore' | 'quantile' | 'rank';
+  interaction_terms?: string[];
+  max_interaction_order?: number;
 }
 
-/** 诊断结果 */
+/** 非因子型配置参数 */
+export interface NonFactorConfigParams {
+  lookback_window?: number;
+  hold_period?: number;
+  indicators?: string[];
+  indicator_params?: Record<string, unknown>;
+  dynamic_params?: Record<string, unknown>;
+}
+
+/** 过渡形态配置参数 */
+export interface TransitionalConfigParams {
+  data_source?: string;
+  sentiment_decay_half_life?: number;
+  target_factor_pool?: string[];
+}
+
+/** 策略配置快照（富化后，新字段均为 ? 可选以兼容现有引用） */
+export interface ConfigSnapshot {
+  strategy: string;
+  schemaVersion?: number;
+  strategyVersion?: string;
+  category?: string;
+  subcategory?: string;
+  params: Record<string, unknown>;
+  hash?: string;
+  updatedAt?: number;
+}
+
+/** 诊断结果（与 API DiagnosticResultWire 逐字段对齐） */
 export interface DiagnosticResult {
-  id: string;
+  resultId: string;
+  resultType: 'diagnostics';
   taskId: string;
   strategy: string;
+  category: string;
+  subcategory: string | null;
   configSnapshot: ConfigSnapshot;
-  dataJson: Record<string, unknown>;
+  data: Record<string, unknown>;
   createdAt: number;
+  expiresAt: number;
+  engineVersion: string;
 }
 
 export interface MarketTick {
@@ -468,15 +508,15 @@ export interface UiCopy {
   /** 策略子分类标签 */
   strategySubcategoryLabels: {
     linear_multi_factor: string;
-    nonlinear_ml: string;
+    index_enhancement: string;
+    ml_nonlinear_factor: string;
     trend_cta: string;
-    mean_reversion: string;
     arbitrage: string;
-    high_frequency: string;
+    hft_microstructure: string;
     macro_quant: string;
     event_driven: string;
     e2e_ai_timeseries: string;
-    tail_risk_hedging: string;
+    event_sentiment_factor: string;
   };
   /** ConfigPanel 占位文案 */
   configPanelPlaceholder: string;

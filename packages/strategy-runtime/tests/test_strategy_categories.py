@@ -1,5 +1,6 @@
 """策略分类枚举测试"""
 
+import pytest
 from quantforge_strategy import (
     StrategyMeta, StrategyCategory, StrategySubcategory,
     UIConstraint, StrategyParamDef, ParamType,
@@ -17,6 +18,48 @@ def test_subcategory_enum_values():
     assert Sub.TREND_CTA == "trend_cta"
     assert Sub.LINEAR_MULTI_FACTOR == "linear_multi_factor"
     assert Sub.E2E_AI_TIMESERIES == "e2e_ai_timeseries"
+
+
+def test_canonical_10_members():
+    """验证所有 canonical 10 成员存在且值正确"""
+    canonical_values = {
+        "linear_multi_factor",
+        "index_enhancement",
+        "ml_nonlinear_factor",
+        "trend_cta",
+        "arbitrage",
+        "hft_microstructure",
+        "macro_quant",
+        "event_driven",
+        "e2e_ai_timeseries",
+        "event_sentiment_factor",
+    }
+    members = {m.value for m in Sub}
+    assert members == canonical_values, f"Expected exactly 10 canonical values, got {len(members)}"
+
+
+def test_old_subcategory_members_removed():
+    """旧 4 成员应不存在，访问触发 AttributeError"""
+    with pytest.raises(AttributeError):
+        _ = Sub.MEAN_REVERSION
+    with pytest.raises(AttributeError):
+        _ = Sub.TAIL_RISK_HEDGING
+    with pytest.raises(AttributeError):
+        _ = Sub.NONLINEAR_ML
+    with pytest.raises(AttributeError):
+        _ = Sub.HIGH_FREQUENCY
+
+
+def test_renamed_subcategory_members():
+    """HIGH_FREQUENCY→HFT_MICROSTRUCTURE, NONLINEAR_ML→ML_NONLINEAR_FACTOR"""
+    assert Sub.HFT_MICROSTRUCTURE == "hft_microstructure"
+    assert Sub.ML_NONLINEAR_FACTOR == "ml_nonlinear_factor"
+
+
+def test_new_subcategory_members():
+    """新增成员 INDEX_ENHANCEMENT / EVENT_SENTIMENT_FACTOR"""
+    assert Sub.INDEX_ENHANCEMENT == "index_enhancement"
+    assert Sub.EVENT_SENTIMENT_FACTOR == "event_sentiment_factor"
 
 
 def test_default_category_is_non_factor():
