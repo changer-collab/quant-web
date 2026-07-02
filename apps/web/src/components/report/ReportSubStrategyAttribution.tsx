@@ -22,7 +22,11 @@ function ComparisonChart({ report, ui }: Props) {
     if (data.length === 0) return {};
     return {
       tooltip: { ...CHART_DEFAULTS.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: { data: [labels.annualizedReturn, labels.maxDrawdown, labels.sharpe], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
+      legend: {
+        data: [labels.annualizedReturn, labels.maxDrawdown, labels.sharpe],
+        textStyle: { color: '#8fa29b', fontSize: 10 },
+        top: 0,
+      },
       grid: { top: 32, right: 16, bottom: 24, left: 48 },
       xAxis: {
         type: 'category',
@@ -36,9 +40,24 @@ function ComparisonChart({ report, ui }: Props) {
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       series: [
-        { name: labels.annualizedReturn, type: 'bar', data: data.map((d) => +(d.annualizedReturn * 100).toFixed(1)), itemStyle: { color: '#4df0a0' } },
-        { name: labels.maxDrawdown, type: 'bar', data: data.map((d) => +(d.maxDrawdown * 100).toFixed(1)), itemStyle: { color: '#ff6b6b' } },
-        { name: labels.sharpe, type: 'bar', data: data.map((d) => d.sharpe), itemStyle: { color: '#62d8ff' } },
+        {
+          name: labels.annualizedReturn,
+          type: 'bar',
+          data: data.map((d) => +(d.annualizedReturn * 100).toFixed(1)),
+          itemStyle: { color: '#4df0a0' },
+        },
+        {
+          name: labels.maxDrawdown,
+          type: 'bar',
+          data: data.map((d) => +(d.maxDrawdown * 100).toFixed(1)),
+          itemStyle: { color: '#ff6b6b' },
+        },
+        {
+          name: labels.sharpe,
+          type: 'bar',
+          data: data.map((d) => d.sharpe),
+          itemStyle: { color: '#62d8ff' },
+        },
       ],
     };
   }, [data, labels]);
@@ -46,7 +65,14 @@ function ComparisonChart({ report, ui }: Props) {
   if (data.length === 0) return null;
   return (
     <div className={styles.chartSection}>
-      <ReactEChartsCore echarts={echarts} option={option} theme="quant-dark" style={{ height: 240 }} notMerge lazyUpdate />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 240 }}
+        notMerge
+        lazyUpdate
+      />
     </div>
   );
 }
@@ -70,7 +96,11 @@ function TimeSeriesChart({ report }: Props) {
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${(v * 100).toFixed(0)}%` },
+        axisLabel: {
+          fontSize: 10,
+          color: '#8fa29b',
+          formatter: (v: number) => `${(v * 100).toFixed(0)}%`,
+        },
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       series: modules.map((mod, i) => ({
@@ -89,7 +119,14 @@ function TimeSeriesChart({ report }: Props) {
   if (ts.length === 0) return null;
   return (
     <div className={styles.chartSection}>
-      <ReactEChartsCore echarts={echarts} option={option} theme="quant-dark" style={{ height: 240 }} notMerge lazyUpdate />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 240 }}
+        notMerge
+        lazyUpdate
+      />
     </div>
   );
 }

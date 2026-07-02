@@ -57,7 +57,16 @@ export interface TencentExtra {
 }
 
 /** 所有适配器 extra 类型的联合 */
-export type AdapterExtra = TushareExtra | AkshareExtra | CsvExtra | BaostockExtra | EfinanceExtra | YfinanceExtra | MootdxExtra | TencentExtra | Record<string, unknown>;
+export type AdapterExtra =
+  | TushareExtra
+  | AkshareExtra
+  | CsvExtra
+  | BaostockExtra
+  | EfinanceExtra
+  | YfinanceExtra
+  | MootdxExtra
+  | TencentExtra
+  | Record<string, unknown>;
 
 /** 适配器拉取选项 */
 export interface AdapterFetchOptions {

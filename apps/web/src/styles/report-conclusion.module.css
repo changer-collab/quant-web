@@ -21,9 +21,15 @@
   color: var(--muted);
 }
 
-.titleAdv { color: var(--green); }
-.titleRisk { color: var(--red, #ff6b6b); }
-.titleImprove { color: var(--cyan); }
+.titleAdv {
+  color: var(--green);
+}
+.titleRisk {
+  color: var(--red, #ff6b6b);
+}
+.titleImprove {
+  color: var(--cyan);
+}
 
 .list {
   list-style: none;
@@ -56,9 +62,15 @@
   flex-shrink: 0;
 }
 
-.markerAdv { background: var(--green); }
-.markerRisk { background: var(--red, #ff6b6b); }
-.markerImprove { background: var(--cyan); }
+.markerAdv {
+  background: var(--green);
+}
+.markerRisk {
+  background: var(--red, #ff6b6b);
+}
+.markerImprove {
+  background: var(--cyan);
+}
 
 .adviceBlock {
   padding: var(--space-lg);

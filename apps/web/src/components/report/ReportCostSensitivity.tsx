@@ -22,7 +22,11 @@ function SlippageChart({ report, ui }: Props) {
     if (data.length === 0) return {};
     return {
       tooltip: { ...CHART_DEFAULTS.tooltip, trigger: 'axis' },
-      legend: { data: [labels.annualizedReturn, labels.sharpe], textStyle: { color: '#8fa29b', fontSize: 10 }, top: 0 },
+      legend: {
+        data: [labels.annualizedReturn, labels.sharpe],
+        textStyle: { color: '#8fa29b', fontSize: 10 },
+        top: 0,
+      },
       grid: { top: 32, right: 48, bottom: 32, left: 48 },
       xAxis: {
         type: 'category',
@@ -75,7 +79,14 @@ function SlippageChart({ report, ui }: Props) {
   if (data.length === 0) return null;
   return (
     <div className={styles.chartSection}>
-      <ReactEChartsCore echarts={echarts} option={option} theme="quant-dark" style={{ height: 240 }} notMerge lazyUpdate />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        theme="quant-dark"
+        style={{ height: 240 }}
+        notMerge
+        lazyUpdate
+      />
     </div>
   );
 }
@@ -126,8 +137,16 @@ export function ReportCostSensitivity({ report, ui }: Props) {
               {c.beforeAfterCost.map((row) => (
                 <tr key={row.metric}>
                   <td className={styles.nameCell}>{row.metric}</td>
-                  <td className={styles.numCell}>{typeof row.beforeCost === 'number' && row.beforeCost < 1 ? pct(row.beforeCost) : row.beforeCost}</td>
-                  <td className={styles.numCell}>{typeof row.afterCost === 'number' && row.afterCost < 1 ? pct(row.afterCost) : row.afterCost}</td>
+                  <td className={styles.numCell}>
+                    {typeof row.beforeCost === 'number' && row.beforeCost < 1
+                      ? pct(row.beforeCost)
+                      : row.beforeCost}
+                  </td>
+                  <td className={styles.numCell}>
+                    {typeof row.afterCost === 'number' && row.afterCost < 1
+                      ? pct(row.afterCost)
+                      : row.afterCost}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -138,9 +157,13 @@ export function ReportCostSensitivity({ report, ui }: Props) {
       {/* 成本拖累 */}
       <div className={styles.dragBlock}>
         <span className={styles.dragLabel}>{labels.costDragRatio}</span>
-        <strong className={styles.dragValue}>{c.costDragRatio != null ? pct(c.costDragRatio) : '--'}</strong>
+        <strong className={styles.dragValue}>
+          {c.costDragRatio != null ? pct(c.costDragRatio) : '--'}
+        </strong>
         <span className={styles.dragLabel}>{labels.annualTurnover}</span>
-        <strong className={styles.dragValue}>{c.annualTurnover != null ? `${c.annualTurnover}x` : '--'}</strong>
+        <strong className={styles.dragValue}>
+          {c.annualTurnover != null ? `${c.annualTurnover}x` : '--'}
+        </strong>
       </div>
 
       {/* 滑点敏感性 */}

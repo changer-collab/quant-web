@@ -7,9 +7,17 @@ interface Props {
   ui: ReportUiCopy;
 }
 
-function RiskIndicator({ level, ui }: { level: 'low' | 'medium' | 'high'; ui: ReportUiCopy['issues'] }) {
-  const cls = level === 'low' ? styles.riskLow : level === 'medium' ? styles.riskMed : styles.riskHigh;
-  const label = level === 'low' ? ui.lowSeverity : level === 'medium' ? ui.mediumSeverity : ui.highSeverity;
+function RiskIndicator({
+  level,
+  ui,
+}: {
+  level: 'low' | 'medium' | 'high';
+  ui: ReportUiCopy['issues'];
+}) {
+  const cls =
+    level === 'low' ? styles.riskLow : level === 'medium' ? styles.riskMed : styles.riskHigh;
+  const label =
+    level === 'low' ? ui.lowSeverity : level === 'medium' ? ui.mediumSeverity : ui.highSeverity;
   return (
     <span className={`${styles.riskDot} ${cls}`} title={label}>
       <span className={styles.riskLabel}>{label}</span>
@@ -24,13 +32,19 @@ export function ReportIssues({ report, ui }: Props) {
   return (
     <div className={styles.issuesPanel}>
       <div className={`${styles.issuesGrid} ${styles.issuesGridFull} ${styles.issueStatusTiles}`}>
-        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
+        <article
+          className={`${styles.issueCard} ${styles.issueStatusTile}`}
+          data-keyword-tile="true"
+        >
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.overfitting}</span>
             <RiskIndicator level={issues.overfittingRisk} ui={labels} />
           </div>
         </article>
-        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
+        <article
+          className={`${styles.issueCard} ${styles.issueStatusTile}`}
+          data-keyword-tile="true"
+        >
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.survivorshipBias}</span>
             <span className={issues.survivorshipBias ? styles.issueBadWarn : styles.issueBadGood}>
@@ -38,7 +52,10 @@ export function ReportIssues({ report, ui }: Props) {
             </span>
           </div>
         </article>
-        <article className={`${styles.issueCard} ${styles.issueStatusTile}`} data-keyword-tile="true">
+        <article
+          className={`${styles.issueCard} ${styles.issueStatusTile}`}
+          data-keyword-tile="true"
+        >
           <div className={styles.issueHeader}>
             <span className={styles.issueLabel}>{labels.lookAheadBias}</span>
             <span className={issues.lookAheadBias ? styles.issueBadWarn : styles.issueBadGood}>

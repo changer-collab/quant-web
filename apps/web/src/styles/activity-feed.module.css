@@ -23,7 +23,9 @@
   padding: 12px;
   border-radius: var(--radius-sm);
   background: transparent;
-  transition: background 0.15s, transform 0.12s;
+  transition:
+    background 0.15s,
+    transform 0.12s;
 }
 
 .item:hover {

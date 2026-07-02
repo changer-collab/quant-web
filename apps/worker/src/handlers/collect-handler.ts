@@ -33,11 +33,14 @@ export class CollectHandler implements TaskHandler {
 
     // 2. 创建采集器
     const { registry } = createCollector({
-      sources: [payload.source as 'baostock' | 'akshare' | 'csv' | 'efinance' | 'yfinance' | 'tushare'],
+      sources: [
+        payload.source as 'baostock' | 'akshare' | 'csv' | 'efinance' | 'yfinance' | 'tushare',
+      ],
     });
     const scheduler = new CollectorScheduler(registry, dc.repos);
 
-    const details: Array<{ symbol: string; records: number; success: boolean; error?: string }> = [];
+    const details: Array<{ symbol: string; records: number; success: boolean; error?: string }> =
+      [];
     let totalRecords = 0;
 
     try {

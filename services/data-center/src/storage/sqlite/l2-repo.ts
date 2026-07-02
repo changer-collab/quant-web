@@ -3,11 +3,7 @@
  */
 import { eq, and, gte, lte, gt, desc } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
-import {
-  l2Snapshots,
-  tradeRecords,
-  orderRecords,
-} from '../schema.js';
+import { l2Snapshots, tradeRecords, orderRecords } from '../schema.js';
 import type {
   Level2SnapshotRepository,
   TradeRecordRepository,
@@ -15,12 +11,7 @@ import type {
   PageParams,
   PageResult,
 } from '../../repository/types.js';
-import type {
-  Level2Snapshot,
-  OrderBookEntry,
-  TradeRecord,
-  OrderRecord,
-} from '../../l2/types.js';
+import type { Level2Snapshot, OrderBookEntry, TradeRecord, OrderRecord } from '../../l2/types.js';
 import { TradeSide, TradeType, OrderAction, L2OrderType } from '../../l2/types.js';
 import { WriteError, QueryError } from '../../errors.js';
 
@@ -59,7 +50,9 @@ export class SqliteLevel2SnapshotRepository implements Level2SnapshotRepository 
       const conditions = [eq(l2Snapshots.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(l2Snapshots.timestamp, start));
       if (end !== undefined) conditions.push(lte(l2Snapshots.timestamp, end));
-      const rows = await this.db.select().from(l2Snapshots)
+      const rows = await this.db
+        .select()
+        .from(l2Snapshots)
         .where(and(...conditions))
         .orderBy(l2Snapshots.timestamp);
       return rows.map((r) => ({
@@ -75,7 +68,9 @@ export class SqliteLevel2SnapshotRepository implements Level2SnapshotRepository 
 
   async getLatest(symbol: string): Promise<Level2Snapshot | undefined> {
     try {
-      const rows = await this.db.select().from(l2Snapshots)
+      const rows = await this.db
+        .select()
+        .from(l2Snapshots)
         .where(eq(l2Snapshots.symbol, symbol))
         .orderBy(desc(l2Snapshots.timestamp))
         .limit(1);
@@ -99,7 +94,9 @@ export class SqliteLevel2SnapshotRepository implements Level2SnapshotRepository 
       if (params?.afterTimestamp !== undefined) {
         conditions.push(gt(l2Snapshots.timestamp, params.afterTimestamp));
       }
-      const rows = await this.db.select().from(l2Snapshots)
+      const rows = await this.db
+        .select()
+        .from(l2Snapshots)
         .where(and(...conditions))
         .orderBy(l2Snapshots.timestamp)
         .limit(limit + 1);
@@ -154,7 +151,9 @@ export class SqliteTradeRecordRepository implements TradeRecordRepository {
       const conditions = [eq(tradeRecords.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(tradeRecords.timestamp, start));
       if (end !== undefined) conditions.push(lte(tradeRecords.timestamp, end));
-      const rows = await this.db.select().from(tradeRecords)
+      const rows = await this.db
+        .select()
+        .from(tradeRecords)
         .where(and(...conditions))
         .orderBy(tradeRecords.timestamp);
       return rows.map((r) => ({
@@ -177,7 +176,9 @@ export class SqliteTradeRecordRepository implements TradeRecordRepository {
       if (params?.afterTimestamp !== undefined) {
         conditions.push(gt(tradeRecords.timestamp, params.afterTimestamp));
       }
-      const rows = await this.db.select().from(tradeRecords)
+      const rows = await this.db
+        .select()
+        .from(tradeRecords)
         .where(and(...conditions))
         .orderBy(tradeRecords.timestamp)
         .limit(limit + 1);
@@ -234,7 +235,9 @@ export class SqliteOrderRecordRepository implements OrderRecordRepository {
       const conditions = [eq(orderRecords.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(orderRecords.timestamp, start));
       if (end !== undefined) conditions.push(lte(orderRecords.timestamp, end));
-      const rows = await this.db.select().from(orderRecords)
+      const rows = await this.db
+        .select()
+        .from(orderRecords)
         .where(and(...conditions))
         .orderBy(orderRecords.timestamp);
       return rows.map((r) => ({
@@ -257,7 +260,9 @@ export class SqliteOrderRecordRepository implements OrderRecordRepository {
       if (params?.afterTimestamp !== undefined) {
         conditions.push(gt(orderRecords.timestamp, params.afterTimestamp));
       }
-      const rows = await this.db.select().from(orderRecords)
+      const rows = await this.db
+        .select()
+        .from(orderRecords)
         .where(and(...conditions))
         .orderBy(orderRecords.timestamp)
         .limit(limit + 1);

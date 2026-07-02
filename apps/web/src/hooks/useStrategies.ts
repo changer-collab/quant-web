@@ -48,7 +48,7 @@ export function useStrategies() {
   // 注意：API 未返回 backtestable 时（旧后端）默认保留，避免误删全部策略。
   const strategies = useMemo(
     () => (data ?? []).filter((s) => s.backtestable !== false).map(mapStrategy),
-    [data],
+    [data]
   );
 
   return { strategies, loading, error, reload };

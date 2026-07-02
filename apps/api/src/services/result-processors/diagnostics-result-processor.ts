@@ -31,9 +31,10 @@ export class DiagnosticsResultProcessor implements ResultProcessor {
       configSnapshot,
       dataJson: diagData,
       createdAt: now,
-      engineVersion: ((result as Record<string, unknown>).engine_version as string)
-        ?? (diagData as Record<string, unknown>).engine_version as string
-        ?? 'legacy',
+      engineVersion:
+        ((result as Record<string, unknown>).engine_version as string) ??
+        ((diagData as Record<string, unknown>).engine_version as string) ??
+        'legacy',
       expiresAt: now + 7 * 24 * 60 * 60 * 1000,
     };
 

@@ -1,4 +1,9 @@
-import type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions, TushareExtra } from './types.js';
+import type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+  TushareExtra,
+} from './types.js';
 
 /** Tushare Pro API 响应 */
 interface TushareResponse {
@@ -34,7 +39,15 @@ interface RetryConfig {
 export class TushareAdapter implements DataSourceAdapter {
   name = 'tushare';
   supportedDomains = ['market', 'reference', 'fundamental'];
-  supportedDataTypes = ['bar', 'tick', 'instrument', 'calendar', 'adjustment_factor', 'financial_report', 'shareholder_metrics'];
+  supportedDataTypes = [
+    'bar',
+    'tick',
+    'instrument',
+    'calendar',
+    'adjustment_factor',
+    'financial_report',
+    'shareholder_metrics',
+  ];
 
   private readonly apiUrl = 'https://api.tushare.pro';
   private readonly retryConfig: RetryConfig;
@@ -84,7 +97,7 @@ export class TushareAdapter implements DataSourceAdapter {
   private resolveApiParams(
     domain: string,
     dataType: string,
-    options: AdapterFetchOptions,
+    options: AdapterFetchOptions
   ): { apiName: string; params: Record<string, string>; fields?: string[] } | null {
     const { symbol, timeframe, start, end } = options;
     const startDate = start ? this.formatDate(start) : '';
@@ -117,7 +130,16 @@ export class TushareAdapter implements DataSourceAdapter {
       return {
         apiName: 'stock_basic',
         params: {},
-        fields: ['ts_code', 'symbol', 'name', 'area', 'industry', 'market', 'list_date', 'list_status'],
+        fields: [
+          'ts_code',
+          'symbol',
+          'name',
+          'area',
+          'industry',
+          'market',
+          'list_date',
+          'list_status',
+        ],
       };
     }
 
@@ -173,7 +195,7 @@ export class TushareAdapter implements DataSourceAdapter {
     token: string,
     apiName: string,
     params: Record<string, string>,
-    fields?: string[],
+    fields?: string[]
   ): Promise<TushareResponse> {
     const body: Record<string, unknown> = {
       api_name: apiName,
@@ -203,7 +225,10 @@ export class TushareAdapter implements DataSourceAdapter {
 
         if (!resp.ok) {
           // 429 Too Many Requests 或 5xx 可重试
-          if ((resp.status === 429 || resp.status >= 500) && attempt < this.retryConfig.maxRetries) {
+          if (
+            (resp.status === 429 || resp.status >= 500) &&
+            attempt < this.retryConfig.maxRetries
+          ) {
             const delay = this.retryConfig.baseDelay * Math.pow(2, attempt);
             await this.sleep(delay);
             continue;
@@ -211,7 +236,7 @@ export class TushareAdapter implements DataSourceAdapter {
           throw new Error(`Tushare HTTP 错误: ${resp.status} ${resp.statusText}`);
         }
 
-        const result = await resp.json() as TushareResponse;
+        const result = (await resp.json()) as TushareResponse;
 
         // Tushare 业务错误码（积分不足等）不重试
         if (result.code !== 0) {
@@ -229,7 +254,9 @@ export class TushareAdapter implements DataSourceAdapter {
       }
     }
 
-    throw new Error(`Tushare API 调用失败（重试 ${this.retryConfig.maxRetries} 次）: ${lastError?.message}`);
+    throw new Error(
+      `Tushare API 调用失败（重试 ${this.retryConfig.maxRetries} 次）: ${lastError?.message}`
+    );
   }
 
   private sleep(ms: number): Promise<void> {
@@ -241,7 +268,7 @@ export class TushareAdapter implements DataSourceAdapter {
     record: RawDataRecord,
     domain: string,
     dataType: string,
-    options: AdapterFetchOptions,
+    options: AdapterFetchOptions
   ): RawDataRecord {
     if (domain === 'market' && dataType === 'bar') {
       return {
@@ -330,7 +357,11 @@ export class TushareAdapter implements DataSourceAdapter {
   /** 时间周期映射 */
   private mapTimeframe(tf?: string): string {
     const map: Record<string, string> = {
-      '1m': '1min', '5m': '5min', '15m': '15min', '1h': '60min', '1d': '1d',
+      '1m': '1min',
+      '5m': '5min',
+      '15m': '15min',
+      '1h': '60min',
+      '1d': '1d',
     };
     return map[tf ?? '1d'] ?? '1d';
   }
@@ -339,7 +370,8 @@ export class TushareAdapter implements DataSourceAdapter {
   private toTsCode(symbol: string): string {
     if (symbol.includes('.')) return symbol;
     if (symbol.startsWith('6') || symbol.startsWith('9')) return `${symbol}.SH`;
-    if (symbol.startsWith('0') || symbol.startsWith('3') || symbol.startsWith('2')) return `${symbol}.SZ`;
+    if (symbol.startsWith('0') || symbol.startsWith('3') || symbol.startsWith('2'))
+      return `${symbol}.SZ`;
     return symbol;
   }
 

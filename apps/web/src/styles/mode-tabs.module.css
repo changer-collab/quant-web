@@ -16,7 +16,9 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   border-radius: calc(var(--radius-sm) - 2px);
   font-size: var(--text-sm);
   font-weight: 500;

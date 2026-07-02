@@ -162,19 +162,22 @@ function DrawdownChart({ report, ui }: Props) {
           lineStyle: { color: '#ff6b6b', width: 1.5 },
           itemStyle: { color: '#ff6b6b' },
           showSymbol: false,
-          markPoint: maxDDVal !== 0 ? {
-            data: [
-              {
-                name: 'maxDD',
-                coord: [maxDDIdx, maxDDVal],
-                value: `${maxDDVal.toFixed(1)}%`,
-                itemStyle: { color: '#ff6b6b' },
-                label: { show: true, color: '#e6eee9', fontSize: 11, fontWeight: 700 },
-              },
-            ],
-            symbol: 'pin',
-            symbolSize: 40,
-          } : undefined,
+          markPoint:
+            maxDDVal !== 0
+              ? {
+                  data: [
+                    {
+                      name: 'maxDD',
+                      coord: [maxDDIdx, maxDDVal],
+                      value: `${maxDDVal.toFixed(1)}%`,
+                      itemStyle: { color: '#ff6b6b' },
+                      label: { show: true, color: '#e6eee9', fontSize: 11, fontWeight: 700 },
+                    },
+                  ],
+                  symbol: 'pin',
+                  symbolSize: 40,
+                }
+              : undefined,
         },
       ],
     };
@@ -285,7 +288,14 @@ function MonthlyHeatmap({ report, ui }: Props) {
         echarts={echarts}
         option={option}
         theme="quant-dark"
-        style={{ height: Math.max(180, report.equityData.monthlyReturns.length > 0 ? 60 + [...new Set(report.equityData.monthlyReturns.map((m) => m.year))].length * 36 : 180) }}
+        style={{
+          height: Math.max(
+            180,
+            report.equityData.monthlyReturns.length > 0
+              ? 60 + [...new Set(report.equityData.monthlyReturns.map((m) => m.year))].length * 36
+              : 180
+          ),
+        }}
         notMerge
         lazyUpdate
       />
@@ -328,7 +338,10 @@ function AnnualBarChart({ report, ui }: Props) {
           type: 'bar',
           data: values.map((v) => ({
             value: v,
-            itemStyle: { color: v >= 0 ? '#4df0a0' : '#ff6b6b', borderRadius: v >= 0 ? [2, 2, 0, 0] : [0, 0, 2, 2] },
+            itemStyle: {
+              color: v >= 0 ? '#4df0a0' : '#ff6b6b',
+              borderRadius: v >= 0 ? [2, 2, 0, 0] : [0, 0, 2, 2],
+            },
           })),
           barWidth: 32,
           label: {

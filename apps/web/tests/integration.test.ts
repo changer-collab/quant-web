@@ -46,16 +46,22 @@ describe('Research workflow integration', () => {
     act(() => result.current.handleRunResearch());
     expect(result.current.state.activePage).toBe('jobs');
 
-    await waitFor(() => {
-      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.localizedJobs.length).toBeGreaterThan(0);
+      },
+      { timeout: 5000 }
+    );
 
-    await waitFor(() => {
-      expect(result.current.reportJobIds.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.reportJobIds.length).toBeGreaterThan(0);
+      },
+      { timeout: 5000 }
+    );
 
     const jobWithReport = result.current.localizedJobs.find((job) =>
-      result.current.reportJobIds.includes(job.id),
+      result.current.reportJobIds.includes(job.id)
     );
     expect(jobWithReport).toBeDefined();
 
@@ -80,19 +86,28 @@ describe('Research workflow integration', () => {
     act(() => result.current.handleSelectStrategy(strategy));
     act(() => result.current.handleRunResearch());
 
-    await waitFor(() => {
-      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
-    await waitFor(() => {
-      expect(result.current.localizedJobs[0].state).toBe('已完成');
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.localizedJobs.length).toBeGreaterThan(0);
+      },
+      { timeout: 5000 }
+    );
+    await waitFor(
+      () => {
+        expect(result.current.localizedJobs[0].state).toBe('已完成');
+      },
+      { timeout: 5000 }
+    );
 
-    await waitFor(() => {
-      expect(result.current.reportJobIds.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.reportJobIds.length).toBeGreaterThan(0);
+      },
+      { timeout: 5000 }
+    );
 
     const jobWithReport = result.current.localizedJobs.find((job) =>
-      result.current.reportJobIds.includes(job.id),
+      result.current.reportJobIds.includes(job.id)
     );
     expect(jobWithReport).toBeDefined();
 
@@ -121,9 +136,12 @@ describe('Research workflow integration', () => {
 
     act(() => result.current.handleRunResearch());
 
-    await waitFor(() => {
-      expect(result.current.localizedJobs.length).toBeGreaterThan(0);
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.localizedJobs.length).toBeGreaterThan(0);
+      },
+      { timeout: 5000 }
+    );
 
     const job = result.current.localizedJobs[0];
     expect(job.kind).toBe('ai');

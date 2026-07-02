@@ -52,15 +52,23 @@ export class ReportRepository {
       reportData: JSON.stringify(report.reportData),
     };
 
-    await db.insert(backtestReports).values(row).onConflictDoUpdate({
-      target: backtestReports.id,
-      set: row,
-    }).execute();
+    await db
+      .insert(backtestReports)
+      .values(row)
+      .onConflictDoUpdate({
+        target: backtestReports.id,
+        set: row,
+      })
+      .execute();
   }
 
   async getById(id: string): Promise<BacktestReport | undefined> {
     const db = getApiDb();
-    const rows = await db.select().from(backtestReports).where(eq(backtestReports.id, id)).execute();
+    const rows = await db
+      .select()
+      .from(backtestReports)
+      .where(eq(backtestReports.id, id))
+      .execute();
     return rows[0] ? rowToReport(rows[0]) : undefined;
   }
 

@@ -2,12 +2,12 @@
 
 ## 环境要求
 
-| 工具 | 最低版本 | 说明 |
-|------|----------|------|
-| Node.js | 20+ | 推荐 LTS 版本 |
-| pnpm | 9+ | 包管理器（`corepack enable` 自动启用） |
-| Python | 3.11+ | 回测引擎、策略运行时 |
-| Git | 2.30+ | 支持长路径 |
+| 工具    | 最低版本 | 说明                                   |
+| ------- | -------- | -------------------------------------- |
+| Node.js | 20+      | 推荐 LTS 版本                          |
+| pnpm    | 9+       | 包管理器（`corepack enable` 自动启用） |
+| Python  | 3.11+    | 回测引擎、策略运行时                   |
+| Git     | 2.30+    | 支持长路径                             |
 
 > 本项目使用 `better-sqlite3`（SQLite 原生驱动）。它随包提供 **预编译二进制**，Node 20/24 + Windows x64 **无需 Visual Studio Build Tools**。pnpm 9.x 默认拦截依赖的构建脚本，已在 `pnpm-workspace.yaml` 的 `onlyBuiltDependencies` 中放行 `better-sqlite3` 以允许其下载预编译二进制。
 
@@ -172,13 +172,13 @@ pnpm approve-builds   # 交互式确认 better-sqlite3
 
 ```yaml
 packages:
-  - "apps/*"
-  - "packages/*"
-  - "services/*"
+  - 'apps/*'
+  - 'packages/*'
+  - 'services/*'
 
 # Keep comments in ASCII to avoid encoding issues on Windows.
 onlyBuiltDependencies:
-  - "better-sqlite3"
+  - 'better-sqlite3'
 ```
 
 验证配置生效：
@@ -273,11 +273,11 @@ CI 配置位于 `.github/workflows/ci.yml`，包含两个并行 Job：
 
 `apps/web/tests/setup.ts` 中的 `globalThis.fetch` mock 确保前端测试完全脱离后端：
 
-| 请求类型 | 响应 |
-|----------|------|
-| `GET /api/.../count` | `{ count: 0 }` |
-| `GET /api/...` | `[]`（空列表） |
-| `POST /api/...` | `{ id, taskId, status: 'pending' }` |
-| `DELETE /api/...` | `{ success: true }` |
+| 请求类型             | 响应                                |
+| -------------------- | ----------------------------------- |
+| `GET /api/.../count` | `{ count: 0 }`                      |
+| `GET /api/...`       | `[]`（空列表）                      |
+| `POST /api/...`      | `{ id, taskId, status: 'pending' }` |
+| `DELETE /api/...`    | `{ success: true }`                 |
 
 个别测试可通过 `mockFetch.mockImplementationOnce(...)` 覆盖特定端点响应。

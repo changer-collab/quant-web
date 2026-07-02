@@ -30,13 +30,17 @@ function rmDirRobust(dir: string): void {
       if (code !== 'EPERM' && code !== 'EBUSY' && code !== 'ENOTEMPTY') throw err;
       // 短暂同步等待后重试，给 OS 释放文件句柄的时间
       const until = Date.now() + 50;
-      while (Date.now() < until) { /* spin */ }
+      while (Date.now() < until) {
+        /* spin */
+      }
     }
   }
   // 最后一次尝试，失败则不阻断测试（临时目录会被 OS 定期清理）
   try {
     fs.rmSync(dir, { recursive: true, force: true });
-  } catch { /* 临时目录残留无害，留给 OS 清理 */ }
+  } catch {
+    /* 临时目录残留无害，留给 OS 清理 */
+  }
 }
 
 describe('DataCenter 集成测试', () => {
@@ -56,8 +60,28 @@ describe('DataCenter 集成测试', () => {
   describe('K 线存储与查询', () => {
     it('保存并查询 K 线', async () => {
       const bars: ExtendedBar[] = [
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 2000, open: 5050, high: 5200, low: 5000, close: 5150, volume: 120000, turnover: 600000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 2000,
+          open: 5050,
+          high: 5200,
+          low: 5000,
+          close: 5150,
+          volume: 120000,
+          turnover: 600000000,
+        },
       ];
       await dc.repos.bars.save(bars);
 
@@ -69,9 +93,39 @@ describe('DataCenter 集成测试', () => {
 
     it('按时间范围查询', async () => {
       const bars: ExtendedBar[] = [
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 2000, open: 5050, high: 5200, low: 5000, close: 5150, volume: 120000, turnover: 600000000 },
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 3000, open: 5150, high: 5300, low: 5100, close: 5250, volume: 110000, turnover: 550000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 2000,
+          open: 5050,
+          high: 5200,
+          low: 5000,
+          close: 5150,
+          volume: 120000,
+          turnover: 600000000,
+        },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 3000,
+          open: 5150,
+          high: 5300,
+          low: 5100,
+          close: 5250,
+          volume: 110000,
+          turnover: 550000000,
+        },
       ];
       await dc.repos.bars.save(bars);
 
@@ -82,8 +136,28 @@ describe('DataCenter 集成测试', () => {
 
     it('获取最新 K 线', async () => {
       const bars: ExtendedBar[] = [
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 3000, open: 5150, high: 5300, low: 5100, close: 5250, volume: 110000, turnover: 550000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 3000,
+          open: 5150,
+          high: 5300,
+          low: 5100,
+          close: 5250,
+          volume: 110000,
+          turnover: 550000000,
+        },
       ];
       await dc.repos.bars.save(bars);
 
@@ -92,7 +166,17 @@ describe('DataCenter 集成测试', () => {
     });
 
     it('幂等写入（重复不报错）', async () => {
-      const bar: ExtendedBar = { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 };
+      const bar: ExtendedBar = {
+        symbol: 'CSI500',
+        timeframe: TimeFrame.D1,
+        timestamp: 1000,
+        open: 5000,
+        high: 5100,
+        low: 4900,
+        close: 5050,
+        volume: 100000,
+        turnover: 500000000,
+      };
       await dc.repos.bars.save([bar]);
       await dc.repos.bars.save([bar]); // 重复写入
 
@@ -102,8 +186,28 @@ describe('DataCenter 集成测试', () => {
 
     it('获取可用标的', async () => {
       await dc.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
-        { symbol: 'HS300', timeframe: TimeFrame.D1, timestamp: 1000, open: 4000, high: 4100, low: 3900, close: 4050, volume: 80000, turnover: 400000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
+        {
+          symbol: 'HS300',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 4000,
+          high: 4100,
+          low: 3900,
+          close: 4050,
+          volume: 80000,
+          turnover: 400000000,
+        },
       ]);
 
       const symbols = await dc.repos.bars.getAvailableSymbols(TimeFrame.D1);
@@ -115,9 +219,15 @@ describe('DataCenter 集成测试', () => {
   describe('标的存储与查询', () => {
     it('保存并查询标的', async () => {
       const inst: ExtendedInstrument = {
-        symbol: 'CSI500', name: '中证500', exchange: 'SSE',
-        lotSize: 1, priceTick: 0.01, industry: '指数', sector: '宽基',
-        listDate: 20050101, status: InstrumentStatus.Active,
+        symbol: 'CSI500',
+        name: '中证500',
+        exchange: 'SSE',
+        lotSize: 1,
+        priceTick: 0.01,
+        industry: '指数',
+        sector: '宽基',
+        listDate: 20050101,
+        status: InstrumentStatus.Active,
       };
       await dc.repos.instruments.save([inst]);
 
@@ -127,8 +237,28 @@ describe('DataCenter 集成测试', () => {
 
     it('按条件查询标的', async () => {
       await dc.repos.instruments.save([
-        { symbol: 'CSI500', name: '中证500', exchange: 'SSE', lotSize: 1, priceTick: 0.01, industry: '指数', sector: '宽基', listDate: 20050101, status: InstrumentStatus.Active },
-        { symbol: 'HS300', name: '沪深300', exchange: 'SSE', lotSize: 1, priceTick: 0.01, industry: '指数', sector: '宽基', listDate: 20050101, status: InstrumentStatus.Active },
+        {
+          symbol: 'CSI500',
+          name: '中证500',
+          exchange: 'SSE',
+          lotSize: 1,
+          priceTick: 0.01,
+          industry: '指数',
+          sector: '宽基',
+          listDate: 20050101,
+          status: InstrumentStatus.Active,
+        },
+        {
+          symbol: 'HS300',
+          name: '沪深300',
+          exchange: 'SSE',
+          lotSize: 1,
+          priceTick: 0.01,
+          industry: '指数',
+          sector: '宽基',
+          listDate: 20050101,
+          status: InstrumentStatus.Active,
+        },
       ]);
 
       const result = await dc.repos.instruments.query({ exchange: 'SSE' });
@@ -139,7 +269,8 @@ describe('DataCenter 集成测试', () => {
   describe('交易日历', () => {
     it('保存并查询交易日历', async () => {
       await dc.repos.calendars.save({
-        exchange: 'SSE', year: 2024,
+        exchange: 'SSE',
+        year: 2024,
         tradingDays: [1704067200000, 1704153600000],
         holidays: [1704240000000],
       });
@@ -154,7 +285,7 @@ describe('DataCenter 集成测试', () => {
     it('保存并查询复权因子', async () => {
       await dc.repos.adjustmentFactors.save([
         { symbol: 'CSI500', date: 1704067200000, factor: 1.05, type: AdjustmentType.Forward },
-        { symbol: 'CSI500', date: 1706745600000, factor: 1.10, type: AdjustmentType.Forward },
+        { symbol: 'CSI500', date: 1706745600000, factor: 1.1, type: AdjustmentType.Forward },
       ]);
 
       const factors = await dc.repos.adjustmentFactors.query('CSI500');
@@ -169,9 +300,26 @@ describe('DataCenter 集成测试', () => {
         reportDate: 1704067200000,
         announceDate: 1711929600000,
         reportType: ReportType.Annual,
-        income: { revenue: 100, costOfRevenue: 50, operatingIncome: 40, totalRevenue: 45, netIncome: 30 },
-        balanceSheet: { totalAssets: 500, totalLiabilities: 200, totalEquity: 300, currentAssets: 150, currentLiabilities: 80 },
-        cashFlow: { operatingCashFlow: 35, investingCashFlow: -10, financingCashFlow: -5, freeCashFlow: 25 },
+        income: {
+          revenue: 100,
+          costOfRevenue: 50,
+          operatingIncome: 40,
+          totalRevenue: 45,
+          netIncome: 30,
+        },
+        balanceSheet: {
+          totalAssets: 500,
+          totalLiabilities: 200,
+          totalEquity: 300,
+          currentAssets: 150,
+          currentLiabilities: 80,
+        },
+        cashFlow: {
+          operatingCashFlow: 35,
+          investingCashFlow: -10,
+          financingCashFlow: -5,
+          freeCashFlow: 25,
+        },
       };
       await dc.repos.financialReports.save([report]);
 
@@ -184,8 +332,11 @@ describe('DataCenter 集成测试', () => {
   describe('公告事件', () => {
     it('保存并查询公告', async () => {
       const event: AnnouncementEvent = {
-        id: 'evt-1', symbol: '600519', eventTime: 1704067200000,
-        eventType: AnnouncementEventType.Dividend, title: '分红公告',
+        id: 'evt-1',
+        symbol: '600519',
+        eventTime: 1704067200000,
+        eventType: AnnouncementEventType.Dividend,
+        title: '分红公告',
         impact: EventImpact.Positive,
       };
       await dc.repos.announcementEvents.save([event]);
@@ -199,8 +350,28 @@ describe('DataCenter 集成测试', () => {
   describe('Provider 集成', () => {
     it('MarketDataProvider 流式返回 K 线', async () => {
       await dc.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 2000, open: 5050, high: 5200, low: 5000, close: 5150, volume: 120000, turnover: 600000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 2000,
+          open: 5050,
+          high: 5200,
+          low: 5000,
+          close: 5150,
+          volume: 120000,
+          turnover: 600000000,
+        },
       ]);
 
       const collected: ExtendedBar[] = [];
@@ -212,7 +383,17 @@ describe('DataCenter 集成测试', () => {
 
     it('ReferenceDataProvider 查询标的', async () => {
       await dc.repos.instruments.save([
-        { symbol: 'CSI500', name: '中证500', exchange: 'SSE', lotSize: 1, priceTick: 0.01, industry: '指数', sector: '宽基', listDate: 20050101, status: InstrumentStatus.Active },
+        {
+          symbol: 'CSI500',
+          name: '中证500',
+          exchange: 'SSE',
+          lotSize: 1,
+          priceTick: 0.01,
+          industry: '指数',
+          sector: '宽基',
+          listDate: 20050101,
+          status: InstrumentStatus.Active,
+        },
       ]);
 
       const instruments = await dc.providers.reference.getInstruments();
@@ -222,7 +403,17 @@ describe('DataCenter 集成测试', () => {
 
     it('DataQualityChecker 完整性检查', async () => {
       await dc.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       const report = await dc.providers.quality.checkCompleteness('test', 'CSI500', 1000, 2000);
@@ -236,7 +427,17 @@ describe('DataCenter 集成测试', () => {
       const dbPath = path.join(tmpDir, 'persist-test.db');
       const dc1 = await createDataCenter({ dbPath });
       await dc1.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
       await dc1.close();
 
@@ -255,7 +456,17 @@ describe('DataCenter 集成测试', () => {
       const dbPath = path.join(tmpDir, 'no-close-test.db');
       const dc1 = await createDataCenter({ dbPath });
       await dc1.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
       // 不调用 close()，直接用新连接读取
       const dc2 = await createDataCenter({ dbPath });
@@ -299,7 +510,17 @@ describe('DataCenter 集成测试', () => {
       const dbPath = path.join(tmpDir, 'flush-test.db');
       const dcLocal = await createDataCenter({ dbPath });
       await dcLocal.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
       dcLocal.flush();
 
@@ -320,7 +541,17 @@ describe('DataCenter 集成测试', () => {
       const dbPath = path.join(tmpDir, 'immediate-test.db');
       const dcLocal = await createDataCenter({ dbPath, persistence: 'immediate' });
       await dcLocal.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       // 不调用 close()，但 immediate 模式已自动 flush
@@ -336,7 +567,9 @@ describe('DataCenter 集成测试', () => {
         dbPath: path.join(tmpDir, 'hook-block-old.db'),
         hooks: {
           beforeClose: async () => false,
-          afterClose: async () => { closeCalled = true; },
+          afterClose: async () => {
+            closeCalled = true;
+          },
         },
       });
       // 新版 close() 会抛出错误
@@ -364,7 +597,17 @@ describe('DataCenter 集成测试', () => {
       const dbPath = path.join(tmpDir, 'concurrent-close.db');
       const dcLocal = await createDataCenter({ dbPath });
       await dcLocal.repos.bars.save([
-        { symbol: 'CONCUR', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CONCUR',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       // 并发调用 close
@@ -383,7 +626,9 @@ describe('DataCenter 集成测试', () => {
       const dcLocal = await createDataCenter({
         dbPath: path.join(tmpDir, 'after-close-fail.db'),
         hooks: {
-          afterClose: async () => { afterCloseCalled = true; },
+          afterClose: async () => {
+            afterCloseCalled = true;
+          },
         },
       });
       // 正常 close
@@ -396,7 +641,9 @@ describe('DataCenter 集成测试', () => {
       const dcLocal = await createDataCenter({
         dbPath: path.join(tmpDir, 'hook-after.db'),
         hooks: {
-          afterClose: async () => { closeCalled = true; },
+          afterClose: async () => {
+            closeCalled = true;
+          },
         },
       });
       await dcLocal.close();
@@ -408,7 +655,9 @@ describe('DataCenter 集成测试', () => {
       const dcLocal = await createDataCenter({
         dbPath: path.join(tmpDir, 'hook-flush.db'),
         hooks: {
-          afterFlush: () => { flushCount++; },
+          afterFlush: () => {
+            flushCount++;
+          },
         },
       });
       dcLocal.flush();
@@ -434,7 +683,17 @@ describe('DataCenter 集成测试', () => {
       const dbPath = path.join(tmpDir, 'dispose-test.db');
       const dcLocal = await createDataCenter({ dbPath });
       await dcLocal.repos.bars.save([
-        { symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'CSI500',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
       await dcLocal[Symbol.asyncDispose]();
       expect(dcLocal.isClosed()).toBe(true);
@@ -450,9 +709,15 @@ describe('DataCenter 集成测试', () => {
   describe('分页查询', () => {
     it('cursor 分页', async () => {
       const bars: ExtendedBar[] = Array.from({ length: 25 }, (_, i) => ({
-        symbol: 'CSI500', timeframe: TimeFrame.D1, timestamp: (i + 1) * 1000,
-        open: 5000 + i, high: 5100 + i, low: 4900 + i, close: 5050 + i,
-        volume: 100000, turnover: 500000000,
+        symbol: 'CSI500',
+        timeframe: TimeFrame.D1,
+        timestamp: (i + 1) * 1000,
+        open: 5000 + i,
+        high: 5100 + i,
+        low: 4900 + i,
+        close: 5050 + i,
+        volume: 100000,
+        turnover: 500000000,
       }));
       await dc.repos.bars.save(bars);
 
@@ -463,12 +728,18 @@ describe('DataCenter 集成测试', () => {
       expect(page1.nextCursor).toBe(10000);
 
       // 第二页
-      const page2 = await dc.providers.market.getBarsPaged('CSI500', TimeFrame.D1, { limit: 10, afterTimestamp: page1.nextCursor });
+      const page2 = await dc.providers.market.getBarsPaged('CSI500', TimeFrame.D1, {
+        limit: 10,
+        afterTimestamp: page1.nextCursor,
+      });
       expect(page2.data).toHaveLength(10);
       expect(page2.hasMore).toBe(true);
 
       // 第三页
-      const page3 = await dc.providers.market.getBarsPaged('CSI500', TimeFrame.D1, { limit: 10, afterTimestamp: page2.nextCursor });
+      const page3 = await dc.providers.market.getBarsPaged('CSI500', TimeFrame.D1, {
+        limit: 10,
+        afterTimestamp: page2.nextCursor,
+      });
       expect(page3.data).toHaveLength(5);
       expect(page3.hasMore).toBe(false);
       expect(page3.nextCursor).toBeUndefined();
@@ -479,22 +750,82 @@ describe('DataCenter 集成测试', () => {
     it('asOfDate 过滤财报', async () => {
       const reports = [
         {
-          symbol: '600519', reportDate: 1000, announceDate: 1500,
-          reportType: ReportType.Q1, income: { revenue: 10, costOfRevenue: 5, operatingIncome: 4, totalRevenue: 4.5, netIncome: 3 },
-          balanceSheet: { totalAssets: 50, totalLiabilities: 20, totalEquity: 30, currentAssets: 15, currentLiabilities: 8 },
-          cashFlow: { operatingCashFlow: 3.5, investingCashFlow: -1, financingCashFlow: -0.5, freeCashFlow: 2.5 },
+          symbol: '600519',
+          reportDate: 1000,
+          announceDate: 1500,
+          reportType: ReportType.Q1,
+          income: {
+            revenue: 10,
+            costOfRevenue: 5,
+            operatingIncome: 4,
+            totalRevenue: 4.5,
+            netIncome: 3,
+          },
+          balanceSheet: {
+            totalAssets: 50,
+            totalLiabilities: 20,
+            totalEquity: 30,
+            currentAssets: 15,
+            currentLiabilities: 8,
+          },
+          cashFlow: {
+            operatingCashFlow: 3.5,
+            investingCashFlow: -1,
+            financingCashFlow: -0.5,
+            freeCashFlow: 2.5,
+          },
         },
         {
-          symbol: '600519', reportDate: 2000, announceDate: 2500,
-          reportType: ReportType.Q2, income: { revenue: 20, costOfRevenue: 10, operatingIncome: 8, totalRevenue: 9, netIncome: 6 },
-          balanceSheet: { totalAssets: 60, totalLiabilities: 25, totalEquity: 35, currentAssets: 20, currentLiabilities: 10 },
-          cashFlow: { operatingCashFlow: 7, investingCashFlow: -2, financingCashFlow: -1, freeCashFlow: 5 },
+          symbol: '600519',
+          reportDate: 2000,
+          announceDate: 2500,
+          reportType: ReportType.Q2,
+          income: {
+            revenue: 20,
+            costOfRevenue: 10,
+            operatingIncome: 8,
+            totalRevenue: 9,
+            netIncome: 6,
+          },
+          balanceSheet: {
+            totalAssets: 60,
+            totalLiabilities: 25,
+            totalEquity: 35,
+            currentAssets: 20,
+            currentLiabilities: 10,
+          },
+          cashFlow: {
+            operatingCashFlow: 7,
+            investingCashFlow: -2,
+            financingCashFlow: -1,
+            freeCashFlow: 5,
+          },
         },
         {
-          symbol: '600519', reportDate: 3000, announceDate: 3500,
-          reportType: ReportType.Annual, income: { revenue: 30, costOfRevenue: 15, operatingIncome: 12, totalRevenue: 13.5, netIncome: 9 },
-          balanceSheet: { totalAssets: 70, totalLiabilities: 30, totalEquity: 40, currentAssets: 25, currentLiabilities: 12 },
-          cashFlow: { operatingCashFlow: 10, investingCashFlow: -3, financingCashFlow: -1.5, freeCashFlow: 7 },
+          symbol: '600519',
+          reportDate: 3000,
+          announceDate: 3500,
+          reportType: ReportType.Annual,
+          income: {
+            revenue: 30,
+            costOfRevenue: 15,
+            operatingIncome: 12,
+            totalRevenue: 13.5,
+            netIncome: 9,
+          },
+          balanceSheet: {
+            totalAssets: 70,
+            totalLiabilities: 30,
+            totalEquity: 40,
+            currentAssets: 25,
+            currentLiabilities: 12,
+          },
+          cashFlow: {
+            operatingCashFlow: 10,
+            investingCashFlow: -3,
+            financingCashFlow: -1.5,
+            freeCashFlow: 7,
+          },
         },
       ];
       await dc.repos.financialReports.save(reports);
@@ -511,9 +842,33 @@ describe('DataCenter 集成测试', () => {
 
     it('asOfDate 过滤估值', async () => {
       await dc.repos.valuations.save([
-        { symbol: '000001', timestamp: 1000, marketCap: 100, peTTM: 10, pb: 1.2, psTTM: 3, dividendYield: 0.05 },
-        { symbol: '000001', timestamp: 2000, marketCap: 120, peTTM: 12, pb: 1.5, psTTM: 3.5, dividendYield: 0.04 },
-        { symbol: '000001', timestamp: 3000, marketCap: 150, peTTM: 15, pb: 1.8, psTTM: 4, dividendYield: 0.03 },
+        {
+          symbol: '000001',
+          timestamp: 1000,
+          marketCap: 100,
+          peTTM: 10,
+          pb: 1.2,
+          psTTM: 3,
+          dividendYield: 0.05,
+        },
+        {
+          symbol: '000001',
+          timestamp: 2000,
+          marketCap: 120,
+          peTTM: 12,
+          pb: 1.5,
+          psTTM: 3.5,
+          dividendYield: 0.04,
+        },
+        {
+          symbol: '000001',
+          timestamp: 3000,
+          marketCap: 150,
+          peTTM: 15,
+          pb: 1.8,
+          psTTM: 4,
+          dividendYield: 0.03,
+        },
       ]);
 
       const filtered = await dc.repos.valuations.query('000001', undefined, undefined, 2000);
@@ -526,12 +881,41 @@ describe('DataCenter 集成测试', () => {
 
     it('asOfDate 过滤股东人数', async () => {
       await dc.repos.shareholderMetrics.save([
-        { symbol: '000001', announceDate: 1000, endDate: 900, totalHolders: 50000, avgHoldingShares: 2000, avgHoldingAmount: 100000, changeRatio: -5 },
-        { symbol: '000001', announceDate: 2000, endDate: 1900, totalHolders: 48000, avgHoldingShares: 2100, avgHoldingAmount: 110000, changeRatio: -4 },
-        { symbol: '000001', announceDate: 3000, endDate: 2900, totalHolders: 45000, avgHoldingShares: 2200, avgHoldingAmount: 120000, changeRatio: -6.25 },
+        {
+          symbol: '000001',
+          announceDate: 1000,
+          endDate: 900,
+          totalHolders: 50000,
+          avgHoldingShares: 2000,
+          avgHoldingAmount: 100000,
+          changeRatio: -5,
+        },
+        {
+          symbol: '000001',
+          announceDate: 2000,
+          endDate: 1900,
+          totalHolders: 48000,
+          avgHoldingShares: 2100,
+          avgHoldingAmount: 110000,
+          changeRatio: -4,
+        },
+        {
+          symbol: '000001',
+          announceDate: 3000,
+          endDate: 2900,
+          totalHolders: 45000,
+          avgHoldingShares: 2200,
+          avgHoldingAmount: 120000,
+          changeRatio: -6.25,
+        },
       ]);
 
-      const filtered = await dc.repos.shareholderMetrics.query('000001', undefined, undefined, 2000);
+      const filtered = await dc.repos.shareholderMetrics.query(
+        '000001',
+        undefined,
+        undefined,
+        2000
+      );
       expect(filtered).toHaveLength(2);
       expect(filtered.every((m) => m.announceDate <= 2000)).toBe(true);
 
@@ -541,9 +925,48 @@ describe('DataCenter 集成测试', () => {
 
     it('asOfDate 过滤财务比率', async () => {
       await dc.repos.financialRatios.save([
-        { symbol: '000001', asOfDate: 1000, roe: 0.15, roa: 0.08, eps: 1.5, pe: 10, pb: 1.2, ps: 3, debtToEquity: 0.5, currentRatio: 2, grossMargin: 0.4, netMargin: 0.15 },
-        { symbol: '000001', asOfDate: 2000, roe: 0.18, roa: 0.09, eps: 1.8, pe: 12, pb: 1.5, ps: 3.5, debtToEquity: 0.45, currentRatio: 2.2, grossMargin: 0.42, netMargin: 0.18 },
-        { symbol: '000001', asOfDate: 3000, roe: 0.2, roa: 0.1, eps: 2.0, pe: 15, pb: 1.8, ps: 4, debtToEquity: 0.4, currentRatio: 2.5, grossMargin: 0.45, netMargin: 0.2 },
+        {
+          symbol: '000001',
+          asOfDate: 1000,
+          roe: 0.15,
+          roa: 0.08,
+          eps: 1.5,
+          pe: 10,
+          pb: 1.2,
+          ps: 3,
+          debtToEquity: 0.5,
+          currentRatio: 2,
+          grossMargin: 0.4,
+          netMargin: 0.15,
+        },
+        {
+          symbol: '000001',
+          asOfDate: 2000,
+          roe: 0.18,
+          roa: 0.09,
+          eps: 1.8,
+          pe: 12,
+          pb: 1.5,
+          ps: 3.5,
+          debtToEquity: 0.45,
+          currentRatio: 2.2,
+          grossMargin: 0.42,
+          netMargin: 0.18,
+        },
+        {
+          symbol: '000001',
+          asOfDate: 3000,
+          roe: 0.2,
+          roa: 0.1,
+          eps: 2.0,
+          pe: 15,
+          pb: 1.8,
+          ps: 4,
+          debtToEquity: 0.4,
+          currentRatio: 2.5,
+          grossMargin: 0.45,
+          netMargin: 0.2,
+        },
       ]);
 
       const filtered = await dc.repos.financialRatios.query('000001', undefined, undefined, 2000);
@@ -558,8 +981,11 @@ describe('DataCenter 集成测试', () => {
   describe('Watermark 水位', () => {
     it('保存和查询水位', async () => {
       await dc.repos.watermarks.upsert({
-        source: 'tushare', dataType: 'bar', symbol: 'CSI500',
-        lastTimestamp: 1700000000000, updatedAt: Date.now(),
+        source: 'tushare',
+        dataType: 'bar',
+        symbol: 'CSI500',
+        lastTimestamp: 1700000000000,
+        updatedAt: Date.now(),
       });
 
       const wm = await dc.repos.watermarks.get('tushare', 'bar', 'CSI500');
@@ -568,8 +994,11 @@ describe('DataCenter 集成测试', () => {
 
       // 更新水位
       await dc.repos.watermarks.upsert({
-        source: 'tushare', dataType: 'bar', symbol: 'CSI500',
-        lastTimestamp: 1800000000000, updatedAt: Date.now(),
+        source: 'tushare',
+        dataType: 'bar',
+        symbol: 'CSI500',
+        lastTimestamp: 1800000000000,
+        updatedAt: Date.now(),
       });
 
       const updated = await dc.repos.watermarks.get('tushare', 'bar', 'CSI500');
@@ -577,9 +1006,27 @@ describe('DataCenter 集成测试', () => {
     });
 
     it('列出水位', async () => {
-      await dc.repos.watermarks.upsert({ source: 'tushare', dataType: 'bar', symbol: 'CSI500', lastTimestamp: 1000, updatedAt: Date.now() });
-      await dc.repos.watermarks.upsert({ source: 'tushare', dataType: 'bar', symbol: 'HS300', lastTimestamp: 2000, updatedAt: Date.now() });
-      await dc.repos.watermarks.upsert({ source: 'akshare', dataType: 'tick', symbol: 'CSI500', lastTimestamp: 3000, updatedAt: Date.now() });
+      await dc.repos.watermarks.upsert({
+        source: 'tushare',
+        dataType: 'bar',
+        symbol: 'CSI500',
+        lastTimestamp: 1000,
+        updatedAt: Date.now(),
+      });
+      await dc.repos.watermarks.upsert({
+        source: 'tushare',
+        dataType: 'bar',
+        symbol: 'HS300',
+        lastTimestamp: 2000,
+        updatedAt: Date.now(),
+      });
+      await dc.repos.watermarks.upsert({
+        source: 'akshare',
+        dataType: 'tick',
+        symbol: 'CSI500',
+        lastTimestamp: 3000,
+        updatedAt: Date.now(),
+      });
 
       const all = await dc.repos.watermarks.list('tushare');
       expect(all).toHaveLength(2);
@@ -592,9 +1039,15 @@ describe('DataCenter 集成测试', () => {
   describe('标的信息扩展性', () => {
     it('attributes JSON 字段', async () => {
       const inst: ExtendedInstrument = {
-        symbol: '600519', name: '贵州茅台', exchange: 'SSE',
-        lotSize: 100, priceTick: 0.01, industry: '白酒', sector: '消费',
-        listDate: 20010827, status: InstrumentStatus.Active,
+        symbol: '600519',
+        name: '贵州茅台',
+        exchange: 'SSE',
+        lotSize: 100,
+        priceTick: 0.01,
+        industry: '白酒',
+        sector: '消费',
+        listDate: 20010827,
+        status: InstrumentStatus.Active,
         attributes: { marketCap: 2000000000000, peTTM: 30.5 },
       };
       await dc.repos.instruments.save([inst]);
@@ -605,8 +1058,10 @@ describe('DataCenter 集成测试', () => {
 
     it('TradingCalendar sessionType', async () => {
       await dc.repos.calendars.save({
-        exchange: 'SSE', year: 2024,
-        tradingDays: [1704067200000], holidays: [],
+        exchange: 'SSE',
+        year: 2024,
+        tradingDays: [1704067200000],
+        holidays: [],
         sessionType: 'regular',
       });
 
@@ -619,7 +1074,17 @@ describe('DataCenter 集成测试', () => {
     it('数据新鲜时通过检查', async () => {
       const recentTs = Date.now() - 1000; // 1秒前
       await dc.repos.bars.save([
-        { symbol: 'FRESH', timeframe: TimeFrame.D1, timestamp: recentTs, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'FRESH',
+          timeframe: TimeFrame.D1,
+          timestamp: recentTs,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       const report = await dc.providers.quality.checkFreshness('test', 'FRESH', 86400000); // 1天容忍
@@ -630,7 +1095,17 @@ describe('DataCenter 集成测试', () => {
     it('数据过期时报告问题', async () => {
       const staleTs = Date.now() - 7 * 86400000; // 7天前
       await dc.repos.bars.save([
-        { symbol: 'STALE', timeframe: TimeFrame.D1, timestamp: staleTs, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'STALE',
+          timeframe: TimeFrame.D1,
+          timestamp: staleTs,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       const report = await dc.providers.quality.checkFreshness('test', 'STALE', 86400000); // 1天容忍
@@ -643,7 +1118,17 @@ describe('DataCenter 集成测试', () => {
   describe('数据导出', () => {
     it('JSON 格式导出 K 线', async () => {
       await dc.repos.bars.save([
-        { symbol: 'EXP', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'EXP',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       const json = await dc.exporter.exportBars('EXP', TimeFrame.D1);
@@ -654,7 +1139,17 @@ describe('DataCenter 集成测试', () => {
 
     it('CSV 格式导出 K 线', async () => {
       await dc.repos.bars.save([
-        { symbol: 'EXP2', timeframe: TimeFrame.D1, timestamp: 1000, open: 5000, high: 5100, low: 4900, close: 5050, volume: 100000, turnover: 500000000 },
+        {
+          symbol: 'EXP2',
+          timeframe: TimeFrame.D1,
+          timestamp: 1000,
+          open: 5000,
+          high: 5100,
+          low: 4900,
+          close: 5050,
+          volume: 100000,
+          turnover: 500000000,
+        },
       ]);
 
       const csv = await dc.exporter.exportBars('EXP2', TimeFrame.D1, undefined, undefined, 'csv');

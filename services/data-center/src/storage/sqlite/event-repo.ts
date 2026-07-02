@@ -37,9 +37,13 @@ export class SqliteAnnouncementEventRepository implements AnnouncementEventRepos
       this.db.transaction((tx) => {
         for (const e of input) {
           const row = {
-            id: e.id, symbol: e.symbol, eventTime: e.eventTime,
-            eventType: e.eventType, title: e.title,
-            description: e.description ?? null, impact: e.impact,
+            id: e.id,
+            symbol: e.symbol,
+            eventTime: e.eventTime,
+            eventType: e.eventType,
+            title: e.title,
+            description: e.description ?? null,
+            impact: e.impact,
           };
           tx.insert(announcementEvents)
             .values(row)
@@ -57,12 +61,17 @@ export class SqliteAnnouncementEventRepository implements AnnouncementEventRepos
       const conditions = [eq(announcementEvents.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(announcementEvents.eventTime, start));
       if (end !== undefined) conditions.push(lte(announcementEvents.eventTime, end));
-      const rows = await this.db.select().from(announcementEvents)
+      const rows = await this.db
+        .select()
+        .from(announcementEvents)
         .where(and(...conditions))
         .orderBy(announcementEvents.eventTime);
       return rows.map((r) => ({
-        id: r.id, symbol: r.symbol, eventTime: r.eventTime,
-        eventType: r.eventType as AnnouncementEventType, title: r.title,
+        id: r.id,
+        symbol: r.symbol,
+        eventTime: r.eventTime,
+        eventType: r.eventType as AnnouncementEventType,
+        title: r.title,
         ...(r.description != null && { description: r.description }),
         impact: r.impact as EventImpact,
       }));
@@ -83,7 +92,10 @@ export class SqliteNewsRepository implements NewsRepository {
       this.db.transaction((tx) => {
         for (const a of input) {
           const row = {
-            id: a.id, publishTime: a.publishTime, title: a.title, source: a.source,
+            id: a.id,
+            publishTime: a.publishTime,
+            title: a.title,
+            source: a.source,
             symbols: JSON.stringify(a.symbols),
             sentimentScore: a.sentimentScore ?? null,
             tags: JSON.stringify(a.tags),
@@ -99,24 +111,36 @@ export class SqliteNewsRepository implements NewsRepository {
     }
   }
 
-  async query(symbols: string[], start?: number, end?: number, limit?: number): Promise<NewsArticle[]> {
+  async query(
+    symbols: string[],
+    start?: number,
+    end?: number,
+    limit?: number
+  ): Promise<NewsArticle[]> {
     try {
       const conditions = [];
       if (start !== undefined) conditions.push(gte(newsArticles.publishTime, start));
       if (end !== undefined) conditions.push(lte(newsArticles.publishTime, end));
 
       if (symbols.length > 0) {
-        const symbolConditions = symbols.map((s) => sql`${newsArticles.symbols} LIKE ${'%"' + s + '"%'}`);
+        const symbolConditions = symbols.map(
+          (s) => sql`${newsArticles.symbols} LIKE ${'%"' + s + '"%'}`
+        );
         conditions.push(sql`(${symbolConditions.map((c) => c.getSQL()).join(' OR ')})`);
       }
 
-      const rows = await this.db.select().from(newsArticles)
+      const rows = await this.db
+        .select()
+        .from(newsArticles)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(newsArticles.publishTime))
         .limit(limit ?? 1000);
 
       return rows.map((r) => ({
-        id: r.id, publishTime: r.publishTime, title: r.title, source: r.source,
+        id: r.id,
+        publishTime: r.publishTime,
+        title: r.title,
+        source: r.source,
         symbols: JSON.parse(r.symbols),
         ...(r.sentimentScore != null && { sentimentScore: r.sentimentScore }),
         tags: JSON.parse(r.tags),
@@ -137,7 +161,12 @@ export class SqliteSentimentRepository implements SentimentRepository {
     try {
       this.db.transaction((tx) => {
         for (const p of input) {
-          const row = { symbol: p.symbol, timestamp: p.timestamp, score: p.score, sampleSize: p.sampleSize };
+          const row = {
+            symbol: p.symbol,
+            timestamp: p.timestamp,
+            score: p.score,
+            sampleSize: p.sampleSize,
+          };
           tx.insert(sentimentPoints)
             .values(row)
             .onConflictDoUpdate({
@@ -157,11 +186,16 @@ export class SqliteSentimentRepository implements SentimentRepository {
       const conditions = [eq(sentimentPoints.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(sentimentPoints.timestamp, start));
       if (end !== undefined) conditions.push(lte(sentimentPoints.timestamp, end));
-      const rows = await this.db.select().from(sentimentPoints)
+      const rows = await this.db
+        .select()
+        .from(sentimentPoints)
         .where(and(...conditions))
         .orderBy(sentimentPoints.timestamp);
       return rows.map((r) => ({
-        symbol: r.symbol, timestamp: r.timestamp, score: r.score, sampleSize: r.sampleSize,
+        symbol: r.symbol,
+        timestamp: r.timestamp,
+        score: r.score,
+        sampleSize: r.sampleSize,
       }));
     } catch (err) {
       throw new QueryError(`查询情绪指标失败: ${symbol}`, err);
@@ -179,7 +213,13 @@ export class SqliteMacroIndicatorRepository implements MacroIndicatorRepository 
     try {
       this.db.transaction((tx) => {
         for (const d of defs) {
-          const row = { id: d.id, name: d.name, unit: d.unit, frequency: d.frequency, source: d.source };
+          const row = {
+            id: d.id,
+            name: d.name,
+            unit: d.unit,
+            frequency: d.frequency,
+            source: d.source,
+          };
           tx.insert(macroIndicatorDefs)
             .values(row)
             .onConflictDoUpdate({ target: macroIndicatorDefs.id, set: row })
@@ -195,8 +235,11 @@ export class SqliteMacroIndicatorRepository implements MacroIndicatorRepository 
     try {
       const rows = await this.db.select().from(macroIndicatorDefs);
       return rows.map((r) => ({
-        id: r.id, name: r.name, unit: r.unit,
-        frequency: r.frequency as MacroFrequency, source: r.source,
+        id: r.id,
+        name: r.name,
+        unit: r.unit,
+        frequency: r.frequency as MacroFrequency,
+        source: r.source,
       }));
     } catch (err) {
       throw new QueryError('查询宏观指标定义失败', err);
@@ -228,11 +271,15 @@ export class SqliteMacroIndicatorRepository implements MacroIndicatorRepository 
       const conditions = [eq(macroPoints.indicatorId, indicatorId)];
       if (start !== undefined) conditions.push(gte(macroPoints.timestamp, start));
       if (end !== undefined) conditions.push(lte(macroPoints.timestamp, end));
-      const rows = await this.db.select().from(macroPoints)
+      const rows = await this.db
+        .select()
+        .from(macroPoints)
         .where(and(...conditions))
         .orderBy(macroPoints.timestamp);
       return rows.map((r) => ({
-        indicatorId: r.indicatorId, timestamp: r.timestamp, value: r.value,
+        indicatorId: r.indicatorId,
+        timestamp: r.timestamp,
+        value: r.value,
       }));
     } catch (err) {
       throw new QueryError(`查询宏观数据失败: ${indicatorId}`, err);

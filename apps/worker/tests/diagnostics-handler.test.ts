@@ -11,7 +11,13 @@ function createMockBridge(override?: Partial<PythonBridge>): PythonBridge {
       data: {
         type: 'non_factor',
         param_sensitivity: [],
-        signal_quality: { total_signals: 0, win_rate: 0, avg_holding_bars: 0, profit_factor: 0, max_consecutive_losses: 0 },
+        signal_quality: {
+          total_signals: 0,
+          win_rate: 0,
+          avg_holding_bars: 0,
+          profit_factor: 0,
+          max_consecutive_losses: 0,
+        },
         slippage_stress: [],
       },
     }),
@@ -20,7 +26,13 @@ function createMockBridge(override?: Partial<PythonBridge>): PythonBridge {
       data: {
         type: 'non_factor',
         param_sensitivity: [],
-        signal_quality: { total_signals: 0, win_rate: 0, avg_holding_bars: 0, profit_factor: 0, max_consecutive_losses: 0 },
+        signal_quality: {
+          total_signals: 0,
+          win_rate: 0,
+          avg_holding_bars: 0,
+          profit_factor: 0,
+          max_consecutive_losses: 0,
+        },
         slippage_stress: [],
       },
     }),
@@ -48,7 +60,7 @@ describe('DiagnosticsHandler - fail-closed', () => {
 
     await queue.processAll();
     const tasks = await queue.list();
-    const failed = tasks.find(t => t.status === TaskStatus.Failed);
+    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
     expect(failed).toBeDefined();
     expect(failed!.error).toContain('No price data');
   });
@@ -72,7 +84,7 @@ describe('DiagnosticsHandler - fail-closed', () => {
 
     await queue.processAll();
     const tasks = await queue.list();
-    const failed = tasks.find(t => t.status === TaskStatus.Failed);
+    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
     expect(failed).toBeDefined();
     expect(failed!.error).toContain('empty diagnostics result');
   });
@@ -93,12 +105,16 @@ describe('DiagnosticsHandler - fail-closed', () => {
           id: 'test-task',
           type: TaskType.Diagnostics as never,
           status: TaskStatus.Running,
-          payload: { strategy: 'dual_ma', category: 'non_factor', configSnapshot: { strategy: 'dual_ma', params: {} } },
+          payload: {
+            strategy: 'dual_ma',
+            category: 'non_factor',
+            configSnapshot: { strategy: 'dual_ma', params: {} },
+          },
           submittedAt: Date.now(),
           startedAt: Date.now(),
         },
-        vi.fn(),
-      ),
+        vi.fn()
+      )
     ).rejects.toThrow('Python diagnostics crashed');
   });
 
@@ -117,12 +133,16 @@ describe('DiagnosticsHandler - fail-closed', () => {
           id: 'test-task',
           type: TaskType.Diagnostics as never,
           status: TaskStatus.Running,
-          payload: { strategy: 'dual_ma', category: 'non_factor', configSnapshot: { strategy: 'dual_ma', params: {} } },
+          payload: {
+            strategy: 'dual_ma',
+            category: 'non_factor',
+            configSnapshot: { strategy: 'dual_ma', params: {} },
+          },
           submittedAt: Date.now(),
           startedAt: Date.now(),
         },
-        vi.fn(),
-      ),
+        vi.fn()
+      )
     ).rejects.toThrow('empty diagnostics result');
   });
 
@@ -130,9 +150,20 @@ describe('DiagnosticsHandler - fail-closed', () => {
     const diagData = {
       type: 'non_factor',
       param_sensitivity: [
-        { param: 'period', values: [10, 15, 20, 25, 30], returns: [0.01, 0.02, 0.03, 0.02, 0.01], sharpe: [0.5, 0.8, 1.2, 0.9, 0.6] },
+        {
+          param: 'period',
+          values: [10, 15, 20, 25, 30],
+          returns: [0.01, 0.02, 0.03, 0.02, 0.01],
+          sharpe: [0.5, 0.8, 1.2, 0.9, 0.6],
+        },
       ],
-      signal_quality: { total_signals: 15, win_rate: 0.6, avg_holding_bars: 5, profit_factor: 2.1, max_consecutive_losses: 3 },
+      signal_quality: {
+        total_signals: 15,
+        win_rate: 0.6,
+        avg_holding_bars: 5,
+        profit_factor: 2.1,
+        max_consecutive_losses: 3,
+      },
       slippage_stress: [
         { bps: 1, return: 0.03, sharpe: 1.2, trade_count: 15 },
         { bps: 3, return: 0.025, sharpe: 1.0, trade_count: 15 },
@@ -156,7 +187,7 @@ describe('DiagnosticsHandler - fail-closed', () => {
 
     await queue.processAll();
     const tasks = await queue.list();
-    const completed = tasks.find(t => t.status === TaskStatus.Completed);
+    const completed = tasks.find((t) => t.status === TaskStatus.Completed);
     expect(completed).toBeDefined();
     expect(completed!.result).toBeDefined();
 
@@ -184,7 +215,7 @@ describe('DiagnosticsHandler - fail-closed', () => {
 
     await queue.processAll();
     const tasks = await queue.list();
-    const failed = tasks.find(t => t.status === TaskStatus.Failed);
+    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
     expect(failed).toBeDefined();
     expect(failed!.error).toContain('Python diagnostics failed');
   });

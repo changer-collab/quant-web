@@ -71,12 +71,12 @@
 
 ### 文件结构
 
-| 文件 | 职责 |
-|------|------|
-| `scripts/ralph/ralph.sh` | 循环脚本 |
-| `scripts/ralph/prd.json.example` | 示例格式 |
-| `scripts/ralph/AGENT_PROMPT.md` | AI 指令模板（引用 AGENTS.md 规则） |
-| `.github/workflows/ralph.yml` | GitHub Actions workflow |
+| 文件                             | 职责                               |
+| -------------------------------- | ---------------------------------- |
+| `scripts/ralph/ralph.sh`         | 循环脚本                           |
+| `scripts/ralph/prd.json.example` | 示例格式                           |
+| `scripts/ralph/AGENT_PROMPT.md`  | AI 指令模板（引用 AGENTS.md 规则） |
+| `.github/workflows/ralph.yml`    | GitHub Actions workflow            |
 
 ### Task 清单
 

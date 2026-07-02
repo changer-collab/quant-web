@@ -13,22 +13,27 @@ export class SqliteDiagnosticRepo implements IDiagnosticRepo {
   constructor(private db: ApiDb) {}
 
   async save(result: DiagnosticResult): Promise<void> {
-    await this.db.insert(diagnosticResults).values({
-      id: result.id,
-      taskId: result.taskId,
-      strategy: result.strategy,
-      category: result.category,
-      subcategory: result.subcategory,
-      configSnapshot: JSON.stringify(result.configSnapshot),
-      dataJson: JSON.stringify(result.dataJson),
-      createdAt: result.createdAt,
-      engineVersion: result.engineVersion,
-      expiresAt: result.expiresAt,
-    }).run();
+    await this.db
+      .insert(diagnosticResults)
+      .values({
+        id: result.id,
+        taskId: result.taskId,
+        strategy: result.strategy,
+        category: result.category,
+        subcategory: result.subcategory,
+        configSnapshot: JSON.stringify(result.configSnapshot),
+        dataJson: JSON.stringify(result.dataJson),
+        createdAt: result.createdAt,
+        engineVersion: result.engineVersion,
+        expiresAt: result.expiresAt,
+      })
+      .run();
   }
 
   async getById(id: string): Promise<DiagnosticResult | null> {
-    const rows = await this.db.select().from(diagnosticResults)
+    const rows = await this.db
+      .select()
+      .from(diagnosticResults)
       .where(eq(diagnosticResults.id, id))
       .limit(1);
     if (rows.length === 0) return null;
@@ -48,7 +53,9 @@ export class SqliteDiagnosticRepo implements IDiagnosticRepo {
   }
 
   async listByStrategy(strategy: string, limit = 20): Promise<DiagnosticResult[]> {
-    const rows = await this.db.select().from(diagnosticResults)
+    const rows = await this.db
+      .select()
+      .from(diagnosticResults)
       .where(eq(diagnosticResults.strategy, strategy))
       .orderBy(desc(diagnosticResults.createdAt))
       .limit(limit);
@@ -68,9 +75,7 @@ export class SqliteDiagnosticRepo implements IDiagnosticRepo {
 
   async purgeOlderThan(days: number): Promise<number> {
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-    await this.db.delete(diagnosticResults)
-      .where(lt(diagnosticResults.createdAt, cutoff))
-      .run();
+    await this.db.delete(diagnosticResults).where(lt(diagnosticResults.createdAt, cutoff)).run();
     return 0; // SQL.js 驱动不返回 affected rows count
   }
 }

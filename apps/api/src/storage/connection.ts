@@ -28,7 +28,17 @@ let currentDbPath: string | null = null;
 /** 获取 sql.js 包目录下的 wasm 文件路径（兼容 pnpm workspace） */
 function resolveWasmPath(file: string): string {
   // 尝试从当前包 node_modules 定位
-  const fromPackage = resolve(__dirname, '..', '..', '..', '..', 'node_modules', 'sql.js', 'dist', file);
+  const fromPackage = resolve(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    '..',
+    'node_modules',
+    'sql.js',
+    'dist',
+    file
+  );
   if (existsSync(fromPackage)) return fromPackage;
 
   // 尝试从 process.cwd() 向上逐层查找
@@ -163,13 +173,29 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
   // 迁移：为已有表安全添加新列（兼容旧 DB 文件，仅当列不存在时执行）
   const migrationColumns: Array<{ table: string; column: string; def: string }> = [
     // strategy_configs
-    { table: 'strategy_configs', column: 'category', def: 'category TEXT NOT NULL DEFAULT \'non_factor\'' },
+    {
+      table: 'strategy_configs',
+      column: 'category',
+      def: "category TEXT NOT NULL DEFAULT 'non_factor'",
+    },
     { table: 'strategy_configs', column: 'subcategory', def: 'subcategory TEXT' },
-    { table: 'strategy_configs', column: 'schema_version', def: 'schema_version INTEGER NOT NULL DEFAULT 1' },
+    {
+      table: 'strategy_configs',
+      column: 'schema_version',
+      def: 'schema_version INTEGER NOT NULL DEFAULT 1',
+    },
     // diagnostic_results
     { table: 'diagnostic_results', column: 'subcategory', def: 'subcategory TEXT' },
-    { table: 'diagnostic_results', column: 'engine_version', def: 'engine_version TEXT NOT NULL DEFAULT \'legacy\'' },
-    { table: 'diagnostic_results', column: 'expires_at', def: 'expires_at INTEGER NOT NULL DEFAULT 0' },
+    {
+      table: 'diagnostic_results',
+      column: 'engine_version',
+      def: "engine_version TEXT NOT NULL DEFAULT 'legacy'",
+    },
+    {
+      table: 'diagnostic_results',
+      column: 'expires_at',
+      def: 'expires_at INTEGER NOT NULL DEFAULT 0',
+    },
     // config_history
     { table: 'config_history', column: 'strategy_version', def: 'strategy_version TEXT' },
     { table: 'config_history', column: 'category', def: 'category TEXT' },

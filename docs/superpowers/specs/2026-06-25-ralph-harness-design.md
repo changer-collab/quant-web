@@ -27,12 +27,12 @@ ralph.sh 循环:
 
 ### 2.2 其他缺陷
 
-| 缺陷 | 影响 |
-|------|------|
-| progress.txt 分支切换时被 `>` 覆盖 | 丢失历史记忆 |
-| 无收敛检测 | 可能在同一问题上无限循环 |
-| 无单个 story 尝试次数限制 | 一个 story 可能耗尽所有迭代 |
-| `--print` 单轮无状态 | Claude 无法在执行中根据结果调整 |
+| 缺陷                               | 影响                            |
+| ---------------------------------- | ------------------------------- |
+| progress.txt 分支切换时被 `>` 覆盖 | 丢失历史记忆                    |
+| 无收敛检测                         | 可能在同一问题上无限循环        |
+| 无单个 story 尝试次数限制          | 一个 story 可能耗尽所有迭代     |
+| `--print` 单轮无状态               | Claude 无法在执行中根据结果调整 |
 
 ## 3. 设计方案
 
@@ -99,25 +99,25 @@ ralph.sh 循环:
 
 ## 4. 改进文件清单
 
-| 文件 | 变更 |
-|------|------|
-| `scripts/ralph/ralph-core.mjs` | **新增** — Node.js 核心模块，状态管理/错误检测/收敛判断/PRD 解析 |
-| `scripts/ralph/ralph.ps1` | **新增** — PowerShell 包装层，仅循环 + 调用 claude |
-| `scripts/ralph/ralph.sh` | **重写** — 简化为 Bash 包装层，仅循环 + 调用 core 模块 |
-| `scripts/ralph/AGENT_PROMPT.md` | 添加错误反馈读取指令 |
-| `.skills/ralph-harness/SKILL.md` | 更新为 Shell-Agnostic 架构文档 |
+| 文件                             | 变更                                                             |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `scripts/ralph/ralph-core.mjs`   | **新增** — Node.js 核心模块，状态管理/错误检测/收敛判断/PRD 解析 |
+| `scripts/ralph/ralph.ps1`        | **新增** — PowerShell 包装层，仅循环 + 调用 claude               |
+| `scripts/ralph/ralph.sh`         | **重写** — 简化为 Bash 包装层，仅循环 + 调用 core 模块           |
+| `scripts/ralph/AGENT_PROMPT.md`  | 添加错误反馈读取指令                                             |
+| `.skills/ralph-harness/SKILL.md` | 更新为 Shell-Agnostic 架构文档                                   |
 
 ## 5. 架构对比：v2（Bash脚本） vs v3（核心+双包装）
 
-| 维度 | v2（ralph-v2.sh） | v3（ralph-core.mjs + .ps1/.sh） |
-|------|------------------|-------------------------------|
-| **核心语言** | Bash | Node.js (ESM) |
-| **Shell 依赖** | 强（bash 语法） | 弱（包装层各 ~50 行） |
-| **Windows 原生** | 不支持 | 支持（PowerShell） |
-| **单元测试** | 不可测 | 可作为 ESM import 测试 |
-| **错误检测** | grep + sed | JS 正则（跨平台一致） |
-| **JSON 处理** | inline node -e | 原生 JSON.parse/stringify |
-| **状态序列化** | shell 变量拼接 | 结构化对象 |
+| 维度             | v2（ralph-v2.sh） | v3（ralph-core.mjs + .ps1/.sh） |
+| ---------------- | ----------------- | ------------------------------- |
+| **核心语言**     | Bash              | Node.js (ESM)                   |
+| **Shell 依赖**   | 强（bash 语法）   | 弱（包装层各 ~50 行）           |
+| **Windows 原生** | 不支持            | 支持（PowerShell）              |
+| **单元测试**     | 不可测            | 可作为 ESM import 测试          |
+| **错误检测**     | grep + sed        | JS 正则（跨平台一致）           |
+| **JSON 处理**    | inline node -e    | 原生 JSON.parse/stringify       |
+| **状态序列化**   | shell 变量拼接    | 结构化对象                      |
 
 ## 6. 验证方式
 

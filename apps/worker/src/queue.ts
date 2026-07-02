@@ -91,7 +91,9 @@ export class TaskQueue {
   }
 
   private loadIdCounter(): void {
-    const row = this.db.prepare('SELECT MAX(id) as max_id FROM tasks').get() as { max_id: string | null } | undefined;
+    const row = this.db.prepare('SELECT MAX(id) as max_id FROM tasks').get() as
+      | { max_id: string | null }
+      | undefined;
     const maxId = row?.max_id;
     if (maxId) {
       const match = maxId.match(/task-(\d+)/);
@@ -109,46 +111,61 @@ export class TaskQueue {
     await this.ensureInit();
     const id = `task-${++this.idCounter}`;
     const task: TaskRecord = {
-      id, type, status: TaskStatus.Pending, payload,
+      id,
+      type,
+      status: TaskStatus.Pending,
+      payload,
       submittedAt: Date.now(),
     };
-    this.db.prepare(
-      'INSERT INTO tasks (id, type, status, payload, submitted_at) VALUES (?, ?, ?, ?, ?)',
-    ).run(id, type, TaskStatus.Pending, JSON.stringify(payload), task.submittedAt);
+    this.db
+      .prepare('INSERT INTO tasks (id, type, status, payload, submitted_at) VALUES (?, ?, ?, ?, ?)')
+      .run(id, type, TaskStatus.Pending, JSON.stringify(payload), task.submittedAt);
     return task;
   }
 
   /** 获取任务 */
   async get(taskId: string): Promise<TaskRecord | undefined> {
     await this.ensureInit();
-    const row = this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as TaskRow | undefined;
+    const row = this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as
+      | TaskRow
+      | undefined;
     return row ? this.toRecord(row) : undefined;
   }
 
   /** 列出任务（按类型筛选） */
   async list(type?: TaskType): Promise<TaskRecord[]> {
     await this.ensureInit();
-    const rows = (type
-      ? this.db.prepare('SELECT * FROM tasks WHERE type = ? ORDER BY submitted_at DESC').all(type)
-      : this.db.prepare('SELECT * FROM tasks ORDER BY submitted_at DESC').all()) as TaskRow[];
+    const rows = (
+      type
+        ? this.db.prepare('SELECT * FROM tasks WHERE type = ? ORDER BY submitted_at DESC').all(type)
+        : this.db.prepare('SELECT * FROM tasks ORDER BY submitted_at DESC').all()
+    ) as TaskRow[];
     return rows.map((r) => this.toRecord(r));
   }
 
   /** 取消任务（仅 Pending 状态可取消） */
   async cancel(taskId: string): Promise<boolean> {
     await this.ensureInit();
-    const row = this.db.prepare('SELECT status FROM tasks WHERE id = ?').get(taskId) as { status: string } | undefined;
+    const row = this.db.prepare('SELECT status FROM tasks WHERE id = ?').get(taskId) as
+      | { status: string }
+      | undefined;
     if (!row) return false;
     if (row.status !== TaskStatus.Pending) return false;
     const now = Date.now();
-    this.db.prepare('UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?').run(TaskStatus.Cancelled, now, taskId);
+    this.db
+      .prepare('UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?')
+      .run(TaskStatus.Cancelled, now, taskId);
     return true;
   }
 
   /** 执行下一个待处理任务 */
-  async processNext(onEvent?: (taskId: string, event: StreamEvent) => void): Promise<TaskRecord | undefined> {
+  async processNext(
+    onEvent?: (taskId: string, event: StreamEvent) => void
+  ): Promise<TaskRecord | undefined> {
     await this.ensureInit();
-    const row = this.db.prepare('SELECT * FROM tasks WHERE status = ? ORDER BY submitted_at ASC LIMIT 1').get(TaskStatus.Pending) as TaskRow | undefined;
+    const row = this.db
+      .prepare('SELECT * FROM tasks WHERE status = ? ORDER BY submitted_at ASC LIMIT 1')
+      .get(TaskStatus.Pending) as TaskRow | undefined;
     if (!row) return undefined;
 
     const task = this.toRecord(row);
@@ -156,29 +173,40 @@ export class TaskQueue {
     if (!handler) return undefined;
 
     const now = Date.now();
-    this.db.prepare('UPDATE tasks SET status = ?, started_at = ? WHERE id = ?').run(TaskStatus.Running, now, task.id);
+    this.db
+      .prepare('UPDATE tasks SET status = ?, started_at = ? WHERE id = ?')
+      .run(TaskStatus.Running, now, task.id);
 
     // 构建事件回调：更新 DB 中的 progress/lines 并通知外部
     const taskLines: string[] = [];
     const handlerCallback: TaskEventHandler | undefined = onEvent
       ? (event: StreamEvent) => {
           if (event.event === 'progress') {
-            this.db.prepare('UPDATE tasks SET progress = ? WHERE id = ?').run(event.percent ?? 0, task.id);
+            this.db
+              .prepare('UPDATE tasks SET progress = ? WHERE id = ?')
+              .run(event.percent ?? 0, task.id);
           } else if (event.event === 'log') {
             taskLines.push(`[${event.level ?? 'info'}] ${event.message ?? ''}`);
-            this.db.prepare('UPDATE tasks SET lines = ? WHERE id = ?').run(JSON.stringify(taskLines), task.id);
+            this.db
+              .prepare('UPDATE tasks SET lines = ? WHERE id = ?')
+              .run(JSON.stringify(taskLines), task.id);
           }
           onEvent(task.id, event);
         }
       : undefined;
 
     try {
-      const result = await handler.handle({ ...task, status: TaskStatus.Running, startedAt: now }, handlerCallback);
-      this.db.prepare('UPDATE tasks SET status = ?, result = ?, completed_at = ? WHERE id = ?')
+      const result = await handler.handle(
+        { ...task, status: TaskStatus.Running, startedAt: now },
+        handlerCallback
+      );
+      this.db
+        .prepare('UPDATE tasks SET status = ?, result = ?, completed_at = ? WHERE id = ?')
         .run(TaskStatus.Completed, JSON.stringify(result), Date.now(), task.id);
       return this.get(task.id);
     } catch (err) {
-      this.db.prepare('UPDATE tasks SET status = ?, error = ?, completed_at = ? WHERE id = ?')
+      this.db
+        .prepare('UPDATE tasks SET status = ?, error = ?, completed_at = ? WHERE id = ?')
         .run(TaskStatus.Failed, String(err), Date.now(), task.id);
       return this.get(task.id);
     }

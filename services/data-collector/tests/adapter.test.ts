@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions } from '../src/adapters/types.js';
+import type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+} from '../src/adapters/types.js';
 import { CsvAdapter } from '../src/adapters/csv-adapter.js';
 import { TushareAdapter } from '../src/adapters/tushare-adapter.js';
 import { AkshareAdapter } from '../src/adapters/akshare-adapter.js';
@@ -36,7 +40,9 @@ describe('适配器接口类型', () => {
       name: 'test',
       supportedDomains: ['market'],
       supportedDataTypes: ['bar'],
-      fetch: async function* () { yield { symbol: 'CSI500', timestamp: 1 }; },
+      fetch: async function* () {
+        yield { symbol: 'CSI500', timestamp: 1 };
+      },
     };
     expect(adapter.name).toBe('test');
   });
@@ -116,7 +122,9 @@ describe('TushareAdapter', () => {
         domain: 'market',
         dataType: 'bar',
         symbol: 'CSI500',
-      })) { break; }
+      })) {
+        break;
+      }
     }).rejects.toThrow('Tushare token');
   });
 });

@@ -85,21 +85,77 @@ export const MOCK_FINANCIAL_RATIOS = [
     debtToEquity: 2.22,
     currentRatio: 1.19,
     grossMargin: 0.227,
-    netMargin: 0.110,
+    netMargin: 0.11,
   },
 ];
 
 /** Mock 估值序列 */
 export const MOCK_VALUATION_SERIES = [
-  { symbol: '600519.SH', timestamp: Date.UTC(2025, 0, 31), marketCap: 2_250_000_000_000, peTTM: 26.1, pb: 8.8, psTTM: 12.9, dividendYield: 0.019 },
-  { symbol: '600519.SH', timestamp: Date.UTC(2025, 1, 28), marketCap: 2_280_000_000_000, peTTM: 26.4, pb: 8.9, psTTM: 13.1, dividendYield: 0.018 },
-  { symbol: '600519.SH', timestamp: Date.UTC(2025, 2, 31), marketCap: 2_260_000_000_000, peTTM: 26.2, pb: 8.9, psTTM: 13.0, dividendYield: 0.019 },
-  { symbol: '600519.SH', timestamp: Date.UTC(2025, 3, 30), marketCap: 2_300_000_000_000, peTTM: 26.6, pb: 9.0, psTTM: 13.2, dividendYield: 0.018 },
-  { symbol: '600519.SH', timestamp: Date.UTC(2025, 4, 31), marketCap: 2_240_000_000_000, peTTM: 26.0, pb: 8.8, psTTM: 12.9, dividendYield: 0.019 },
+  {
+    symbol: '600519.SH',
+    timestamp: Date.UTC(2025, 0, 31),
+    marketCap: 2_250_000_000_000,
+    peTTM: 26.1,
+    pb: 8.8,
+    psTTM: 12.9,
+    dividendYield: 0.019,
+  },
+  {
+    symbol: '600519.SH',
+    timestamp: Date.UTC(2025, 1, 28),
+    marketCap: 2_280_000_000_000,
+    peTTM: 26.4,
+    pb: 8.9,
+    psTTM: 13.1,
+    dividendYield: 0.018,
+  },
+  {
+    symbol: '600519.SH',
+    timestamp: Date.UTC(2025, 2, 31),
+    marketCap: 2_260_000_000_000,
+    peTTM: 26.2,
+    pb: 8.9,
+    psTTM: 13.0,
+    dividendYield: 0.019,
+  },
+  {
+    symbol: '600519.SH',
+    timestamp: Date.UTC(2025, 3, 30),
+    marketCap: 2_300_000_000_000,
+    peTTM: 26.6,
+    pb: 9.0,
+    psTTM: 13.2,
+    dividendYield: 0.018,
+  },
+  {
+    symbol: '600519.SH',
+    timestamp: Date.UTC(2025, 4, 31),
+    marketCap: 2_240_000_000_000,
+    peTTM: 26.0,
+    pb: 8.8,
+    psTTM: 12.9,
+    dividendYield: 0.019,
+  },
 ];
 
 /** Mock 股东人数 */
 export const MOCK_SHAREHOLDER_METRICS = [
-  { symbol: '600519.SH', announceDate: Date.UTC(2025, 2, 15), endDate: Date.UTC(2024, 11, 31), totalHolders: 120_500, avgHoldingShares: 1000, avgHoldingAmount: 1_800_000, changeRatio: -3.2 },
-  { symbol: '600519.SH', announceDate: Date.UTC(2024, 8, 30), endDate: Date.UTC(2024, 5, 30), totalHolders: 124_500, avgHoldingShares: 970, avgHoldingAmount: 1_720_000, changeRatio: -2.1 },
+  {
+    symbol: '600519.SH',
+    announceDate: Date.UTC(2025, 2, 15),
+    endDate: Date.UTC(2024, 11, 31),
+    totalHolders: 120_500,
+    avgHoldingShares: 1000,
+    avgHoldingAmount: 1_800_000,
+    changeRatio: -3.2,
+  },
+  {
+    symbol: '600519.SH',
+    announceDate: Date.UTC(2024, 8, 30),
+    endDate: Date.UTC(2024, 5, 30),
+    totalHolders: 124_500,
+    avgHoldingShares: 970,
+    avgHoldingAmount: 1_720_000,
+    changeRatio: -2.1,
+  },
 ];

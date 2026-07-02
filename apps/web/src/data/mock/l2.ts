@@ -20,8 +20,7 @@ export function generateMockSnapshot(symbol: string, basePrice: number = 50) {
 }
 
 /** 生成模拟逐笔成交 */
-export function generateMockTradeRecords(symbol: string, count: number = 20,
-) {
+export function generateMockTradeRecords(symbol: string, count: number = 20) {
   const records = [];
   const now = Date.now();
   for (let i = 0; i < count; i++) {
@@ -38,8 +37,7 @@ export function generateMockTradeRecords(symbol: string, count: number = 20,
 }
 
 /** 生成模拟逐笔委托 */
-export function generateMockOrderRecords(symbol: string, count: number = 20,
-) {
+export function generateMockOrderRecords(symbol: string, count: number = 20) {
   const records = [];
   const now = Date.now();
   for (let i = 0; i < count; i++) {

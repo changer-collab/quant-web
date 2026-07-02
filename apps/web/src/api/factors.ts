@@ -19,7 +19,9 @@ export function fetchFactor(id: string): Promise<ApiFactor> {
   return apiGet<ApiFactor>(`/factors/${id}`);
 }
 
-export function createFactor(factor: Omit<ApiFactor, 'version'> & { version?: string }): Promise<ApiFactor> {
+export function createFactor(
+  factor: Omit<ApiFactor, 'version'> & { version?: string }
+): Promise<ApiFactor> {
   return apiPost<ApiFactor>('/factors', factor);
 }
 

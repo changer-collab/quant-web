@@ -14,12 +14,7 @@ import { vi, afterEach } from 'vitest';
  */
 export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
   const method = (init?.method ?? 'GET').toUpperCase();
-  const url =
-    typeof input === 'string'
-      ? input
-      : input instanceof URL
-        ? input.href
-        : input.url;
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
   let body: unknown;
   if (method === 'POST') {
@@ -34,7 +29,12 @@ export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
         engine_version: '1.0.0',
       };
     } else {
-      body = { id: 'mock-task-id', taskId: 'mock-task-id', status: 'pending', diagnostics: { type: 'diagnostics' } };
+      body = {
+        id: 'mock-task-id',
+        taskId: 'mock-task-id',
+        status: 'pending',
+        diagnostics: { type: 'diagnostics' },
+      };
     }
   } else if (method === 'PUT') {
     if (url.includes('/config')) {
@@ -58,7 +58,7 @@ export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
     new Response(JSON.stringify(body), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-    }),
+    })
   );
 });
 

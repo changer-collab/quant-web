@@ -34,7 +34,7 @@ export class FactorComputeHandler implements TaskHandler {
 
   constructor(
     private readonly dataCenter: DataCenter,
-    private readonly factorEngine: FactorComputeEngine,
+    private readonly factorEngine: FactorComputeEngine
   ) {}
 
   async handle(task: TaskRecord): Promise<Record<string, unknown>> {
@@ -43,14 +43,16 @@ export class FactorComputeHandler implements TaskHandler {
     const bars: Bar[] = [];
     for await (const bar of this.dataCenter.providers.market.loadBars(
       payload.symbol,
-      payload.timeframe,
+      payload.timeframe
     )) {
       bars.push(bar);
     }
     if (bars.length === 0) throw new Error(`无行情数据: ${payload.symbol}`);
 
     const requests: FactorComputeRequest[] = payload.factorIds.map((factorId) => ({
-      factorId, symbol: payload.symbol, bars,
+      factorId,
+      symbol: payload.symbol,
+      bars,
     }));
 
     const result = this.factorEngine.computeBatch(requests);

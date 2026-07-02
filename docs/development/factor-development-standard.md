@@ -42,16 +42,16 @@ FactorDefinition(
 
 ### category 分类
 
-| 分类 | 说明 |
-|------|------|
-| `momentum` | 动量/反转 |
-| `volatility` | 波动率 |
-| `volume` | 量价 |
-| `value` | 价值 |
-| `quality` | 质量 |
-| `growth` | 成长 |
-| `technical` | 技术指标 |
-| `custom` | 自定义 |
+| 分类         | 说明      |
+| ------------ | --------- |
+| `momentum`   | 动量/反转 |
+| `volatility` | 波动率    |
+| `volume`     | 量价      |
+| `value`      | 价值      |
+| `quality`    | 质量      |
+| `growth`     | 成长      |
+| `technical`  | 技术指标  |
+| `custom`     | 自定义    |
 
 ## 4. compute 方法规范
 
@@ -60,6 +60,7 @@ FactorDefinition(
 **输出**：`pd.Series`，与输入等长，NaN 表示无法计算
 
 **禁止**：
+
 - 访问数据库或网络
 - 修改输入 DataFrame
 - 返回不等长 Series
@@ -69,12 +70,12 @@ FactorDefinition(
 
 由 `FactorEvaluator` 执行，开发者无需自己写评估逻辑。
 
-| 指标 | 说明 | 有效阈值 |
-|------|------|----------|
-| IC | Pearson 相关系数 | > 0.03 有效，> 0.05 强 |
-| Rank IC | Spearman 秩相关 | > IC 说明单调性好 |
-| 多空收益 | 最高组 - 最低组 | > 5% 区分度高 |
-| IC 胜率 | IC > 0 的比例 | > 55% 稳定 |
+| 指标     | 说明             | 有效阈值               |
+| -------- | ---------------- | ---------------------- |
+| IC       | Pearson 相关系数 | > 0.03 有效，> 0.05 强 |
+| Rank IC  | Spearman 秩相关  | > IC 说明单调性好      |
+| 多空收益 | 最高组 - 最低组  | > 5% 区分度高          |
+| IC 胜率  | IC > 0 的比例    | > 55% 稳定             |
 
 分层回测委托给回测引擎，不在 factor-lab 内实现。
 

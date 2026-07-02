@@ -24,7 +24,12 @@ const CATEGORY_CLASSES: Record<NormalizedKeywordTile['category'], string> = {
   observation: styles.keywordTileObservation,
 };
 
-export function KeywordTileGrid({ title, items, fallbackText, maxItems }: KeywordTileGridProps): JSX.Element | null {
+export function KeywordTileGrid({
+  title,
+  items,
+  fallbackText,
+  maxItems,
+}: KeywordTileGridProps): JSX.Element | null {
   const tiles = normalizeKeywordTiles({ items, fallbackText, maxItems });
 
   if (!tiles.length) return null;

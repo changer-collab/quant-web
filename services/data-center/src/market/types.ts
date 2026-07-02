@@ -35,7 +35,12 @@ export interface MarketDataQuery {
 /** L1 行情 Provider 接口 */
 export interface MarketDataProvider {
   /** 流式返回 K 线 */
-  loadBars(symbol: string, timeframe: TimeFrame, start?: number, end?: number): AsyncIterable<ExtendedBar>;
+  loadBars(
+    symbol: string,
+    timeframe: TimeFrame,
+    start?: number,
+    end?: number
+  ): AsyncIterable<ExtendedBar>;
   /** 流式返回 Tick */
   loadTicks(symbol: string, start?: number, end?: number): AsyncIterable<ExtendedTick>;
   /** 获取最新 K 线 */
@@ -43,5 +48,9 @@ export interface MarketDataProvider {
   /** 获取可用标的列表 */
   getAvailableSymbols(timeframe?: TimeFrame): Promise<string[]>;
   /** 分页查询 K 线（cursor 方式） */
-  getBarsPaged(symbol: string, timeframe: TimeFrame, params?: PageParams): Promise<PageResult<ExtendedBar>>;
+  getBarsPaged(
+    symbol: string,
+    timeframe: TimeFrame,
+    params?: PageParams
+  ): Promise<PageResult<ExtendedBar>>;
 }

@@ -12,12 +12,16 @@ export class SqliteWatermarkRepository implements WatermarkRepository {
 
   async get(source: string, dataType: string, symbol: string): Promise<Watermark | undefined> {
     try {
-      const rows = await this.db.select().from(watermarks)
-        .where(and(
-          eq(watermarks.source, source),
-          eq(watermarks.dataType, dataType),
-          eq(watermarks.symbol, symbol),
-        ))
+      const rows = await this.db
+        .select()
+        .from(watermarks)
+        .where(
+          and(
+            eq(watermarks.source, source),
+            eq(watermarks.dataType, dataType),
+            eq(watermarks.symbol, symbol)
+          )
+        )
         .limit(1);
       if (rows.length === 0) return undefined;
       const r = rows[0];
@@ -42,7 +46,8 @@ export class SqliteWatermarkRepository implements WatermarkRepository {
         lastTimestamp: wm.lastTimestamp,
         updatedAt: wm.updatedAt,
       };
-      await this.db.insert(watermarks)
+      await this.db
+        .insert(watermarks)
         .values(row)
         .onConflictDoUpdate({
           target: [watermarks.source, watermarks.dataType, watermarks.symbol],
@@ -57,7 +62,9 @@ export class SqliteWatermarkRepository implements WatermarkRepository {
     try {
       const conditions = [eq(watermarks.source, source)];
       if (dataType !== undefined) conditions.push(eq(watermarks.dataType, dataType));
-      const rows = await this.db.select().from(watermarks)
+      const rows = await this.db
+        .select()
+        .from(watermarks)
         .where(and(...conditions));
       return rows.map((r) => ({
         source: r.source,

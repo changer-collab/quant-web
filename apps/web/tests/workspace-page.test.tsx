@@ -41,7 +41,12 @@ vi.mock('../src/api/tasks', () => ({
             data: {
               type: 'non_factor',
               param_sensitivity: [],
-              signal_quality: { total_signals: 0, win_rate: 0, avg_holding_bars: 0, profit_factor: 0 },
+              signal_quality: {
+                total_signals: 0,
+                win_rate: 0,
+                avg_holding_bars: 0,
+                profit_factor: 0,
+              },
               slippage_stress: [],
             },
           },
@@ -63,8 +68,22 @@ vi.mock('../src/api/tasks', () => ({
                 { timestamp: 1704153600000, equity: 1_123_400 },
               ],
               trades: [
-                { timestamp: 1704067200000, side: 'buy', price: 10, quantity: 100, pnl: 0, reason: 'entry' },
-                { timestamp: 1704153600000, side: 'sell', price: 11.23, quantity: 100, pnl: 123, reason: 'exit' },
+                {
+                  timestamp: 1704067200000,
+                  side: 'buy',
+                  price: 10,
+                  quantity: 100,
+                  pnl: 0,
+                  reason: 'entry',
+                },
+                {
+                  timestamp: 1704153600000,
+                  side: 'sell',
+                  price: 11.23,
+                  quantity: 100,
+                  pnl: 123,
+                  reason: 'exit',
+                },
               ],
             },
           },
@@ -100,12 +119,7 @@ describe('WorkspacePage', () => {
     const user = userEvent.setup();
 
     render(
-      <WorkspacePage
-        strategy={strategy}
-        onBack={vi.fn()}
-        language="zh"
-        ui={getUiCopy('zh')}
-      />,
+      <WorkspacePage strategy={strategy} onBack={vi.fn()} language="zh" ui={getUiCopy('zh')} />
     );
 
     await user.click(screen.getByRole('button', { name: '开始诊断' }));
@@ -117,10 +131,12 @@ describe('WorkspacePage', () => {
       expect(screen.getByText('12.34%')).toBeInTheDocument();
     });
     expect(screen.queryByText('35.2%')).not.toBeInTheDocument();
-    expect(apiMockState.savedTaskPayloads[0]).toEqual(expect.objectContaining({
-      symbol: '000001',
-      timeframe: '1h',
-      initialCash: 2_000_000,
-    }));
+    expect(apiMockState.savedTaskPayloads[0]).toEqual(
+      expect.objectContaining({
+        symbol: '000001',
+        timeframe: '1h',
+        initialCash: 2_000_000,
+      })
+    );
   });
 });

@@ -6,7 +6,7 @@ export function generateMockBars(
   symbol: string,
   timeframe: TimeFrame,
   count: number = 100,
-  basePrice: number = 50,
+  basePrice: number = 50
 ) {
   const bars = [];
   const now = Date.now();
@@ -31,7 +31,7 @@ export function generateMockBars(
       low: round(low),
       close: round(close),
       volume,
-      turnover: round(volume * (open + close) / 2),
+      turnover: round((volume * (open + close)) / 2),
       openInterest: undefined,
       numTrades: Math.floor(volume / 100),
     });
@@ -43,11 +43,7 @@ export function generateMockBars(
 }
 
 /** 生成模拟 Tick 数据 */
-export function generateMockTicks(
-  symbol: string,
-  count: number = 20,
-  basePrice: number = 50,
-) {
+export function generateMockTicks(symbol: string, count: number = 20, basePrice: number = 50) {
   const ticks = [];
   const now = Date.now();
   let price = basePrice;
@@ -77,12 +73,18 @@ export function generateMockTicks(
 /** 获取时间周期对应的毫秒数 */
 function getIntervalMs(timeframe: TimeFrame): number {
   switch (timeframe) {
-    case TimeFrame.M1: return 60 * 1000;
-    case TimeFrame.M5: return 5 * 60 * 1000;
-    case TimeFrame.M15: return 15 * 60 * 1000;
-    case TimeFrame.H1: return 60 * 60 * 1000;
-    case TimeFrame.D1: return 24 * 60 * 60 * 1000;
-    default: return 60 * 1000;
+    case TimeFrame.M1:
+      return 60 * 1000;
+    case TimeFrame.M5:
+      return 5 * 60 * 1000;
+    case TimeFrame.M15:
+      return 15 * 60 * 1000;
+    case TimeFrame.H1:
+      return 60 * 60 * 1000;
+    case TimeFrame.D1:
+      return 24 * 60 * 60 * 1000;
+    default:
+      return 60 * 1000;
   }
 }
 

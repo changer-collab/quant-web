@@ -33,7 +33,7 @@ export class ConfigHashConflictError extends Error {
   constructor(
     public readonly expectedHash: string,
     public readonly currentHash: string,
-    public readonly currentSnapshot: ConfigSnapshot,
+    public readonly currentSnapshot: ConfigSnapshot
   ) {
     super(`Config hash conflict: expected ${expectedHash}, current ${currentHash}`);
     this.name = 'ConfigHashConflictError';
@@ -56,9 +56,13 @@ function canonicalJson(obj: Record<string, unknown>): string {
 /**
  * 校验策略分类是否属于 canonical 3 值
  */
-function assertCanonicalCategory(category?: string): asserts category is StrategyCategory | undefined {
+function assertCanonicalCategory(
+  category?: string
+): asserts category is StrategyCategory | undefined {
   if (category !== undefined && !CANONICAL_CATEGORIES.has(category)) {
-    throw new Error(`Invalid category: "${category}". Must be one of: ${[...CANONICAL_CATEGORIES].join(', ')}`);
+    throw new Error(
+      `Invalid category: "${category}". Must be one of: ${[...CANONICAL_CATEGORIES].join(', ')}`
+    );
   }
 }
 
@@ -76,7 +80,7 @@ export class StrategyConfigService {
   buildDefaultSnapshot(
     strategy: string,
     strategyVersion: string,
-    category?: StrategyCategory,
+    category?: StrategyCategory
   ): ConfigSnapshot {
     assertCanonicalCategory(category);
 
@@ -112,7 +116,7 @@ export class StrategyConfigService {
   async getOrDefault(
     strategy: string,
     strategyVersion: string,
-    category?: StrategyCategory,
+    category?: StrategyCategory
   ): Promise<{ persisted: boolean; configSnapshot: ConfigSnapshot }> {
     const existing = await this.repo.get(strategy);
 
@@ -139,10 +143,7 @@ export class StrategyConfigService {
    * - expectedHash 未提供 → 无条件写入（首存）
    * - 保存成功 → 返回保存后的 ConfigSnapshot
    */
-  async save(
-    snapshot: ConfigSnapshot,
-    expectedHash?: string,
-  ): Promise<ConfigSnapshot> {
+  async save(snapshot: ConfigSnapshot, expectedHash?: string): Promise<ConfigSnapshot> {
     // 校验：空 strategy
     if (!snapshot.strategy) {
       throw new Error('strategy is required');
@@ -155,11 +156,7 @@ export class StrategyConfigService {
     if (expectedHash !== undefined) {
       const existing = await this.repo.get(snapshot.strategy);
       if (existing && existing.hash !== expectedHash) {
-        throw new ConfigHashConflictError(
-          expectedHash,
-          existing.hash ?? '',
-          existing,
-        );
+        throw new ConfigHashConflictError(expectedHash, existing.hash ?? '', existing);
       }
     }
 
@@ -182,7 +179,11 @@ export class StrategyConfigService {
   }
 
   /** @deprecated 使用 save(snapshot, expectedHash?) 替代 */
-  async saveConfig(strategy: string, configJson: Record<string, unknown>, hash: string): Promise<void> {
+  async saveConfig(
+    strategy: string,
+    configJson: Record<string, unknown>,
+    hash: string
+  ): Promise<void> {
     await this.save({ strategy, params: configJson, hash });
   }
 }

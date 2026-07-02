@@ -46,7 +46,7 @@
 }
 
 .chevron::after {
-  content: "▾";
+  content: '▾';
   line-height: 1;
 }
 

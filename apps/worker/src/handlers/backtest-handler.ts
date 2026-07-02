@@ -51,7 +51,9 @@ export class BacktestHandler implements TaskHandler {
     } else {
       fallbackParams = payload.params ?? {};
       snapshotParams = fallbackParams;
-      console.warn('[backtest-handler] deprecated: payload.params will be removed, use configSnapshot.params');
+      console.warn(
+        '[backtest-handler] deprecated: payload.params will be removed, use configSnapshot.params'
+      );
     }
 
     const request = {

@@ -31,7 +31,17 @@ function WorkspaceMockup({
   ui,
 }: {
   configSummary: string[];
-  mode: { id: string; label: string; title: string; description: string; codeFile: string; codeSample: string; configItems: { label: string; value: string; description: string }[]; heroMetrics: { label: string; value: string; tone: MetricTone }[]; sections: { title: string; items: string[] }[] };
+  mode: {
+    id: string;
+    label: string;
+    title: string;
+    description: string;
+    codeFile: string;
+    codeSample: string;
+    configItems: { label: string; value: string; description: string }[];
+    heroMetrics: { label: string; value: string; tone: MetricTone }[];
+    sections: { title: string; items: string[] }[];
+  };
   onRunResearch: () => void;
   selectedStrategy?: StrategyRow;
   backtestConfig: BacktestConfig;
@@ -86,7 +96,9 @@ function WorkspaceMockup({
               <input
                 type="date"
                 value={tsToDate(backtestConfig.startTs)}
-                onChange={(e) => onConfigChange({ ...backtestConfig, startTs: dateToTs(e.target.value) })}
+                onChange={(e) =>
+                  onConfigChange({ ...backtestConfig, startTs: dateToTs(e.target.value) })
+                }
                 className={workspace.configInput}
               />
             </div>
@@ -95,7 +107,9 @@ function WorkspaceMockup({
               <input
                 type="date"
                 value={tsToDate(backtestConfig.endTs)}
-                onChange={(e) => onConfigChange({ ...backtestConfig, endTs: dateToTs(e.target.value) })}
+                onChange={(e) =>
+                  onConfigChange({ ...backtestConfig, endTs: dateToTs(e.target.value) })
+                }
                 className={workspace.configInput}
               />
             </div>
@@ -104,7 +118,9 @@ function WorkspaceMockup({
               <input
                 type="number"
                 value={backtestConfig.initialCash}
-                onChange={(e) => onConfigChange({ ...backtestConfig, initialCash: Number(e.target.value) })}
+                onChange={(e) =>
+                  onConfigChange({ ...backtestConfig, initialCash: Number(e.target.value) })
+                }
                 className={workspace.configInput}
               />
             </div>
@@ -139,7 +155,12 @@ function WorkspaceMockup({
             ))}
           </div>
         </div>
-        <button className={buttons.workspaceRunButton} data-testid="workspace-run-research" onClick={onRunResearch} type="button">
+        <button
+          className={buttons.workspaceRunButton}
+          data-testid="workspace-run-research"
+          onClick={onRunResearch}
+          type="button"
+        >
           {ui.runResearch}
         </button>
       </aside>
@@ -185,7 +206,17 @@ export function WorkspaceContent({
   ui,
 }: {
   configSummary: string[];
-  mode: { id: string; label: string; title: string; description: string; codeFile: string; codeSample: string; configItems: { label: string; value: string; description: string }[]; heroMetrics: { label: string; value: string; tone: MetricTone }[]; sections: { title: string; items: string[] }[] };
+  mode: {
+    id: string;
+    label: string;
+    title: string;
+    description: string;
+    codeFile: string;
+    codeSample: string;
+    configItems: { label: string; value: string; description: string }[];
+    heroMetrics: { label: string; value: string; tone: MetricTone }[];
+    sections: { title: string; items: string[] }[];
+  };
   onRunResearch: () => void;
   strategies: StrategyRow[];
   selectedStrategy?: StrategyRow;

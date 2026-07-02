@@ -14,31 +14,31 @@
 
 ### 0.1 唯一裁决原则
 
-| 争议 | 裁决 |
-|---|---|
-| 产品分类、参数、配置、Preview、Task、Diagnostics 的最终 shape | 以 06-29 backend-sync 为准 |
-| 后端内部路由、Processor、Repo DI、完成回调拆分 | 采用 06-30 backend-realign 的结构方案 |
-| `apps/api/src/routes/task.ts` 的改动顺序 | 先定义统一 result envelope，再抽 `ResultProcessor`，再接入 `ConfigSnapshot` 验证和报告/诊断持久化 |
-| `StrategyCategory` / `StrategySubcategory` 是否单独走 06-30 P2 | 不单独走；并入本计划 Phase 2 的 canonical taxonomy 迁移 |
-| Python 通道统一是否单独走 06-30 A4 | 不单独走；随本计划 Python CLI diagnostics/configSnapshot 改造时收敛 |
-| Worker 死队列清理 | 保留为独立收尾任务，不阻塞主链路 |
-| 前端当前旧结构是否作为目标 | 不作为目标；当前 `ResearchModeId`、旧 subcategory、mock diagnostics 都视为迁移差距 |
+| 争议                                                           | 裁决                                                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 产品分类、参数、配置、Preview、Task、Diagnostics 的最终 shape  | 以 06-29 backend-sync 为准                                                                        |
+| 后端内部路由、Processor、Repo DI、完成回调拆分                 | 采用 06-30 backend-realign 的结构方案                                                             |
+| `apps/api/src/routes/task.ts` 的改动顺序                       | 先定义统一 result envelope，再抽 `ResultProcessor`，再接入 `ConfigSnapshot` 验证和报告/诊断持久化 |
+| `StrategyCategory` / `StrategySubcategory` 是否单独走 06-30 P2 | 不单独走；并入本计划 Phase 2 的 canonical taxonomy 迁移                                           |
+| Python 通道统一是否单独走 06-30 A4                             | 不单独走；随本计划 Python CLI diagnostics/configSnapshot 改造时收敛                               |
+| Worker 死队列清理                                              | 保留为独立收尾任务，不阻塞主链路                                                                  |
+| 前端当前旧结构是否作为目标                                     | 不作为目标；当前 `ResearchModeId`、旧 subcategory、mock diagnostics 都视为迁移差距                |
 
 ### 0.2 来源方案保留关系
 
-| 原方案内容 | 整合后位置 |
-|---|---|
-| 06-29 Phase 0 diagnostics 算法设计 | Phase 0 |
-| 06-30 P0 `TaskResult` / `DiagnosticResult` / `ApiTaskType` 止血 | Phase 1 |
-| 06-30 P1 `/api/strategies` 路由合并、`ResultProcessor`、Repo DI | Phase 1.5 |
-| 06-29 Task 1-2 taxonomy / metadata | Phase 2 |
-| 06-29 Task 3-4 ConfigSnapshot / DB / Repo | Phase 3 |
-| 06-29 Task 5 Preview | Phase 4 |
-| 06-29 Task 6-8 Task / Worker / Python CLI | Phase 5 |
-| 06-29 Task 9-11 Diagnostics algorithms | Phase 6 |
-| 06-29 Task 12 Backtest end-to-end | Phase 7 |
-| 06-29 Task 13 Frontend consumer alignment | Phase 8 |
-| 06-30 P2/P3 Python channel residual / worker dead queue | Phase 9 |
+| 原方案内容                                                      | 整合后位置 |
+| --------------------------------------------------------------- | ---------- |
+| 06-29 Phase 0 diagnostics 算法设计                              | Phase 0    |
+| 06-30 P0 `TaskResult` / `DiagnosticResult` / `ApiTaskType` 止血 | Phase 1    |
+| 06-30 P1 `/api/strategies` 路由合并、`ResultProcessor`、Repo DI | Phase 1.5  |
+| 06-29 Task 1-2 taxonomy / metadata                              | Phase 2    |
+| 06-29 Task 3-4 ConfigSnapshot / DB / Repo                       | Phase 3    |
+| 06-29 Task 5 Preview                                            | Phase 4    |
+| 06-29 Task 6-8 Task / Worker / Python CLI                       | Phase 5    |
+| 06-29 Task 9-11 Diagnostics algorithms                          | Phase 6    |
+| 06-29 Task 12 Backtest end-to-end                               | Phase 7    |
+| 06-29 Task 13 Frontend consumer alignment                       | Phase 8    |
+| 06-30 P2/P3 Python channel residual / worker dead queue         | Phase 9    |
 
 ---
 
@@ -64,14 +64,14 @@ export type StrategySubcategory =
 
 旧值处理：
 
-| 当前值 | 处理 |
-|---|---|
-| `nonlinear_ml` | 自动迁移为 `ml_nonlinear_factor` |
-| `high_frequency` | 自动迁移为 `hft_microstructure` |
-| `mean_reversion` | 不静默映射，迁移时 quarantine 或 fail closed |
-| `tail_risk_hedging` | 不静默映射，迁移时 quarantine 或 fail closed |
-| 缺失 `index_enhancement` | 补齐策略元数据与 API 输出 |
-| 缺失 `event_sentiment_factor` | 作为 transitional 唯一目标子分类补齐 |
+| 当前值                        | 处理                                         |
+| ----------------------------- | -------------------------------------------- |
+| `nonlinear_ml`                | 自动迁移为 `ml_nonlinear_factor`             |
+| `high_frequency`              | 自动迁移为 `hft_microstructure`              |
+| `mean_reversion`              | 不静默映射，迁移时 quarantine 或 fail closed |
+| `tail_risk_hedging`           | 不静默映射，迁移时 quarantine 或 fail closed |
+| 缺失 `index_enhancement`      | 补齐策略元数据与 API 输出                    |
+| 缺失 `event_sentiment_factor` | 作为 transitional 唯一目标子分类补齐         |
 
 ### 1.2 Strategy wire
 
@@ -157,11 +157,16 @@ interface TransitionalConfigParams {
   target_factor_pool: string;
 }
 
-type ConfigSnapshot = ConfigSnapshotBase & (
-  | { category: 'factor_based'; params: FactorBasedConfigParams & Record<string, unknown> }
-  | { category: 'non_factor'; params: NonFactorConfigParams & Record<string, unknown> }
-  | { category: 'transitional'; subcategory: 'event_sentiment_factor'; params: TransitionalConfigParams & Record<string, unknown> }
-);
+type ConfigSnapshot = ConfigSnapshotBase &
+  (
+    | { category: 'factor_based'; params: FactorBasedConfigParams & Record<string, unknown> }
+    | { category: 'non_factor'; params: NonFactorConfigParams & Record<string, unknown> }
+    | {
+        category: 'transitional';
+        subcategory: 'event_sentiment_factor';
+        params: TransitionalConfigParams & Record<string, unknown>;
+      }
+  );
 ```
 
 Config API：
@@ -209,11 +214,22 @@ interface PreviewResponse {
   symbol: string;
   bars: Array<{ ts: number; o: number; h: number; l: number; c: number; v: number }>;
   overlays: Array<
-    | { type: 'line'; label: string; data: Array<{ ts: number; value: number }>; style?: { color?: string; width?: number } }
+    | {
+        type: 'line';
+        label: string;
+        data: Array<{ ts: number; value: number }>;
+        style?: { color?: string; width?: number };
+      }
     | { type: 'marker'; label: string; data: Array<{ ts: number; kind: string; value?: number }> }
     | { type: 'histogram'; label: string; data: Array<{ ts: number; value: number }> }
   >;
-  signals: Array<{ ts: number; side: 'buy' | 'sell'; price: number; reason: string; factor_snapshot: Record<string, number> | null }>;
+  signals: Array<{
+    ts: number;
+    side: 'buy' | 'sell';
+    price: number;
+    reason: string;
+    factor_snapshot: Record<string, number> | null;
+  }>;
   pagination: { has_more: boolean; next_cursor: number | null; total_count: number | null };
   fingerprint: string;
   engine_version: string;
@@ -250,8 +266,20 @@ interface BacktestTaskPayload {
 }
 
 type TaskResultEnvelope =
-  | { type: 'result'; taskId: string; resultId: string; resultType: 'diagnostics'; data: DiagnosticResultData }
-  | { type: 'result'; taskId: string; resultId: string; resultType: 'backtest'; data: BacktestTaskResult };
+  | {
+      type: 'result';
+      taskId: string;
+      resultId: string;
+      resultType: 'diagnostics';
+      data: DiagnosticResultData;
+    }
+  | {
+      type: 'result';
+      taskId: string;
+      resultId: string;
+      resultType: 'backtest';
+      data: BacktestTaskResult;
+    };
 
 interface DiagnosticResultWire {
   resultId: string;
@@ -344,65 +372,65 @@ export interface ResultProcessor {
 
 ### 3.1 API
 
-| File | Responsibility |
-|---|---|
-| `apps/api/src/types.ts` | Canonical TS 镜像类型、Task payload/result、DiagnosticResultWire |
-| `apps/api/src/routes/strategy.ts` | `/api/strategies` catalog/config/preview 单一入口 |
-| `apps/api/src/routes/config.ts` | 整合后删除注册或转为 strategy route 内部模块 |
-| `apps/api/src/routes/preview.ts` | 整合后删除注册或转为 strategy route 内部模块 |
-| `apps/api/src/routes/task.ts` | task submit/stream/internal complete 薄路由 |
-| `apps/api/src/routes/diagnostics.ts` | diagnostics result query |
-| `apps/api/src/services/config-service.ts` | 默认 configSnapshot、hash、校验、保存 |
-| `apps/api/src/services/diagnostic-service.ts` | diagnostics save/query/purge |
-| `apps/api/src/services/preview-service.ts` | 纯 TS preview |
-| `apps/api/src/services/result-processors/types.ts` | ResultProcessor 接口 |
-| `apps/api/src/services/result-processors/backtest-result-processor.ts` | backtest 结果持久化与信封输出 |
-| `apps/api/src/services/result-processors/diagnostics-result-processor.ts` | diagnostics 结果持久化与信封输出 |
-| `apps/api/src/services/result-processors/index.ts` | processor registry |
-| `apps/api/src/storage/schema.ts` | config/diagnostic/report schema |
-| `apps/api/src/storage/connection.ts` | SQLite schema migration/bootstrap |
-| `apps/api/src/repositories/sqlite-config-repo.ts` | ConfigSnapshot repo |
-| `apps/api/src/repositories/sqlite-diag-repo.ts` | DiagnosticResult repo |
-| `apps/api/src/repositories/sqlite-report-repo.ts` | Report repo |
+| File                                                                      | Responsibility                                                   |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `apps/api/src/types.ts`                                                   | Canonical TS 镜像类型、Task payload/result、DiagnosticResultWire |
+| `apps/api/src/routes/strategy.ts`                                         | `/api/strategies` catalog/config/preview 单一入口                |
+| `apps/api/src/routes/config.ts`                                           | 整合后删除注册或转为 strategy route 内部模块                     |
+| `apps/api/src/routes/preview.ts`                                          | 整合后删除注册或转为 strategy route 内部模块                     |
+| `apps/api/src/routes/task.ts`                                             | task submit/stream/internal complete 薄路由                      |
+| `apps/api/src/routes/diagnostics.ts`                                      | diagnostics result query                                         |
+| `apps/api/src/services/config-service.ts`                                 | 默认 configSnapshot、hash、校验、保存                            |
+| `apps/api/src/services/diagnostic-service.ts`                             | diagnostics save/query/purge                                     |
+| `apps/api/src/services/preview-service.ts`                                | 纯 TS preview                                                    |
+| `apps/api/src/services/result-processors/types.ts`                        | ResultProcessor 接口                                             |
+| `apps/api/src/services/result-processors/backtest-result-processor.ts`    | backtest 结果持久化与信封输出                                    |
+| `apps/api/src/services/result-processors/diagnostics-result-processor.ts` | diagnostics 结果持久化与信封输出                                 |
+| `apps/api/src/services/result-processors/index.ts`                        | processor registry                                               |
+| `apps/api/src/storage/schema.ts`                                          | config/diagnostic/report schema                                  |
+| `apps/api/src/storage/connection.ts`                                      | SQLite schema migration/bootstrap                                |
+| `apps/api/src/repositories/sqlite-config-repo.ts`                         | ConfigSnapshot repo                                              |
+| `apps/api/src/repositories/sqlite-diag-repo.ts`                           | DiagnosticResult repo                                            |
+| `apps/api/src/repositories/sqlite-report-repo.ts`                         | Report repo                                                      |
 
 ### 3.2 Worker
 
-| File | Responsibility |
-|---|---|
-| `apps/worker/src/types.ts` | Task payload mirrors、Python request/response |
-| `apps/worker/src/main.ts` | task type routing；unsupported types fail before polling or are rejected by API |
-| `apps/worker/src/handlers/diagnostics-handler.ts` | Build diagnostics CLI request from configSnapshot |
-| `apps/worker/src/handlers/backtest-handler.ts` | Build backtest CLI request from configSnapshot |
-| `apps/worker/src/queue.ts` | Phase 9 删除，当前主链路不使用 |
+| File                                              | Responsibility                                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `apps/worker/src/types.ts`                        | Task payload mirrors、Python request/response                                   |
+| `apps/worker/src/main.ts`                         | task type routing；unsupported types fail before polling or are rejected by API |
+| `apps/worker/src/handlers/diagnostics-handler.ts` | Build diagnostics CLI request from configSnapshot                               |
+| `apps/worker/src/handlers/backtest-handler.ts`    | Build backtest CLI request from configSnapshot                                  |
+| `apps/worker/src/queue.ts`                        | Phase 9 删除，当前主链路不使用                                                  |
 
 ### 3.3 Python
 
-| File | Responsibility |
-|---|---|
-| `packages/strategy-runtime/quantforge_strategy/types.py` | StrategyCategory/Subcategory/ParamDef canonical |
-| `packages/strategy-runtime/quantforge_strategy/meta.py` | StrategyMeta / StrategyParamDef |
-| `packages/strategy-runtime/quantforge_strategy/cli.py` | Register `backtest` and `diagnostics` commands |
-| `packages/strategy-runtime/quantforge_strategy/commands/backtest.py` | Read `configSnapshot.params` |
-| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py` | Dispatch diagnostics by category/subcategory |
-| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/factor.py` | factor_based diagnostics |
-| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py` | non_factor diagnostics |
-| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/transitional.py` | event_sentiment_factor diagnostics |
-| `packages/strategies/**` | Strategy metadata classification completion |
+| File                                                                                 | Responsibility                                  |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `packages/strategy-runtime/quantforge_strategy/types.py`                             | StrategyCategory/Subcategory/ParamDef canonical |
+| `packages/strategy-runtime/quantforge_strategy/meta.py`                              | StrategyMeta / StrategyParamDef                 |
+| `packages/strategy-runtime/quantforge_strategy/cli.py`                               | Register `backtest` and `diagnostics` commands  |
+| `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`                 | Read `configSnapshot.params`                    |
+| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`              | Dispatch diagnostics by category/subcategory    |
+| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/factor.py`       | factor_based diagnostics                        |
+| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py`   | non_factor diagnostics                          |
+| `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/transitional.py` | event_sentiment_factor diagnostics              |
+| `packages/strategies/**`                                                             | Strategy metadata classification completion     |
 
 ### 3.4 Frontend
 
-| File | Responsibility |
-|---|---|
-| `apps/web/src/data/types.ts` | Target type mirrors |
-| `apps/web/src/hooks/useStrategies.ts` | Consume camelCase strategy wire |
-| `apps/web/src/api/strategies.ts` | Strategy API types |
-| `apps/web/src/api/strategies-config.ts` | ConfigSnapshot API types |
-| `apps/web/src/api/preview.ts` | Preview API types |
-| `apps/web/src/api/tasks.ts` | Task payload/result/SSE types |
-| `apps/web/src/api/diagnostics.ts` | DiagnosticResultWire API |
-| `apps/web/src/components/config-panel.tsx` | Save flattened params and expectedHash |
+| File                                         | Responsibility                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| `apps/web/src/data/types.ts`                 | Target type mirrors                                                       |
+| `apps/web/src/hooks/useStrategies.ts`        | Consume camelCase strategy wire                                           |
+| `apps/web/src/api/strategies.ts`             | Strategy API types                                                        |
+| `apps/web/src/api/strategies-config.ts`      | ConfigSnapshot API types                                                  |
+| `apps/web/src/api/preview.ts`                | Preview API types                                                         |
+| `apps/web/src/api/tasks.ts`                  | Task payload/result/SSE types                                             |
+| `apps/web/src/api/diagnostics.ts`            | DiagnosticResultWire API                                                  |
+| `apps/web/src/components/config-panel.tsx`   | Save flattened params and expectedHash                                    |
 | `apps/web/src/components/workspace-page.tsx` | Load configSnapshot, submit diagnostics/backtest, render real diagnostics |
-| `apps/web/src/components/kline-chart.tsx` | Consume target preview shape or local adapter |
+| `apps/web/src/components/kline-chart.tsx`    | Consume target preview shape or local adapter                             |
 
 ---
 
@@ -413,15 +441,18 @@ export interface ResultProcessor {
 **Goal:** 在写 Python diagnostics 前冻结三类诊断的输入、输出、错误和最小算法规则。
 
 **Files:**
+
 - Create: `docs/superpowers/specs/2026-06-30-diagnostics-algorithm-contract.md`
 
 **Acceptance Criteria:**
+
 - 文档定义 `FactorDiagnosticsResult`、`NonFactorDiagnosticsResult`、`TransitionalDiagnosticsResult`。
 - 文档定义 `NO_PRICE_DATA`、`NO_FACTOR_DATA`、`NO_EVENT_SENTIMENT_DATA`、`INVALID_CONFIG_SNAPSHOT`。
 - 文档定义数据输入来源：price bars、factor values、event/sentiment records。
 - 文档明确 synthetic diagnostics 默认关闭。
 
 **Steps:**
+
 - [ ] 写明 factor_based 的 IC/rankIC、分层收益、相关性矩阵字段。
 - [ ] 写明 non_factor 的参数敏感性、信号质量、滑点压力字段。
 - [ ] 写明 transitional 的情感衰减、映射目标、标准化因子质量、映射验证字段。
@@ -437,18 +468,21 @@ export interface ResultProcessor {
 #### Task 1.1: Define TaskResult envelope and diagnostics task type
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/web/src/api/tasks.ts`
 - Modify/Create: `apps/api/tests/routes/task.test.ts`
 - Modify/Create: `apps/web/tests/use-tasks.test.ts`
 
 **Acceptance Criteria:**
+
 - API 与前端类型都包含 `diagnostics` task type。
 - `TaskStreamEvent` 支持顶层 `resultId/resultType`。
 - `TaskResultEnvelope` 是可辨识联合：`diagnostics` 与 `backtest` 分支清晰。
 - 旧 `event.data.resultId` 的解析仅作为短期兼容路径存在。
 
 **Steps:**
+
 - [ ] 在 API types 中增加 `TaskResultEnvelope`、`DiagnosticsTaskPayload`、`BacktestTaskPayload`。
 - [ ] 在前端 `ApiTaskType` 中加入 `diagnostics`。
 - [ ] 在前端 `TaskStreamEvent` 顶层加入 `resultId?: string`、`resultType?: 'diagnostics' | 'backtest'`。
@@ -461,6 +495,7 @@ export interface ResultProcessor {
 #### Task 1.2: Align DiagnosticResult wire shape
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/api/src/routes/diagnostics.ts`
 - Modify: `apps/api/src/repositories/sqlite-diag-repo.ts`
@@ -469,11 +504,13 @@ export interface ResultProcessor {
 - Modify/Create: `apps/api/tests/routes/diagnostics.test.ts`
 
 **Acceptance Criteria:**
+
 - `GET /api/diagnostics/:resultId` 返回 `resultId/resultType/taskId/strategy/category/subcategory/configSnapshot/data/createdAt/expiresAt/engineVersion`。
 - 前端不再只依赖 `id/dataJson`。
 - 短期兼容旧 rows 时，repo mapper 将 `id` 映射为 `resultId`，`dataJson` 映射为 `data`。
 
 **Steps:**
+
 - [ ] 更新 API `DiagnosticResultWire` 类型。
 - [ ] 更新 diagnostics route response mapper。
 - [ ] 更新 sqlite diag repo read/write mapper。
@@ -492,6 +529,7 @@ export interface ResultProcessor {
 #### Task 1.5.1: Consolidate `/api/strategies` route ownership
 
 **Files:**
+
 - Modify: `apps/api/src/app.ts`
 - Modify: `apps/api/src/routes/strategy.ts`
 - Modify: `apps/api/src/routes/config.ts`
@@ -501,12 +539,14 @@ export interface ResultProcessor {
 - Modify/Create: `apps/api/tests/routes/preview.test.ts`
 
 **Acceptance Criteria:**
+
 - `app.ts` 对 `/api/strategies` 只 register 一次。
 - 原 `/api/strategies`、`/api/strategies/:name/config`、`/api/strategies/:name/preview` URL 不变。
 - route 文件内部可以拆 helper，但 public registration 只有 strategy route 拥有。
 - 所有现有 strategy/config/preview route tests 通过。
 
 **Steps:**
+
 - [ ] 将 config route handler 逻辑移入 `routes/strategy.ts` 或由 `strategy.ts` 调用内部 register function。
 - [ ] 将 preview route handler 逻辑移入 `routes/strategy.ts` 或由 `strategy.ts` 调用内部 register function。
 - [ ] 删除 `app.ts` 中对 config/preview route 的独立 register。
@@ -517,6 +557,7 @@ export interface ResultProcessor {
 #### Task 1.5.2: Introduce ResultProcessor registry and DI repos
 
 **Files:**
+
 - Create: `apps/api/src/services/result-processors/types.ts`
 - Create: `apps/api/src/services/result-processors/index.ts`
 - Create: `apps/api/src/services/result-processors/backtest-result-processor.ts`
@@ -528,6 +569,7 @@ export interface ResultProcessor {
 - Create/Modify: `apps/api/tests/services/result-processors.test.ts`
 
 **Acceptance Criteria:**
+
 - `routes/task.ts` complete handler 只负责 task 状态流转和 processor 分派。
 - `BacktestResultProcessor` 负责 report save、report mapper、AI analysis merge、surrogate cleanup。
 - `DiagnosticsResultProcessor` 负责 diagnostics save 和 result envelope。
@@ -535,6 +577,7 @@ export interface ResultProcessor {
 - complete handler 主逻辑保持在 25 行左右；如果多于 25 行，测试不强制失败，但需要拆出私有 helper。
 
 **Steps:**
+
 - [ ] 定义 `ResultProcessor`、`ResultProcessorContext`、`ResultProcessorOutput`。
 - [ ] 实现 `createResultProcessorRegistry()`。
 - [ ] 把 backtest 完成后的报告保存逻辑移到 `BacktestResultProcessor`。
@@ -552,6 +595,7 @@ export interface ResultProcessor {
 **Goal:** 让 Python registry 和 API `/api/strategies` 只输出 06-28 canonical category/subcategory 和 target parameter wire shape。
 
 **Files:**
+
 - Modify: `packages/strategy-runtime/quantforge_strategy/types.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/meta.py`
 - Modify: `packages/strategies/**`
@@ -561,6 +605,7 @@ export interface ResultProcessor {
 - Modify/Create: `apps/api/tests/routes/strategy.test.ts`
 
 **Acceptance Criteria:**
+
 - Python `StrategySubcategory` 只包含目标 10 值。
 - API `StrategySubcategory` type 只包含目标 10 值。
 - API output public param identity 使用 `name`。
@@ -569,6 +614,7 @@ export interface ResultProcessor {
 - `mean_reversion`、`tail_risk_hedging` 不作为 API output。
 
 **Steps:**
+
 - [ ] 更新 Python enum。
 - [ ] 更新 Python `StrategyParamDef`：`key` 迁移为 `name`，`range` 替代 `min/max` 的 public wire。
 - [ ] 补齐每个实际注册策略的 category/subcategory。
@@ -589,6 +635,7 @@ export interface ResultProcessor {
 #### Task 3.1: Implement ConfigSnapshot service and API
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/api/src/services/config-service.ts`
 - Modify: `apps/api/src/routes/strategy.ts`
@@ -596,6 +643,7 @@ export interface ResultProcessor {
 - Modify/Create: `apps/api/tests/routes/config.test.ts`
 
 **Acceptance Criteria:**
+
 - `GET /api/strategies/:name/config` 返回 `{ persisted, configSnapshot }`。
 - 无保存配置时返回 defaults，不返回 404/null。
 - `PUT /api/strategies/:name/config` 请求使用 `{ category, subcategory, params, expectedHash }`。
@@ -604,6 +652,7 @@ export interface ResultProcessor {
 - hash 冲突返回 409 和 current snapshot。
 
 **Steps:**
+
 - [ ] 在 API types 定义 `ConfigSnapshot` 和三类 params。
 - [ ] 实现 default snapshot builder。
 - [ ] 实现 canonical JSON hash。
@@ -617,6 +666,7 @@ export interface ResultProcessor {
 #### Task 3.2: Update DB schema and repositories
 
 **Files:**
+
 - Modify: `apps/api/src/storage/schema.ts`
 - Modify: `apps/api/src/storage/connection.ts`
 - Modify: `apps/api/src/repositories/sqlite-config-repo.ts`
@@ -626,6 +676,7 @@ export interface ResultProcessor {
 - Modify/Create: `apps/api/tests/repositories/diagnostic-repo.test.ts`
 
 **Acceptance Criteria:**
+
 - `strategy_configs` 支持 strategyName、category、subcategory、schemaVersion、configJson、hash、updatedAt。
 - `config_history` 记录每次成功保存。
 - `diagnostic_results` 支持 resultId/resultType/category/subcategory/configSnapshot/dataJson/engineVersion/expiresAt。
@@ -633,6 +684,7 @@ export interface ResultProcessor {
 - migration 对 `mean_reversion` / `tail_risk_hedging` fail closed 或 quarantine。
 
 **Steps:**
+
 - [ ] 更新 Drizzle schema。
 - [ ] 更新 bootstrap SQL。
 - [ ] 更新 config repo get/save/history。
@@ -649,6 +701,7 @@ export interface ResultProcessor {
 **Goal:** `POST /api/strategies/:name/preview` 对齐 target response shape，并按 category/subcategory/config 选择轻量 preview 逻辑。
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/api/src/services/preview-service.ts`
 - Modify: `apps/api/src/routes/strategy.ts`
@@ -656,6 +709,7 @@ export interface ResultProcessor {
 - Modify/Create: `apps/api/tests/routes/preview.test.ts`
 
 **Acceptance Criteria:**
+
 - Response bars 使用 `{ts,o,h,l,c,v}`。
 - Response 含 overlays/signals/pagination/fingerprint/engine_version。
 - Route 使用 `:name` 查 strategy meta。
@@ -664,6 +718,7 @@ export interface ResultProcessor {
 - Preview 不调用 Python。
 
 **Steps:**
+
 - [ ] 更新 Preview request/response types。
 - [ ] 更新 route validation。
 - [ ] 更新 PreviewService bar mapper。
@@ -682,11 +737,13 @@ export interface ResultProcessor {
 #### Task 5.1: Enforce ConfigSnapshot-only task payloads in API
 
 **Files:**
+
 - Modify: `apps/api/src/types.ts`
 - Modify: `apps/api/src/routes/task.ts`
 - Modify/Create: `apps/api/tests/routes/task.test.ts`
 
 **Acceptance Criteria:**
+
 - diagnostics/backtest task payload 必须包含 `configSnapshot`。
 - 顶层 `payload.params` 被拒绝。
 - `payload.strategy === payload.configSnapshot.strategy`。
@@ -694,6 +751,7 @@ export interface ResultProcessor {
 - `factor_compute/factor_eval/ai_train` 在本主线中显式 rejected，除非后续单独扩展。
 
 **Steps:**
+
 - [ ] 添加 task payload validation helper。
 - [ ] 在 POST `/api/tasks` 调用 validation。
 - [ ] 添加 tests 覆盖缺失 configSnapshot、顶层 params、strategy mismatch、unsupported task type。
@@ -703,6 +761,7 @@ export interface ResultProcessor {
 #### Task 5.2: Update Worker handlers to pass ConfigSnapshot and fail closed
 
 **Files:**
+
 - Modify: `apps/worker/src/types.ts`
 - Modify: `apps/worker/src/handlers/diagnostics-handler.ts`
 - Modify: `apps/worker/src/handlers/backtest-handler.ts`
@@ -711,12 +770,14 @@ export interface ResultProcessor {
 - Modify/Create: `apps/worker/tests/backtest-handler.test.ts`
 
 **Acceptance Criteria:**
+
 - Diagnostics handler 传 `configSnapshot`、`dataRange`，不传 legacy `config.strategyParams`。
 - Backtest handler 不读取 `payload.params` fallback。
 - diagnostics `UNKNOWN_COMMAND` 或 `{ok:false}` 标记任务失败，不再 echo success。
 - Worker task type surface 与 API validation 一致。
 
 **Steps:**
+
 - [ ] 更新 worker task payload types。
 - [ ] 重写 diagnostics request builder。
 - [ ] 删除 diagnostics echo fallback。
@@ -729,6 +790,7 @@ export interface ResultProcessor {
 #### Task 5.3: Add Python CLI diagnostics and configSnapshot backtest support
 
 **Files:**
+
 - Modify: `packages/strategy-runtime/quantforge_strategy/cli.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
@@ -738,6 +800,7 @@ export interface ResultProcessor {
 - Modify/Create: `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
 
 **Acceptance Criteria:**
+
 - `_COMMANDS` 包含 `diagnostics`。
 - `backtest.py` 从 `configSnapshot.params` 构造策略参数。
 - `diagnostics.py` 按 `configSnapshot.category/subcategory` dispatch。
@@ -745,6 +808,7 @@ export interface ResultProcessor {
 - stdout 只输出 NDJSON。
 
 **Steps:**
+
 - [ ] 注册 CLI diagnostics command。
 - [ ] 添加 configSnapshot/dataRange/execution request parser。
 - [ ] 更新 backtest command。
@@ -760,17 +824,20 @@ export interface ResultProcessor {
 #### Task 6.1: Implement factor_based diagnostics
 
 **Files:**
+
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/factor.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
 - Create/Modify: `packages/strategy-runtime/tests/test_diagnostics_factor.py`
 
 **Acceptance Criteria:**
+
 - 输出 IC/rankIC 序列。
 - 输出分层收益。
 - 输出因子相关性矩阵。
 - 缺 price/factor data 返回结构化错误。
 
 **Steps:**
+
 - [ ] 实现 price/factor data loading adapter。
 - [ ] 实现 forward returns。
 - [ ] 实现 IC/rankIC。
@@ -783,17 +850,20 @@ export interface ResultProcessor {
 #### Task 6.2: Implement non_factor diagnostics
 
 **Files:**
+
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/non_factor.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
 - Create/Modify: `packages/strategy-runtime/tests/test_diagnostics_non_factor.py`
 
 **Acceptance Criteria:**
+
 - 输出参数敏感性。
 - 输出信号质量。
 - 输出滑点压力测试。
 - 策略不能生成信号时返回结构化错误。
 
 **Steps:**
+
 - [ ] 实现 parameter grid generation。
 - [ ] 实现 simplified backtest/signal adapter。
 - [ ] 实现 signal quality statistics。
@@ -805,11 +875,13 @@ export interface ResultProcessor {
 #### Task 6.3: Implement transitional/event_sentiment_factor diagnostics
 
 **Files:**
+
 - Create: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics/transitional.py`
 - Modify: `packages/strategy-runtime/quantforge_strategy/commands/diagnostics.py`
 - Create/Modify: `packages/strategy-runtime/tests/test_diagnostics_transitional.py`
 
 **Acceptance Criteria:**
+
 - 输出 sentiment decay curve。
 - 输出 mapping target metrics。
 - 输出 standardized factor quality。
@@ -817,6 +889,7 @@ export interface ResultProcessor {
 - 无 event/sentiment data 返回 `NO_EVENT_SENTIMENT_DATA`。
 
 **Steps:**
+
 - [ ] 实现 sentiment event loading adapter。
 - [ ] 实现 exponential decay scoring。
 - [ ] 实现 standardization/outlier checks。
@@ -833,6 +906,7 @@ export interface ResultProcessor {
 **Goal:** 回测任务从 API 到 Worker 到 Python 到 report persistence 全链路只使用 `configSnapshot`，并返回可恢复 report resultId。
 
 **Files:**
+
 - Modify: `apps/api/src/routes/task.ts`
 - Modify: `apps/api/src/services/result-processors/backtest-result-processor.ts`
 - Modify: `apps/api/src/services/report-mapper.ts`
@@ -843,6 +917,7 @@ export interface ResultProcessor {
 - Modify/Create: `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
 
 **Acceptance Criteria:**
+
 - Backtest handler 无 `payload.params` fallback。
 - Python backtest 从 `configSnapshot.params` 构造策略。
 - Report mapper 保存 config snapshot metadata。
@@ -850,6 +925,7 @@ export interface ResultProcessor {
 - Report save failure 导致 task failed。
 
 **Steps:**
+
 - [ ] 移除 backtest API tests 中的顶层 params。
 - [ ] 确认 Worker request 包含 configSnapshot 和 execution fields。
 - [ ] 确认 Python command 使用 configSnapshot.params。
@@ -867,6 +943,7 @@ export interface ResultProcessor {
 **Goal:** 前端只作为消费方对接新后端 contract，不再把旧 taxonomy、ResearchMode、mock diagnostics 当目标依据。
 
 **Files:**
+
 - Modify: `apps/web/src/data/types.ts`
 - Modify: `apps/web/src/hooks/useStrategies.ts`
 - Modify: `apps/web/src/api/strategies.ts`
@@ -880,6 +957,7 @@ export interface ResultProcessor {
 - Modify/Create: `apps/web/tests/*.ts`
 
 **Acceptance Criteria:**
+
 - Frontend `StrategySubcategory` 匹配目标 10 值。
 - `ResearchModeId` 不用于 Strategy/Workspace 分类。
 - `useStrategies` 消费 camelCase API response。
@@ -890,6 +968,7 @@ export interface ResultProcessor {
 - KlineChart 消费 target preview shape 或在 API boundary 有 adapter。
 
 **Steps:**
+
 - [ ] 更新 frontend type unions。
 - [ ] 更新 strategy API client types。
 - [ ] 更新 config API client types。
@@ -912,17 +991,20 @@ export interface ResultProcessor {
 #### Task 9.1: Unify strategy metadata Python channel
 
 **Files:**
+
 - Modify: `packages/strategy-runtime/quantforge_strategy/cli.py`
 - Modify: `apps/api/src/services/strategy-sync.ts`
 - Modify/Create: `packages/strategy-runtime/tests/test_cli_list_strategies.py`
 - Modify/Create: `apps/api/tests/services/strategy-sync.test.ts`
 
 **Acceptance Criteria:**
+
 - CLI 支持 `listStrategies` NDJSON command。
 - API strategy catalog 不再使用内联 Python script string。
 - API strategy catalog 与 Worker PythonBridge 通道风格一致。
 
 **Steps:**
+
 - [ ] 在 CLI 注册 `listStrategies` command。
 - [ ] 添加 CLI test 覆盖输出 strategy meta list。
 - [ ] 修改 `strategy-sync.ts` 使用 PythonBridge 调用。
@@ -934,18 +1016,21 @@ export interface ResultProcessor {
 #### Task 9.2: Remove dead Worker queue
 
 **Files:**
+
 - Delete: `apps/worker/src/queue.ts`
 - Modify: `apps/worker/package.json`
 - Modify: root package lock file if dependency changes
 - Modify/Create: `apps/worker/tests/*.ts`
 
 **Acceptance Criteria:**
+
 - `apps/worker/src/queue.ts` 删除。
 - `better-sqlite3` 只在仍被使用时保留；如果仅 queue 使用，则移除 worker dependency。
 - `rg "queue"` 不再出现旧本地队列引用。
 - Worker 仍通过 HTTP poll `/api/internal/tasks/pending`。
 
 **Steps:**
+
 - [ ] Run: `rg "queue|better-sqlite3" apps/worker` 确认引用。
 - [ ] 删除 `apps/worker/src/queue.ts`。
 - [ ] 移除未使用 dependency。
@@ -1024,18 +1109,18 @@ bash scripts/smoke-test.sh
 
 ### 8.1 Spec coverage
 
-| Requirement | Covered by |
-|---|---|
-| 06-29 产品契约迁移 | Phase 2-8 |
-| 06-30 P0 契约止血 | Phase 1 |
-| 06-30 P1 路由和 Processor 整理 | Phase 1.5 |
-| ConfigSnapshot 唯一真相源 | Phase 3, Phase 5, Phase 7, Phase 8 |
-| Preview target shape | Phase 4, Phase 8 |
-| Diagnostics algorithms | Phase 0, Phase 6 |
-| Worker/Python fail closed | Phase 5 |
-| Frontend consumer alignment | Phase 8 |
-| Python channel residual cleanup | Phase 9.1 |
-| Worker dead queue cleanup | Phase 9.2 |
+| Requirement                     | Covered by                         |
+| ------------------------------- | ---------------------------------- |
+| 06-29 产品契约迁移              | Phase 2-8                          |
+| 06-30 P0 契约止血               | Phase 1                            |
+| 06-30 P1 路由和 Processor 整理  | Phase 1.5                          |
+| ConfigSnapshot 唯一真相源       | Phase 3, Phase 5, Phase 7, Phase 8 |
+| Preview target shape            | Phase 4, Phase 8                   |
+| Diagnostics algorithms          | Phase 0, Phase 6                   |
+| Worker/Python fail closed       | Phase 5                            |
+| Frontend consumer alignment     | Phase 8                            |
+| Python channel residual cleanup | Phase 9.1                          |
+| Worker dead queue cleanup       | Phase 9.2                          |
 
 ### 8.2 Type consistency
 
@@ -1043,4 +1128,3 @@ bash scripts/smoke-test.sh
 - Public config request 统一使用 `params`，完整执行态统一使用 `configSnapshot`。
 - SSE result envelope 统一使用顶层 `resultId/resultType`。
 - Diagnostics persisted response 统一使用 `resultId/resultType/data`，旧 `id/dataJson` 只作为 mapper 兼容输入。
-

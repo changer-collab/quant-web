@@ -31,7 +31,9 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-sm);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .metricCard:hover {

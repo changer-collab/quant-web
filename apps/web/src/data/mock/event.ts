@@ -1,9 +1,5 @@
 // apps/web/src/data/mock/event.ts
-import {
-  AnnouncementEventType,
-  EventImpact,
-  MacroFrequency,
-} from '../types.js';
+import { AnnouncementEventType, EventImpact, MacroFrequency } from '../types.js';
 
 /** Mock 公告事件 */
 export const MOCK_ANNOUNCEMENT_EVENTS = [
@@ -87,10 +83,34 @@ export const MOCK_SENTIMENT_SERIES = [
 
 /** Mock 宏观指标定义 */
 export const MOCK_MACRO_INDICATORS = [
-  { id: 'cpi', name: '居民消费价格指数(CPI)', unit: '%', frequency: MacroFrequency.Monthly, source: '国家统计局' },
-  { id: 'pmi', name: '制造业采购经理指数(PMI)', unit: '', frequency: MacroFrequency.Monthly, source: '国家统计局' },
-  { id: 'm2', name: '广义货币供应量(M2)', unit: '万亿元', frequency: MacroFrequency.Monthly, source: '中国人民银行' },
-  { id: 'gdp', name: '国内生产总值(GDP)', unit: '万亿元', frequency: MacroFrequency.Quarterly, source: '国家统计局' },
+  {
+    id: 'cpi',
+    name: '居民消费价格指数(CPI)',
+    unit: '%',
+    frequency: MacroFrequency.Monthly,
+    source: '国家统计局',
+  },
+  {
+    id: 'pmi',
+    name: '制造业采购经理指数(PMI)',
+    unit: '',
+    frequency: MacroFrequency.Monthly,
+    source: '国家统计局',
+  },
+  {
+    id: 'm2',
+    name: '广义货币供应量(M2)',
+    unit: '万亿元',
+    frequency: MacroFrequency.Monthly,
+    source: '中国人民银行',
+  },
+  {
+    id: 'gdp',
+    name: '国内生产总值(GDP)',
+    unit: '万亿元',
+    frequency: MacroFrequency.Quarterly,
+    source: '国家统计局',
+  },
 ];
 
 /** Mock 宏观数据点 */

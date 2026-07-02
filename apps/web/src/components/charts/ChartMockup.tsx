@@ -21,7 +21,15 @@ const MOCK_BARS: BarDatum[] = [
 
 const MOCK_LINE = [28, 38, 45, 52, 48, 65, 72, 78, 85, 92];
 
-export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: string; priceUp?: string; priceDown?: string }) {
+export function ChartMockup({
+  ariaLabel,
+  priceUp,
+  priceDown,
+}: {
+  ariaLabel: string;
+  priceUp?: string;
+  priceDown?: string;
+}) {
   const barData = MOCK_BARS;
   const lineData = MOCK_LINE;
 
@@ -40,7 +48,15 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
 
   const barPoints = barData.map((d, i) => {
     const h = (d.value / maxVal) * plotH;
-    return { x: padL + i * barW + barPad, y: padT + plotH - h, w: barW - barPad * 2, h, value: d.value, label: d.label, up: d.up };
+    return {
+      x: padL + i * barW + barPad,
+      y: padT + plotH - h,
+      w: barW - barPad * 2,
+      h,
+      value: d.value,
+      label: d.label,
+      up: d.up,
+    };
   });
 
   const linePoints = lineData.map((v, i) => ({
@@ -58,8 +74,16 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
   }));
 
   const tradeMarkers = [
-    { x: padL + 2 * barW + barW / 2, y: padT + plotH - (42 / maxVal) * plotH, type: 'buy' as const },
-    { x: padL + 7 * barW + barW / 2, y: padT + plotH - (78 / maxVal) * plotH, type: 'sell' as const },
+    {
+      x: padL + 2 * barW + barW / 2,
+      y: padT + plotH - (42 / maxVal) * plotH,
+      type: 'buy' as const,
+    },
+    {
+      x: padL + 7 * barW + barW / 2,
+      y: padT + plotH - (78 / maxVal) * plotH,
+      type: 'sell' as const,
+    },
   ];
 
   return (
@@ -92,11 +116,17 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
           </linearGradient>
           <filter id="glowCyan">
             <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
           <filter id="dotGlow">
             <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
         </defs>
 
@@ -104,8 +134,13 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
         {gridLines.map((g) => (
           <g key={g.label}>
             <line
-              x1={padL} y1={g.y} x2={chartW - padR} y2={g.y}
-              stroke="var(--line)" strokeWidth="0.5" strokeDasharray="4 4"
+              x1={padL}
+              y1={g.y}
+              x2={chartW - padR}
+              y2={g.y}
+              stroke="var(--line)"
+              strokeWidth="0.5"
+              strokeDasharray="4 4"
             />
             <text x={padL - 6} y={g.y + 3} textAnchor="end" className={chartStyles.gridLabel}>
               {g.label}
@@ -120,13 +155,19 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
         {barPoints.map((b, i) => (
           <g key={b.label}>
             <rect
-              x={b.x} y={b.y} width={b.w} height={b.h}
+              x={b.x}
+              y={b.y}
+              width={b.w}
+              height={b.h}
               fill={b.up ? 'url(#barGradUp)' : 'url(#barGradDown)'}
-              rx="2" ry="2"
+              rx="2"
+              ry="2"
               className={chartStyles.barRect}
               style={{ animationDelay: `${i * 0.06}s` }}
             >
-              <title>{b.value}% {b.up ? (priceUp ?? 'Up') : (priceDown ?? 'Down')}</title>
+              <title>
+                {b.value}% {b.up ? (priceUp ?? 'Up') : (priceDown ?? 'Down')}
+              </title>
             </rect>
           </g>
         ))}
@@ -147,7 +188,9 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
         {linePoints.map((p, i) => (
           <circle
             key={i}
-            cx={p.x} cy={p.y} r="2.5"
+            cx={p.x}
+            cy={p.y}
+            r="2.5"
             fill="var(--cyan)"
             opacity="0.6"
             className={chartStyles.lineDot}
@@ -159,19 +202,24 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
         {tradeMarkers.map((m, i) => (
           <g key={i} className={chartStyles.tradeMarker}>
             <circle
-              cx={m.x} cy={m.y} r="8"
+              cx={m.x}
+              cy={m.y}
+              r="8"
               fill={m.type === 'buy' ? 'var(--red)' : 'var(--green)'}
               opacity="0.15"
               className={chartStyles.tradePulse}
             />
             <circle
-              cx={m.x} cy={m.y} r="4"
+              cx={m.x}
+              cy={m.y}
+              r="4"
               fill={m.type === 'buy' ? 'var(--red)' : 'var(--green)'}
               filter="url(#dotGlow)"
             />
             <circle cx={m.x} cy={m.y} r="1.5" fill="var(--bg)" />
             <text
-              x={m.x} y={m.y - 12}
+              x={m.x}
+              y={m.y - 12}
               textAnchor="middle"
               className={chartStyles.tradeLabel}
               fill={m.type === 'buy' ? 'var(--red)' : 'var(--green)'}
@@ -185,7 +233,8 @@ export function ChartMockup({ ariaLabel, priceUp, priceDown }: { ariaLabel: stri
         {barPoints.map((b) => (
           <text
             key={b.label}
-            x={b.x + b.w / 2} y={padT + plotH + 18}
+            x={b.x + b.w / 2}
+            y={padT + plotH + 18}
             textAnchor="middle"
             className={chartStyles.gridLabel}
           >

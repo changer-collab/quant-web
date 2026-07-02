@@ -1,7 +1,4 @@
-export {
-  InstrumentStatus,
-  AdjustmentType,
-} from './types.js';
+export { InstrumentStatus, AdjustmentType } from './types.js';
 export type {
   TradingCalendar,
   ExtendedInstrument,

@@ -138,13 +138,33 @@ export interface ShareholderMetrics {
 /** 基本面数据 Provider 接口（所有查询默认 PIT 过滤：announceDate <= asOfDate） */
 export interface FundamentalDataProvider {
   /** 获取财务报告。asOfDate 为 PIT 截止日，仅返回 announceDate <= asOfDate 的记录 */
-  getFinancialReports(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialReport[]>;
+  getFinancialReports(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialReport[]>;
   /** 获取财务比率快照（PIT） */
-  getFinancialRatios(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialRatio[]>;
+  getFinancialRatios(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialRatio[]>;
   /** 获取估值序列（PIT） */
-  getValuationSeries(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ValuationPoint[]>;
+  getValuationSeries(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ValuationPoint[]>;
   /** 获取最新财报（PIT） */
   getLatestReport(symbol: string): Promise<FinancialReport | undefined>;
   /** 获取股东人数序列（PIT） */
-  getShareholderMetrics(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ShareholderMetrics[]>;
+  getShareholderMetrics(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ShareholderMetrics[]>;
 }

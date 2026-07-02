@@ -9,7 +9,7 @@ import type { TimeFrame } from '../base/types.js';
 export class DataQualityCheckerImpl implements DataQualityChecker {
   constructor(
     private barRepo: BarRepository,
-    private calendarRepo?: CalendarRepository,
+    private calendarRepo?: CalendarRepository
   ) {}
 
   /**
@@ -42,10 +42,15 @@ export class DataQualityCheckerImpl implements DataQualityChecker {
   /** 粗略估算：自然日 * 5/7 */
   private fallbackEstimate(start: number, end: number): number {
     const days = Math.ceil((end - start) / (24 * 60 * 60 * 1000));
-    return Math.max(1, Math.round(days * 5 / 7));
+    return Math.max(1, Math.round((days * 5) / 7));
   }
 
-  async checkCompleteness(source: string, symbol: string, start: number, end: number): Promise<DataQualityReport> {
+  async checkCompleteness(
+    source: string,
+    symbol: string,
+    start: number,
+    end: number
+  ): Promise<DataQualityReport> {
     const expectedDailyBars = await this.getExpectedTradingDays(start, end);
     const actualCount = await this.barRepo.count(symbol, '1d' as TimeFrame, start, end);
     const coverage = expectedDailyBars > 0 ? actualCount / expectedDailyBars : 0;
@@ -63,7 +68,12 @@ export class DataQualityCheckerImpl implements DataQualityChecker {
     };
   }
 
-  async checkConsistency(source: string, symbol: string, start: number, end: number): Promise<DataQualityReport> {
+  async checkConsistency(
+    source: string,
+    symbol: string,
+    start: number,
+    end: number
+  ): Promise<DataQualityReport> {
     const bars = await this.barRepo.query(symbol, '1d' as TimeFrame, start, end);
     const issues: ConsistencyIssue[] = [];
 
@@ -115,7 +125,11 @@ export class DataQualityCheckerImpl implements DataQualityChecker {
     };
   }
 
-  async checkFreshness(source: string, symbol: string, maxStalenessMs: number): Promise<DataQualityReport> {
+  async checkFreshness(
+    source: string,
+    symbol: string,
+    maxStalenessMs: number
+  ): Promise<DataQualityReport> {
     const latest = await this.barRepo.getLatest(symbol, '1d' as TimeFrame);
     const now = Date.now();
     const issues: ConsistencyIssue[] = [];

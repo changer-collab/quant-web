@@ -1,7 +1,13 @@
 import { apiGet, apiPost } from './client';
 import type { ConfigSnapshot } from '../data/types';
 
-export type ApiTaskType = 'backtest' | 'factor_compute' | 'factor_eval' | 'ai_train' | 'diagnostics' | 'collect';
+export type ApiTaskType =
+  | 'backtest'
+  | 'factor_compute'
+  | 'factor_eval'
+  | 'ai_train'
+  | 'diagnostics'
+  | 'collect';
 export type ApiTaskStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export interface ApiTask {
@@ -56,7 +62,10 @@ export function submitBacktest(payload: {
   return apiPost('/tasks', { type: 'backtest', payload });
 }
 
-export function submitFactorEval(factorId: string, symbol?: string): Promise<{ taskId: string; status: ApiTaskStatus }> {
+export function submitFactorEval(
+  factorId: string,
+  symbol?: string
+): Promise<{ taskId: string; status: ApiTaskStatus }> {
   return apiPost(`/factors/${factorId}/evaluate`, { symbol });
 }
 
@@ -64,7 +73,7 @@ export function submitFactorEval(factorId: string, symbol?: string): Promise<{ t
 export function streamTask(
   taskId: string,
   onEvent: (event: TaskStreamEvent) => void,
-  onError?: (err: Event) => void,
+  onError?: (err: Event) => void
 ): () => void {
   const es = new EventSource(`/api/tasks/${taskId}/stream`);
   let terminalEventReceived = false;

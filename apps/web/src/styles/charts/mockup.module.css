@@ -11,7 +11,12 @@
     radial-gradient(ellipse at 20% 30%, rgba(255, 107, 107, 0.03), transparent 50%),
     radial-gradient(ellipse at 80% 70%, rgba(77, 240, 160, 0.02), transparent 40%),
     rgba(17, 25, 23, 0.92);
-  background-size: 60px 60px, 60px 60px, auto, auto, auto;
+  background-size:
+    60px 60px,
+    60px 60px,
+    auto,
+    auto,
+    auto;
   border-radius: var(--radius-sm);
   padding: var(--space-md);
   animation: fadeIn 0.5s 0.1s ease-out both;
@@ -55,7 +60,9 @@
 .barRect {
   transform-origin: bottom;
   animation: barGrow 0.6s var(--ease-out-expo) both;
-  transition: opacity 0.2s, filter 0.2s;
+  transition:
+    opacity 0.2s,
+    filter 0.2s;
   cursor: pointer;
   border-radius: 1px 1px 0 0;
 }
@@ -182,8 +189,12 @@
 }
 
 @keyframes areaReveal {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes dotAppear {
@@ -198,11 +209,22 @@
 }
 
 @keyframes tradePulse {
-  0%, 100% { opacity: 0.15; r: 8; }
-  50%      { opacity: 0.35; r: 12; }
+  0%,
+  100% {
+    opacity: 0.15;
+    r: 8;
+  }
+  50% {
+    opacity: 0.35;
+    r: 12;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

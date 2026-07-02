@@ -106,7 +106,14 @@ describe('BacktestHandler', () => {
         ok: true,
         data: {
           config: {},
-          metrics: { totalReturn: 0.1, annualizedReturn: 0.15, sharpeRatio: 1.5, maxDrawdown: 0.08, winRate: 0.55, totalTrades: 10 },
+          metrics: {
+            totalReturn: 0.1,
+            annualizedReturn: 0.15,
+            sharpeRatio: 1.5,
+            maxDrawdown: 0.08,
+            winRate: 0.55,
+            totalTrades: 10,
+          },
           equityCurve: [],
           trades: [],
         },
@@ -127,7 +134,7 @@ describe('BacktestHandler', () => {
 
     await queue.processAll();
     const tasks = await queue.list();
-    const completed = tasks.find(t => t.status === TaskStatus.Completed);
+    const completed = tasks.find((t) => t.status === TaskStatus.Completed);
     expect(completed!.status).toBe(TaskStatus.Completed);
     expect(completed!.result!.backtestResult).toBeDefined();
   });
@@ -181,7 +188,14 @@ describe('BacktestHandler - configSnapshot', () => {
         config: {},
         trades: [],
         equityCurve: [],
-        metrics: { totalReturn: 0.1, annualizedReturn: 0.15, sharpeRatio: 1.5, maxDrawdown: 0.08, winRate: 0.55, totalTrades: 10 },
+        metrics: {
+          totalReturn: 0.1,
+          annualizedReturn: 0.15,
+          sharpeRatio: 1.5,
+          maxDrawdown: 0.08,
+          winRate: 0.55,
+          totalTrades: 10,
+        },
       },
     });
     const bridge = createMockBridge({ call: callFn });
@@ -201,7 +215,9 @@ describe('BacktestHandler - configSnapshot', () => {
 
     // 验证 WARN 日志
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('deprecated: payload.params will be removed, use configSnapshot.params'),
+      expect.stringContaining(
+        'deprecated: payload.params will be removed, use configSnapshot.params'
+      )
     );
 
     // 验证 bridge 请求含降级后的 params

@@ -16,7 +16,9 @@ export interface ProcessorRegistryDeps {
   diagnosticService: DiagnosticService;
 }
 
-export function createResultProcessorRegistry(deps: ProcessorRegistryDeps): Map<TaskType, ResultProcessor> {
+export function createResultProcessorRegistry(
+  deps: ProcessorRegistryDeps
+): Map<TaskType, ResultProcessor> {
   const registry = new Map<TaskType, ResultProcessor>();
 
   registry.set(TaskType.Backtest, new BacktestResultProcessor(deps.reportRepository));

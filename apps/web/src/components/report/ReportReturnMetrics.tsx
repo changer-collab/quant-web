@@ -109,36 +109,36 @@ function RiskAdjustedRadar({ report, ui }: Props) {
     // sharpe
     indicators.push({ name: labels.sharpe, max: 100 });
     const scores: number[] = [];
-    scores.push(Math.min(Math.max(ram.sharpeRatio / 3 * 100, 0), 100));
+    scores.push(Math.min(Math.max((ram.sharpeRatio / 3) * 100, 0), 100));
 
     // sortino
     if (ram.sortinoRatio != null) {
       indicators.push({ name: 'Sortino', max: 100 });
-      scores.push(Math.min(Math.max(ram.sortinoRatio / 4 * 100, 0), 100));
+      scores.push(Math.min(Math.max((ram.sortinoRatio / 4) * 100, 0), 100));
     }
 
     // calmar
     if (rkm.calmarRatio != null) {
       indicators.push({ name: 'Calmar', max: 100 });
-      scores.push(Math.min(Math.max(rkm.calmarRatio / 3 * 100, 0), 100));
+      scores.push(Math.min(Math.max((rkm.calmarRatio / 3) * 100, 0), 100));
     }
 
     // infoRatio
     if (ram.informationRatio != null) {
       indicators.push({ name: 'Info', max: 100 });
-      scores.push(Math.min(Math.max(ram.informationRatio / 2 * 100, 0), 100));
+      scores.push(Math.min(Math.max((ram.informationRatio / 2) * 100, 0), 100));
     }
 
     // treynor
     if (ram.treynorRatio != null) {
       indicators.push({ name: 'Treynor', max: 100 });
-      scores.push(Math.min(Math.max(ram.treynorRatio / 1 * 100, 0), 100));
+      scores.push(Math.min(Math.max((ram.treynorRatio / 1) * 100, 0), 100));
     }
 
     // alpha
     if (rm.alpha != null) {
       indicators.push({ name: 'Alpha', max: 100 });
-      scores.push(Math.min(Math.max(rm.alpha / 0.2 * 100, 0), 100));
+      scores.push(Math.min(Math.max((rm.alpha / 0.2) * 100, 0), 100));
     }
 
     // 如果维度不足 3 个，雷达图会塌缩，返回空
@@ -194,11 +194,29 @@ export function ReportReturnMetrics({ report, ui }: Props) {
   const labels = ui.returnMetrics;
 
   const cards = [
-    { label: labels.cumulativeReturn, value: pct(m.cumulativeReturn), tone: m.cumulativeReturn > 0 ? 'good' : 'warn' },
-    { label: labels.totalReturn, value: pct(m.totalReturn), tone: m.totalReturn > 0 ? 'good' : 'warn' },
-    { label: labels.annualizedReturn, value: pct(m.annualizedReturn), tone: m.annualizedReturn > 0 ? 'good' : 'warn' },
+    {
+      label: labels.cumulativeReturn,
+      value: pct(m.cumulativeReturn),
+      tone: m.cumulativeReturn > 0 ? 'good' : 'warn',
+    },
+    {
+      label: labels.totalReturn,
+      value: pct(m.totalReturn),
+      tone: m.totalReturn > 0 ? 'good' : 'warn',
+    },
+    {
+      label: labels.annualizedReturn,
+      value: pct(m.annualizedReturn),
+      tone: m.annualizedReturn > 0 ? 'good' : 'warn',
+    },
     ...(m.alpha != null && m.alpha !== 0
-      ? [{ label: labels.alpha, value: pct(m.alpha), tone: (m.alpha > 0 ? 'good' : 'warn') as 'good' | 'warn' }]
+      ? [
+          {
+            label: labels.alpha,
+            value: pct(m.alpha),
+            tone: (m.alpha > 0 ? 'good' : 'warn') as 'good' | 'warn',
+          },
+        ]
       : []),
   ];
 
@@ -210,7 +228,10 @@ export function ReportReturnMetrics({ report, ui }: Props) {
       {/* 指标卡片 */}
       <div className={styles.metricGrid}>
         {cards.map((card) => (
-          <article key={card.label} className={`${styles.metricCard} ${styles[`tone${card.tone}`]}`}>
+          <article
+            key={card.label}
+            className={`${styles.metricCard} ${styles[`tone${card.tone}`]}`}
+          >
             <span className={styles.metricLabel}>{card.label}</span>
             <strong className={styles.metricValue}>{card.value}</strong>
           </article>

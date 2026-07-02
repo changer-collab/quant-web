@@ -48,7 +48,11 @@
   border-radius: var(--radius-md);
   background: rgba(8, 16, 15, 0.6);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.2s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.15s,
+    box-shadow 0.2s;
 }
 
 .card:hover {

@@ -5,8 +5,26 @@ export { CollectorDomain } from './types.js';
 export type { CollectorTask, CollectorResult, CollectorConfig, TaskStatus } from './types.js';
 
 // 适配器
-export { CsvAdapter, TushareAdapter, AkshareAdapter, BaostockAdapter, EfinanceAdapter, YfinanceAdapter } from './adapters/index.js';
-export type { DataSourceAdapter, RawDataRecord, AdapterFetchOptions, TushareExtra, AkshareExtra, CsvExtra, BaostockExtra, EfinanceExtra, YfinanceExtra, AdapterExtra } from './adapters/types.js';
+export {
+  CsvAdapter,
+  TushareAdapter,
+  AkshareAdapter,
+  BaostockAdapter,
+  EfinanceAdapter,
+  YfinanceAdapter,
+} from './adapters/index.js';
+export type {
+  DataSourceAdapter,
+  RawDataRecord,
+  AdapterFetchOptions,
+  TushareExtra,
+  AkshareExtra,
+  CsvExtra,
+  BaostockExtra,
+  EfinanceExtra,
+  YfinanceExtra,
+  AdapterExtra,
+} from './adapters/types.js';
 
 // 注册中心
 export { AdapterRegistryImpl } from './registry/index.js';

@@ -10,7 +10,7 @@ export class DataCenterError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly cause?: unknown,
+    public readonly cause?: unknown
   ) {
     super(message);
     this.name = 'DataCenterError';
@@ -27,7 +27,10 @@ export class NotFoundError extends DataCenterError {
 
 /** 数据验证失败 */
 export class ValidationError extends DataCenterError {
-  constructor(message: string, public readonly details?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    public readonly details?: Record<string, unknown>
+  ) {
     super(message, 'VALIDATION_ERROR');
     this.name = 'ValidationError';
   }

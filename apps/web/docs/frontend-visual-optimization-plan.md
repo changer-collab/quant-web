@@ -7,6 +7,7 @@
 **设计方向:** "Dark Quant Command Center" — 黑暗量化指挥中心风格。在现有暗色金融风基础上，强化数据密度感、层次感和动效品质，让界面更接近专业交易终端的气质。
 
 **核心原则:**
+
 - 不改变现有组件结构和数据流
 - 只增强 CSS 样式、动画、布局细节
 - 保持一致的 design token 体系
@@ -67,7 +68,11 @@ apps/web/src/
 --gradient-panel: linear-gradient(135deg, rgba(17, 25, 23, 0.96), rgba(22, 33, 31, 0.82));
 --gradient-panel-hover: linear-gradient(135deg, rgba(17, 25, 23, 0.98), rgba(22, 33, 31, 0.9));
 --gradient-accent: linear-gradient(135deg, var(--green), var(--cyan));
---gradient-accent-subtle: linear-gradient(90deg, rgba(77, 240, 160, 0.14), rgba(98, 216, 255, 0.04));
+--gradient-accent-subtle: linear-gradient(
+  90deg,
+  rgba(77, 240, 160, 0.14),
+  rgba(98, 216, 255, 0.04)
+);
 --gradient-green-glow: linear-gradient(180deg, rgba(77, 240, 160, 0.9), rgba(77, 240, 160, 0.08));
 
 /* 阴影 */
@@ -97,7 +102,7 @@ apps/web/src/
 --radius-lg: 8px;
 
 /* 新字体选项（保留现有字体作为 fallback） */
---font-display: "Fraunces", Georgia, serif;
+--font-display: 'Fraunces', Georgia, serif;
 ```
 
 - [ ] **Step 2: 优化 body 背景**
@@ -110,9 +115,13 @@ body {
     linear-gradient(90deg, rgba(77, 240, 160, 0.06) 1px, transparent 1px),
     linear-gradient(rgba(98, 216, 255, 0.04) 1px, transparent 1px),
     radial-gradient(ellipse at 20% 50%, rgba(77, 240, 160, 0.06), transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(98, 216, 255, 0.05), transparent 40%),
-    var(--bg);
-  background-size: 28px 28px, 28px 28px, auto, auto, auto;
+    radial-gradient(ellipse at 80% 20%, rgba(98, 216, 255, 0.05), transparent 40%), var(--bg);
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto,
+    auto,
+    auto;
 }
 ```
 
@@ -122,53 +131,102 @@ body {
 
 ```css
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes breathe {
-  0%, 100% { opacity: 0.8; }
-  50%      { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpFade {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseGlowIntense {
-  0%, 100% { box-shadow: 0 0 18px var(--green); }
-  50%      { box-shadow: 0 0 35px var(--green), 0 0 60px rgba(77, 240, 160, 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 18px var(--green);
+  }
+  50% {
+    box-shadow:
+      0 0 35px var(--green),
+      0 0 60px rgba(77, 240, 160, 0.2);
+  }
 }
 
 /* 数据变化动效 */
 @keyframes dataFlash {
-  0%   { background-color: rgba(77, 240, 160, 0.2); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: rgba(77, 240, 160, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
 @keyframes borderGlow {
-  0%, 100% { border-color: var(--line); }
-  50%      { border-color: rgba(77, 240, 160, 0.3); }
+  0%,
+  100% {
+    border-color: var(--line);
+  }
+  50% {
+    border-color: rgba(77, 240, 160, 0.3);
+  }
 }
 ```
 
 - [ ] **Step 4: 新增动画工具类**
 
 ```css
-.scaleIn   { animation: scaleIn 0.35s var(--ease-out-expo) both; }
-.slideDown { animation: slideDown 0.3s ease-out both; }
-.slideUpFade { animation: slideUpFade 0.4s var(--ease-out-expo) both; }
+.scaleIn {
+  animation: scaleIn 0.35s var(--ease-out-expo) both;
+}
+.slideDown {
+  animation: slideDown 0.3s ease-out both;
+}
+.slideUpFade {
+  animation: slideUpFade 0.4s var(--ease-out-expo) both;
+}
 ```
 
 ---
@@ -191,7 +249,10 @@ body {
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- IBM Plex Sans + Fraunces (display) + JetBrains Mono (code) -->
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
 </head>
 ```
 
@@ -238,7 +299,9 @@ body {
 ```css
 .brandIcon {
   /* ... 保留现有样式 ... */
-  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+  transition:
+    transform 0.3s var(--ease-spring),
+    box-shadow 0.3s;
 }
 
 .brand:hover .brandIcon {
@@ -365,7 +428,8 @@ body {
   border: 1px solid transparent;
   background:
     linear-gradient(135deg, rgba(17, 25, 23, 0.96), rgba(22, 33, 31, 0.82)) padding-box,
-    linear-gradient(135deg, rgba(77, 240, 160, 0.15), rgba(98, 216, 255, 0.05), transparent) border-box;
+    linear-gradient(135deg, rgba(77, 240, 160, 0.15), rgba(98, 216, 255, 0.05), transparent)
+      border-box;
   position: relative;
   overflow: hidden;
 }
@@ -450,7 +514,11 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.15), transparent 60%);
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.15),
+    transparent 60%
+  );
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
@@ -518,7 +586,12 @@ body {
     radial-gradient(ellipse at 30% 40%, rgba(77, 240, 160, 0.03), transparent 50%),
     radial-gradient(ellipse at 70% 60%, rgba(98, 216, 255, 0.02), transparent 40%),
     rgba(17, 25, 23, 0.9);
-  background-size: 60px 60px, 60px 60px, auto, auto, auto;
+  background-size:
+    60px 60px,
+    60px 60px,
+    auto,
+    auto,
+    auto;
   border-radius: var(--radius-sm);
 }
 ```
@@ -559,8 +632,12 @@ body {
 }
 
 @keyframes chartLineReveal {
-  from { transform: skewY(-6deg) scaleX(0); }
-  to   { transform: skewY(-6deg) scaleX(1); }
+  from {
+    transform: skewY(-6deg) scaleX(0);
+  }
+  to {
+    transform: skewY(-6deg) scaleX(1);
+  }
 }
 ```
 
@@ -584,8 +661,15 @@ body {
 }
 
 @keyframes tradeDotPulse {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50%      { transform: scale(1.4); opacity: 0.5; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
 }
 ```
 
@@ -612,7 +696,9 @@ body {
 }
 
 .tablePanel tbody tr {
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .clickableRow:hover {
@@ -664,7 +750,11 @@ body {
   /* ... 保留现有样式 ... */
   border-radius: 3px;
   cursor: default;
-  transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s,
+    transform 0.15s;
 }
 
 .chip:hover {
@@ -726,7 +816,11 @@ body {
 .modeTab {
   /* ... 保留现有样式 ... */
   border-radius: var(--radius-sm);
-  transition: border-color 0.25s, background 0.3s, color 0.2s, transform 0.2s var(--ease-spring);
+  transition:
+    border-color 0.25s,
+    background 0.3s,
+    color 0.2s,
+    transform 0.2s var(--ease-spring);
 }
 
 .modeTab:hover {
@@ -789,7 +883,9 @@ body {
 .icBar {
   /* ... 保留现有样式 ... */
   border-radius: 2px 2px 0 0;
-  transition: background 0.2s, transform 0.2s var(--ease-spring);
+  transition:
+    background 0.2s,
+    transform 0.2s var(--ease-spring);
 }
 
 .icBar:hover {
@@ -805,7 +901,10 @@ body {
 .groupCard {
   /* ... 保留现有样式 ... */
   border-radius: var(--radius-sm);
-  transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease-spring);
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.2s var(--ease-spring);
 }
 
 .groupCard:hover {
@@ -871,7 +970,9 @@ body {
   /* ... 保留现有样式 ... */
   position: relative;
   z-index: 1;
-  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s;
+  transition:
+    transform 0.2s var(--ease-spring),
+    box-shadow 0.2s;
 }
 
 .item:hover .dot {
@@ -912,7 +1013,10 @@ body {
 .statCard {
   /* ... 保留现有样式 ... */
   border-radius: var(--radius-sm);
-  transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease-spring);
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.2s var(--ease-spring);
 }
 
 .statCard:hover {
@@ -961,7 +1065,10 @@ body {
 ```css
 .item {
   /* ... 保留现有样式 ... */
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
 }
 
 .item:hover {
@@ -1010,6 +1117,7 @@ body {
 ### Task 16: 报告相关样式优化
 
 **文件:**
+
 - `apps/web/src/styles/report.module.css`
 - `apps/web/src/styles/report-overview.module.css`
 - `apps/web/src/styles/report-charts.module.css`
@@ -1082,7 +1190,9 @@ body {
 .metaItem {
   /* ... 保留现有样式 ... */
   border-radius: var(--radius-sm);
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .metaItem:hover {
@@ -1151,8 +1261,14 @@ Read: apps/web/src/styles/report-section.module.css
 }
 
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 ```
 

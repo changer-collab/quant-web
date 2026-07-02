@@ -48,7 +48,7 @@ export class PreviewService {
       return { overlays: [], signals: [], fingerprint: '' };
     }
 
-    const closes = bars.map(b => b.close);
+    const closes = bars.map((b) => b.close);
     const overlays: ChartOverlay[] = [];
     const signals: PreviewSignal[] = [];
 
@@ -72,9 +72,11 @@ export class PreviewService {
 
       // 金叉/死叉检测
       for (let i = 1; i < macd.macd.length; i++) {
-        const pm = macd.macd[i - 1], cm = macd.macd[i];
-        const ps = macd.signal[i - 1], cs = macd.signal[i];
-        if ([pm, cm, ps, cs].some(v => !Number.isFinite(v))) continue;
+        const pm = macd.macd[i - 1],
+          cm = macd.macd[i];
+        const ps = macd.signal[i - 1],
+          cs = macd.signal[i];
+        if ([pm, cm, ps, cs].some((v) => !Number.isFinite(v))) continue;
 
         if (pm <= ps && cm > cs) {
           signals.push({
@@ -100,12 +102,21 @@ export class PreviewService {
       overlays.push({ name: 'RSI(14)', type: 'line', data: zip(bars, rsi) });
 
       // 超买/超卖参考线
-      overlays.push({ name: 'RSI_70', type: 'zone', data: bars.map(b => ({ timestamp: b.timestamp, value: 70 })) });
-      overlays.push({ name: 'RSI_30', type: 'zone', data: bars.map(b => ({ timestamp: b.timestamp, value: 30 })) });
+      overlays.push({
+        name: 'RSI_70',
+        type: 'zone',
+        data: bars.map((b) => ({ timestamp: b.timestamp, value: 70 })),
+      });
+      overlays.push({
+        name: 'RSI_30',
+        type: 'zone',
+        data: bars.map((b) => ({ timestamp: b.timestamp, value: 30 })),
+      });
 
       // 超买超卖反转信号
       for (let i = 1; i < rsi.length; i++) {
-        const pv = rsi[i - 1], cv = rsi[i];
+        const pv = rsi[i - 1],
+          cv = rsi[i];
         if (!Number.isFinite(pv) || !Number.isFinite(cv)) continue;
 
         if (pv < 30 && cv >= 30) {
@@ -195,7 +206,7 @@ function computeMACD(
   data: number[],
   fastPeriod: number,
   slowPeriod: number,
-  signalPeriod: number,
+  signalPeriod: number
 ): { macd: number[]; signal: number[]; histogram: number[] } | null {
   if (data.length < slowPeriod + signalPeriod) return null;
 

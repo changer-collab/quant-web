@@ -6,7 +6,12 @@
  *           将 SQLite Repository 换成 PostgreSQL Repository，
  *           Provider 层和上层消费者零改动。
  */
-import { createSqliteContext, saveDbToFile, type DrizzleDb, type SqliteContext } from './sqlite/connection.js';
+import {
+  createSqliteContext,
+  saveDbToFile,
+  type DrizzleDb,
+  type SqliteContext,
+} from './sqlite/connection.js';
 import {
   SqliteBarRepository,
   SqliteTickRepository,
@@ -156,26 +161,22 @@ export function createProviders(repos: RepositorySet): DataCenter['providers'] {
       repos.instruments,
       repos.calendars,
       repos.indexCompositions,
-      repos.adjustmentFactors,
+      repos.adjustmentFactors
     ),
     market: new MarketDataProviderImpl(repos.bars, repos.ticks),
     fundamental: new FundamentalDataProviderImpl(
       repos.financialReports,
       repos.financialRatios,
       repos.valuations,
-      repos.shareholderMetrics,
+      repos.shareholderMetrics
     ),
     event: new EventDataProviderImpl(
       repos.announcementEvents,
       repos.news,
       repos.sentiments,
-      repos.macroIndicators,
+      repos.macroIndicators
     ),
-    l2: new Level2DataProviderImpl(
-      repos.l2Snapshots,
-      repos.tradeRecords,
-      repos.orderRecords,
-    ),
+    l2: new Level2DataProviderImpl(repos.l2Snapshots, repos.tradeRecords, repos.orderRecords),
     quality: new DataQualityCheckerImpl(repos.bars, repos.calendars),
   };
 }
@@ -234,7 +235,11 @@ export async function createDataCenter(config?: DataCenterConfig): Promise<DataC
   let flushTimer: ReturnType<typeof setInterval> | undefined;
   if (flushInterval > 0 && strategy === 'manual') {
     flushTimer = setInterval(() => {
-      try { doFlush(); } catch { /* 定时 flush 失败不中断 */ }
+      try {
+        doFlush();
+      } catch {
+        /* 定时 flush 失败不中断 */
+      }
     }, flushInterval);
   }
 
@@ -279,10 +284,12 @@ export async function createDataCenter(config?: DataCenterConfig): Promise<DataC
         _status = 'closed';
         // 即使失败也调用 afterClose
         await hooks.afterClose?.();
-        throw err instanceof CloseError ? err : new CloseError(
-          `数据中心关闭失败: ${err instanceof Error ? err.message : String(err)}`,
-          err,
-        );
+        throw err instanceof CloseError
+          ? err
+          : new CloseError(
+              `数据中心关闭失败: ${err instanceof Error ? err.message : String(err)}`,
+              err
+            );
       }
     })();
 

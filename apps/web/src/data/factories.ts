@@ -14,13 +14,15 @@ import { localizeJobState, localizeResearchJob } from './localization';
 function resolveResearchTarget(input: CreateResearchJobInput, language?: LanguageCode) {
   const content = getContent(language);
   const mode = input.strategy?.mode ?? input.mode ?? 'non_factor';
-  const strategyName =
-    input.strategy?.name ?? `${mode}${content.draftSuffix} #${input.sequence}`;
+  const strategyName = input.strategy?.name ?? `${mode}${content.draftSuffix} #${input.sequence}`;
 
   return { content, mode, strategyName };
 }
 
-export function createResearchJob(input: CreateResearchJobInput, language?: LanguageCode): ResearchJob {
+export function createResearchJob(
+  input: CreateResearchJobInput,
+  language?: LanguageCode
+): ResearchJob {
   const { content, mode, strategyName } = resolveResearchTarget(input, language);
 
   return {
@@ -38,7 +40,10 @@ export function createResearchJob(input: CreateResearchJobInput, language?: Lang
   };
 }
 
-export function createResearchReport(input: CreateResearchReportInput, language?: LanguageCode): ResearchReport {
+export function createResearchReport(
+  input: CreateResearchReportInput,
+  language?: LanguageCode
+): ResearchReport {
   const { content, mode, strategyName } = resolveResearchTarget(input, language);
   const labels = content.reportMetricLabels;
   const modeName = mode;
@@ -52,10 +57,16 @@ export function createResearchReport(input: CreateResearchReportInput, language?
     : [];
 
   const diagnostics = input.diagnosticSections?.length
-    ? input.diagnosticSections.map((section) => ({ title: section.title, items: [...section.items] }))
+    ? input.diagnosticSections.map((section) => ({
+        title: section.title,
+        items: [...section.items],
+      }))
     : [];
 
-  if (input.configSummary?.length && !diagnostics.some((section) => section.title === content.ui.runConfigurationTitle)) {
+  if (
+    input.configSummary?.length &&
+    !diagnostics.some((section) => section.title === content.ui.runConfigurationTitle)
+  ) {
     diagnostics.unshift({
       title: content.ui.runConfigurationTitle,
       items: [...input.configSummary],
@@ -314,28 +325,41 @@ function createEmptyReport(source?: Partial<BacktestReportFull>): BacktestReport
     robustness: { ...base.robustness, ...(src.robustness as Record<string, unknown>) },
     attribution: { ...base.attribution, ...(src.attribution as Record<string, unknown>) },
     issues: { ...base.issues, ...(src.issues as Record<string, unknown>) },
-    executiveSummary: { ...base.executiveSummary, ...(src.executiveSummary as Record<string, unknown>) },
+    executiveSummary: {
+      ...base.executiveSummary,
+      ...(src.executiveSummary as Record<string, unknown>),
+    },
     conclusion: { ...base.conclusion, ...(src.conclusion as Record<string, unknown>) },
-    positionAnalysis: { ...base.positionAnalysis, ...(src.positionAnalysis as Record<string, unknown>) },
-    subStrategyAttribution: { ...base.subStrategyAttribution, ...(src.subStrategyAttribution as Record<string, unknown>) },
+    positionAnalysis: {
+      ...base.positionAnalysis,
+      ...(src.positionAnalysis as Record<string, unknown>),
+    },
+    subStrategyAttribution: {
+      ...base.subStrategyAttribution,
+      ...(src.subStrategyAttribution as Record<string, unknown>),
+    },
     stressTest: { ...base.stressTest, ...(src.stressTest as Record<string, unknown>) },
-    costSensitivity: { ...base.costSensitivity, ...(src.costSensitivity as Record<string, unknown>) },
-    benchmarkComparison: { ...base.benchmarkComparison, ...(src.benchmarkComparison as Record<string, unknown>) },
+    costSensitivity: {
+      ...base.costSensitivity,
+      ...(src.costSensitivity as Record<string, unknown>),
+    },
+    benchmarkComparison: {
+      ...base.benchmarkComparison,
+      ...(src.benchmarkComparison as Record<string, unknown>),
+    },
     riskWarnings: { ...base.riskWarnings, ...(src.riskWarnings as Record<string, unknown>) },
   } as BacktestReportFull;
 }
 
 /** 创建一个空白回测报告（不依赖 mock 数据） */
-export function createBacktestReportFull(
-  source?: Partial<BacktestReportFull>,
-): BacktestReportFull {
+export function createBacktestReportFull(source?: Partial<BacktestReportFull>): BacktestReportFull {
   return createEmptyReport(source);
 }
 
 /** 将 Worker 返回的真实回测结果映射为 BacktestReportFull（未覆盖字段保持空） */
 export function mapBacktestResultToReport(
   taskResult: { backtestResult?: unknown; analysis?: unknown } | undefined,
-  source?: Partial<BacktestReportFull>,
+  source?: Partial<BacktestReportFull>
 ): BacktestReportFull {
   const bt = taskResult?.backtestResult as PythonBacktestResult | undefined;
   const analysis = taskResult?.analysis as Record<string, unknown> | undefined;
@@ -364,7 +388,10 @@ export function mapBacktestResultToReport(
       dataSource: source?.dataParams?.dataSource ?? '',
       adjustmentType: source?.dataParams?.adjustmentType ?? '',
       fee: source?.dataParams?.fee ?? { commission: 0, stampTax: 0 },
-      slippage: { model: source?.dataParams?.slippage.model ?? 'fixed', value: config.slippage ?? source?.dataParams?.slippage.value ?? 0 },
+      slippage: {
+        model: source?.dataParams?.slippage.model ?? 'fixed',
+        value: config.slippage ?? source?.dataParams?.slippage.value ?? 0,
+      },
       capital: {
         initialCash: config.initialCash ?? source?.dataParams?.capital.initialCash ?? 0,
         maxLeverage: source?.dataParams?.capital.maxLeverage ?? 1.0,
@@ -421,7 +448,10 @@ export function mapBacktestResultToReport(
       strategyCategory: config.strategyKind ?? 'timing',
     },
     equityData: {
-      equityCurve: (bt.equityCurve ?? []).map((p) => ({ timestamp: p.timestamp, equity: p.equity })),
+      equityCurve: (bt.equityCurve ?? []).map((p) => ({
+        timestamp: p.timestamp,
+        equity: p.equity,
+      })),
       benchmarkCurve: [],
       drawdownCurve: bt.drawdownCurve ?? [],
       monthlyReturns: bt.monthlyReturns ?? [],
@@ -435,10 +465,16 @@ export function mapBacktestResultToReport(
     if (es) {
       report.executiveSummary = {
         ...report.executiveSummary,
-        oneLineConclusion: (es.oneLineConclusion as string) || report.executiveSummary.oneLineConclusion,
-        recommendedForLive: (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
-        recommendationReason: (es.recommendationReason as string) || report.executiveSummary.recommendationReason,
-        mainRisks: (es.mainRisks as string[]) ?? (es.riskPoints as string[]) ?? report.executiveSummary.mainRisks,
+        oneLineConclusion:
+          (es.oneLineConclusion as string) || report.executiveSummary.oneLineConclusion,
+        recommendedForLive:
+          (es.recommendedForLive as boolean) ?? report.executiveSummary.recommendedForLive,
+        recommendationReason:
+          (es.recommendationReason as string) || report.executiveSummary.recommendationReason,
+        mainRisks:
+          (es.mainRisks as string[]) ??
+          (es.riskPoints as string[]) ??
+          report.executiveSummary.mainRisks,
       };
     }
     const ov = analysis.overview as Record<string, unknown> | undefined;
@@ -464,16 +500,18 @@ export function mapBacktestResultToReport(
       const apiIssues = iss as Record<string, unknown>;
       report.issues = {
         ...report.issues,
-        overfittingRisk: (apiIssues.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
+        overfittingRisk:
+          (apiIssues.overfittingRisk as 'low' | 'medium' | 'high') ?? report.issues.overfittingRisk,
         survivorshipBias: (apiIssues.survivorshipBias as boolean) ?? report.issues.survivorshipBias,
         lookAheadBias: (apiIssues.lookAheadBias as boolean) ?? report.issues.lookAheadBias,
-        liquidityAssessment: (apiIssues.liquidityAssessment as string) || report.issues.liquidityAssessment,
+        liquidityAssessment:
+          (apiIssues.liquidityAssessment as string) || report.issues.liquidityAssessment,
         capacityEstimate: (apiIssues.capacityEstimate as string) || report.issues.capacityEstimate,
         liquidityAssessmentItems: Array.isArray(apiIssues.liquidityAssessmentItems)
-          ? apiIssues.liquidityAssessmentItems as typeof report.issues.liquidityAssessmentItems
+          ? (apiIssues.liquidityAssessmentItems as typeof report.issues.liquidityAssessmentItems)
           : report.issues.liquidityAssessmentItems,
         capacityEstimateItems: Array.isArray(apiIssues.capacityEstimateItems)
-          ? apiIssues.capacityEstimateItems as typeof report.issues.capacityEstimateItems
+          ? (apiIssues.capacityEstimateItems as typeof report.issues.capacityEstimateItems)
           : report.issues.capacityEstimateItems,
       };
     }
@@ -484,14 +522,17 @@ export function mapBacktestResultToReport(
         advantages: (con.advantages as string[]) ?? report.conclusion.advantages,
         potentialRisks: (con.potentialRisks as string[]) ?? report.conclusion.potentialRisks,
         improvements: (con.improvements as string[]) ?? report.conclusion.improvements,
-        liveTradingAdvice: (con.liveTradingAdvice as ReportConclusion['liveTradingAdvice']) ?? report.conclusion.liveTradingAdvice,
+        liveTradingAdvice:
+          (con.liveTradingAdvice as ReportConclusion['liveTradingAdvice']) ??
+          report.conclusion.liveTradingAdvice,
       };
     }
     const rw = analysis.riskWarnings as Record<string, unknown> | undefined;
     if (rw) {
       report.riskWarnings = {
         ...report.riskWarnings,
-        limitations: (rw.limitations as ReportRiskWarnings['limitations']) ?? report.riskWarnings.limitations,
+        limitations:
+          (rw.limitations as ReportRiskWarnings['limitations']) ?? report.riskWarnings.limitations,
         redLines: (rw.redLines as ReportRiskWarnings['redLines']) ?? report.riskWarnings.redLines,
       };
     }

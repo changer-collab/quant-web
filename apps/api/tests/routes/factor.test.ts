@@ -10,7 +10,11 @@ function createMockDataCenter(): DataCenter {
       reference: {
         getTradingCalendar: async () => ({ exchange: 'SSE', year: 2024, tradingDays: [] }),
         getInstruments: async () => [],
-        getIndexComposition: async () => ({ indexSymbol: 'CSI500', asOfDate: 20240101, constituents: [] }),
+        getIndexComposition: async () => ({
+          indexSymbol: 'CSI500',
+          asOfDate: 20240101,
+          constituents: [],
+        }),
         getAdjustmentFactors: async () => [],
         isTradingDay: async () => true,
         getPreviousTradingDay: async () => 20240101,
@@ -44,28 +48,47 @@ function createMockDataCenter(): DataCenter {
       },
       quality: {
         checkCompleteness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkConsistency: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
         checkFreshness: async () => ({
-          source: 'test', dateRange: { start: 0, end: 0 },
-          totalExpected: 0, actualCount: 0, missingDates: [],
-          consistencyIssues: [], coverage: 1, isAcceptable: true,
+          source: 'test',
+          dateRange: { start: 0, end: 0 },
+          totalExpected: 0,
+          actualCount: 0,
+          missingDates: [],
+          consistencyIssues: [],
+          coverage: 1,
+          isAcceptable: true,
         }),
       },
     },
     repos: {
       factors: {
-        save: async (factor: any) => { factorStore.set(factor.id, { ...factor }); },
+        save: async (factor: any) => {
+          factorStore.set(factor.id, { ...factor });
+        },
         getAll: async () => Array.from(factorStore.values()),
         getById: async (id: string) => factorStore.get(id),
-        delete: async (id: string) => { factorStore.delete(id); },
+        delete: async (id: string) => {
+          factorStore.delete(id);
+        },
       },
     } as never,
     exporter: {} as never,
