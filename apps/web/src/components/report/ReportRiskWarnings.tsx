@@ -45,7 +45,9 @@ export function ReportRiskWarnings({ report, ui }: Props) {
                   <td className={styles.thresholdCell}>{rl.threshold}</td>
                   <td className={styles.actualCell}>{rl.actual}</td>
                   <td className={styles.statusCell}>
-                    <span className={`${styles.statusBadge} ${rl.passed ? styles.statusPass : styles.statusFail}`}>
+                    <span
+                      className={`${styles.statusBadge} ${rl.passed ? styles.statusPass : styles.statusFail}`}
+                    >
                       {rl.passed ? labels.passed : labels.failed}
                     </span>
                   </td>

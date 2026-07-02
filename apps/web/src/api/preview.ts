@@ -13,10 +13,7 @@ export interface PreviewRequestBody {
 /** 获取策略 K 线预览 */
 export function fetchPreview(
   strategyName: string,
-  body: PreviewRequestBody,
+  body: PreviewRequestBody
 ): Promise<PreviewResponse> {
-  return apiPost<PreviewResponse>(
-    `/strategies/${encodeURIComponent(strategyName)}/preview`,
-    body,
-  );
+  return apiPost<PreviewResponse>(`/strategies/${encodeURIComponent(strategyName)}/preview`, body);
 }

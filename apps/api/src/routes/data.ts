@@ -47,7 +47,7 @@ export async function dataRoutes(app: FastifyInstance) {
       symbol,
       timeframe as TimeFrame,
       start ? Number(start) : undefined,
-      end ? Number(end) : undefined,
+      end ? Number(end) : undefined
     )) {
       bars.push(bar);
     }
@@ -62,7 +62,10 @@ export async function dataRoutes(app: FastifyInstance) {
       end: string;
     };
     return app.dataCenter.providers.quality.checkCompleteness(
-      source, symbol, Number(start), Number(end),
+      source,
+      symbol,
+      Number(start),
+      Number(end)
     );
   });
 
@@ -74,7 +77,10 @@ export async function dataRoutes(app: FastifyInstance) {
       end: string;
     };
     return app.dataCenter.providers.quality.checkConsistency(
-      source, symbol, Number(start), Number(end),
+      source,
+      symbol,
+      Number(start),
+      Number(end)
     );
   });
 }

@@ -56,7 +56,7 @@ describe('reference mock', () => {
   it('指数成分总权重约等于 1', () => {
     const totalWeight = MOCK_INDEX_COMPOSITION_CSI500.constituents.reduce(
       (sum, c) => sum + c.weight,
-      0,
+      0
     );
     expect(totalWeight).toBeLessThan(1.1);
     expect(totalWeight).toBeGreaterThan(0);
@@ -170,7 +170,7 @@ describe('fundamental mock', () => {
   it('估值序列数据递增', () => {
     for (let i = 1; i < MOCK_VALUATION_SERIES.length; i++) {
       expect(MOCK_VALUATION_SERIES[i].timestamp).toBeGreaterThan(
-        MOCK_VALUATION_SERIES[i - 1].timestamp,
+        MOCK_VALUATION_SERIES[i - 1].timestamp
       );
     }
   });

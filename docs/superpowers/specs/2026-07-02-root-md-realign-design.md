@@ -23,12 +23,14 @@
 #### 2.1 核心闭环（第 5-11 行）
 
 当前：
+
 ```
 选择策略 → 配置参数 → 运行回测/训练 → 查看任务和报告 → 迭代策略
 前后端端到端闭环已打通：前端提交回测 → API → Worker → Python CLI → 真实回测指标 → SSE 推送 → 前端报告显示。
 ```
 
 更新为：
+
 ```
 选择策略 → 配置参数 → 预览/诊断 → 运行回测 → 查看任务和报告 → 迭代策略
 前后端端到端闭环已打通：前端提交回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE 推送 → 前端报告显示。
@@ -56,6 +58,7 @@
 #### 2.4 "已连通链路"小节（第 63-73 行）
 
 在 `apps/worker → apps/api → SSE → apps/web` 之后追加一行：
+
 ```
 apps/api /api/strategies（catalog/config/preview）/api/diagnostics /api/tasks 已对齐 canonical 契约
 ```
@@ -69,11 +72,13 @@ apps/api /api/strategies（catalog/config/preview）/api/diagnostics /api/tasks 
 #### 3.1 项目概述"当前阶段"（第 6 行）
 
 当前：
+
 ```
 - 当前阶段：前端研究原型稳定，前后端端到端闭环已打通（前端提交回测 → API → Worker → Python CLI → 真实回测指标 → SSE 推送 → 前端报告显示）。
 ```
 
 更新为：
+
 ```
 - 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)。
 ```
@@ -112,12 +117,14 @@ API（apps/api，TypeScript）拥有：
 #### 4.2 "协作接口"措辞对齐
 
 当前（AGENTS.md "协作接口"小节）：
+
 ```
 - 前端 Agent 通过 API Agent 获取策略、任务、报告和数据摘要；当前阶段用前端模拟数据。
 - 前端 Agent 通过因子工坊页面展示因子定义、评估结果和因子引用；当前阶段用前端模拟数据。
 ```
 
 更新为：
+
 ```
 - 前端 Agent 通过 API Agent 获取策略、任务、报告和数据摘要；当前阶段消费真实 API 数据，部分空态场景仍用 mock 占位。
 - 前端 Agent 通过因子工坊页面展示因子定义、评估结果和因子引用；当前阶段用前端模拟数据。

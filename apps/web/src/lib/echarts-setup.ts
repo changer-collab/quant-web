@@ -5,7 +5,15 @@
  * 所有报告图表通过此 Hook 获取 chart 实例。
  */
 import * as echarts from 'echarts/core';
-import { LineChart, BarChart, HeatmapChart, RadarChart, PieChart, GaugeChart, ScatterChart } from 'echarts/charts';
+import {
+  LineChart,
+  BarChart,
+  HeatmapChart,
+  RadarChart,
+  PieChart,
+  GaugeChart,
+  ScatterChart,
+} from 'echarts/charts';
 import {
   TitleComponent,
   TooltipComponent,
@@ -64,7 +72,7 @@ export const CHART_DEFAULTS = {
 
 /** 百分比格式化 */
 export function fmtPct(v: number): string {
-  return `${(v >= 0 ? '+' : '')}${(v * 100).toFixed(2)}%`;
+  return `${v >= 0 ? '+' : ''}${(v * 100).toFixed(2)}%`;
 }
 
 /** 数值格式化 */

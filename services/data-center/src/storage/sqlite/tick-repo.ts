@@ -66,7 +66,9 @@ export class SqliteTickRepository implements TickRepository {
       const conditions = [eq(ticks.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(ticks.timestamp, start));
       if (end !== undefined) conditions.push(lte(ticks.timestamp, end));
-      const rows = await this.db.select().from(ticks)
+      const rows = await this.db
+        .select()
+        .from(ticks)
         .where(and(...conditions))
         .orderBy(ticks.timestamp);
       return rows.map(toModel);
@@ -77,7 +79,9 @@ export class SqliteTickRepository implements TickRepository {
 
   async getLatest(symbol: string): Promise<ExtendedTick | undefined> {
     try {
-      const rows = await this.db.select().from(ticks)
+      const rows = await this.db
+        .select()
+        .from(ticks)
         .where(eq(ticks.symbol, symbol))
         .orderBy(desc(ticks.timestamp))
         .limit(1);
@@ -94,7 +98,9 @@ export class SqliteTickRepository implements TickRepository {
       if (params?.afterTimestamp !== undefined) {
         conditions.push(gt(ticks.timestamp, params.afterTimestamp));
       }
-      const rows = await this.db.select().from(ticks)
+      const rows = await this.db
+        .select()
+        .from(ticks)
         .where(and(...conditions))
         .orderBy(ticks.timestamp)
         .limit(limit + 1);

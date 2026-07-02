@@ -15,7 +15,7 @@ const report = createResearchReport(
     strategy,
     generatedAt: '14:30:00',
   },
-  'en',
+  'en'
 );
 
 describe('ReportSummary', () => {

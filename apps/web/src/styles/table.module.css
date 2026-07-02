@@ -43,7 +43,9 @@
 
 .clickableRow {
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .clickableRow:hover {

@@ -20,39 +20,40 @@ export class SqliteTaskRepository {
   constructor(private db: DrizzleDb) {}
 
   async save(task: TaskView): Promise<void> {
-    await this.db.insert(tasks).values({
-      id: task.id,
-      type: task.type,
-      status: task.status,
-      payload: JSON.stringify(task.payload),
-      submittedAt: task.submittedAt,
-      startedAt: task.startedAt ?? null,
-      completedAt: task.completedAt ?? null,
-      result: task.result ? JSON.stringify(task.result) : null,
-      error: task.error ?? null,
-      progress: task.progress ?? null,
-      lines: task.lines ? JSON.stringify(task.lines) : null,
-    }).onConflictDoUpdate({
-      target: tasks.id,
-      set: {
+    await this.db
+      .insert(tasks)
+      .values({
+        id: task.id,
+        type: task.type,
         status: task.status,
+        payload: JSON.stringify(task.payload),
+        submittedAt: task.submittedAt,
         startedAt: task.startedAt ?? null,
         completedAt: task.completedAt ?? null,
         result: task.result ? JSON.stringify(task.result) : null,
         error: task.error ?? null,
         progress: task.progress ?? null,
         lines: task.lines ? JSON.stringify(task.lines) : null,
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: tasks.id,
+        set: {
+          status: task.status,
+          startedAt: task.startedAt ?? null,
+          completedAt: task.completedAt ?? null,
+          result: task.result ? JSON.stringify(task.result) : null,
+          error: task.error ?? null,
+          progress: task.progress ?? null,
+          lines: task.lines ? JSON.stringify(task.lines) : null,
+        },
+      });
   }
 
   async getById(id: string): Promise<TaskView | undefined> {
-    const rows = await this.db.select().from(tasks)
-      .where(eq(tasks.id, id))
-      .limit(1);
-    
+    const rows = await this.db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
+
     if (rows.length === 0) return undefined;
-    
+
     return this.mapRow(rows[0]);
   }
 
@@ -60,10 +61,12 @@ export class SqliteTaskRepository {
     const conditions = [];
     if (filter?.type) conditions.push(eq(tasks.type, filter.type));
     if (filter?.status) conditions.push(eq(tasks.status, filter.status));
-    
-    const rows = await this.db.select().from(tasks)
+
+    const rows = await this.db
+      .select()
+      .from(tasks)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
-    
+
     return rows.map((row) => this.mapRow(row));
   }
 

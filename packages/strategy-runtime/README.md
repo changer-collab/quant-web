@@ -26,21 +26,21 @@
 
 ## 子模块
 
-| 模块 | 文件 | 职责 |
-|------|------|------|
-| 类型定义 | `types.py` | 枚举类型（OrderSide、TimeFrame、TaskStatus 等），与 TS 侧对齐 |
-| 行情类型 | `market.py` | Bar、Tick、Instrument、MarketEvent（re-export 给下游） |
-| 订单 | `order.py` | Order、Trade、OrderRequest |
-| 持仓 | `portfolio.py` | Position、Account |
-| 策略元数据 | `meta.py` | StrategyParamDef、StrategyMeta |
-| 策略上下文 | `context.py` | StrategyContext（策略运行时上下文） |
-| 策略结果 | `result.py` | StrategyResult |
-| 策略基类 | `strategy.py` | Strategy ABC（init/on_bar/on_tick/on_order/finish） |
-| 分层策略 | `selectors.py` `timers.py` `sizers.py` `composite.py` | 选股/择时/仓位/组合策略基类 |
-| 序列化 | `serialization.py` | camelCase/snake_case 互转 |
-| 错误 | `error.py` | QuantError |
-| CLI | `cli.py` `__main__.py` | stdin JSON → stdout NDJSON 事件流 |
-| 命令 | `commands/backtest.py` `commands/factor_eval.py` `commands/ai_train.py` | 命令实现（含 `commands/__init__.py` 函数内延迟导入下游包） |
+| 模块       | 文件                                                                    | 职责                                                          |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 类型定义   | `types.py`                                                              | 枚举类型（OrderSide、TimeFrame、TaskStatus 等），与 TS 侧对齐 |
+| 行情类型   | `market.py`                                                             | Bar、Tick、Instrument、MarketEvent（re-export 给下游）        |
+| 订单       | `order.py`                                                              | Order、Trade、OrderRequest                                    |
+| 持仓       | `portfolio.py`                                                          | Position、Account                                             |
+| 策略元数据 | `meta.py`                                                               | StrategyParamDef、StrategyMeta                                |
+| 策略上下文 | `context.py`                                                            | StrategyContext（策略运行时上下文）                           |
+| 策略结果   | `result.py`                                                             | StrategyResult                                                |
+| 策略基类   | `strategy.py`                                                           | Strategy ABC（init/on_bar/on_tick/on_order/finish）           |
+| 分层策略   | `selectors.py` `timers.py` `sizers.py` `composite.py`                   | 选股/择时/仓位/组合策略基类                                   |
+| 序列化     | `serialization.py`                                                      | camelCase/snake_case 互转                                     |
+| 错误       | `error.py`                                                              | QuantError                                                    |
+| CLI        | `cli.py` `__main__.py`                                                  | stdin JSON → stdout NDJSON 事件流                             |
+| 命令       | `commands/backtest.py` `commands/factor_eval.py` `commands/ai_train.py` | 命令实现（含 `commands/__init__.py` 函数内延迟导入下游包）    |
 
 ## 核心设计
 

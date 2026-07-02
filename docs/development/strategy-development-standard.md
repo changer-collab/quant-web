@@ -86,19 +86,19 @@ StrategyMeta(
 
 > 子分类值在 Python / API / 前端三层严格一致（共 10 个）。
 
-| category | subcategory |
-|----------|-------------|
-| `FACTOR_BASED` 因子型 | `linear_multi_factor` / `nonlinear_ml` |
-| `NON_FACTOR` 非因子型 | `trend_cta` / `mean_reversion` / `arbitrage` / `high_frequency` / `macro_quant` / `event_driven` / `e2e_ai_timeseries` / `tail_risk_hedging` |
-| `TRANSITIONAL` 过渡形态 | 无子分类（前端 `CATEGORY_SUBCATEGORIES.transitional` 为空） |
+| category                | subcategory                                                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FACTOR_BASED` 因子型   | `linear_multi_factor` / `nonlinear_ml`                                                                                                       |
+| `NON_FACTOR` 非因子型   | `trend_cta` / `mean_reversion` / `arbitrage` / `high_frequency` / `macro_quant` / `event_driven` / `e2e_ai_timeseries` / `tail_risk_hedging` |
+| `TRANSITIONAL` 过渡形态 | 无子分类（前端 `CATEGORY_SUBCATEGORIES.transitional` 为空）                                                                                  |
 
 ### StrategyParamDef 扩展字段
 
 供策略配置页动态表单与 K 线预览使用：
 
-| 字段 | 说明 |
-|------|------|
-| `chart_relevant` | 该参数变动是否触发 K 线预览重新请求（默认 `False`） |
+| 字段             | 说明                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| `chart_relevant` | 该参数变动是否触发 K 线预览重新请求（默认 `False`）                                                           |
 | `ui_constraints` | 前端表单联动规则列表（`UIConstraint`，kind 取 `disable_when`/`require_when`/`set_default_when`/`range_when`） |
 
 ## 4. 生命周期
@@ -163,8 +163,8 @@ all_strategies = list_all()
 {
   "command": "backtest",
   "strategy": "dual_ma",
-  "config": {"initialCash": 100000, "slippage": 0.001},
-  "dataRange": {"dbPath": "data/quant.db", "symbol": "600519", "timeframe": "1d"}
+  "config": { "initialCash": 100000, "slippage": 0.001 },
+  "dataRange": { "dbPath": "data/quant.db", "symbol": "600519", "timeframe": "1d" }
 }
 ```
 
@@ -177,22 +177,22 @@ all_strategies = list_all()
   "config": {
     "initialCash": 100000,
     "components": {
-      "selector": {"name": "momentum_selector", "params": {"lookback": 5, "top_k": 2}},
-      "timer": {"name": "ma_crossover", "params": {"short_period": 5, "long_period": 20}},
-      "sizer": {"name": "equal_weight", "params": {"max_positions": 2}}
+      "selector": { "name": "momentum_selector", "params": { "lookback": 5, "top_k": 2 } },
+      "timer": { "name": "ma_crossover", "params": { "short_period": 5, "long_period": 20 } },
+      "sizer": { "name": "equal_weight", "params": { "max_positions": 2 } }
     }
   },
-  "dataRange": {"dbPath": "data/quant.db", "symbols": ["600519", "000001"], "timeframe": "1d"}
+  "dataRange": { "dbPath": "data/quant.db", "symbols": ["600519", "000001"], "timeframe": "1d" }
 }
 ```
 
 ### 错误码
 
-| 错误码 | 触发条件 |
-|--------|----------|
-| `NO_SYMBOLS` | 组合策略未提供 symbols |
-| `NO_DATA` | 标的无数据 |
-| `UNSUPPORTED` | 传统策略不支持多标的 |
+| 错误码           | 触发条件               |
+| ---------------- | ---------------------- |
+| `NO_SYMBOLS`     | 组合策略未提供 symbols |
+| `NO_DATA`        | 标的无数据             |
+| `UNSUPPORTED`    | 传统策略不支持多标的   |
 | `INTERNAL_ERROR` | 策略名不存在或参数错误 |
 
 ## 9. 测试要求

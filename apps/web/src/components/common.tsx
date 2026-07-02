@@ -3,7 +3,12 @@ import hero from '../styles/hero.module.css';
 import infoPanelStyles from '../styles/info-panel.module.css';
 
 export function MetricCard({ metric }: { metric: Metric }) {
-  const toneClass = metric.tone === 'good' ? hero.metricGood : metric.tone === 'warn' ? hero.metricWarn : hero.metricInfo;
+  const toneClass =
+    metric.tone === 'good'
+      ? hero.metricGood
+      : metric.tone === 'warn'
+        ? hero.metricWarn
+        : hero.metricInfo;
   return (
     <article className={`${hero.metric} ${toneClass}`}>
       <span className={hero.metricLabel}>{metric.label}</span>

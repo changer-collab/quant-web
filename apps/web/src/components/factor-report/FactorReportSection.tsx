@@ -9,7 +9,13 @@ interface FactorReportSectionProps {
   className?: string;
 }
 
-export function FactorReportSection({ title, subtitle, children, defaultOpen = true, className }: FactorReportSectionProps) {
+export function FactorReportSection({
+  title,
+  subtitle,
+  children,
+  defaultOpen = true,
+  className,
+}: FactorReportSectionProps) {
   return (
     <details open={defaultOpen} className={`${s.section} ${className ?? ''}`}>
       <summary className={s.summary}>

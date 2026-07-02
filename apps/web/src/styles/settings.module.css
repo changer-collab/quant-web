@@ -41,7 +41,10 @@
   font-size: var(--text-sm);
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .languageButton:hover,

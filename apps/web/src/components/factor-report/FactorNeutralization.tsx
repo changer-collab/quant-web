@@ -25,7 +25,9 @@ export function FactorNeutralization({ report, ui }: Props) {
             <div key={i} className={s.gridTableRow}>
               <span className={s.colLabel}>{row.metric}</span>
               <span className={s.colValue}>{row.raw.toFixed(3)}</span>
-              <span className={`${s.colValue} ${row.neutralized >= row.raw ? s.alertNormal : s.alertCritical}`}>
+              <span
+                className={`${s.colValue} ${row.neutralized >= row.raw ? s.alertNormal : s.alertCritical}`}
+              >
                 {row.neutralized.toFixed(3)}
               </span>
             </div>
@@ -65,7 +67,9 @@ export function FactorNeutralization({ report, ui }: Props) {
             <div key={i} className={s.gridTableRow}>
               <span className={s.colLabel}>{row.factorA}</span>
               <span className={s.colLabel}>{row.factorB}</span>
-              <span className={`${s.colValue} ${Math.abs(row.correlation) > 0.5 ? s.alertWarning : s.alertNormal}`}>
+              <span
+                className={`${s.colValue} ${Math.abs(row.correlation) > 0.5 ? s.alertWarning : s.alertNormal}`}
+              >
                 {row.correlation.toFixed(3)}
               </span>
             </div>

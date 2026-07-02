@@ -13,7 +13,11 @@ const CANONICAL_CATEGORIES = ['factor_based', 'non_factor', 'transitional'];
  */
 function validateTaskPayload(type: TaskType, payload: Record<string, unknown>): string | null {
   // 拒绝不受支持的任务类型
-  if (type === TaskType.FactorCompute || type === TaskType.FactorEval || type === TaskType.AITrain) {
+  if (
+    type === TaskType.FactorCompute ||
+    type === TaskType.FactorEval ||
+    type === TaskType.AITrain
+  ) {
     return 'not supported in this workflow';
   }
 
@@ -39,7 +43,12 @@ function validateTaskPayload(type: TaskType, payload: Record<string, unknown>): 
     }
 
     const category = configSnapshot.category;
-    if (category !== undefined && category !== null && typeof category === 'string' && !CANONICAL_CATEGORIES.includes(category)) {
+    if (
+      category !== undefined &&
+      category !== null &&
+      typeof category === 'string' &&
+      !CANONICAL_CATEGORIES.includes(category)
+    ) {
       return `invalid configSnapshot.category: ${category}`;
     }
 
@@ -94,7 +103,9 @@ export async function taskRoutes(app: FastifyInstance) {
     });
 
     // 发送初始状态
-    reply.raw.write(`data: ${JSON.stringify({ type: 'status', taskId, message: task.status, percent: task.progress ?? 0 })}\n\n`);
+    reply.raw.write(
+      `data: ${JSON.stringify({ type: 'status', taskId, message: task.status, percent: task.progress ?? 0 })}\n\n`
+    );
 
     // 订阅后续事件
     const unsubscribe = app.taskService.subscribe(taskId, (event) => {
@@ -108,9 +119,14 @@ export async function taskRoutes(app: FastifyInstance) {
 
     // 如果任务已完成，直接发送终态事件
     if (task.status === 'completed' || task.status === 'failed') {
-      const finalEvent = task.status === 'completed'
-        ? { type: 'result' as const, taskId, data: task.result }
-        : { type: 'error' as const, taskId, error: { code: 'TASK_FAILED', message: task.error ?? 'Unknown error' } };
+      const finalEvent =
+        task.status === 'completed'
+          ? { type: 'result' as const, taskId, data: task.result }
+          : {
+              type: 'error' as const,
+              taskId,
+              error: { code: 'TASK_FAILED', message: task.error ?? 'Unknown error' },
+            };
       reply.raw.write(`data: ${JSON.stringify(finalEvent)}\n\n`);
       unsubscribe();
       reply.raw.end();
@@ -138,10 +154,14 @@ export async function internalTaskRoutes(app: FastifyInstance) {
     if (task.status !== TaskStatus.Pending) {
       return reply.code(409).send({ error: 'Task is not pending' });
     }
-    await app.taskService.updateTask(req.params.id, {
-      status: TaskStatus.Running,
-      startedAt: Date.now(),
-    }, { type: 'status', taskId: req.params.id, message: TaskStatus.Running });
+    await app.taskService.updateTask(
+      req.params.id,
+      {
+        status: TaskStatus.Running,
+        startedAt: Date.now(),
+      },
+      { type: 'status', taskId: req.params.id, message: TaskStatus.Running }
+    );
     return { ok: true };
   });
 
@@ -149,14 +169,23 @@ export async function internalTaskRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string } }>('/:id/event', async (req, reply) => {
     const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
-    const event = req.body as { type: 'progress' | 'log'; percent?: number; message?: string; level?: string };
-    await app.taskService.updateTask(req.params.id, {}, {
-      type: event.type,
-      taskId: req.params.id,
-      percent: event.percent,
-      message: event.message,
-      level: event.level,
-    });
+    const event = req.body as {
+      type: 'progress' | 'log';
+      percent?: number;
+      message?: string;
+      level?: string;
+    };
+    await app.taskService.updateTask(
+      req.params.id,
+      {},
+      {
+        type: event.type,
+        taskId: req.params.id,
+        percent: event.percent,
+        message: event.message,
+        level: event.level,
+      }
+    );
     if (event.type === 'progress' && event.percent !== undefined) {
       await app.taskService.updateTask(req.params.id, { progress: event.percent });
     }
@@ -188,26 +217,44 @@ export async function internalTaskRoutes(app: FastifyInstance) {
           task: { id: task.id, type: task.type, payload: task.payload as Record<string, unknown> },
           result,
         });
-        enrichedResult = { ...result, resultId: envelope.resultId, resultType: envelope.resultType };
+        enrichedResult = {
+          ...result,
+          resultId: envelope.resultId,
+          resultType: envelope.resultType,
+        };
         sseResultId = envelope.resultId;
         sseResultType = envelope.resultType;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        await app.taskService.updateTask(req.params.id, {
-          status: TaskStatus.Failed,
-          error: msg,
-          completedAt: Date.now(),
-        }, { type: 'error', taskId: req.params.id, error: { code: 'PROCESSOR_ERROR', message: msg } });
+        await app.taskService.updateTask(
+          req.params.id,
+          {
+            status: TaskStatus.Failed,
+            error: msg,
+            completedAt: Date.now(),
+          },
+          { type: 'error', taskId: req.params.id, error: { code: 'PROCESSOR_ERROR', message: msg } }
+        );
         return { ok: true };
       }
     }
 
-    await app.taskService.updateTask(req.params.id, {
-      status: TaskStatus.Completed,
-      result: enrichedResult,
-      completedAt: Date.now(),
-      progress: 100,
-    }, { type: 'result', taskId: req.params.id, resultId: sseResultId, resultType: sseResultType, data: enrichedResult });
+    await app.taskService.updateTask(
+      req.params.id,
+      {
+        status: TaskStatus.Completed,
+        result: enrichedResult,
+        completedAt: Date.now(),
+        progress: 100,
+      },
+      {
+        type: 'result',
+        taskId: req.params.id,
+        resultId: sseResultId,
+        resultType: sseResultType,
+        data: enrichedResult,
+      }
+    );
 
     return { ok: true };
   });
@@ -217,11 +264,15 @@ export async function internalTaskRoutes(app: FastifyInstance) {
     const task = await app.taskService.get(req.params.id);
     if (!task) return reply.code(404).send({ error: 'Task not found' });
     const { error } = req.body as { error: string };
-    await app.taskService.updateTask(req.params.id, {
-      status: TaskStatus.Failed,
-      error,
-      completedAt: Date.now(),
-    }, { type: 'error', taskId: req.params.id, error: { code: 'TASK_FAILED', message: error } });
+    await app.taskService.updateTask(
+      req.params.id,
+      {
+        status: TaskStatus.Failed,
+        error,
+        completedAt: Date.now(),
+      },
+      { type: 'error', taskId: req.params.id, error: { code: 'TASK_FAILED', message: error } }
+    );
     return { ok: true };
   });
 }

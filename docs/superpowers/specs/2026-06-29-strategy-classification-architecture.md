@@ -26,10 +26,10 @@
 
 ### 0.2 当前契约待决项（2026-06-29）
 
-| 待决项 | 当前建议 | 落地位置 |
-|---|---|---|
-| diagnostics 结果存储 | 短期继续用 `data_json` JSON 字段；Phase 3 前补 `category` 列（plan story-17b） | 本文件第 7.2 节，plan 文件 Decision Log |
-| `transitional` 支持范围 | MVP 可先轻量占位；优先跑通 `factor_based` / `non_factor` | 本文件第 6.3 / 8.3 节，plan 文件 Phase 3 |
+| 待决项                  | 当前建议                                                                       | 落地位置                                 |
+| ----------------------- | ------------------------------------------------------------------------------ | ---------------------------------------- |
+| diagnostics 结果存储    | 短期继续用 `data_json` JSON 字段；Phase 3 前补 `category` 列（plan story-17b） | 本文件第 7.2 节，plan 文件 Decision Log  |
+| `transitional` 支持范围 | MVP 可先轻量占位；优先跑通 `factor_based` / `non_factor`                       | 本文件第 6.3 / 8.3 节，plan 文件 Phase 3 |
 
 ---
 
@@ -81,25 +81,25 @@ graph TB
 
 ### 1.1 每一层的职责
 
-| 层 | 目录 | 职责 | 关键约束 |
-|---|------|------|---------|
-| **表现层** | `apps/web/` | 策略选择、参数配置、指标预览、诊断图表、回测报告 | 无 Node.js 依赖，纯浏览器端渲染 |
-| **服务层** | `apps/api/` | REST API、SSE 推送、配置存储、任务编排、类型转换 | Fastify + Drizzle ORM |
-| **执行层** | `apps/worker/` | 轮询 pending 任务、调 Python 子进程、转发事件 | 无状态，可水平扩展 |
-| **引擎层** | `packages/*/` | 回测计算、因子分析、AI 分析、策略注册 | 纯 Python，通过 stdin/stdout NDJSON 通信 |
-| **持久层** | `data/quant.db` | 策略配置、诊断结果、回测报告、K 线数据 | better-sqlite3 + WAL 模式 |
+| 层         | 目录            | 职责                                             | 关键约束                                 |
+| ---------- | --------------- | ------------------------------------------------ | ---------------------------------------- |
+| **表现层** | `apps/web/`     | 策略选择、参数配置、指标预览、诊断图表、回测报告 | 无 Node.js 依赖，纯浏览器端渲染          |
+| **服务层** | `apps/api/`     | REST API、SSE 推送、配置存储、任务编排、类型转换 | Fastify + Drizzle ORM                    |
+| **执行层** | `apps/worker/`  | 轮询 pending 任务、调 Python 子进程、转发事件    | 无状态，可水平扩展                       |
+| **引擎层** | `packages/*/`   | 回测计算、因子分析、AI 分析、策略注册            | 纯 Python，通过 stdin/stdout NDJSON 通信 |
+| **持久层** | `data/quant.db` | 策略配置、诊断结果、回测报告、K 线数据           | better-sqlite3 + WAL 模式                |
 
 ### 1.2 技术选型
 
-| 组件 | 技术 | 版本 |
-|------|------|------|
-| 前端框架 | React + TypeScript + Vite | — |
-| API 框架 | Fastify | — |
-| Worker 运行时 | Node.js (tsx) | — |
-| Python 运行时 | CPython | ≥3.10 |
-| 数据库 | better-sqlite3 + Drizzle ORM | — |
-| 任务队列 | 数据库轮询（无消息队列） | — |
-| 通信协议 | HTTP + SSE + stdin/stdout NDJSON | — |
+| 组件          | 技术                             | 版本  |
+| ------------- | -------------------------------- | ----- |
+| 前端框架      | React + TypeScript + Vite        | —     |
+| API 框架      | Fastify                          | —     |
+| Worker 运行时 | Node.js (tsx)                    | —     |
+| Python 运行时 | CPython                          | ≥3.10 |
+| 数据库        | better-sqlite3 + Drizzle ORM     | —     |
+| 任务队列      | 数据库轮询（无消息队列）         | —     |
+| 通信协议      | HTTP + SSE + stdin/stdout NDJSON | —     |
 
 ---
 
@@ -115,7 +115,7 @@ graph TB
 
     FB --> FB1[linear_multi_factor<br/>线性多因子]
     FB --> FB2[nonlinear_ml<br/>非线性 ML]
-    
+
     NF --> NF1[trend_cta<br/>趋势跟踪]
     NF --> NF2[mean_reversion<br/>均值回归]
     NF --> NF3[arbitrage<br/>套利]
@@ -141,7 +141,7 @@ graph TB
 
 StrategyCategory = 'factor_based' | 'non_factor' | 'transitional'
 
-StrategySubcategory = 
+StrategySubcategory =
   | 'linear_multi_factor' | 'nonlinear_ml'        // 因子型
   | 'trend_cta' | 'mean_reversion' | 'arbitrage'  // 非因子型
   | 'high_frequency' | 'macro_quant'               // 非因子型
@@ -171,17 +171,17 @@ workflowReady =
 graph TB
     APP[App.tsx] --> NAV[导航栏]
     APP --> PAGE{activePage}
-    
+
     PAGE -->|strategies| SP[StrategyPage]
     PAGE -->|workspace| SW{workspaceEntryStrategy?}
     PAGE -->|reports| RP[ReportPage]
-    
+
     SW -->|有策略| WSP[WorkspacePage<br/>新双流程]
     SW -->|无策略| WSC[WorkspaceContent<br/>旧单页面<br/>⚠️ 待清理]
 
     SP -->|'grid' 视图| SGN[StrategyGridNew<br/>策略总览]
     SP -->|'config' 视图| CP[ConfigPanel + KlineChart]
-    
+
     SGN -->|进入工作区| APP
     CP -->|进入工作区| APP
 ```
@@ -199,15 +199,15 @@ graph TB
         direction TB
         WSP[WorkspacePage] -->|Step 1| DIAG[诊断部分]
         WSP -->|Step 2| BT[回测部分]
-        
+
         DIAG -->|factor_based| ICD[IC 序列图]
         DIAG -->|factor_based| LRD[分层收益图]
         DIAG -->|factor_based| CHD[相关性热图]
-        
+
         DIAG -->|non_factor| PSD[参数敏感性热图]
         DIAG -->|non_factor| SQD[信号分布图]
         DIAG -->|non_factor| SLD[滑点压力图]
-        
+
         BT -->|所有类型| EQ[权益曲线]
         BT -->|所有类型| MET[绩效指标卡]
         BT -->|所有类型| TRD[交易明细表]
@@ -225,17 +225,17 @@ graph TB
 
 ### 3.3 ConfigPanel — 按分类分支配置
 
-| 配置区域 | `factor_based` | `non_factor` | `transitional` |
-|---------|---------------|-------------|----------------|
-| 策略参数 | ✅ 通用策略参数 | ✅ 通用策略参数 | ✅ 通用策略参数 |
-| 因子池 | ✅ 多选因子列表 | ❌ | ❌ |
-| 预处理方式 | ✅ 标准化/中性化等 | ❌ | ❌ |
-| 窗口参数 | ❌ | ✅ lookback/hold 等 | ❌ |
-| 指标工具箱 | ❌ | ✅ 技术指标开关 | ❌ |
-| 子分类专属字段 | ❌ | ✅ 如 macro_quant 的宏观因子 | ❌ |
-| 数据源选择 | ❌ | ❌ | ✅ |
-| 衰减参数 | ❌ | ❌ | ✅ |
-| UI 约束联动 | ✅ `ui_constraints` | ✅ `ui_constraints` | ✅ `ui_constraints` |
+| 配置区域       | `factor_based`      | `non_factor`                 | `transitional`      |
+| -------------- | ------------------- | ---------------------------- | ------------------- |
+| 策略参数       | ✅ 通用策略参数     | ✅ 通用策略参数              | ✅ 通用策略参数     |
+| 因子池         | ✅ 多选因子列表     | ❌                           | ❌                  |
+| 预处理方式     | ✅ 标准化/中性化等  | ❌                           | ❌                  |
+| 窗口参数       | ❌                  | ✅ lookback/hold 等          | ❌                  |
+| 指标工具箱     | ❌                  | ✅ 技术指标开关              | ❌                  |
+| 子分类专属字段 | ❌                  | ✅ 如 macro_quant 的宏观因子 | ❌                  |
+| 数据源选择     | ❌                  | ❌                           | ✅                  |
+| 衰减参数       | ❌                  | ❌                           | ✅                  |
+| UI 约束联动    | ✅ `ui_constraints` | ✅ `ui_constraints`          | ✅ `ui_constraints` |
 
 ### 3.4 KlineChart — 预览引擎
 
@@ -256,17 +256,17 @@ PreviewService 是纯 TypeScript 实现，策略名无关，只按参数计算�
 
 ### 4.1 端点总览
 
-| 方法 | 路径 | 用途 | 数据源 |
-|------|------|------|--------|
-| GET | `/api/strategies` | 列出所有策略及其 meta | Python 策略注册表（同步） |
-| GET | `/api/strategies/:name` | 获取单个策略 meta | Python 策略注册表（同步） |
-| GET | `/api/strategies/:name/config` | 读取已保存的策略配置 | SQLite |
-| PUT | `/api/strategies/:name/config` | 保存/更新策略配置 | SQLite |
-| POST | `/api/strategies/:name/preview` | 预览 K 线 + 指标叠加 | data-center + PreviewService |
-| POST | `/api/tasks` | 提交任务（诊断/回测等） | TaskService |
-| GET | `/api/tasks/:id/stream` | SSE 流式任务进度 | TaskService |
-| GET | `/api/diagnostics/:resultId` | 获取诊断结果 | SQLite |
-| GET | `/api/diagnostics` | 按策略名列出诊断历史 | SQLite |
+| 方法 | 路径                            | 用途                    | 数据源                       |
+| ---- | ------------------------------- | ----------------------- | ---------------------------- |
+| GET  | `/api/strategies`               | 列出所有策略及其 meta   | Python 策略注册表（同步）    |
+| GET  | `/api/strategies/:name`         | 获取单个策略 meta       | Python 策略注册表（同步）    |
+| GET  | `/api/strategies/:name/config`  | 读取已保存的策略配置    | SQLite                       |
+| PUT  | `/api/strategies/:name/config`  | 保存/更新策略配置       | SQLite                       |
+| POST | `/api/strategies/:name/preview` | 预览 K 线 + 指标叠加    | data-center + PreviewService |
+| POST | `/api/tasks`                    | 提交任务（诊断/回测等） | TaskService                  |
+| GET  | `/api/tasks/:id/stream`         | SSE 流式任务进度        | TaskService                  |
+| GET  | `/api/diagnostics/:resultId`    | 获取诊断结果            | SQLite                       |
+| GET  | `/api/diagnostics`              | 按策略名列出诊断历史    | SQLite                       |
 
 ### 4.2 策略响应格式
 
@@ -274,7 +274,7 @@ PreviewService 是纯 TypeScript 实现，策略名无关，只按参数计算�
 // GET /api/strategies → StrategyMeta[]
 
 interface StrategyMeta {
-  name: string;              // snake_case，与注册名一致
+  name: string; // snake_case，与注册名一致
   description: string;
   params: StrategyParamDef[];
   version: string;
@@ -282,7 +282,7 @@ interface StrategyMeta {
   backtestable: boolean;
   category: StrategyCategory;
   subcategory: StrategySubcategory | null;
-  workflowReady: boolean;    // subcategory !== null
+  workflowReady: boolean; // subcategory !== null
 }
 
 interface StrategyParamDef {
@@ -293,7 +293,7 @@ interface StrategyParamDef {
   min?: number;
   max?: number;
   options?: string[];
-  chart_relevant?: boolean;    // 改动时触发 KlineChart 重新请求
+  chart_relevant?: boolean; // 改动时触发 KlineChart 重新请求
   ui_constraints?: UIConstraint[];
 }
 ```
@@ -309,7 +309,7 @@ sequenceDiagram
 
     F->>API: POST /tasks { type, payload }
     API-->>F: 202 { id, status }
-    
+
     F->>API: GET /tasks/:id/stream (SSE)
     API-->>F: data: { type: 'status', message: 'pending' }
 
@@ -325,7 +325,7 @@ sequenceDiagram
     P-->>W: stdout: {"event":"progress","percent":30,"message":"..."}
     W->>API: POST /tasks/:id/event { type, percent, message }
     API-->>F: SSE: { type: 'progress', percent: 30, message: '...' }
-    
+
     P-->>W: stdout: {"event":"result","data":{...}}
     W->>API: POST /tasks/:id/complete { result }
     API-->>F: SSE: { type: 'result', data: { ... } }
@@ -336,8 +336,8 @@ sequenceDiagram
 
 ```typescript
 enum TaskType {
-  Backtest = 'backtest',        // 策略回测
-  Diagnostics = 'diagnostics',   // 策略诊断
+  Backtest = 'backtest', // 策略回测
+  Diagnostics = 'diagnostics', // 策略诊断
   FactorCompute = 'factor_compute',
   FactorEval = 'factor_eval',
   AITrain = 'ai_train',
@@ -350,11 +350,11 @@ enum TaskType {
 ```typescript
 // 提交诊断
 interface DiagnosticsPayload {
-  strategy: string;                         // 策略名
-  category: StrategyCategory;               // 用于 Python 分支
-  configSnapshot: ConfigSnapshot;           // 已保存配置
-  symbol: string;                           // 分析标的
-  timeframe: string;                        // 时间粒度
+  strategy: string; // 策略名
+  category: StrategyCategory; // 用于 Python 分支
+  configSnapshot: ConfigSnapshot; // 已保存配置
+  symbol: string; // 分析标的
+  timeframe: string; // 时间粒度
   dataRange?: { startTs?: number; endTs?: number };
 }
 
@@ -372,7 +372,12 @@ interface NonFactorDiagnostics {
   type: 'non_factor';
   subcategory: string;
   param_sensitivity: { param: string; values: number[]; returns: number[]; sharpe: number[] }[];
-  signal_quality: { total_signals: number; win_rate: number; avg_holding_bars: number; profit_factor: number };
+  signal_quality: {
+    total_signals: number;
+    win_rate: number;
+    avg_holding_bars: number;
+    profit_factor: number;
+  };
   slippage_stress: { bps: number; return: number; sharpe: number; trade_count: number }[];
 }
 
@@ -393,17 +398,17 @@ graph TB
     START[main.ts 轮询] --> PENDING[GET /internal/tasks/pending]
     PENDING --> CLAIM[POST /tasks/:id/claim]
     CLAIM --> SWITCH{任务类型}
-    
+
     SWITCH -->|backtest| BH[BacktestHandler]
     SWITCH -->|diagnostics| DH[DiagnosticsHandler]
     SWITCH -->|other| OTHER[...]
-    
+
     BH --> PYCALL[PythonBridge.streamCall]
     DH --> PYCALL
-    
+
     PYCALL --> EVT[POST /tasks/:id/event<br/>转发进度]
     PYCALL --> COMPLETE[POST /tasks/:id/complete<br/>返回结果]
-    
+
     COMPLETE --> NEXT[轮询下一批]
 ```
 
@@ -419,6 +424,7 @@ interface TaskHandler {
 ```
 
 **BacktestHandler** — 三阶段流水线：
+
 ```
 1. backtest    → 执行回测 → { trades, equityCurve, metrics }
 2. analyze     → AI 分析结果 → { analysis }
@@ -426,6 +432,7 @@ interface TaskHandler {
 ```
 
 **DiagnosticsHandler** — 按 category 分支：
+
 ```
 payload.category === 'factor_based'
   → Python: diagnostics + factor 算法 → { ic_series, layered_returns, ... }
@@ -476,23 +483,23 @@ _COMMANDS = {
 graph TB
     CLI[cli.py 收到 diagnostics 命令] --> DIAG[commands/diagnostics.py]
     DIAG --> BRANCH{request.category}
-    
+
     BRANCH -->|factor_based| F[DiagnosticsFactor]
     BRANCH -->|non_factor| NF[DiagnosticsNonFactor]
     BRANCH -->|transitional| TR[DiagnosticsTransitional]
-    
+
     F --> F1[加载策略 + 因子数据]
     F1 --> F2[计算各因子 IC 序列]
     F2 --> F3[分层回测（5 组）]
     F3 --> F4[因子相关性矩阵]
     F4 --> F5[输出: FactorDiagnosticsResult]
-    
+
     NF --> NF1[加载策略 + K 线数据]
     NF1 --> NF2[参数敏感性扫描<br/>在参数范围内运行简化回测]
     NF2 --> NF3[信号质量统计]
     NF3 --> NF4[滑点压力测试<br/>在不同 bps 下重新计算]
     NF4 --> NF5[输出: NonFactorDiagnosticsResult]
-    
+
     TR --> TR1[加载数据源配置]
     TR1 --> TR2[评估数据完整性/滞后度]
     TR2 --> TR3[输出: TransitionalDiagnosticsResult]
@@ -621,13 +628,13 @@ graph LR
 
 ### 9.2 错误码
 
-| 场景 | 触发条件 | 表现 |
-|------|---------|------|
-| 策略不存在 | `strategy.name` 未注册 | API 404 |
-| 参数不完整 | 缺少 `category`/`symbol` 等 | Worker 失败 |
-| Python 超时 | 回测/诊断超过 120s | Worker 失败 |
-| CLI 无此命令 | Python 未实现 | Worker 捕获 |
-| SSE 连接断开 | 前端关闭浏览器 | 后端清理订阅 |
+| 场景         | 触发条件                    | 表现         |
+| ------------ | --------------------------- | ------------ |
+| 策略不存在   | `strategy.name` 未注册      | API 404      |
+| 参数不完整   | 缺少 `category`/`symbol` 等 | Worker 失败  |
+| Python 超时  | 回测/诊断超过 120s          | Worker 失败  |
+| CLI 无此命令 | Python 未实现               | Worker 捕获  |
+| SSE 连接断开 | 前端关闭浏览器              | 后端清理订阅 |
 
 ### 9.3 幂等与恢复
 
@@ -639,12 +646,12 @@ graph LR
 
 ## 十、与旧架构的差异
 
-| 维度 | 旧架构 (ResearchMode) | 新架构 (StrategyCategory) |
-|------|----------------------|--------------------------|
-| 分类方式 | 开发模式：traditional/hft/ai | 策略本质：factor/non_factor/transitional |
-| 前端路由 | WorkspaceModeTabs 切换模式 | 策略选择 → Config → Workspace |
-| 诊断内容 | 统一显示 | 按类别分支渲染不同图表 |
-| 诊断数据 | 全 mock (`det()`) | Python CLI 真实计算 |
-| 配置传递 | 不保存，会话级 | API 持久化，跨会话 |
-| 策略就绪 | `workflowReady: true/false` | 同左，但基于 subcategory 非 null |
-| 组件 | `WorkspaceContent` + `StrategyGrid` | `WorkspacePage` + `StrategyGridNew` |
+| 维度     | 旧架构 (ResearchMode)               | 新架构 (StrategyCategory)                |
+| -------- | ----------------------------------- | ---------------------------------------- |
+| 分类方式 | 开发模式：traditional/hft/ai        | 策略本质：factor/non_factor/transitional |
+| 前端路由 | WorkspaceModeTabs 切换模式          | 策略选择 → Config → Workspace            |
+| 诊断内容 | 统一显示                            | 按类别分支渲染不同图表                   |
+| 诊断数据 | 全 mock (`det()`)                   | Python CLI 真实计算                      |
+| 配置传递 | 不保存，会话级                      | API 持久化，跨会话                       |
+| 策略就绪 | `workflowReady: true/false`         | 同左，但基于 subcategory 非 null         |
+| 组件     | `WorkspaceContent` + `StrategyGrid` | `WorkspacePage` + `StrategyGridNew`      |

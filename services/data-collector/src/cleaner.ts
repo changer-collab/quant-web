@@ -96,7 +96,10 @@ export class DataCleaner {
       listDate: DataCleaner.parseDateField(raw, 'listDate'),
       ...(raw.delistDate != null && { delistDate: DataCleaner.parseDateField(raw, 'delistDate') }),
       status: DataCleaner.requireString(raw, 'status') as ExtendedInstrument['status'],
-      ...(raw.attributes != null && { attributes: typeof raw.attributes === 'string' ? JSON.parse(raw.attributes) : raw.attributes }),
+      ...(raw.attributes != null && {
+        attributes:
+          typeof raw.attributes === 'string' ? JSON.parse(raw.attributes) : raw.attributes,
+      }),
     };
   }
 
@@ -316,7 +319,10 @@ export class DataCleaner {
   }
 
   /** 解析公告事件类型 */
-  private static parseAnnouncementEventType(raw: RawDataRecord, key: string): AnnouncementEventType {
+  private static parseAnnouncementEventType(
+    raw: RawDataRecord,
+    key: string
+  ): AnnouncementEventType {
     const val = String(raw[key] ?? '').toLowerCase();
     const map: Record<string, AnnouncementEventType> = {
       st: AnnouncementEventType.ST,
@@ -361,13 +367,19 @@ export class DataCleaner {
           return Number(s);
         });
       }
-    } catch { /* 不是 JSON，继续按逗号分隔 */ }
-    return str.split(',').map((s) => s.trim()).filter(Boolean).map((s) => {
-      if (/^\d{8}$/.test(s) && Number(s) < 99991231) {
-        return DataCleaner.yyyymmddToTimestamp(s);
-      }
-      return Number(s);
-    });
+    } catch {
+      /* 不是 JSON，继续按逗号分隔 */
+    }
+    return str
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => {
+        if (/^\d{8}$/.test(s) && Number(s) < 99991231) {
+          return DataCleaner.yyyymmddToTimestamp(s);
+        }
+        return Number(s);
+      });
   }
 
   /** 解析逗号分隔的字符串列表 */
@@ -376,8 +388,13 @@ export class DataCleaner {
     try {
       const arr = JSON.parse(str);
       if (Array.isArray(arr)) return arr.map(String);
-    } catch { /* 不是 JSON */ }
-    return str.split(',').map((s) => s.trim()).filter(Boolean);
+    } catch {
+      /* 不是 JSON */
+    }
+    return str
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   /** YYYYMMDD 字符串转毫秒时间戳 */

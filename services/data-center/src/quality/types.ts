@@ -44,9 +44,23 @@ export interface DataQualityReport {
 /** 数据质量校验 Provider 接口 */
 export interface DataQualityChecker {
   /** 完整性检查 */
-  checkCompleteness(source: string, symbol: string, start: number, end: number): Promise<DataQualityReport>;
+  checkCompleteness(
+    source: string,
+    symbol: string,
+    start: number,
+    end: number
+  ): Promise<DataQualityReport>;
   /** 一致性检查 */
-  checkConsistency(source: string, symbol: string, start: number, end: number): Promise<DataQualityReport>;
+  checkConsistency(
+    source: string,
+    symbol: string,
+    start: number,
+    end: number
+  ): Promise<DataQualityReport>;
   /** 时效性检查：数据最后更新时间是否在可接受范围内 */
-  checkFreshness(source: string, symbol: string, maxStalenessMs: number): Promise<DataQualityReport>;
+  checkFreshness(
+    source: string,
+    symbol: string,
+    maxStalenessMs: number
+  ): Promise<DataQualityReport>;
 }

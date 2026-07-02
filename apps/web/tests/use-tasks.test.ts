@@ -85,7 +85,11 @@ describe('useTasks', () => {
     });
 
     expect(events).toHaveLength(1);
-    const ev = events[0] as { resultId?: string; resultType?: string; data?: Record<string, unknown> };
+    const ev = events[0] as {
+      resultId?: string;
+      resultType?: string;
+      data?: Record<string, unknown>;
+    };
     expect(ev.resultId).toBe('diag-result-1');
     expect(ev.resultType).toBe('diagnostics');
     expect(ev.data).toBeDefined();

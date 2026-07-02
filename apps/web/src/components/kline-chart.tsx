@@ -21,7 +21,7 @@ const CANDLE_WIDTH_RATIO = 0.6; // 蜡烛体占 bar 宽度的比例
 const MIN_BAR_WIDTH = 3;
 
 const MA_COLORS = ['#62d8ff', '#e9c46a', '#f472b6', '#a78bfa'];
-const COLOR_UP = '#ef4444';   // 红涨
+const COLOR_UP = '#ef4444'; // 红涨
 const COLOR_DOWN = '#22c55e'; // 绿跌
 const COLOR_GRID = 'rgba(98, 110, 110, 0.15)';
 const COLOR_TEXT = 'rgba(150, 160, 160, 0.7)';
@@ -43,12 +43,18 @@ function clamp(v: number, lo: number, hi: number): number {
 function computeSMA(values: (number | null)[], period: number): (number | null)[] {
   const out: (number | null)[] = [];
   for (let i = 0; i < values.length; i++) {
-    if (i < period - 1) { out.push(null); continue; }
+    if (i < period - 1) {
+      out.push(null);
+      continue;
+    }
     let sum = 0;
     let cnt = 0;
     for (let j = i - period + 1; j <= i; j++) {
       const v = values[j];
-      if (v != null && !Number.isNaN(v)) { sum += v; cnt++; }
+      if (v != null && !Number.isNaN(v)) {
+        sum += v;
+        cnt++;
+      }
     }
     out.push(cnt >= period * 0.5 ? sum / cnt : null);
   }
@@ -100,7 +106,7 @@ function computeLayout(
   cw: number,
   ch: number,
   barCount: number,
-  hasSubChart: boolean,
+  hasSubChart: boolean
 ): ChartLayout {
   const volH = 50;
   const subH = hasSubChart ? 50 : 0;
@@ -128,7 +134,7 @@ function drawGrid(
   layout: ChartLayout,
   priceMin: number,
   priceMax: number,
-  barCount: number,
+  barCount: number
 ) {
   const { main, volume } = layout;
   ctx.strokeStyle = COLOR_GRID;
@@ -154,7 +160,10 @@ function drawGrid(
     const x = main.x + i * layout.barWidth;
     ctx.beginPath();
     ctx.moveTo(x, CHART_TOP);
-    ctx.lineTo(x, CHART_TOP + main.h + volume.h + (layout.sub.h > 0 ? layout.sub.h + GAP_BETWEEN_CHARTS : 0));
+    ctx.lineTo(
+      x,
+      CHART_TOP + main.h + volume.h + (layout.sub.h > 0 ? layout.sub.h + GAP_BETWEEN_CHARTS : 0)
+    );
     ctx.stroke();
   }
 
@@ -172,7 +181,15 @@ function drawGrid(
   ctx.textAlign = 'center';
   for (let i = 0; i < barCount; i += vStep) {
     const x = main.x + i * layout.barWidth + layout.barWidth / 2;
-    ctx.fillText(`#${i + 1}`, x, CHART_TOP + main.h + volume.h + (layout.sub.h > 0 ? layout.sub.h + 14 : 14) + GAP_BETWEEN_CHARTS);
+    ctx.fillText(
+      `#${i + 1}`,
+      x,
+      CHART_TOP +
+        main.h +
+        volume.h +
+        (layout.sub.h > 0 ? layout.sub.h + 14 : 14) +
+        GAP_BETWEEN_CHARTS
+    );
   }
 }
 
@@ -182,7 +199,7 @@ function drawCandlesticks(
   bars: BarData[],
   layout: ChartLayout,
   priceMin: number,
-  priceMax: number,
+  priceMax: number
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
@@ -223,7 +240,7 @@ function drawOverlays(
   overlays: ChartOverlay[],
   layout: ChartLayout,
   priceMin: number,
-  priceMax: number,
+  priceMax: number
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
@@ -238,7 +255,10 @@ function drawOverlays(
     let started = false;
     for (let i = 0; i < overlay.values.length; i++) {
       const v = overlay.values[i];
-      if (v == null || Number.isNaN(v)) { started = false; continue; }
+      if (v == null || Number.isNaN(v)) {
+        started = false;
+        continue;
+      }
       const x = main.x + i * barWidth + barWidth / 2;
       const y = main.y + main.h - ((v - priceMin) / range) * main.h;
       if (!started) {
@@ -253,23 +273,24 @@ function drawOverlays(
 }
 
 /** 绘制成交量柱状图 */
-function drawVolume(
-  ctx: CanvasRenderingContext2D,
-  bars: BarData[],
-  layout: ChartLayout,
-) {
+function drawVolume(ctx: CanvasRenderingContext2D, bars: BarData[], layout: ChartLayout) {
   const { volume, barWidth } = layout;
   if (volume.h <= 0) return;
 
-  const maxVol = Math.max(...bars.map(b => b.volume), 1);
-  const halfW = Math.max(1, barWidth * CANDLE_WIDTH_RATIO / 2);
+  const maxVol = Math.max(...bars.map((b) => b.volume), 1);
+  const halfW = Math.max(1, (barWidth * CANDLE_WIDTH_RATIO) / 2);
 
   for (let i = 0; i < bars.length; i++) {
     const b = bars[i];
     const isUp = b.close >= b.open;
     const h = (b.volume / maxVol) * volume.h;
     ctx.fillStyle = isUp ? COLOR_VOLUME_UP : COLOR_VOLUME_DOWN;
-    ctx.fillRect(volume.x + i * barWidth + barWidth / 2 - halfW, volume.y + volume.h - h, halfW * 2, h);
+    ctx.fillRect(
+      volume.x + i * barWidth + barWidth / 2 - halfW,
+      volume.y + volume.h - h,
+      halfW * 2,
+      h
+    );
   }
 }
 
@@ -279,12 +300,12 @@ function drawSubChart(
   bars: BarData[],
   subcategory: string | null | undefined,
   layout: ChartLayout,
-  subLabel: string,
+  subLabel: string
 ) {
   const { sub, barWidth } = layout;
   if (sub.h <= 0) return;
 
-  const closes = bars.map(b => b.close);
+  const closes = bars.map((b) => b.close);
   const subcat = subcategory ?? '';
 
   let data: (number | null)[];
@@ -298,28 +319,36 @@ function drawSubChart(
     yMax = 100;
   } else if (subcat === 'arbitrage' || subcat === 'hft_microstructure') {
     // 价差 = (high - low) / close
-    data = bars.map(b => ((b.high - b.low) / b.close) * 100);
+    data = bars.map((b) => ((b.high - b.low) / b.close) * 100);
     yMin = 0;
     const vals = data.filter((d): d is number => d != null);
     yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 10;
   } else if (subcat === 'macro_quant') {
     // 滚动波动率
-    const returns = closes.map((c, i) => i === 0 ? 0 : (c - closes[i - 1]) / closes[i - 1]);
-    data = computeSMA(returns.map(r => Math.abs(r) * 100), 10);
+    const returns = closes.map((c, i) => (i === 0 ? 0 : (c - closes[i - 1]) / closes[i - 1]));
+    data = computeSMA(
+      returns.map((r) => Math.abs(r) * 100),
+      10
+    );
     const vals = data.filter((d): d is number => d != null);
     yMin = 0;
     yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 5;
-  } else if (subcat === 'e2e_ai_timeseries' || subcat === 'factor_based' || subcat === 'ml_nonlinear_factor' || subcat === 'linear_multi_factor') {
+  } else if (
+    subcat === 'e2e_ai_timeseries' ||
+    subcat === 'factor_based' ||
+    subcat === 'ml_nonlinear_factor' ||
+    subcat === 'linear_multi_factor'
+  ) {
     // 模拟 IC 状曲线：close 的归一化变化
     const base = closes[0] || 1;
-    data = closes.map(c => ((c - base) / base) * 100);
+    data = closes.map((c) => ((c - base) / base) * 100);
     const vals = data.filter((d): d is number => d != null);
     yMin = vals.length > 0 ? Math.min(...vals) * 1.2 : -5;
     yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 5;
   } else if (subcat === 'event_driven' || subcat === 'transitional') {
     // 情感得分：成交量相对均值偏离
     const avgVol = bars.reduce((s, b) => s + b.volume, 0) / bars.length || 1;
-    data = bars.map(b => ((b.volume - avgVol) / avgVol) * 100);
+    data = bars.map((b) => ((b.volume - avgVol) / avgVol) * 100);
     const vals = data.filter((d): d is number => d != null);
     yMin = Math.min(...vals) * 1.2;
     yMax = Math.max(...vals) * 1.2;
@@ -349,8 +378,16 @@ function drawSubChart(
     ctx.fillStyle = COLOR_TEXT;
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(String(OVERBOUGHT), sub.x - 2, sub.y + sub.h - ((OVERBOUGHT - yMin) / range) * sub.h + 3);
-    ctx.fillText(String(OVERSOLD), sub.x - 2, sub.y + sub.h - ((OVERSOLD - yMin) / range) * sub.h + 3);
+    ctx.fillText(
+      String(OVERBOUGHT),
+      sub.x - 2,
+      sub.y + sub.h - ((OVERBOUGHT - yMin) / range) * sub.h + 3
+    );
+    ctx.fillText(
+      String(OVERSOLD),
+      sub.x - 2,
+      sub.y + sub.h - ((OVERSOLD - yMin) / range) * sub.h + 3
+    );
   }
 
   // 画副图数据线
@@ -360,7 +397,10 @@ function drawSubChart(
   let started = false;
   for (let i = 0; i < data.length; i++) {
     const v = data[i];
-    if (v == null || Number.isNaN(v)) { started = false; continue; }
+    if (v == null || Number.isNaN(v)) {
+      started = false;
+      continue;
+    }
     const x = sub.x + i * barWidth + barWidth / 2;
     const y = sub.y + sub.h - ((v - yMin) / range) * sub.h;
     if (!started) {
@@ -387,7 +427,7 @@ function drawSignals(
   layout: ChartLayout,
   priceMin: number,
   priceMax: number,
-  hoveredSignal: number | null,
+  hoveredSignal: number | null
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
@@ -554,7 +594,12 @@ export function KlineChart({
     let subLabel = ui.klineChartRSI;
     if (subcategory && ['arbitrage', 'hft_microstructure'].includes(subcategory)) {
       subLabel = ui.klineChartSpread;
-    } else if (subcategory && ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(subcategory)) {
+    } else if (
+      subcategory &&
+      ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(
+        subcategory
+      )
+    ) {
       subLabel = ui.klineChartIC;
     } else if (subcategory && ['transitional', 'event_driven'].includes(subcategory)) {
       subLabel = ui.klineChartSentiment;
@@ -583,47 +628,53 @@ export function KlineChart({
 
   // ── 鼠标事件 ────────────────────────────────────────────
 
-  const getBarIndexFromX = useCallback((clientX: number): number | null => {
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas || !previewData) return null;
-    const rect = container.getBoundingClientRect();
-    const x = clientX - rect.left - CHART_LEFT;
-    if (x < 0) return null;
-    const layout = computeLayout(rect.width, rect.height, previewData.bars.length, true);
-    const idx = Math.floor(x / layout.barWidth);
-    if (idx < 0 || idx >= previewData.bars.length) return null;
-    return idx;
-  }, [previewData]);
+  const getBarIndexFromX = useCallback(
+    (clientX: number): number | null => {
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      if (!container || !canvas || !previewData) return null;
+      const rect = container.getBoundingClientRect();
+      const x = clientX - rect.left - CHART_LEFT;
+      if (x < 0) return null;
+      const layout = computeLayout(rect.width, rect.height, previewData.bars.length, true);
+      const idx = Math.floor(x / layout.barWidth);
+      if (idx < 0 || idx >= previewData.bars.length) return null;
+      return idx;
+    },
+    [previewData]
+  );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const idx = getBarIndexFromX(e.clientX);
-    if (idx == null || !previewData) {
-      setTooltip(null);
-      setHoveredSignal(null);
-      return;
-    }
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const idx = getBarIndexFromX(e.clientX);
+      if (idx == null || !previewData) {
+        setTooltip(null);
+        setHoveredSignal(null);
+        return;
+      }
 
-    // 检测是否悬停在信号上
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (container && canvas && previewData) {
-      const sigIdx = previewData.signals.findIndex(sig => sig.bar_index === idx);
-      setHoveredSignal(sigIdx >= 0 ? sigIdx : null);
-    }
+      // 检测是否悬停在信号上
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      if (container && canvas && previewData) {
+        const sigIdx = previewData.signals.findIndex((sig) => sig.bar_index === idx);
+        setHoveredSignal(sigIdx >= 0 ? sigIdx : null);
+      }
 
-    const bar = previewData.bars[idx];
-    const barSignals = previewData.signals.filter(s => s.bar_index === idx);
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    if (containerRect) {
-      setTooltip({
-        x: e.clientX - containerRect.left,
-        y: e.clientY - containerRect.top,
-        data: bar,
-        signals: barSignals,
-      });
-    }
-  }, [getBarIndexFromX, previewData]);
+      const bar = previewData.bars[idx];
+      const barSignals = previewData.signals.filter((s) => s.bar_index === idx);
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        setTooltip({
+          x: e.clientX - containerRect.left,
+          y: e.clientY - containerRect.top,
+          data: bar,
+          signals: barSignals,
+        });
+      }
+    },
+    [getBarIndexFromX, previewData]
+  );
 
   const handleMouseLeave = useCallback(() => {
     setTooltip(null);
@@ -632,25 +683,31 @@ export function KlineChart({
 
   // ── 时间轴拖拽 / 滚轮加载更多 ──────────────────────────
 
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    // 滚动到左边界触发加载更多
-    if (onLoadMore && e.deltaX < 0 && previewData?.pagination?.next_cursor) {
-      onLoadMore(previewData.pagination.next_cursor);
-    }
-  }, [onLoadMore, previewData]);
+  const handleWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      // 滚动到左边界触发加载更多
+      if (onLoadMore && e.deltaX < 0 && previewData?.pagination?.next_cursor) {
+        onLoadMore(previewData.pagination.next_cursor);
+      }
+    },
+    [onLoadMore, previewData]
+  );
 
   // ── 搜索 ────────────────────────────────────────────────
 
-  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchValue.trim() && onSymbolChange) {
-      onSymbolChange(searchValue.trim().toUpperCase());
-    }
-  }, [searchValue, onSymbolChange]);
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && searchValue.trim() && onSymbolChange) {
+        onSymbolChange(searchValue.trim().toUpperCase());
+      }
+    },
+    [searchValue, onSymbolChange]
+  );
 
   // ── 底部信号计数 ────────────────────────────────────────
 
-  const buyCount = previewData?.signals.filter(s => s.side === 'buy').length ?? 0;
-  const sellCount = previewData?.signals.filter(s => s.side === 'sell').length ?? 0;
+  const buyCount = previewData?.signals.filter((s) => s.side === 'buy').length ?? 0;
+  const sellCount = previewData?.signals.filter((s) => s.side === 'sell').length ?? 0;
 
   // ── Render ──────────────────────────────────────────────
 
@@ -663,7 +720,7 @@ export function KlineChart({
           type="text"
           placeholder={ui.klineChartSymbolSearch}
           value={searchValue}
-          onChange={e => setSearchValue(e.target.value)}
+          onChange={(e) => setSearchValue(e.target.value)}
           onKeyDown={handleSearchKeyDown}
         />
         {loading && (
@@ -686,15 +743,17 @@ export function KlineChart({
         <canvas ref={canvasRef} className={s.chartCanvas} />
 
         {/* Loading overlay */}
-        {loading && (
-          <div className={s.loadingOverlay}>{ui.klineChartLoading}</div>
-        )}
+        {loading && <div className={s.loadingOverlay}>{ui.klineChartLoading}</div>}
 
         {/* 空状态 */}
         {!loading && (!previewData || previewData.bars.length === 0) && (
           <div className={s.emptyState}>
             <span>{language === 'zh' ? '暂无 K 线数据' : 'No bar data'}</span>
-            <span>{language === 'zh' ? '请选择一个标的并点击"预览"' : 'Select a symbol and click Preview'}</span>
+            <span>
+              {language === 'zh'
+                ? '请选择一个标的并点击"预览"'
+                : 'Select a symbol and click Preview'}
+            </span>
           </div>
         )}
 
@@ -712,9 +771,7 @@ export function KlineChart({
               top: clamp(tooltip.y, 60, containerDims.h - 60),
             }}
           >
-            <div className={s.tooltipTitle}>
-              {ui.klineChartOHLC}
-            </div>
+            <div className={s.tooltipTitle}>{ui.klineChartOHLC}</div>
             <div className={s.tooltipRow}>
               <span>O</span>
               <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.open)}</span>
@@ -739,7 +796,8 @@ export function KlineChart({
               <div key={i} className={s.tooltipSignal}>
                 <div className={sig.side === 'buy' ? s.tooltipBuy : s.tooltipSell}>
                   {sig.side === 'buy' ? ui.klineChartBuy : ui.klineChartSell}
-                  {' · '}{sig.type}
+                  {' · '}
+                  {sig.type}
                 </div>
                 {sig.reason && (
                   <div className={s.tooltipReason}>
@@ -777,9 +835,7 @@ export function KlineChart({
           <span>
             {language === 'zh' ? 'K线' : 'Bars'}: {previewData.bars.length}
           </span>
-          <span>
-            ID: {previewData.fingerprint?.slice(0, 12) ?? '-'}
-          </span>
+          <span>ID: {previewData.fingerprint?.slice(0, 12) ?? '-'}</span>
         </div>
       )}
     </div>

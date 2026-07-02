@@ -21,7 +21,9 @@ export function FactorRiskAnalysis({ report, ui }: Props) {
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>{u.maxDrawdown}</div>
-          <div className={`${s.kpiValue} ${s.negative}`}>{(risk.maxDrawdown * 100).toFixed(1)}%</div>
+          <div className={`${s.kpiValue} ${s.negative}`}>
+            {(risk.maxDrawdown * 100).toFixed(1)}%
+          </div>
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>{u.maxDrawdownDuration}</div>
@@ -44,7 +46,12 @@ export function FactorRiskAnalysis({ report, ui }: Props) {
       <FactorReportSection title={u.regimePerformance} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>Regime</th><th>Return</th><th>Sharpe</th><th>Max DD</th></tr>
+            <tr>
+              <th>Regime</th>
+              <th>Return</th>
+              <th>Sharpe</th>
+              <th>Max DD</th>
+            </tr>
           </thead>
           <tbody>
             {risk.regimePerformance.map((r) => (

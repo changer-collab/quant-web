@@ -4,10 +4,7 @@
  * SQLite 和 PostgreSQL 实现同一套接口，切换只需改工厂函数。
  */
 import type { TimeFrame } from '../base/types.js';
-import type {
-  ExtendedBar,
-  ExtendedTick,
-} from '../market/types.js';
+import type { ExtendedBar, ExtendedTick } from '../market/types.js';
 import type {
   TradingCalendar,
   ExtendedInstrument,
@@ -29,11 +26,7 @@ import type {
   MacroIndicatorDef,
   MacroPoint,
 } from '../event/types.js';
-import type {
-  Level2Snapshot,
-  TradeRecord,
-  OrderRecord,
-} from '../l2/types.js';
+import type { Level2Snapshot, TradeRecord, OrderRecord } from '../l2/types.js';
 
 // ─── L1 行情 ───────────────────────────────────────────
 
@@ -45,7 +38,11 @@ export interface BarRepository {
   getAvailableSymbols(timeframe?: TimeFrame): Promise<string[]>;
   count(symbol: string, timeframe: TimeFrame, start?: number, end?: number): Promise<number>;
   /** cursor 分页查询 */
-  queryPaged(symbol: string, timeframe: TimeFrame, params?: PageParams): Promise<PageResult<ExtendedBar>>;
+  queryPaged(
+    symbol: string,
+    timeframe: TimeFrame,
+    params?: PageParams
+  ): Promise<PageResult<ExtendedBar>>;
 }
 
 /** Tick 存储接口 */
@@ -90,7 +87,12 @@ export interface AdjustmentFactorRepository {
 export interface FinancialReportRepository {
   save(reports: FinancialReport[]): Promise<void>;
   /** 查询财报。asOfDate 为 PIT 过滤：仅返回 announceDate <= asOfDate 的记录 */
-  query(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialReport[]>;
+  query(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialReport[]>;
   getLatest(symbol: string): Promise<FinancialReport | undefined>;
 }
 
@@ -103,7 +105,12 @@ export interface FinancialRatioRepository {
 /** 股东人数存储接口 */
 export interface ShareholderMetricsRepository {
   save(metrics: ShareholderMetrics[]): Promise<void>;
-  query(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ShareholderMetrics[]>;
+  query(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ShareholderMetrics[]>;
   getLatest(symbol: string): Promise<ShareholderMetrics | undefined>;
 }
 
@@ -281,7 +288,13 @@ export type ExportFormat = 'json' | 'csv';
 /** 数据导出接口 */
 export interface DataExporter {
   /** 导出 K 线数据 */
-  exportBars(symbol: string, timeframe: TimeFrame, start?: number, end?: number, format?: ExportFormat): Promise<string>;
+  exportBars(
+    symbol: string,
+    timeframe: TimeFrame,
+    start?: number,
+    end?: number,
+    format?: ExportFormat
+  ): Promise<string>;
   /** 导出标的列表 */
   exportInstruments(query?: ReferenceQuery, format?: ExportFormat): Promise<string>;
 }

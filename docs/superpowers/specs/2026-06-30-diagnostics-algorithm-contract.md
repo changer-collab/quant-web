@@ -18,8 +18,8 @@
 
 ### 0.2 Doc Sync Log
 
-| Date | Change |
-|------|--------|
+| Date       | Change                                                                       |
+| ---------- | ---------------------------------------------------------------------------- |
 | 2026-06-30 | v1 冻结 — 基于 factor.py / non_factor.py 真实实现 + transitional.py 契约定义 |
 
 ---
@@ -96,13 +96,13 @@
 
 ## 3. 错误码
 
-| 错误码 | 触发条件 | 适用分类 |
-|--------|----------|----------|
-| `NO_PRICE_DATA` | DataClient 查询返回 None / 空 DataFrame / 加载异常 | factor_based, non_factor, transitional |
-| `NO_FACTOR_DATA` | 所有因子公式计算均失败 / 无有效因子值 / `_build_factor_defs` 返回空且默认因子也无效 | factor_based |
-| `NO_EVENT_SENTIMENT_DATA` | event-sentiment 查询返回空 / 数据不足（Phase 6 实现） | transitional |
-| `INVALID_CONFIG_SNAPSHOT` | `configSnapshot` 缺失 / `params` 为非 dict / 策略名称为空 | factor_based, non_factor, transitional |
-| `DIAGNOSTICS_ERROR` | 诊断执行过程中发生未预期的异常（catch-all） | 全部 |
+| 错误码                    | 触发条件                                                                            | 适用分类                               |
+| ------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------- |
+| `NO_PRICE_DATA`           | DataClient 查询返回 None / 空 DataFrame / 加载异常                                  | factor_based, non_factor, transitional |
+| `NO_FACTOR_DATA`          | 所有因子公式计算均失败 / 无有效因子值 / `_build_factor_defs` 返回空且默认因子也无效 | factor_based                           |
+| `NO_EVENT_SENTIMENT_DATA` | event-sentiment 查询返回空 / 数据不足（Phase 6 实现）                               | transitional                           |
+| `INVALID_CONFIG_SNAPSHOT` | `configSnapshot` 缺失 / `params` 为非 dict / 策略名称为空                           | factor_based, non_factor, transitional |
+| `DIAGNOSTICS_ERROR`       | 诊断执行过程中发生未预期的异常（catch-all）                                         | 全部                                   |
 
 触发条件说明：
 
@@ -417,11 +417,11 @@ params = {
 
 前端 `renderDiagnosticContent()` 通过 `data.type` 字段判断渲染方式：
 
-| `data.type` | 渲染路径 | 核心内容 |
-|-------------|----------|----------|
-| `factor_based` | `parseFactorDiagnostics()` | ic_series → BarChart, layered_returns → HBarChart, correlation_matrix → HeatmapChart, summary → MiniGrid |
-| `non_factor` | `parseNonFactorDiagnostics()` | param_sensitivity.sharpe → HeatmapChart, signal_quality → MiniGrid, slippage_stress.return → LineChart |
-| `transitional` | 与 factor_based 复用路径（当前 stub） | ic_series → BarChart, layered_returns → HBarChart |
+| `data.type`    | 渲染路径                              | 核心内容                                                                                                 |
+| -------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `factor_based` | `parseFactorDiagnostics()`            | ic_series → BarChart, layered_returns → HBarChart, correlation_matrix → HeatmapChart, summary → MiniGrid |
+| `non_factor`   | `parseNonFactorDiagnostics()`         | param_sensitivity.sharpe → HeatmapChart, signal_quality → MiniGrid, slippage_stress.return → LineChart   |
+| `transitional` | 与 factor_based 复用路径（当前 stub） | ic_series → BarChart, layered_returns → HBarChart                                                        |
 
 ### 7.2 synthetic 标记
 
@@ -431,8 +431,8 @@ params = {
 
 ## 8. 实现状态
 
-| 分类 | 状态 | 实现位置 |
-|------|------|----------|
-| factor_based | ✅ 已实现（story-19） | `diagnostics/factor.py` |
-| non_factor | ✅ 已实现（story-20） | `diagnostics/non_factor.py` |
-| transitional | ⏳ stub（story-18） | `diagnostics/transitional.py`，真实算法待 Phase 6 |
+| 分类         | 状态                  | 实现位置                                          |
+| ------------ | --------------------- | ------------------------------------------------- |
+| factor_based | ✅ 已实现（story-19） | `diagnostics/factor.py`                           |
+| non_factor   | ✅ 已实现（story-20） | `diagnostics/non_factor.py`                       |
+| transitional | ⏳ stub（story-18）   | `diagnostics/transitional.py`，真实算法待 Phase 6 |

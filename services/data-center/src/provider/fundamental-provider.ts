@@ -2,7 +2,12 @@
  * 基本面 Provider 实现
  */
 import type { FundamentalDataProvider } from '../fundamental/types.js';
-import type { FinancialReport, FinancialRatio, ValuationPoint, ShareholderMetrics } from '../fundamental/types.js';
+import type {
+  FinancialReport,
+  FinancialRatio,
+  ValuationPoint,
+  ShareholderMetrics,
+} from '../fundamental/types.js';
 import type {
   FinancialReportRepository,
   FinancialRatioRepository,
@@ -15,18 +20,33 @@ export class FundamentalDataProviderImpl implements FundamentalDataProvider {
     private reportRepo: FinancialReportRepository,
     private ratioRepo: FinancialRatioRepository,
     private valuationRepo: ValuationRepository,
-    private shareholderRepo: ShareholderMetricsRepository,
+    private shareholderRepo: ShareholderMetricsRepository
   ) {}
 
-  async getFinancialReports(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialReport[]> {
+  async getFinancialReports(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialReport[]> {
     return this.reportRepo.query(symbol, start, end, asOfDate);
   }
 
-  async getFinancialRatios(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialRatio[]> {
+  async getFinancialRatios(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialRatio[]> {
     return this.ratioRepo.query(symbol, start, end, asOfDate);
   }
 
-  async getValuationSeries(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ValuationPoint[]> {
+  async getValuationSeries(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ValuationPoint[]> {
     return this.valuationRepo.query(symbol, start, end, asOfDate);
   }
 
@@ -34,7 +54,12 @@ export class FundamentalDataProviderImpl implements FundamentalDataProvider {
     return this.reportRepo.getLatest(symbol);
   }
 
-  async getShareholderMetrics(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ShareholderMetrics[]> {
+  async getShareholderMetrics(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ShareholderMetrics[]> {
     return this.shareholderRepo.query(symbol, start, end, asOfDate);
   }
 }

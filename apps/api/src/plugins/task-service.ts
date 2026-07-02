@@ -53,7 +53,10 @@ export class InMemoryTaskService implements TaskService {
   async submit(type: TaskType, payload: Record<string, unknown>): Promise<TaskView> {
     const id = `task-${++this.idCounter}`;
     const task: TaskView = {
-      id, type, status: TaskStatus.Pending, payload,
+      id,
+      type,
+      status: TaskStatus.Pending,
+      payload,
       submittedAt: Date.now(),
       progress: 0,
       lines: [],
@@ -107,7 +110,7 @@ declare module 'fastify' {
 
 export async function taskServicePlugin(
   app: FastifyInstance,
-  options: { taskService: TaskService },
+  options: { taskService: TaskService }
 ) {
   app.decorate('taskService', options.taskService);
 }

@@ -19,7 +19,7 @@ const BATCH_SIZE = 500;
 export class CollectorScheduler {
   constructor(
     private registry: AdapterRegistry,
-    private repos: RepositorySet,
+    private repos: RepositorySet
   ) {}
 
   /**
@@ -31,7 +31,7 @@ export class CollectorScheduler {
   async execute(
     task: CollectorTask,
     extra?: Record<string, unknown>,
-    onProgress?: (progress: CollectorProgress) => void,
+    onProgress?: (progress: CollectorProgress) => void
   ): Promise<CollectorResult[]> {
     const adapter = this.registry.get(task.source);
     if (!adapter) {
@@ -134,7 +134,12 @@ export class CollectorScheduler {
   /**
    * 解析增量采集起点 — 优先使用水位
    */
-  async resolveStart(source: string, dataType: string, symbol: string, defaultStart?: number): Promise<number | undefined> {
+  async resolveStart(
+    source: string,
+    dataType: string,
+    symbol: string,
+    defaultStart?: number
+  ): Promise<number | undefined> {
     const wm = await this.repos.watermarks.get(source, dataType, symbol);
     if (wm) {
       return wm.lastTimestamp;
@@ -143,7 +148,11 @@ export class CollectorScheduler {
   }
 
   /** 将清洗后的数据写入数据中心 */
-  private async writeToDataCenter(task: CollectorTask, rawRecords: Record<string, unknown>[], tf?: string): Promise<number> {
+  private async writeToDataCenter(
+    task: CollectorTask,
+    rawRecords: Record<string, unknown>[],
+    tf?: string
+  ): Promise<number> {
     if (rawRecords.length === 0) return 0;
 
     switch (task.dataType) {

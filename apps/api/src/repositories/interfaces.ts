@@ -21,17 +21,23 @@ export interface IConfigHistoryRepo {
   append(snapshot: ConfigSnapshot): Promise<void>;
 
   /** 列出策略的配置历史（按时间倒序，含 strategyVersion/category/subcategory/schemaVersion） */
-  list(strategy: string, limit?: number, offset?: number): Promise<Array<{
-    id: number;
-    strategy: string;
-    configJson: Record<string, unknown>;
-    hash: string;
-    createdAt: number;
-    strategyVersion?: string;
-    category?: string;
-    subcategory?: string;
-    schemaVersion?: number;
-  }>>;
+  list(
+    strategy: string,
+    limit?: number,
+    offset?: number
+  ): Promise<
+    Array<{
+      id: number;
+      strategy: string;
+      configJson: Record<string, unknown>;
+      hash: string;
+      createdAt: number;
+      strategyVersion?: string;
+      category?: string;
+      subcategory?: string;
+      schemaVersion?: number;
+    }>
+  >;
 }
 
 export interface IDiagnosticRepo {

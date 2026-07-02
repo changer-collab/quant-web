@@ -46,7 +46,9 @@ function DomainTable({ rows }: { rows: DomainRow[] }) {
                 background: row.groupReturn >= 0 ? 'var(--green)' : 'var(--red)',
               }}
             />
-            <span className={`${s.colValue} ${row.groupReturn >= 0 ? s.alertNormal : s.alertCritical}`}>
+            <span
+              className={`${s.colValue} ${row.groupReturn >= 0 ? s.alertNormal : s.alertCritical}`}
+            >
               {(row.groupReturn * 100).toFixed(1)}%
             </span>
           </span>
@@ -61,12 +63,42 @@ export function FactorDomainAnalysis({ report, ui }: Props) {
   const u = ui.domainAnalysis;
 
   const sections: { title: string; rows: DomainRow[] }[] = [
-    { title: u.byCap, rows: domain.byCap.map((d) => ({ label: d.cap, ic: d.ic, groupReturn: d.groupReturn })) },
-    { title: u.byIndustry, rows: domain.byIndustry.map((d) => ({ label: d.industry, ic: d.ic, groupReturn: d.groupReturn })) },
-    { title: u.byRegime, rows: domain.byRegime.map((d) => ({ label: d.regime, ic: d.ic, groupReturn: d.groupReturn })) },
-    { title: u.byValuation, rows: domain.byValuation.map((d) => ({ label: d.level, ic: d.ic, groupReturn: d.groupReturn })) },
-    { title: u.byLiquidity, rows: domain.byLiquidity.map((d) => ({ label: d.level, ic: d.ic, groupReturn: d.groupReturn })) },
-    { title: u.byBoard, rows: domain.byBoard.map((d) => ({ label: d.board, ic: d.ic, groupReturn: d.groupReturn })) },
+    {
+      title: u.byCap,
+      rows: domain.byCap.map((d) => ({ label: d.cap, ic: d.ic, groupReturn: d.groupReturn })),
+    },
+    {
+      title: u.byIndustry,
+      rows: domain.byIndustry.map((d) => ({
+        label: d.industry,
+        ic: d.ic,
+        groupReturn: d.groupReturn,
+      })),
+    },
+    {
+      title: u.byRegime,
+      rows: domain.byRegime.map((d) => ({ label: d.regime, ic: d.ic, groupReturn: d.groupReturn })),
+    },
+    {
+      title: u.byValuation,
+      rows: domain.byValuation.map((d) => ({
+        label: d.level,
+        ic: d.ic,
+        groupReturn: d.groupReturn,
+      })),
+    },
+    {
+      title: u.byLiquidity,
+      rows: domain.byLiquidity.map((d) => ({
+        label: d.level,
+        ic: d.ic,
+        groupReturn: d.groupReturn,
+      })),
+    },
+    {
+      title: u.byBoard,
+      rows: domain.byBoard.map((d) => ({ label: d.board, ic: d.ic, groupReturn: d.groupReturn })),
+    },
   ];
 
   return (

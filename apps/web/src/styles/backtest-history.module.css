@@ -24,7 +24,10 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: rgba(8, 16, 15, 0.4);
-  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.12s;
 }
 
 .item:hover {
@@ -103,7 +106,9 @@
   background: transparent;
   font-size: var(--text-xs);
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .viewBtn:hover {

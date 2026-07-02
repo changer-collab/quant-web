@@ -50,7 +50,9 @@ export async function factorRoutes(app: FastifyInstance) {
       timeframe: string;
     };
     const task = await app.taskService.submit(TaskType.FactorCompute, {
-      factorIds, symbol, timeframe,
+      factorIds,
+      symbol,
+      timeframe,
     });
     return reply.code(202).send({ taskId: task.id, status: task.status });
   });

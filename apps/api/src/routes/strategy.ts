@@ -11,9 +11,16 @@ import { previewRoutes } from './preview.js';
  */
 const CANONICAL_CATEGORIES: StrategyCategory[] = ['factor_based', 'non_factor', 'transitional'];
 const CANONICAL_SUBCATEGORIES: StrategySubcategory[] = [
-  'linear_multi_factor', 'index_enhancement', 'ml_nonlinear_factor',
-  'trend_cta', 'arbitrage', 'hft_microstructure', 'macro_quant',
-  'event_driven', 'e2e_ai_timeseries', 'event_sentiment_factor',
+  'linear_multi_factor',
+  'index_enhancement',
+  'ml_nonlinear_factor',
+  'trend_cta',
+  'arbitrage',
+  'hft_microstructure',
+  'macro_quant',
+  'event_driven',
+  'e2e_ai_timeseries',
+  'event_sentiment_factor',
 ];
 
 function isWorkflowReady(category: string, subcategory: string | null): boolean {

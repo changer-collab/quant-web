@@ -25,7 +25,9 @@ describe('JobList', () => {
   it('shows view report button only for jobs with reports', () => {
     const reportJobIds = [mockJobs[0].id];
     const onViewReport = vi.fn();
-    render(<JobList jobs={mockJobs} onViewReport={onViewReport} reportJobIds={reportJobIds} ui={ui} />);
+    render(
+      <JobList jobs={mockJobs} onViewReport={onViewReport} reportJobIds={reportJobIds} ui={ui} />
+    );
     expect(screen.getByText(ui.viewReport)).toBeInTheDocument();
   });
 
@@ -37,7 +39,9 @@ describe('JobList', () => {
   it('calls onViewReport when button is clicked', () => {
     const reportJobIds = [mockJobs[0].id];
     const onViewReport = vi.fn();
-    render(<JobList jobs={mockJobs} onViewReport={onViewReport} reportJobIds={reportJobIds} ui={ui} />);
+    render(
+      <JobList jobs={mockJobs} onViewReport={onViewReport} reportJobIds={reportJobIds} ui={ui} />
+    );
     fireEvent.click(screen.getByText(ui.viewReport));
     expect(onViewReport).toHaveBeenCalledWith(expect.objectContaining({ id: mockJobs[0].id }));
   });

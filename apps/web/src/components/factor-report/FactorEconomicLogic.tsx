@@ -11,7 +11,12 @@ export function FactorEconomicLogic({ report, ui }: Props) {
   const econ = report.economicLogic;
   const u = ui.economicLogic;
 
-  const snoopingColor = econ.dataSnoopingRisk === 'low' ? s.alertNormal : econ.dataSnoopingRisk === 'medium' ? s.alertWarning : s.alertCritical;
+  const snoopingColor =
+    econ.dataSnoopingRisk === 'low'
+      ? s.alertNormal
+      : econ.dataSnoopingRisk === 'medium'
+        ? s.alertWarning
+        : s.alertCritical;
 
   return (
     <>
@@ -22,7 +27,9 @@ export function FactorEconomicLogic({ report, ui }: Props) {
       <FactorReportSection title={u.literatureRefs} defaultOpen={true}>
         <ul className={s.literatureList}>
           {econ.literatureRefs.map((lit, i) => (
-            <li key={i} className={s.literatureItem}>{lit}</li>
+            <li key={i} className={s.literatureItem}>
+              {lit}
+            </li>
           ))}
         </ul>
       </FactorReportSection>
@@ -35,7 +42,9 @@ export function FactorEconomicLogic({ report, ui }: Props) {
         <div className={s.kpiGrid}>
           <div className={s.kpiCard}>
             <div className={s.kpiLabel}>Data Snooping Risk</div>
-            <div className={`${s.kpiValue} ${snoopingColor}`}>{econ.dataSnoopingRisk.toUpperCase()}</div>
+            <div className={`${s.kpiValue} ${snoopingColor}`}>
+              {econ.dataSnoopingRisk.toUpperCase()}
+            </div>
           </div>
         </div>
       </FactorReportSection>

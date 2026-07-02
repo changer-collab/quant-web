@@ -41,7 +41,7 @@ describe('StrategyTable', () => {
 
   it('marks selected strategy row', () => {
     const { container } = render(
-      <StrategyTable strategies={strategies} ui={ui} selectedStrategyId="strategy-hft-l2" />,
+      <StrategyTable strategies={strategies} ui={ui} selectedStrategyId="strategy-hft-l2" />
     );
     const selectedRow = container.querySelector('[class*="selectedRow"]');
     expect(selectedRow).toBeInTheDocument();

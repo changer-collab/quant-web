@@ -34,7 +34,9 @@ export function FactorConclusion({ report, ui }: Props) {
       <FactorReportSection title={u.recommendedScenarios} defaultOpen={true}>
         <div>
           {conc.recommendedScenarios.map((scenario) => (
-            <span key={scenario} className={s.chip}>{scenario}</span>
+            <span key={scenario} className={s.chip}>
+              {scenario}
+            </span>
           ))}
         </div>
       </FactorReportSection>
@@ -42,7 +44,9 @@ export function FactorConclusion({ report, ui }: Props) {
       <FactorReportSection title={u.riskWarnings} defaultOpen={true}>
         <div>
           {conc.riskWarnings.map((warning) => (
-            <span key={warning} className={`${s.chip} ${s.chipWarn}`}>{warning}</span>
+            <span key={warning} className={`${s.chip} ${s.chipWarn}`}>
+              {warning}
+            </span>
           ))}
         </div>
       </FactorReportSection>
@@ -50,7 +54,9 @@ export function FactorConclusion({ report, ui }: Props) {
       <FactorReportSection title={u.nextActions} defaultOpen={true}>
         <div>
           {conc.nextActions.map((step) => (
-            <span key={step} className={s.chip}>{step}</span>
+            <span key={step} className={s.chip}>
+              {step}
+            </span>
           ))}
         </div>
       </FactorReportSection>

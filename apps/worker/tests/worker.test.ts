@@ -4,7 +4,12 @@ import { TaskType, TaskStatus } from '../src/types.js';
 import type { TaskHandler, TaskRecord } from '../src/queue.js';
 
 function makeSimpleHandler(type: TaskType): TaskHandler {
-  return { type, async handle(task: TaskRecord) { return { processed: true, taskId: task.id }; } };
+  return {
+    type,
+    async handle(task: TaskRecord) {
+      return { processed: true, taskId: task.id };
+    },
+  };
 }
 
 function createMockDataCenter() {

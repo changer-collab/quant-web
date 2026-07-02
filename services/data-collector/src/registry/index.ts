@@ -14,7 +14,7 @@ export class AdapterRegistryImpl implements AdapterRegistry {
 
   findByDomainAndType(domain: string, dataType: string): DataSourceAdapter[] {
     return [...this.adapters.values()].filter(
-      (a) => a.supportedDomains.includes(domain) && a.supportedDataTypes.includes(dataType),
+      (a) => a.supportedDomains.includes(domain) && a.supportedDataTypes.includes(dataType)
     );
   }
 

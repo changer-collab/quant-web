@@ -34,7 +34,9 @@ export function FactorBasicInfo({ report, ui }: Props) {
 
       <FactorReportSection title={u.dataSource} defaultOpen={true}>
         <p style={{ color: 'var(--text)', fontSize: 'var(--text-sm)' }}>{basicInfo.dataSource}</p>
-        <p style={{ color: 'var(--muted)', fontSize: 'var(--text-xs)', marginTop: 4 }}>{u.updateFrequency}: {basicInfo.updateFrequency}</p>
+        <p style={{ color: 'var(--muted)', fontSize: 'var(--text-xs)', marginTop: 4 }}>
+          {u.updateFrequency}: {basicInfo.updateFrequency}
+        </p>
       </FactorReportSection>
 
       <FactorReportSection title={u.formula} defaultOpen={true}>
@@ -69,9 +71,18 @@ export function FactorBasicInfo({ report, ui }: Props) {
             </tr>
           </thead>
           <tbody>
-            <tr><td>Standardization</td><td>{basicInfo.processing.standardization}</td></tr>
-            <tr><td>Winsorization</td><td>{basicInfo.processing.winsorization}</td></tr>
-            <tr><td>Neutralization</td><td>{basicInfo.processing.neutralization}</td></tr>
+            <tr>
+              <td>Standardization</td>
+              <td>{basicInfo.processing.standardization}</td>
+            </tr>
+            <tr>
+              <td>Winsorization</td>
+              <td>{basicInfo.processing.winsorization}</td>
+            </tr>
+            <tr>
+              <td>Neutralization</td>
+              <td>{basicInfo.processing.neutralization}</td>
+            </tr>
           </tbody>
         </table>
       </FactorReportSection>

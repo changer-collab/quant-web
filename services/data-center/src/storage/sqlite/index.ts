@@ -29,5 +29,11 @@ export {
 export { SqliteWatermarkRepository } from './watermark-repo.js';
 export { SqliteFactorRepository } from './factor-repo.js';
 export { SqliteTaskRepository } from './task-repo.js';
-export { createSqliteConnection, createSqliteContext, createRawSqlJs, saveDbToFile, resolveDbPath } from './connection.js';
+export {
+  createSqliteConnection,
+  createSqliteContext,
+  createRawSqlJs,
+  saveDbToFile,
+  resolveDbPath,
+} from './connection.js';
 export type { DrizzleDb, SqliteContext } from './connection.js';

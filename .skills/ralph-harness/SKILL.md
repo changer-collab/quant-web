@@ -2,6 +2,7 @@
 name: ralph-harness
 description: Use when writing, optimizing, or debugging autonomous loop scripts based on Claude CLI (ralph.sh pattern). Also use when the user asks to "improve ralph", "write a harness", design an AI agent execution loop, generate a PRD from a high-level goal, review story completion, or diagnose progress/code desync in ralph-driven pipelines.
 ---
+
 # Ralph Harness Engineering
 
 基于 Claude CLI 的自治 Agent 循环脚本的 harness 工程规范。
@@ -19,6 +20,7 @@ description: Use when writing, optimizing, or debugging autonomous loop scripts 
 ```
 
 **When NOT to use:**
+
 - One-off shell scripts that don't need iterative AI execution loops
 - Tasks completable in a single Claude invocation without iteration
 - General Claude CLI usage (use claude-api skill instead)
@@ -38,8 +40,8 @@ ralph-core.mjs  ← 核心逻辑（状态管理、错误检测、收敛判断、
 
 所有业务逻辑在 `ralph-core.mjs` 中实现，Shell 包装只负责循环和调用 claude。
 
-| 环境                       | 命令            | 说明       |
-| -------------------------- | --------------- | ---------- |
+| 环境                       | 命令          | 说明       |
+| -------------------------- | ------------- | ---------- |
 | PowerShell（Windows 默认） | `./ralph.ps1` | 原生，推荐 |
 | Git Bash / Linux / macOS   | `./ralph.sh`  | 跨平台兼容 |
 
@@ -47,26 +49,26 @@ ralph-core.mjs  ← 核心逻辑（状态管理、错误检测、收敛判断、
 
 所有功能通过 `node ralph-core.mjs --<command> [args]` 调用：
 
-| 命令                    | 参数                         | 说明                                              |
-| ----------------------- | ---------------------------- | ------------------------------------------------- |
-| `--init`              | 无                           | 初始化 `.prd.state.json`（首次运行）            |
+| 命令                  | 参数                         | 说明                                              |
+| --------------------- | ---------------------------- | ------------------------------------------------- |
+| `--init`              | 无                           | 初始化 `.prd.state.json`（首次运行）              |
 | `--init-run`          | 无                           | 检查 feature 是否改变，改变则重置状态并归档旧 run |
 | `--remaining`         | 无                           | 输出剩余 story 数                                 |
 | `--archive`           | 无                           | 分支改变时归档                                    |
 | `--check-convergence` | maxFailures                  | 检测是否需要退出（exit 3）                        |
 | `--check-limits`      | maxAttempts                  | 检测 story 是否超限（exit 9）                     |
 | `--build-prompt`      | iteration                    | 生成增强后的 AGENT_PROMPT（stdout）               |
-| `--record-error`      | iteration exitCode           | 记录错误到 `.last-error.json`                   |
+| `--record-error`      | iteration exitCode           | 记录错误到 `.last-error.json`                     |
 | `--update-progress`   | before after                 | 更新进度计数器                                    |
 | `--record-changes`    | 无                           | 记录 git diff                                     |
 | `--mark-complete`     | 无                           | 完成标记                                          |
 | `--append-log`        | iteration exitCode remaining | 追加 progress.txt                                 |
-| `--record-ledger`     | iteration exitCode story     | 追加 error 到 error-ledger.jsonl 台账            |
-| `--check-ledger`      | 无                           | 检测 ≥3 次的 pattern，输出 upgrade-proposal.json |
+| `--record-ledger`     | iteration exitCode story     | 追加 error 到 error-ledger.jsonl 台账             |
+| `--check-ledger`      | 无                           | 检测 ≥3 次的 pattern，输出 upgrade-proposal.json  |
 | `--record-changelog`  | iteration story reason files | 追加结构化改动日志到 changelog.jsonl              |
-| `--rollback`          | iteration                   | 回滚到指定 iteration                              |
+| `--rollback`          | iteration                    | 回滚到指定 iteration                              |
 | `--baseline-init`     | 无                           | 打 git tag + 存基线测试结果                       |
-| `--check-regression`  | iteration story             | 对比当前测试 vs 基线，退步则回滚 diff 文件        |
+| `--check-regression`  | iteration story              | 对比当前测试 vs 基线，退步则回滚 diff 文件        |
 
 ---
 
@@ -74,15 +76,15 @@ ralph-core.mjs  ← 核心逻辑（状态管理、错误检测、收敛判断、
 
 Harness Engineering 遵循 7 条核心原则：
 
-| # | 原则 | 核心要求 |
-|---|------|---------|
-| 1 | **有真实信号才动** | 有未完成 story 或待分析错误才启动迭代，无事直接退出 |
-| 2 | **优先只加不改** | 能新增文件/函数就不改现有代码，改前必须说明理由（写入 AGENT_PROMPT） |
-| 3 | **改完不退步，退步回滚** | 基线测试对比，退步则 `git checkout` 回滚 diff 文件，重试 3 次后跳过 |
-| 4 | **多维度评估** | 三维度前置审查 + 验收边界检查清单，不信单个指标 |
-| 5 | **一切可回滚，留改动日志** | 结构化日志（changelog.jsonl）+ 按 iteration 粒度一键回滚 |
-| 6 | **单案例进台账，攒够升规则** | error-ledger.jsonl 累计，≥3 次输出升级建议给人审 |
-| 7 | **Story 完成必须包含文档同步判断** | 每次 story 完成后必须显式判断文档是否需要同步：更新受影响文档或记录明确判断"无需更新"并写明原因。判断不可延期；"之后再补"不算有效完成。 |
+| #   | 原则                               | 核心要求                                                                                                                                |
+| --- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **有真实信号才动**                 | 有未完成 story 或待分析错误才启动迭代，无事直接退出                                                                                     |
+| 2   | **优先只加不改**                   | 能新增文件/函数就不改现有代码，改前必须说明理由（写入 AGENT_PROMPT）                                                                    |
+| 3   | **改完不退步，退步回滚**           | 基线测试对比，退步则 `git checkout` 回滚 diff 文件，重试 3 次后跳过                                                                     |
+| 4   | **多维度评估**                     | 三维度前置审查 + 验收边界检查清单，不信单个指标                                                                                         |
+| 5   | **一切可回滚，留改动日志**         | 结构化日志（changelog.jsonl）+ 按 iteration 粒度一键回滚                                                                                |
+| 6   | **单案例进台账，攒够升规则**       | error-ledger.jsonl 累计，≥3 次输出升级建议给人审                                                                                        |
+| 7   | **Story 完成必须包含文档同步判断** | 每次 story 完成后必须显式判断文档是否需要同步：更新受影响文档或记录明确判断"无需更新"并写明原因。判断不可延期；"之后再补"不算有效完成。 |
 
 ### 1. 结构化错误记录（必须）
 
@@ -90,12 +92,12 @@ Harness Engineering 遵循 7 条核心原则：
 
 ```javascript
 const FAILURE_PATTERNS = [
-  { type: "vitest_fail",       pattern: /Tests?\s+.*failed|FAIL|×\s*.*test/i },
-  { type: "pytest_fail",       pattern: /FAILED|failed\s+.*test|pytest.*error/i },
-  { type: "lint_error",        pattern: /ESLint|lint.*error|error.*rule/i },
-  { type: "typescript_error",  pattern: /TS\d+.*error|TypeScript\s+error/i },
-  { type: "build_fail",        pattern: /Build\s+failed|build.*error|Error\s+compiling/i },
-  { type: "git_error",         pattern: /fatal:|error:.*merge|could\s+not\s+apply/i },
+  { type: 'vitest_fail', pattern: /Tests?\s+.*failed|FAIL|×\s*.*test/i },
+  { type: 'pytest_fail', pattern: /FAILED|failed\s+.*test|pytest.*error/i },
+  { type: 'lint_error', pattern: /ESLint|lint.*error|error.*rule/i },
+  { type: 'typescript_error', pattern: /TS\d+.*error|TypeScript\s+error/i },
+  { type: 'build_fail', pattern: /Build\s+failed|build.*error|Error\s+compiling/i },
+  { type: 'git_error', pattern: /fatal:|error:.*merge|could\s+not\s+apply/i },
 ];
 ```
 
@@ -105,19 +107,19 @@ const FAILURE_PATTERNS = [
 
 `ralph-core.mjs` 的 `buildEnhancedPrompt()` 自动拼接上一轮错误：
 
-```javascript
+````javascript
 export function buildEnhancedPrompt(iteration) {
-  const prompt = readFileSync(FILES.prompt, "utf-8");
+  const prompt = readFileSync(FILES.prompt, 'utf-8');
   const error = readJson(FILES.error);
-  let enhanced = prompt + "\n\n---\n\n";
-  enhanced += "## 上一轮运行状态（由 Ralph Core 自动注入）\n\n";
+  let enhanced = prompt + '\n\n---\n\n';
+  enhanced += '## 上一轮运行状态（由 Ralph Core 自动注入）\n\n';
   if (error) {
-    enhanced += "- 上一轮有错误，请先分析失败原因再行动。\n\n";
-    enhanced += "```json\n" + JSON.stringify(error, null, 2) + "\n```\n";
+    enhanced += '- 上一轮有错误，请先分析失败原因再行动。\n\n';
+    enhanced += '```json\n' + JSON.stringify(error, null, 2) + '\n```\n';
   }
   return enhanced;
 }
-```
+````
 
 **关键**：告诉 Claude "先分析错误，再行动"，而不是"重新开始"。
 
@@ -135,7 +137,7 @@ export function updateProgress(remainingBefore, remainingAfter) {
 
 export function checkConvergence(maxFailures) {
   if (noProgress >= maxFailures) {
-    return { shouldStop: true, reason: "..." };
+    return { shouldStop: true, reason: '...' };
   }
 }
 ```
@@ -151,7 +153,7 @@ export function checkConvergence(maxFailures) {
 engine start
   → git tag ralph/baseline-<feature>/<timestamp>      // 快照锚点
   → pnpm test > .baseline-test-results.json            // 基线测试结果
-  
+
 story modified
   → pnpm test                                          // 当前测试
   → diff .baseline-test-results.json vs 当前结果       // 对比 exit code
@@ -161,6 +163,7 @@ story modified
 ```
 
 **回滚机制：**
+
 - 只回滚当前 story 改动产生的文件（即 `git diff --name-only` 的列表）
 - 不回滚上下游依赖——后续 story 可以修复依赖问题
 - 退步记录在 progress.txt，格式：`[rollback] <story-id> — N files reverted — <failure-summary>`
@@ -189,6 +192,7 @@ story modified
 ```
 
 **新增字段说明：**
+
 - `baselineCommit` — engine run 启动时的 HEAD commit，用于退步检测对比基准
 - `baselineTag` — 对应的 git tag 名，格式 `ralph/baseline-<feature>/<timestamp>`
 - `rollbackCount` — 当前 run 的总回滚次数
@@ -196,30 +200,30 @@ story modified
 
 ### 6-12. 运行时机制速查
 
-| # | 机制 | 关键实现 | 文件/命令 |
-|---|------|---------|-----------|
-| 6 | PRD 生命周期绑定 | `initRun()` 检测 feature 变化 → 自动归档/重置；`loadPrdWithRuntime()` 注入 `_runtime` + `_engine` 元数据 | `ralph-core.mjs` |
-| 7 | progress.txt 追加 | 永远 `appendFileSync` / `>>`，永不覆盖 | `--append-log` |
-| 8 | 真实信号守卫 | `shouldRun()`: 有未完成 story 或有待分析错误才启动，无事直接退出 | `ralph-core.mjs` |
-| 9 | 结构化改动日志 | JSONL：`{timestamp, iteration, story, action, filesChanged, summary, reason}` | `changelog.jsonl` |
-| 10 | 一键回滚 | `node ralph-core.mjs --rollback <iteration>`，通过 git log 定位 → revert/checkout | `--rollback` |
-| 11 | Error Ledger 台账 | JSONL 累计 pattern，≥3 次输出 `upgrade-proposal.json`，终端醒目提示 | `error-ledger.jsonl` |
-| 12 | 并行 worktree 隔离 | `claude --dangerously-skip-permissions --print --worktree "$WORKTREE_PATH"` | 高级特性 |
+| #   | 机制               | 关键实现                                                                                                 | 文件/命令            |
+| --- | ------------------ | -------------------------------------------------------------------------------------------------------- | -------------------- |
+| 6   | PRD 生命周期绑定   | `initRun()` 检测 feature 变化 → 自动归档/重置；`loadPrdWithRuntime()` 注入 `_runtime` + `_engine` 元数据 | `ralph-core.mjs`     |
+| 7   | progress.txt 追加  | 永远 `appendFileSync` / `>>`，永不覆盖                                                                   | `--append-log`       |
+| 8   | 真实信号守卫       | `shouldRun()`: 有未完成 story 或有待分析错误才启动，无事直接退出                                         | `ralph-core.mjs`     |
+| 9   | 结构化改动日志     | JSONL：`{timestamp, iteration, story, action, filesChanged, summary, reason}`                            | `changelog.jsonl`    |
+| 10  | 一键回滚           | `node ralph-core.mjs --rollback <iteration>`，通过 git log 定位 → revert/checkout                        | `--rollback`         |
+| 11  | Error Ledger 台账  | JSONL 累计 pattern，≥3 次输出 `upgrade-proposal.json`，终端醒目提示                                      | `error-ledger.jsonl` |
+| 12  | 并行 worktree 隔离 | `claude --dangerously-skip-permissions --print --worktree "$WORKTREE_PATH"`                              | 高级特性             |
 
 ### Red Flags — STOP and Re-check
 
 These thoughts mean you're about to violate a harness engineering rule:
 
-| Thought | Reality |
-|---------|---------|
-| "I'll skip the three-dimension review, it's a small change" | Small changes break pipelines. The review catches blind spots. |
-| "I'll update prd.json passes later" | Harness sees zero progress next iteration. Update passes in the same commit. |
-| "Let me do 2-3 stories in one iteration to save time" | Context compaction loses details. One story per iteration. See [anti-patterns.md](anti-patterns.md). |
-| "The tests pass, so the code is correct" | Shallow assertions miss invariants. Grep for `≈`/`sum`/`abs`/`all` in tests. |
-| "No need to check convergence, one more iteration won't hurt" | Infinite loops start with "one more." Trust the convergence detector. |
-| "I'll just run the engine without checking for actual signal" | Engine wastes Claude CLI invocations on no-op iterations. `shouldRun()` first. |
-| "The error is probably in the frontend, let me fix it there" | Guess-driven fixes waste iterations. Add logging, observe, THEN fix. |
-| "I'll update docs in a separate iteration" | Story completion without Doc Sync judgment is incomplete. Judgment must fire every iteration — deferred documentation is not accepted. |
+| Thought                                                       | Reality                                                                                                                                |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| "I'll skip the three-dimension review, it's a small change"   | Small changes break pipelines. The review catches blind spots.                                                                         |
+| "I'll update prd.json passes later"                           | Harness sees zero progress next iteration. Update passes in the same commit.                                                           |
+| "Let me do 2-3 stories in one iteration to save time"         | Context compaction loses details. One story per iteration. See [anti-patterns.md](anti-patterns.md).                                   |
+| "The tests pass, so the code is correct"                      | Shallow assertions miss invariants. Grep for `≈`/`sum`/`abs`/`all` in tests.                                                           |
+| "No need to check convergence, one more iteration won't hurt" | Infinite loops start with "one more." Trust the convergence detector.                                                                  |
+| "I'll just run the engine without checking for actual signal" | Engine wastes Claude CLI invocations on no-op iterations. `shouldRun()` first.                                                         |
+| "The error is probably in the frontend, let me fix it there"  | Guess-driven fixes waste iterations. Add logging, observe, THEN fix.                                                                   |
+| "I'll update docs in a separate iteration"                    | Story completion without Doc Sync judgment is incomplete. Judgment must fire every iteration — deferred documentation is not accepted. |
 
 ---
 
@@ -243,11 +247,11 @@ scripts/ralph/          ← 执行层：脚本版本演进
 
 ### 文件命名与替换策略
 
-| 阶段             | 文件布局                                                   | 说明                            |
-| ---------------- | ---------------------------------------------------------- | ------------------------------- |
-| **开发中** | `ralph.sh`（旧版）+ `ralph-v2.sh`（新版）              | 新旧并排，选择使用              |
+| 阶段       | 文件布局                                            | 说明                          |
+| ---------- | --------------------------------------------------- | ----------------------------- |
+| **开发中** | `ralph.sh`（旧版）+ `ralph-v2.sh`（新版）           | 新旧并排，选择使用            |
 | **稳定后** | `ralph-v2.sh` → 覆盖 `ralph.sh`，删除 `ralph-v2.sh` | `ralph.sh` 始终指向最新稳定版 |
-| **出 v3**  | `ralph.sh`（稳定）+ `ralph-v3.sh`（开发中）            | 重复替换周期                    |
+| **出 v3**  | `ralph.sh`（稳定）+ `ralph-v3.sh`（开发中）         | 重复替换周期                  |
 
 **不需要 `ralph1/ralph2/ralph3` 子文件夹。** 历史版本通过 `archive/` 统一归档。
 
@@ -297,6 +301,7 @@ rm scripts/ralph/ralph-v2.sh
 - [SWE-bench](https://www.swebench.com/) — 自治编码 Agent 基准测试
 
 **Related superpowers skills:**
+
 - `superpowers:subagent-driven-development` — subagent dispatch patterns (ralph harness uses subagents for story execution)
 - `superpowers:executing-plans` — plan execution methodology (aligns with PRD-driven iteration)
 - `superpowers:verification-before-completion` — verification gates (aligns with story completion review)

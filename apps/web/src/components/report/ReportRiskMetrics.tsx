@@ -66,7 +66,9 @@ function RiskBullets({ report, ui }: Props) {
         axisPointer: { type: 'shadow' },
         formatter(params: unknown) {
           const ps = Array.isArray(params) ? params : [params];
-          const val = ps.find((p) => (p as { seriesName: string }).seriesName === riskLabels.actualValue);
+          const val = ps.find(
+            (p) => (p as { seriesName: string }).seriesName === riskLabels.actualValue
+          );
           if (!val) return '';
           const it = val as { name: string; value: number };
           return `${it.name}: <b>${it.value.toFixed(1)}%</b>`;
@@ -190,7 +192,9 @@ function DrawdownWaterfall({ report, ui }: Props) {
   const option = useMemo<EChartsOption>(() => {
     if (dd.length === 0) return {};
 
-    const dates = dd.map((d) => new Date(d.timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }));
+    const dates = dd.map((d) =>
+      new Date(d.timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+    );
 
     return {
       tooltip: {
@@ -212,7 +216,11 @@ function DrawdownWaterfall({ report, ui }: Props) {
       yAxis: {
         type: 'value',
         min: undefined,
-        axisLabel: { fontSize: 10, color: '#8fa29b', formatter: (v: number) => `${(v * 100).toFixed(0)}%` },
+        axisLabel: {
+          fontSize: 10,
+          color: '#8fa29b',
+          formatter: (v: number) => `${(v * 100).toFixed(0)}%`,
+        },
         splitLine: { lineStyle: { color: 'rgba(38,54,50,0.4)' } },
       },
       dataZoom: [{ type: 'inside', start: 0, end: 100 }],
@@ -259,15 +267,65 @@ export function ReportRiskMetrics({ report, ui }: Props) {
 
   const cards = [
     { label: labels.maxDrawdown, value: pct(m.maxDrawdown), tone: 'warn' },
-    { label: labels.drawdownDuration, value: safeDays(m.maxDrawdownDuration), tone: m.maxDrawdownDuration != null && m.maxDrawdownDuration > 60 ? 'warn' : 'info' },
-    ...(m.annualizedVolatility != null ? [{ label: labels.annualizedVolatility, value: pct(m.annualizedVolatility), tone: 'info' as const }] : []),
-    ...(m.downsideVolatility != null ? [{ label: labels.downsideVolatility, value: pct(m.downsideVolatility), tone: 'info' as const }] : []),
+    {
+      label: labels.drawdownDuration,
+      value: safeDays(m.maxDrawdownDuration),
+      tone: m.maxDrawdownDuration != null && m.maxDrawdownDuration > 60 ? 'warn' : 'info',
+    },
+    ...(m.annualizedVolatility != null
+      ? [
+          {
+            label: labels.annualizedVolatility,
+            value: pct(m.annualizedVolatility),
+            tone: 'info' as const,
+          },
+        ]
+      : []),
+    ...(m.downsideVolatility != null
+      ? [
+          {
+            label: labels.downsideVolatility,
+            value: pct(m.downsideVolatility),
+            tone: 'info' as const,
+          },
+        ]
+      : []),
     ...(m.var95 != null ? [{ label: labels.var, value: pct(m.var95), tone: 'warn' as const }] : []),
-    ...(m.cvar95 != null ? [{ label: labels.cvar, value: pct(m.cvar95), tone: 'warn' as const }] : []),
-    { label: labels.calmar, value: safeNum(m.calmarRatio), tone: m.calmarRatio != null && m.calmarRatio > 1 ? 'good' : 'warn' },
-    ...(m.sortinoRatio != null ? [{ label: labels.sortino, value: m.sortinoRatio.toFixed(2), tone: m.sortinoRatio > 1 ? 'good' : 'warn' as const }] : []),
-    ...(m.skewness != null ? [{ label: labels.skewness, value: m.skewness.toFixed(2), tone: m.skewness < 0 ? 'warn' : 'info' as const }] : []),
-    ...(m.kurtosis != null ? [{ label: labels.kurtosis, value: m.kurtosis.toFixed(2), tone: m.kurtosis > 3 ? 'warn' : 'info' as const }] : []),
+    ...(m.cvar95 != null
+      ? [{ label: labels.cvar, value: pct(m.cvar95), tone: 'warn' as const }]
+      : []),
+    {
+      label: labels.calmar,
+      value: safeNum(m.calmarRatio),
+      tone: m.calmarRatio != null && m.calmarRatio > 1 ? 'good' : 'warn',
+    },
+    ...(m.sortinoRatio != null
+      ? [
+          {
+            label: labels.sortino,
+            value: m.sortinoRatio.toFixed(2),
+            tone: m.sortinoRatio > 1 ? 'good' : ('warn' as const),
+          },
+        ]
+      : []),
+    ...(m.skewness != null
+      ? [
+          {
+            label: labels.skewness,
+            value: m.skewness.toFixed(2),
+            tone: m.skewness < 0 ? 'warn' : ('info' as const),
+          },
+        ]
+      : []),
+    ...(m.kurtosis != null
+      ? [
+          {
+            label: labels.kurtosis,
+            value: m.kurtosis.toFixed(2),
+            tone: m.kurtosis > 3 ? 'warn' : ('info' as const),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -278,7 +336,10 @@ export function ReportRiskMetrics({ report, ui }: Props) {
       {/* 指标卡片 */}
       <div className={styles.metricGrid}>
         {cards.map((card) => (
-          <article key={card.label} className={`${styles.metricCard} ${styles[`tone${card.tone}`]}`}>
+          <article
+            key={card.label}
+            className={`${styles.metricCard} ${styles[`tone${card.tone}`]}`}
+          >
             <span className={styles.metricLabel}>{card.label}</span>
             <strong className={styles.metricValue}>{card.value}</strong>
           </article>

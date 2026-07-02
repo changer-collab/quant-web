@@ -22,7 +22,7 @@ export function fetchStrategyConfig(name: string): Promise<ApiConfigResponse | n
 export function saveStrategyConfig(
   name: string,
   config: Record<string, unknown>,
-  hash?: string,
+  hash?: string
 ): Promise<ApiConfigSaveResponse> {
   return apiPut<ApiConfigSaveResponse>(`/strategies/${encodeURIComponent(name)}/config`, {
     config,

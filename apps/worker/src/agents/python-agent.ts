@@ -22,7 +22,7 @@ export class PythonAgent implements AgentExecutor {
       if (request.onEvent) {
         result = await this.bridge.streamCall(
           request.params,
-          request.onEvent as (event: StreamEvent) => void,
+          request.onEvent as (event: StreamEvent) => void
         );
       } else {
         result = await this.bridge.call(request.params);

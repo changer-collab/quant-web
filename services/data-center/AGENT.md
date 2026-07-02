@@ -70,6 +70,7 @@ HTTP API
 ## PostgreSQL 迁移路径
 
 切换 PostgreSQL 时只需：
+
 1. 安装 `pg` + `drizzle-orm/pg-driver`
 2. 在 `src/storage/postgres/` 下创建 PG 版 Repository 实现
 3. 修改 `factory.ts`：将 `createSqliteRepositorySet` 替换为 `createPostgresRepositorySet`

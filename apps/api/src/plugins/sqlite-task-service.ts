@@ -35,18 +35,18 @@ export class SqliteTaskService implements TaskService {
   private readonly subscribers = new Map<string, Set<TaskEventHandler>>();
   private idCounter = 0;
 
-  constructor(
-    private repo: TaskRepository,
-  ) {}
+  constructor(private repo: TaskRepository) {}
 
   async init(): Promise<void> {
     // 从数据库加载最大 ID
     const tasks = await this.repo.list();
     if (tasks.length > 0) {
-      const maxId = Math.max(...tasks.map((t) => {
-        const num = parseInt(t.id.replace('task-', ''), 10);
-        return isNaN(num) ? 0 : num;
-      }));
+      const maxId = Math.max(
+        ...tasks.map((t) => {
+          const num = parseInt(t.id.replace('task-', ''), 10);
+          return isNaN(num) ? 0 : num;
+        })
+      );
       this.idCounter = maxId;
     }
   }
@@ -54,7 +54,10 @@ export class SqliteTaskService implements TaskService {
   async submit(type: TaskType, payload: Record<string, unknown>): Promise<TaskView> {
     const id = `task-${++this.idCounter}`;
     const task: TaskView = {
-      id, type, status: TaskStatus.Pending, payload,
+      id,
+      type,
+      status: TaskStatus.Pending,
+      payload,
       submittedAt: Date.now(),
       progress: 0,
       lines: [],

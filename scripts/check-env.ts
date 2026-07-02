@@ -8,17 +8,17 @@
  * - baostock 已安装（seed-data.ts 实际使用的数据源）
  * - akshare 已安装（适配器存在，可选）
  */
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
 
 async function checkPython(): Promise<void> {
   try {
-    const { stdout } = await exec("python", ["--version"]);
+    const { stdout } = await exec('python', ['--version']);
     console.log(`Python: ${stdout.trim()}`);
   } catch {
-    throw new Error("Python 未安装或不在 PATH 中");
+    throw new Error('Python 未安装或不在 PATH 中');
   }
 }
 
@@ -42,7 +42,7 @@ except Exception as e:
   sys.stdout = _real_stdout
   print(json.dumps({"ok": False, "error": str(e)}))
 `;
-  await runCheck("baostock", script);
+  await runCheck('baostock', script);
 }
 
 async function checkAkshare(): Promise<void> {
@@ -54,19 +54,19 @@ try:
 except Exception as e:
   print(json.dumps({"ok": False, "error": str(e)}))
 `;
-  await runCheck("akshare", script);
+  await runCheck('akshare', script);
 }
 
 async function runCheck(pkg: string, script: string): Promise<void> {
   try {
-    const { stdout } = await exec("python", ["-c", script], { timeout: 30_000 });
+    const { stdout } = await exec('python', ['-c', script], { timeout: 30_000 });
     const result = JSON.parse(stdout.trim());
     if (!result.ok) {
       throw new Error(`${pkg} 不可用: ${result.error}`);
     }
     console.log(`${pkg}: 可用`);
   } catch (err) {
-    if (err instanceof Error && err.message.includes("不可用")) {
+    if (err instanceof Error && err.message.includes('不可用')) {
       throw err;
     }
     throw new Error(`${pkg} 检查失败: ${err}`);
@@ -74,7 +74,7 @@ async function runCheck(pkg: string, script: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  console.log("=== 环境检查 ===\n");
+  console.log('=== 环境检查 ===\n');
   await checkPython();
   await checkBaostock();
   try {
@@ -82,7 +82,7 @@ async function main(): Promise<void> {
   } catch (err) {
     console.warn(`akshare: 可选依赖未安装（${err}），seed-data.ts 使用 baostock 不受影响`);
   }
-  console.log("\n=== 环境检查通过 ===");
+  console.log('\n=== 环境检查通过 ===');
 }
 
 main().catch((err) => {

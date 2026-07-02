@@ -46,21 +46,31 @@ export class FactorEvaluationRepository {
       evalData: JSON.stringify(evaluation.evalData),
     };
 
-    await db.insert(factorEvaluations).values(row).onConflictDoUpdate({
-      target: factorEvaluations.id,
-      set: row,
-    }).execute();
+    await db
+      .insert(factorEvaluations)
+      .values(row)
+      .onConflictDoUpdate({
+        target: factorEvaluations.id,
+        set: row,
+      })
+      .execute();
   }
 
   async getById(id: string): Promise<FactorEvaluation | undefined> {
     const db = getApiDb();
-    const rows = await db.select().from(factorEvaluations).where(eq(factorEvaluations.id, id)).execute();
+    const rows = await db
+      .select()
+      .from(factorEvaluations)
+      .where(eq(factorEvaluations.id, id))
+      .execute();
     return rows[0] ? rowToEvaluation(rows[0]) : undefined;
   }
 
   async getByFactorId(factorId: string): Promise<FactorEvaluationSummary[]> {
     const db = getApiDb();
-    const rows = await db.select().from(factorEvaluations)
+    const rows = await db
+      .select()
+      .from(factorEvaluations)
       .where(eq(factorEvaluations.factorId, factorId))
       .orderBy(desc(factorEvaluations.createdAt))
       .execute();
@@ -69,7 +79,9 @@ export class FactorEvaluationRepository {
 
   async getLatestByFactorId(factorId: string): Promise<FactorEvaluation | undefined> {
     const db = getApiDb();
-    const rows = await db.select().from(factorEvaluations)
+    const rows = await db
+      .select()
+      .from(factorEvaluations)
       .where(eq(factorEvaluations.factorId, factorId))
       .orderBy(desc(factorEvaluations.createdAt))
       .limit(1)

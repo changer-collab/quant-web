@@ -26,7 +26,7 @@ export function useTasks() {
       const { id } = await submitBacktest(payload);
       return id;
     },
-    [],
+    []
   );
 
   /** 通过 SSE 流式跟踪任务 */
@@ -43,12 +43,19 @@ export function useTasks() {
         },
         () => {
           clearTimeout(timer);
-          onEvent({ type: 'error', taskId, error: { code: 'SSE_ERROR', message: 'SSE connection failed' } });
-        },
+          onEvent({
+            type: 'error',
+            taskId,
+            error: { code: 'SSE_ERROR', message: 'SSE connection failed' },
+          });
+        }
       );
-      return () => { clearTimeout(timer); close(); };
+      return () => {
+        clearTimeout(timer);
+        close();
+      };
     },
-    [],
+    []
   );
 
   /** 提交回测任务并轮询直到完成（兼容旧用法） */
@@ -85,8 +92,16 @@ export function useTasks() {
         });
       });
     },
-    [submitBacktestTask, submitAndStream, reload],
+    [submitBacktestTask, submitAndStream, reload]
   );
 
-  return { tasks: data ?? [], loading, error, reload, submitBacktestTask, submitAndStream, submitAndPoll };
+  return {
+    tasks: data ?? [],
+    loading,
+    error,
+    reload,
+    submitBacktestTask,
+    submitAndStream,
+    submitAndPoll,
+  };
 }

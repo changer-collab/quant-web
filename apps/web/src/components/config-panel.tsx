@@ -52,10 +52,7 @@ function buildInitialParams(params: StrategyParam[]): Record<string, unknown> {
 }
 
 /** 判断 ui_constraints 中 disable_when 是否触发 */
-function isDisabled(
-  param: StrategyParam,
-  allValues: Record<string, unknown>,
-): boolean {
+function isDisabled(param: StrategyParam, allValues: Record<string, unknown>): boolean {
   if (!param.uiConstraints) return false;
   for (const c of param.uiConstraints) {
     if (c.kind === 'disable_when' && allValues[c.target_field] === c.target_value) {
@@ -66,10 +63,7 @@ function isDisabled(
 }
 
 /** 判断 ui_constraints 中 require_when 是否触发 */
-function isRequired(
-  param: StrategyParam,
-  allValues: Record<string, unknown>,
-): boolean {
+function isRequired(param: StrategyParam, allValues: Record<string, unknown>): boolean {
   if (!param.uiConstraints) return false;
   for (const c of param.uiConstraints) {
     if (c.kind === 'require_when' && allValues[c.target_field] === c.target_value) {
@@ -103,34 +97,31 @@ const MOCK_DATA_SOURCES = [
 
 // ─── 组件 ──────────────────────────────────────────────
 
-export function ConfigPanel({
-  strategy,
-  ui,
-  language,
-  onPreviewUpdate,
-}: ConfigPanelProps) {
+export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigPanelProps) {
   // ── 分类 Tab 状态 ──
   const [activeCategory, setActiveCategory] = useState<StrategyCategory>(
-    (strategy.category as StrategyCategory) ?? 'non_factor',
+    (strategy.category as StrategyCategory) ?? 'non_factor'
   );
 
   const availableSubcats = CATEGORY_SUBCATEGORIES[activeCategory];
   const [activeSubcategory, setActiveSubcategory] = useState<string>(
     strategy.subcategory && availableSubcats.includes(strategy.subcategory)
       ? strategy.subcategory
-      : (availableSubcats[0] ?? ''),
+      : (availableSubcats[0] ?? '')
   );
 
   // ── 表单参数值 ──
-  const [paramValues, setParamValues] = useState<Record<string, unknown>>(
-    () => buildInitialParams(strategy.params ?? []),
+  const [paramValues, setParamValues] = useState<Record<string, unknown>>(() =>
+    buildInitialParams(strategy.params ?? [])
   );
 
   // ── 因子型专属状态 ──
   const [factorPool, setFactorPool] = useState<string[]>([]);
   const [winsorizationLevel, setWinsorizationLevel] = useState(3);
   const [neutralizationEnabled, setNeutralizationEnabled] = useState(false);
-  const [standardizationMethod, setStandardizationMethod] = useState<'zscore' | 'minmax' | 'rank'>('zscore');
+  const [standardizationMethod, setStandardizationMethod] = useState<'zscore' | 'minmax' | 'rank'>(
+    'zscore'
+  );
 
   // ── 非因子型专属状态 ──
   const [lookbackWindow, setLookbackWindow] = useState(20);
@@ -158,9 +149,10 @@ export function ConfigPanel({
       const cat = (strategy.category as StrategyCategory) ?? 'non_factor';
       setActiveCategory(cat);
       const subs = CATEGORY_SUBCATEGORIES[cat];
-      const sub = strategy.subcategory && subs.includes(strategy.subcategory)
-        ? strategy.subcategory
-        : (subs[0] ?? '');
+      const sub =
+        strategy.subcategory && subs.includes(strategy.subcategory)
+          ? strategy.subcategory
+          : (subs[0] ?? '');
       setActiveSubcategory(sub);
       setParamValues(buildInitialParams(strategy.params ?? []));
       setFactorPool([]);
@@ -285,9 +277,7 @@ export function ConfigPanel({
   // ── 切换因子选择 ──
   function toggleFactor(factorId: string) {
     setFactorPool((prev) =>
-      prev.includes(factorId)
-        ? prev.filter((f) => f !== factorId)
-        : [...prev, factorId],
+      prev.includes(factorId) ? prev.filter((f) => f !== factorId) : [...prev, factorId]
     );
   }
 
@@ -367,9 +357,7 @@ export function ConfigPanel({
                 >
                   <span className={s.paramLabel}>
                     {param.label}
-                    {required && (
-                      <span style={{ color: '#ff6b6b', marginLeft: 4 }}>*</span>
-                    )}
+                    {required && <span style={{ color: '#ff6b6b', marginLeft: 4 }}>*</span>}
                   </span>
                   <div className={s.paramControl}>
                     {param.type === 'boolean' ? (
@@ -405,12 +393,7 @@ export function ConfigPanel({
                           max={param.max ?? 100}
                           step={Number.isInteger(param.default) ? 1 : 0.1}
                           value={Number(paramValues[param.key] ?? 0)}
-                          onChange={(e) =>
-                            handleParamChange(
-                              param.key,
-                              Number(e.target.value),
-                            )
-                          }
+                          onChange={(e) => handleParamChange(param.key, Number(e.target.value))}
                         />
                         <input
                           type="number"
@@ -423,7 +406,7 @@ export function ConfigPanel({
                             const v = clamp(
                               Number(e.target.value),
                               param.min ?? -Infinity,
-                              param.max ?? Infinity,
+                              param.max ?? Infinity
                             );
                             handleParamChange(param.key, v);
                           }}
@@ -492,7 +475,13 @@ export function ConfigPanel({
                   value={winsorizationLevel}
                   onChange={(e) => setWinsorizationLevel(Number(e.target.value))}
                 />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--muted)' }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--muted)',
+                  }}
+                >
                   ±{winsorizationLevel}σ
                 </span>
               </div>
@@ -585,11 +574,11 @@ export function ConfigPanel({
             <div className={s.section}>
               <div className={s.sectionTitle}>{ui.configPanelIndicatorToolbox}</div>
               <div className={s.indicatorGrid}>
-                {([
+                {[
                   { key: 'macd' as const, label: ui.configPanelMACD },
                   { key: 'rsi' as const, label: ui.configPanelRSI },
                   { key: 'bollinger' as const, label: ui.configPanelBollinger },
-                ]).map((ind) => (
+                ].map((ind) => (
                   <div
                     key={ind.key}
                     className={`${s.indicatorCard} ${indicators[ind.key] ? s.indicatorCardSelected : ''}`}
@@ -702,10 +691,14 @@ export function ConfigPanel({
                 </div>
               )}
               {!['hft_microstructure', 'e2e_ai_timeseries', 'event_driven'].includes(
-                activeSubcategory,
+                activeSubcategory
               ) && (
-                <p style={{ color: 'var(--muted)', fontSize: 'var(--text-xs)', fontStyle: 'italic' }}>
-                  {language === 'zh' ? '该子类型无额外动态参数' : 'No dynamic params for this subcategory'}
+                <p
+                  style={{ color: 'var(--muted)', fontSize: 'var(--text-xs)', fontStyle: 'italic' }}
+                >
+                  {language === 'zh'
+                    ? '该子类型无额外动态参数'
+                    : 'No dynamic params for this subcategory'}
                 </p>
               )}
             </div>
@@ -781,38 +774,20 @@ export function ConfigPanel({
 
         {/* ── 状态提示 ── */}
         {saved && (
-          <div className={`${s.statusMessage} ${s.statusSuccess}`}>
-            {ui.configPanelSaved}
-          </div>
+          <div className={`${s.statusMessage} ${s.statusSuccess}`}>{ui.configPanelSaved}</div>
         )}
-        {error && (
-          <div className={`${s.statusMessage} ${s.statusError}`}>
-            {error}
-          </div>
-        )}
+        {error && <div className={`${s.statusMessage} ${s.statusError}`}>{error}</div>}
       </div>
 
       {/* ── 底部操作按钮 ── */}
       <div className={s.actionBar}>
-        <button
-          className={s.saveButton}
-          disabled={saving}
-          onClick={handleSave}
-          type="button"
-        >
+        <button className={s.saveButton} disabled={saving} onClick={handleSave} type="button">
           {saving ? ui.configPanelSaving : saved ? ui.configPanelSaved : ui.configPanelSave}
         </button>
-        <button
-          className={s.previewButton}
-          onClick={triggerPreview}
-          type="button"
-        >
+        <button className={s.previewButton} onClick={triggerPreview} type="button">
           {ui.configPanelPreview}
         </button>
-        <button
-          className={s.submitButton}
-          type="button"
-        >
+        <button className={s.submitButton} type="button">
           {ui.configPanelSubmitTask}
         </button>
       </div>

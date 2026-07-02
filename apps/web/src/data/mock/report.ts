@@ -4,7 +4,7 @@ function generateEquityCurve(
   length: number,
   startTimestamp: number,
   startEquity: number,
-  totalReturn: number,
+  totalReturn: number
 ): { timestamp: number; equity: number }[] {
   return Array.from({ length }, (_, i) => ({
     timestamp: startTimestamp + i * 86400000,
@@ -13,7 +13,7 @@ function generateEquityCurve(
 }
 
 function generateDrawdownCurve(
-  curve: { timestamp: number; equity: number }[],
+  curve: { timestamp: number; equity: number }[]
 ): { timestamp: number; drawdown: number }[] {
   let peak = curve[0]?.equity ?? 1_000_000;
   return curve.map((p) => {
@@ -102,9 +102,8 @@ export const MOCK_REPORT = {
     maxSingleProfit: 85000,
     maxSingleLoss: -42000,
     pnlDistribution: [
-      8.5, 5.2, 3.1, 2.8, 2.1, 1.9, 1.5, 1.2, 0.8, 0.5,
-      0.3, 0.1, -0.2, -0.5, -0.8, -1.2, -1.8, -2.5, -3.2, -4.2,
-      6.3, 4.1, -1.5, 3.7,
+      8.5, 5.2, 3.1, 2.8, 2.1, 1.9, 1.5, 1.2, 0.8, 0.5, 0.3, 0.1, -0.2, -0.5, -0.8, -1.2, -1.8,
+      -2.5, -3.2, -4.2, 6.3, 4.1, -1.5, 3.7,
     ],
     maxConsecutiveWins: 7,
     maxConsecutiveLosses: 4,
@@ -192,11 +191,11 @@ const pSensitivity = [
   {
     paramName: '慢线周期',
     variations: [
-      { value: 10, return: 0.10, sharpe: 0.72, drawdown: 0.095 },
+      { value: 10, return: 0.1, sharpe: 0.72, drawdown: 0.095 },
       { value: 15, return: 0.13, sharpe: 0.88, drawdown: 0.087 },
       { value: 20, return: 0.156, sharpe: 0.98, drawdown: 0.082 },
       { value: 30, return: 0.14, sharpe: 0.85, drawdown: 0.078 },
-      { value: 60, return: 0.10, sharpe: 0.70, drawdown: 0.09 },
+      { value: 60, return: 0.1, sharpe: 0.7, drawdown: 0.09 },
     ],
   },
   {
@@ -249,20 +248,20 @@ MOCK_REPORT.robustness = {
     windows: [
       { period: '2020-2021', inSampleReturn: 0.18, outOfSampleReturn: 0.14, decay: 0.22 },
       { period: '2021-2022', inSampleReturn: 0.16, outOfSampleReturn: 0.13, decay: 0.19 },
-      { period: '2022-2023', inSampleReturn: 0.15, outOfSampleReturn: 0.12, decay: 0.20 },
+      { period: '2022-2023', inSampleReturn: 0.15, outOfSampleReturn: 0.12, decay: 0.2 },
     ],
-    avgDecay: 0.20,
+    avgDecay: 0.2,
   },
 };
 
 MOCK_REPORT.attribution = {
   industryExposures: [
     { industry: '金融', weight: 0.25, contribution: 0.032 },
-    { industry: '科技', weight: 0.20, contribution: 0.045 },
+    { industry: '科技', weight: 0.2, contribution: 0.045 },
     { industry: '消费', weight: 0.18, contribution: 0.028 },
     { industry: '医药', weight: 0.15, contribution: 0.018 },
     { industry: '制造业', weight: 0.12, contribution: 0.015 },
-    { industry: '其他', weight: 0.10, contribution: 0.018 },
+    { industry: '其他', weight: 0.1, contribution: 0.018 },
   ],
   factorExposures: [
     { factor: 'Size (市值)', exposure: -0.15, contribution: 0.012 },
@@ -289,7 +288,8 @@ MOCK_REPORT.issues = {
 
 // 11. 执行摘要
 MOCK_REPORT.executiveSummary = {
-  oneLineConclusion: '双均线交叉策略在 2023-2024 年回测中实现 13.2% 年化收益，最大回撤 8.2%，夏普比率 0.98，跑赢沪深300 基准',
+  oneLineConclusion:
+    '双均线交叉策略在 2023-2024 年回测中实现 13.2% 年化收益，最大回撤 8.2%，夏普比率 0.98，跑赢沪深300 基准',
   recommendedForLive: true,
   recommendationReason: '策略回撤可控，参数敏感性稳定，样本外表现衰减小于 20%，建议小资金实盘验证',
   keyMetrics: {
@@ -322,11 +322,7 @@ MOCK_REPORT.conclusion = {
   liveTradingAdvice: {
     suggestedCapital: '≥ 100 万（保证流动性）',
     suggestedInitialPosition: '建议从 50% 仓位开始，观察 1 个月',
-    riskControlRules: [
-      '单日回撤超过 3% 暂停交易',
-      '个股权重上限 10%',
-      '行业权重上限 30%',
-    ],
+    riskControlRules: ['单日回撤超过 3% 暂停交易', '个股权重上限 10%', '行业权重上限 30%'],
   },
   suitableMarketRegime: ['牛市', '趋势行情'],
 };
@@ -360,9 +356,30 @@ MOCK_REPORT.positionAnalysis = {
 // 14. 子策略归因
 MOCK_REPORT.subStrategyAttribution = {
   independentComparison: [
-    { name: '仅择股', annualizedReturn: 0.085, annualizedVolatility: 0.16, maxDrawdown: 0.09, sharpe: 0.53, description: '满仓等权' },
-    { name: '仅择时', annualizedReturn: 0.105, annualizedVolatility: 0.18, maxDrawdown: 0.085, sharpe: 0.58, description: '全市场等权' },
-    { name: '择股+择时', annualizedReturn: 0.132, annualizedVolatility: 0.185, maxDrawdown: 0.082, sharpe: 0.98, description: '完整组合' },
+    {
+      name: '仅择股',
+      annualizedReturn: 0.085,
+      annualizedVolatility: 0.16,
+      maxDrawdown: 0.09,
+      sharpe: 0.53,
+      description: '满仓等权',
+    },
+    {
+      name: '仅择时',
+      annualizedReturn: 0.105,
+      annualizedVolatility: 0.18,
+      maxDrawdown: 0.085,
+      sharpe: 0.58,
+      description: '全市场等权',
+    },
+    {
+      name: '择股+择时',
+      annualizedReturn: 0.132,
+      annualizedVolatility: 0.185,
+      maxDrawdown: 0.082,
+      sharpe: 0.98,
+      description: '完整组合',
+    },
   ],
   marginalContributions: [
     { module: '择股贡献', contribution: 0.047 },
@@ -413,10 +430,38 @@ MOCK_REPORT.subStrategyAttribution = {
 // 15. 压力测试
 MOCK_REPORT.stressTest = {
   scenarios: [
-    { name: '2015 股灾', period: '2015-06 ~ 2015-08', strategyDrawdown: 0.065, benchmarkDrawdown: 0.42, recoveryDays: 35, note: '择时模块有效规避大部分回撤' },
-    { name: '2018 贸易战', period: '2018-01 ~ 2018-12', strategyDrawdown: 0.092, benchmarkDrawdown: 0.25, recoveryDays: 68, note: '震荡市信号频繁失效' },
-    { name: '2020 疫情', period: '2020-02 ~ 2020-03', strategyDrawdown: 0.038, benchmarkDrawdown: 0.16, recoveryDays: 18, note: '快速恢复' },
-    { name: '2022 持续下跌', period: '2022-01 ~ 2022-04', strategyDrawdown: 0.071, benchmarkDrawdown: 0.2, recoveryDays: 45, note: '中等回撤' },
+    {
+      name: '2015 股灾',
+      period: '2015-06 ~ 2015-08',
+      strategyDrawdown: 0.065,
+      benchmarkDrawdown: 0.42,
+      recoveryDays: 35,
+      note: '择时模块有效规避大部分回撤',
+    },
+    {
+      name: '2018 贸易战',
+      period: '2018-01 ~ 2018-12',
+      strategyDrawdown: 0.092,
+      benchmarkDrawdown: 0.25,
+      recoveryDays: 68,
+      note: '震荡市信号频繁失效',
+    },
+    {
+      name: '2020 疫情',
+      period: '2020-02 ~ 2020-03',
+      strategyDrawdown: 0.038,
+      benchmarkDrawdown: 0.16,
+      recoveryDays: 18,
+      note: '快速恢复',
+    },
+    {
+      name: '2022 持续下跌',
+      period: '2022-01 ~ 2022-04',
+      strategyDrawdown: 0.071,
+      benchmarkDrawdown: 0.2,
+      recoveryDays: 45,
+      note: '中等回撤',
+    },
   ],
   monteCarlo: {
     simulatedPaths: 1000,
@@ -467,8 +512,14 @@ MOCK_REPORT.benchmarkComparison = {
 MOCK_REPORT.riskWarnings = {
   limitations: [
     { category: '数据质量', description: '前复权处理可能引入轻微前视偏差，停牌处理采用前值填充' },
-    { category: '流动性假设', description: '假设按收盘价成交，大单冲击未完全建模，涨停板无法买入场景未处理' },
-    { category: '过拟合风险', description: '参数优化自由度中等，快线/慢线组合数 25 种，需关注样本外衰减' },
+    {
+      category: '流动性假设',
+      description: '假设按收盘价成交，大单冲击未完全建模，涨停板无法买入场景未处理',
+    },
+    {
+      category: '过拟合风险',
+      description: '参数优化自由度中等，快线/慢线组合数 25 种，需关注样本外衰减',
+    },
     { category: '市场环境', description: '策略容量约 2-5 亿元，Regime Change 时可能失效' },
   ],
   codeSnippets: [
@@ -479,10 +530,16 @@ MOCK_REPORT.riskWarnings = {
     },
   ],
   glossary: [
-    { term: '夏普比率', definition: '(年化收益 - 无风险利率) / 年化波动率，衡量单位风险下的超额收益' },
+    {
+      term: '夏普比率',
+      definition: '(年化收益 - 无风险利率) / 年化波动率，衡量单位风险下的超额收益',
+    },
     { term: '最大回撤', definition: '资金从峰值到谷底的最大跌幅，衡量最坏情况下的损失' },
     { term: '信息比率', definition: '超额收益均值 / 跟踪误差，衡量主动管理的风险调整收益' },
-    { term: 'VaR', definition: '在给定置信度下的最大可能损失，如 95% VaR 表示有 95% 概率损失不超过此值' },
+    {
+      term: 'VaR',
+      definition: '在给定置信度下的最大可能损失，如 95% VaR 表示有 95% 概率损失不超过此值',
+    },
     { term: 'CVaR', definition: '条件在险价值，即损失超过 VaR 时的平均损失，衡量尾部风险' },
   ],
   redLines: [

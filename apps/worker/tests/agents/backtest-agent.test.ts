@@ -53,12 +53,14 @@ describe('BacktestAgent', () => {
     });
 
     // 验证参数转换
-    expect(inner.execute).toHaveBeenCalledWith(expect.objectContaining({
-      params: expect.objectContaining({
-        command: 'backtest',
-        strategy: 'dual_ma',
-      }),
-    }));
+    expect(inner.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({
+          command: 'backtest',
+          strategy: 'dual_ma',
+        }),
+      })
+    );
   });
 
   it('传递 configSnapshot.category/subcategory/snapshotParams', async () => {
@@ -81,16 +83,18 @@ describe('BacktestAgent', () => {
       },
     });
 
-    expect(inner.execute).toHaveBeenCalledWith(expect.objectContaining({
-      params: expect.objectContaining({
-        config: expect.objectContaining({
-          category: 'non_factor',
-          subcategory: 'trend_cta',
-          snapshotParams: { period: 20 },
-          strategyParams: { period: 20 },
+    expect(inner.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({
+          config: expect.objectContaining({
+            category: 'non_factor',
+            subcategory: 'trend_cta',
+            snapshotParams: { period: 20 },
+            strategyParams: { period: 20 },
+          }),
         }),
-      }),
-    }));
+      })
+    );
   });
 
   it('configSnapshot 缺失时降级到 params.params 并输出 WARN', async () => {
@@ -112,18 +116,22 @@ describe('BacktestAgent', () => {
 
     // 验证 WARN
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('deprecated: params.params will be removed, use configSnapshot.params'),
+      expect.stringContaining(
+        'deprecated: params.params will be removed, use configSnapshot.params'
+      )
     );
 
     // 验证降级后的 params
-    expect(inner.execute).toHaveBeenCalledWith(expect.objectContaining({
-      params: expect.objectContaining({
-        config: expect.objectContaining({
-          snapshotParams: { period: 10 },
-          strategyParams: { period: 10 },
+    expect(inner.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({
+          config: expect.objectContaining({
+            snapshotParams: { period: 10 },
+            strategyParams: { period: 10 },
+          }),
         }),
-      }),
-    }));
+      })
+    );
 
     warnSpy.mockRestore();
   });

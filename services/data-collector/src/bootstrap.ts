@@ -1,13 +1,31 @@
 import { AdapterRegistryImpl } from './registry/index.js';
 import { CollectorScheduler } from './scheduler.js';
-import { CsvAdapter, TushareAdapter, AkshareAdapter, BaostockAdapter, EfinanceAdapter, YfinanceAdapter, MootdxAdapter, TencentAdapter } from './adapters/index.js';
+import {
+  CsvAdapter,
+  TushareAdapter,
+  AkshareAdapter,
+  BaostockAdapter,
+  EfinanceAdapter,
+  YfinanceAdapter,
+  MootdxAdapter,
+  TencentAdapter,
+} from './adapters/index.js';
 
 /**
  * 采集器启动配置
  */
 export interface CollectorBootstrapConfig {
   /** 启用的数据源列表，不传则启用全部 */
-  sources?: ('tushare' | 'akshare' | 'csv' | 'baostock' | 'efinance' | 'yfinance' | 'mootdx' | 'tencent')[];
+  sources?: (
+    | 'tushare'
+    | 'akshare'
+    | 'csv'
+    | 'baostock'
+    | 'efinance'
+    | 'yfinance'
+    | 'mootdx'
+    | 'tencent'
+  )[];
   /** 数据目录路径（SQLite 文件等），默认 ./data */
   dataDir?: string;
 }
@@ -30,7 +48,14 @@ export interface CollectorBootstrapResult {
  */
 export function createCollector(config?: CollectorBootstrapConfig): CollectorBootstrapResult {
   const registry = new AdapterRegistryImpl();
-  const sources = config?.sources ?? ['akshare', 'baostock', 'efinance', 'yfinance', 'tushare', 'csv'];
+  const sources = config?.sources ?? [
+    'akshare',
+    'baostock',
+    'efinance',
+    'yfinance',
+    'tushare',
+    'csv',
+  ];
 
   for (const source of sources) {
     switch (source) {

@@ -36,7 +36,10 @@ export function useTaskStream(taskId: string | null) {
             case 'progress':
               return { ...prev, progress: event.percent ?? prev.progress };
             case 'log':
-              return { ...prev, lines: [...prev.lines, `[${event.level ?? 'info'}] ${event.message ?? ''}`] };
+              return {
+                ...prev,
+                lines: [...prev.lines, `[${event.level ?? 'info'}] ${event.message ?? ''}`],
+              };
             case 'status':
               return { ...prev, status: event.message ?? prev.status };
             case 'result':
@@ -50,7 +53,7 @@ export function useTaskStream(taskId: string | null) {
       },
       () => {
         setState((prev) => ({ ...prev, status: 'failed' }));
-      },
+      }
     );
 
     return () => {

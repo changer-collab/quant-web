@@ -1,9 +1,4 @@
-export {
-  TradeSide,
-  TradeType,
-  OrderAction,
-  L2OrderType,
-} from './types.js';
+export { TradeSide, TradeType, OrderAction, L2OrderType } from './types.js';
 export type {
   OrderBookEntry,
   Level2Snapshot,

@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { DataCleaner } from '../src/cleaner.js';
-import { TimeFrame, ReportType, AdjustmentType, AnnouncementEventType, EventImpact } from '@quant/data-center';
+import {
+  TimeFrame,
+  ReportType,
+  AdjustmentType,
+  AnnouncementEventType,
+  EventImpact,
+} from '@quant/data-center';
 import type { RawDataRecord } from '../src/adapters/types.js';
 
 describe('DataCleaner', () => {
@@ -59,7 +65,7 @@ describe('DataCleaner', () => {
       status: 'active',
     };
     const inst = DataCleaner.cleanInstrument(raw);
-    expect(inst.listDate).toBe(998870400000);  // 2001-08-27 00:00:00 UTC
+    expect(inst.listDate).toBe(998870400000); // 2001-08-27 00:00:00 UTC
   });
 
   it('清洗 instrument 缺少必填字段时抛错', () => {
@@ -69,8 +75,26 @@ describe('DataCleaner', () => {
 
   it('批量清洗 bar', () => {
     const raws: RawDataRecord[] = [
-      { symbol: 'CSI500', timestamp: '1000', open: '5000', high: '5100', low: '4900', close: '5050', volume: '100000', turnover: '500000000' },
-      { symbol: 'CSI500', timestamp: '2000', open: '5050', high: '5200', low: '5000', close: '5150', volume: '120000', turnover: '600000000' },
+      {
+        symbol: 'CSI500',
+        timestamp: '1000',
+        open: '5000',
+        high: '5100',
+        low: '4900',
+        close: '5050',
+        volume: '100000',
+        turnover: '500000000',
+      },
+      {
+        symbol: 'CSI500',
+        timestamp: '2000',
+        open: '5050',
+        high: '5200',
+        low: '5000',
+        close: '5150',
+        volume: '120000',
+        turnover: '600000000',
+      },
     ];
     const bars = DataCleaner.cleanBars(raws, TimeFrame.D1);
     expect(bars).toHaveLength(2);
@@ -136,8 +160,46 @@ describe('DataCleaner', () => {
 
   it('批量清洗 financialReport', () => {
     const raws: RawDataRecord[] = [
-      { symbol: '600519', reportDate: '1703980800000', announceDate: '1706620800000', reportType: 'annual', revenue: '1', costOfRevenue: '1', operatingIncome: '1', totalRevenue: '1', netIncome: '1', totalAssets: '1', totalLiabilities: '1', totalEquity: '1', currentAssets: '1', currentLiabilities: '1', operatingCashFlow: '1', investingCashFlow: '1', financingCashFlow: '1', freeCashFlow: '1' },
-      { symbol: '600519', reportDate: '1711929600000', announceDate: '1714560000000', reportType: 'q1', revenue: '2', costOfRevenue: '2', operatingIncome: '2', totalRevenue: '2', netIncome: '2', totalAssets: '2', totalLiabilities: '2', totalEquity: '2', currentAssets: '2', currentLiabilities: '2', operatingCashFlow: '2', investingCashFlow: '2', financingCashFlow: '2', freeCashFlow: '2' },
+      {
+        symbol: '600519',
+        reportDate: '1703980800000',
+        announceDate: '1706620800000',
+        reportType: 'annual',
+        revenue: '1',
+        costOfRevenue: '1',
+        operatingIncome: '1',
+        totalRevenue: '1',
+        netIncome: '1',
+        totalAssets: '1',
+        totalLiabilities: '1',
+        totalEquity: '1',
+        currentAssets: '1',
+        currentLiabilities: '1',
+        operatingCashFlow: '1',
+        investingCashFlow: '1',
+        financingCashFlow: '1',
+        freeCashFlow: '1',
+      },
+      {
+        symbol: '600519',
+        reportDate: '1711929600000',
+        announceDate: '1714560000000',
+        reportType: 'q1',
+        revenue: '2',
+        costOfRevenue: '2',
+        operatingIncome: '2',
+        totalRevenue: '2',
+        netIncome: '2',
+        totalAssets: '2',
+        totalLiabilities: '2',
+        totalEquity: '2',
+        currentAssets: '2',
+        currentLiabilities: '2',
+        operatingCashFlow: '2',
+        investingCashFlow: '2',
+        financingCashFlow: '2',
+        freeCashFlow: '2',
+      },
     ];
     const reports = DataCleaner.cleanFinancialReports(raws);
     expect(reports).toHaveLength(2);
@@ -245,8 +307,22 @@ describe('DataCleaner', () => {
 
   it('批量清洗 announcementEvent', () => {
     const raws: RawDataRecord[] = [
-      { id: '1', symbol: '600519', eventTime: '1000', eventType: 'dividend', title: '分红', impact: 'positive' },
-      { id: '2', symbol: '000001', eventTime: '2000', eventType: 'ipo', title: 'IPO', impact: 'neutral' },
+      {
+        id: '1',
+        symbol: '600519',
+        eventTime: '1000',
+        eventType: 'dividend',
+        title: '分红',
+        impact: 'positive',
+      },
+      {
+        id: '2',
+        symbol: '000001',
+        eventTime: '2000',
+        eventType: 'ipo',
+        title: 'IPO',
+        impact: 'neutral',
+      },
     ];
     const events = DataCleaner.cleanAnnouncementEvents(raws);
     expect(events).toHaveLength(2);
@@ -288,8 +364,22 @@ describe('DataCleaner', () => {
 
   it('批量清洗 newsArticle', () => {
     const raws: RawDataRecord[] = [
-      { id: '1', publishTime: '1000', title: '新闻1', source: '源1', symbols: '600519', tags: '白酒' },
-      { id: '2', publishTime: '2000', title: '新闻2', source: '源2', symbols: '000001', tags: '银行' },
+      {
+        id: '1',
+        publishTime: '1000',
+        title: '新闻1',
+        source: '源1',
+        symbols: '600519',
+        tags: '白酒',
+      },
+      {
+        id: '2',
+        publishTime: '2000',
+        title: '新闻2',
+        source: '源2',
+        symbols: '000001',
+        tags: '银行',
+      },
     ];
     const articles = DataCleaner.cleanNewsArticles(raws);
     expect(articles).toHaveLength(2);
@@ -310,9 +400,9 @@ describe('DataCleaner', () => {
     };
     const tick = DataCleaner.cleanTick(raw);
     expect(tick.symbol).toBe('600519');
-    expect(tick.price).toBe(1800.50);
-    expect(tick.bid).toBe(1800.00);
-    expect(tick.ask).toBe(1801.00);
+    expect(tick.price).toBe(1800.5);
+    expect(tick.bid).toBe(1800.0);
+    expect(tick.ask).toBe(1801.0);
     expect(tick.bidVolume).toBe(50);
     expect(tick.askVolume).toBe(60);
     expect(tick.bidOrders).toBeUndefined();
@@ -339,8 +429,26 @@ describe('DataCleaner', () => {
 
   it('批量清洗 tick', () => {
     const raws: RawDataRecord[] = [
-      { symbol: '600519', timestamp: '1000', price: '1800', volume: '10', bid: '1799', ask: '1801', bidVolume: '5', askVolume: '5' },
-      { symbol: '600519', timestamp: '2000', price: '1801', volume: '20', bid: '1800', ask: '1802', bidVolume: '10', askVolume: '10' },
+      {
+        symbol: '600519',
+        timestamp: '1000',
+        price: '1800',
+        volume: '10',
+        bid: '1799',
+        ask: '1801',
+        bidVolume: '5',
+        askVolume: '5',
+      },
+      {
+        symbol: '600519',
+        timestamp: '2000',
+        price: '1801',
+        volume: '20',
+        bid: '1800',
+        ask: '1802',
+        bidVolume: '10',
+        askVolume: '10',
+      },
     ];
     const ticks = DataCleaner.cleanTicks(raws);
     expect(ticks).toHaveLength(2);
@@ -353,8 +461,15 @@ describe('DataCleaner', () => {
     DataCleaner.dateFormat = 'yyyymmdd';
     try {
       const raw: RawDataRecord = {
-        symbol: '600519', name: '茅台', exchange: 'SSE', lotSize: '100', priceTick: '0.01',
-        industry: '白酒', sector: '消费', listDate: '20010827', status: 'active',
+        symbol: '600519',
+        name: '茅台',
+        exchange: 'SSE',
+        lotSize: '100',
+        priceTick: '0.01',
+        industry: '白酒',
+        sector: '消费',
+        listDate: '20010827',
+        status: 'active',
       };
       const inst = DataCleaner.cleanInstrument(raw);
       expect(inst.listDate).toBe(998870400000);
@@ -367,8 +482,15 @@ describe('DataCleaner', () => {
     DataCleaner.dateFormat = 'timestamp';
     try {
       const raw: RawDataRecord = {
-        symbol: '600519', name: '茅台', exchange: 'SSE', lotSize: '100', priceTick: '0.01',
-        industry: '白酒', sector: '消费', listDate: '998870400000', status: 'active',
+        symbol: '600519',
+        name: '茅台',
+        exchange: 'SSE',
+        lotSize: '100',
+        priceTick: '0.01',
+        industry: '白酒',
+        sector: '消费',
+        listDate: '998870400000',
+        status: 'active',
       };
       const inst = DataCleaner.cleanInstrument(raw);
       expect(inst.listDate).toBe(998870400000);
@@ -381,8 +503,15 @@ describe('DataCleaner', () => {
     DataCleaner.dateFormat = 'yyyymmdd';
     try {
       const raw: RawDataRecord = {
-        symbol: '600519', name: '茅台', exchange: 'SSE', lotSize: '100', priceTick: '0.01',
-        industry: '白酒', sector: '消费', listDate: '998870400000', status: 'active',
+        symbol: '600519',
+        name: '茅台',
+        exchange: 'SSE',
+        lotSize: '100',
+        priceTick: '0.01',
+        industry: '白酒',
+        sector: '消费',
+        listDate: '998870400000',
+        status: 'active',
       };
       expect(() => DataCleaner.cleanInstrument(raw)).toThrow('不符合 YYYYMMDD 格式');
     } finally {

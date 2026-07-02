@@ -44,7 +44,9 @@ export class BacktestAgent implements AgentExecutor {
     } else {
       fallbackParams = params.params ?? {};
       snapshotParams = fallbackParams;
-      console.warn('[backtest-agent] deprecated: params.params will be removed, use configSnapshot.params');
+      console.warn(
+        '[backtest-agent] deprecated: params.params will be removed, use configSnapshot.params'
+      );
     }
 
     // 转换为 Python CLI 格式

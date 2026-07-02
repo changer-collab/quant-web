@@ -31,13 +31,7 @@ function jobToBadge(state: string) {
   }
 }
 
-export function ActivityFeed({
-  jobs,
-  ui,
-}: {
-  jobs: ResearchJob[];
-  ui: UiCopy;
-}) {
+export function ActivityFeed({ jobs, ui }: { jobs: ResearchJob[]; ui: UiCopy }) {
   const items = jobs.slice(0, 6);
 
   return (
@@ -54,15 +48,11 @@ export function ActivityFeed({
                 <strong>{job.name}</strong>
                 <div className={s.meta}>
                   <span>{job.strategyName}</span>
-                  <span className={`${s.badge} ${jobToBadge(job.state)}`}>
-                    {job.state}
-                  </span>
+                  <span className={`${s.badge} ${jobToBadge(job.state)}`}>{job.state}</span>
                   <span>{job.progress}%</span>
                 </div>
                 {job.state === 'Failed' && job.errorMessage && (
-                  <div className={s.errorMsg}>
-                    {job.errorMessage}
-                  </div>
+                  <div className={s.errorMsg}>{job.errorMessage}</div>
                 )}
               </div>
             </div>

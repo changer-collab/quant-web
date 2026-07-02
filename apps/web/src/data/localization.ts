@@ -26,7 +26,9 @@ export function localizeResearchJob(job: ResearchJob, language?: LanguageCode): 
   }
 
   const mode = job.mode ?? 'non_factor';
-  const strategy = job.strategyId ? getStrategies(language).find((item) => item.id === job.strategyId) : undefined;
+  const strategy = job.strategyId
+    ? getStrategies(language).find((item) => item.id === job.strategyId)
+    : undefined;
   const strategyName = strategy?.name ?? `${mode}${content.draftSuffix} #${job.sequence ?? 1}`;
 
   return {

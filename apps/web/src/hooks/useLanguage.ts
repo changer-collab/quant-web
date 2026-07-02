@@ -46,15 +46,30 @@ export function useLanguage() {
   const factorEvalResults = useMemo(() => getFactorEvalResults(language), [language]);
   const reportUiCopy = useMemo(() => getReportUiCopy(language), [language]);
 
-  return { language, handleLanguageChange, navItems, ui, strategies, ticks, factors, factorEvalResults, reportUiCopy };
+  return {
+    language,
+    handleLanguageChange,
+    navItems,
+    ui,
+    strategies,
+    ticks,
+    factors,
+    factorEvalResults,
+    reportUiCopy,
+  };
 }
 
-export function usePageContent(
-  activePageId: string,
-  language: LanguageCode,
-) {
+export function usePageContent(activePageId: string, language: LanguageCode) {
   const activePage = useMemo(() => getPage(activePageId, language), [activePageId, language]);
   return { activePage };
 }
 
-export { type NavItem, type PageContent, type StrategyRow, type MarketTick, type FactorDisplayRow, type FactorEvalDisplayResult, type UiCopy };
+export {
+  type NavItem,
+  type PageContent,
+  type StrategyRow,
+  type MarketTick,
+  type FactorDisplayRow,
+  type FactorEvalDisplayResult,
+  type UiCopy,
+};

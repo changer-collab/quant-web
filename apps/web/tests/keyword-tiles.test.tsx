@@ -2,16 +2,17 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mapBacktestResultToReport } from '../src/appData';
 import { KeywordTileGrid } from '../src/components/report/KeywordTileGrid';
-import { classifyKeywordTile, normalizeKeywordTiles, splitKeywordText } from '../src/components/report/keyword-tiles';
+import {
+  classifyKeywordTile,
+  normalizeKeywordTiles,
+  splitKeywordText,
+} from '../src/components/report/keyword-tiles';
 
 describe('keyword tile helpers', () => {
   it('splits Chinese AI assessment text into distinct keyword phrases', () => {
-    expect(splitKeywordText('假设市场流动性充足；未考虑冲击成本；滑点恶化亏损；基于日线回测。')).toEqual([
-      '假设市场流动性充足',
-      '未考虑冲击成本',
-      '滑点恶化亏损',
-      '基于日线回测',
-    ]);
+    expect(
+      splitKeywordText('假设市场流动性充足；未考虑冲击成本；滑点恶化亏损；基于日线回测。')
+    ).toEqual(['假设市场流动性充足', '未考虑冲击成本', '滑点恶化亏损', '基于日线回测']);
   });
 
   it('classifies fallback phrases by deterministic keyword rules', () => {
@@ -22,9 +23,11 @@ describe('keyword tile helpers', () => {
   });
 
   it('normalizes legacy text into classified tiles', () => {
-    expect(normalizeKeywordTiles({
-      fallbackText: '假设市场流动性充足；未考虑冲击成本；滑点恶化亏损；基于日线回测。',
-    })).toEqual([
+    expect(
+      normalizeKeywordTiles({
+        fallbackText: '假设市场流动性充足；未考虑冲击成本；滑点恶化亏损；基于日线回测。',
+      })
+    ).toEqual([
       { text: '假设市场流动性充足', category: 'assumption' },
       { text: '未考虑冲击成本', category: 'limitation' },
       { text: '滑点恶化亏损', category: 'risk' },
@@ -33,57 +36,71 @@ describe('keyword tile helpers', () => {
   });
 
   it('uses structured item categories before fallback classification', () => {
-    expect(normalizeKeywordTiles({
-      items: [{ text: '未考虑冲击成本', category: 'risk' }],
-      fallbackText: '假设市场流动性充足',
-    })).toEqual([{ text: '未考虑冲击成本', category: 'risk' }]);
+    expect(
+      normalizeKeywordTiles({
+        items: [{ text: '未考虑冲击成本', category: 'risk' }],
+        fallbackText: '假设市场流动性充足',
+      })
+    ).toEqual([{ text: '未考虑冲击成本', category: 'risk' }]);
   });
 
   it('preserves an explicit empty structured items array instead of falling back to legacy text', () => {
-    expect(normalizeKeywordTiles({
-      items: [],
-      fallbackText: '假设市场流动性充足；滑点恶化亏损',
-    })).toEqual([]);
+    expect(
+      normalizeKeywordTiles({
+        items: [],
+        fallbackText: '假设市场流动性充足；滑点恶化亏损',
+      })
+    ).toEqual([]);
   });
 
   it('falls back to legacy text when structured items is null from JSON', () => {
-    expect(normalizeKeywordTiles({
-      items: null as unknown as any,
-      fallbackText: '假设市场流动性充足；滑点恶化亏损',
-    })).toEqual([
+    expect(
+      normalizeKeywordTiles({
+        items: null as unknown as any,
+        fallbackText: '假设市场流动性充足；滑点恶化亏损',
+      })
+    ).toEqual([
       { text: '假设市场流动性充足', category: 'assumption' },
       { text: '滑点恶化亏损', category: 'risk' },
     ]);
   });
 
   it('returns no tiles when maxItems is zero or less', () => {
-    expect(normalizeKeywordTiles({
-      fallbackText: '假设市场流动性充足；滑点恶化亏损',
-      maxItems: 0,
-    })).toEqual([]);
+    expect(
+      normalizeKeywordTiles({
+        fallbackText: '假设市场流动性充足；滑点恶化亏损',
+        maxItems: 0,
+      })
+    ).toEqual([]);
 
-    expect(normalizeKeywordTiles({
-      fallbackText: '假设市场流动性充足；滑点恶化亏损',
-      maxItems: -1,
-    })).toEqual([]);
+    expect(
+      normalizeKeywordTiles({
+        fallbackText: '假设市场流动性充足；滑点恶化亏损',
+        maxItems: -1,
+      })
+    ).toEqual([]);
   });
 
   it('ignores malformed structured items from JSON without crashing', () => {
-    expect(normalizeKeywordTiles({
-      items: [
-        { text: '结构化流动性假设', category: 'assumption' },
-        { category: 'risk' } as unknown as any,
-        null as unknown as any,
-      ],
-      fallbackText: 'fallback should not matter',
-    })).toEqual([{ text: '结构化流动性假设', category: 'assumption' }]);
+    expect(
+      normalizeKeywordTiles({
+        items: [
+          { text: '结构化流动性假设', category: 'assumption' },
+          { category: 'risk' } as unknown as any,
+          null as unknown as any,
+        ],
+        fallbackText: 'fallback should not matter',
+      })
+    ).toEqual([{ text: '结构化流动性假设', category: 'assumption' }]);
   });
 
   it('deduplicates phrases and applies the maximum tile count', () => {
-    expect(normalizeKeywordTiles({
-      fallbackText: '假设市场流动性充足；假设市场流动性充足；滑点恶化亏损；基于日线回测',
-      maxItems: 2,
-    })).toEqual([
+    expect(
+      normalizeKeywordTiles({
+        fallbackText: '假设市场流动性充足；假设市场流动性充足；滑点恶化亏损；基于日线回测',
+        maxItems: 2,
+      })
+    ).toEqual([
       { text: '假设市场流动性充足', category: 'assumption' },
       { text: '滑点恶化亏损', category: 'risk' },
     ]);
@@ -141,7 +158,7 @@ describe('keyword tile helpers', () => {
       <KeywordTileGrid
         title="流动性评估"
         fallbackText="假设市场流动性充足；未考虑冲击成本；滑点恶化亏损；基于日线回测。"
-      />,
+      />
     );
 
     expect(screen.getByText('流动性评估')).toBeInTheDocument();

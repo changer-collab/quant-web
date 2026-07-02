@@ -10,12 +10,48 @@ interface MarketRow {
 }
 
 const MOCK_MARKETS: MarketRow[] = [
-  { market: 'CSI 500', instruments: 512, coverage: '99.1%', tickSince: '2019-06', lastSync: '14:28:09' },
-  { market: 'CSI 300', instruments: 306, coverage: '98.7%', tickSince: '2019-01', lastSync: '14:27:55' },
-  { market: 'CSI 1000', instruments: 1004, coverage: '97.3%', tickSince: '2020-03', lastSync: '14:26:40' },
-  { market: 'SSE Main Board', instruments: 1692, coverage: '96.8%', tickSince: '2018-07', lastSync: '14:25:12' },
-  { market: 'SZSE SME', instruments: 1002, coverage: '95.2%', tickSince: '2019-11', lastSync: '14:24:30' },
-  { market: 'Star Market', instruments: 296, coverage: '93.4%', tickSince: '2021-04', lastSync: '14:23:18' },
+  {
+    market: 'CSI 500',
+    instruments: 512,
+    coverage: '99.1%',
+    tickSince: '2019-06',
+    lastSync: '14:28:09',
+  },
+  {
+    market: 'CSI 300',
+    instruments: 306,
+    coverage: '98.7%',
+    tickSince: '2019-01',
+    lastSync: '14:27:55',
+  },
+  {
+    market: 'CSI 1000',
+    instruments: 1004,
+    coverage: '97.3%',
+    tickSince: '2020-03',
+    lastSync: '14:26:40',
+  },
+  {
+    market: 'SSE Main Board',
+    instruments: 1692,
+    coverage: '96.8%',
+    tickSince: '2018-07',
+    lastSync: '14:25:12',
+  },
+  {
+    market: 'SZSE SME',
+    instruments: 1002,
+    coverage: '95.2%',
+    tickSince: '2019-11',
+    lastSync: '14:24:30',
+  },
+  {
+    market: 'Star Market',
+    instruments: 296,
+    coverage: '93.4%',
+    tickSince: '2021-04',
+    lastSync: '14:23:18',
+  },
 ];
 
 function barClass(coverage: string) {
@@ -64,7 +100,9 @@ export function DataCoveragePanel({ ui }: { ui: UiCopy }) {
         <tbody>
           {MOCK_MARKETS.map((row) => (
             <tr key={row.market}>
-              <td><strong>{row.market}</strong></td>
+              <td>
+                <strong>{row.market}</strong>
+              </td>
               <td>{row.instruments.toLocaleString()}</td>
               <td>
                 <div className={s.bar}>

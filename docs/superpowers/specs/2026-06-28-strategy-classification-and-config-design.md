@@ -35,12 +35,12 @@ StrategyCategory (侧边栏一级导航)
 
 ### 区分标准
 
-| | 因子型 | 非因子型 | 过渡形态 |
-|---|---|---|---|
-| 核心逻辑 | 跨截面打分排序 | 时序价差/盘口/宏观/事件 | 事件→标准化因子映射 |
-| 研究单元 | 因子（先验证因子质量） | 策略本身 | 数据源→因子 |
-| 回测前 | 因子 IC/分层回测/相关性矩阵 | 参数敏感性/信号质量/滑点压力 | 情感衰减→映射验证 |
-| 打分框架 | 统一因子库+分层回测 | 无统一因子打分 | 挂载到现有因子库 |
+|          | 因子型                      | 非因子型                     | 过渡形态            |
+| -------- | --------------------------- | ---------------------------- | ------------------- |
+| 核心逻辑 | 跨截面打分排序              | 时序价差/盘口/宏观/事件      | 事件→标准化因子映射 |
+| 研究单元 | 因子（先验证因子质量）      | 策略本身                     | 数据源→因子         |
+| 回测前   | 因子 IC/分层回测/相关性矩阵 | 参数敏感性/信号质量/滑点压力 | 情感衰减→映射验证   |
+| 打分框架 | 统一因子库+分层回测         | 无统一因子打分               | 挂载到现有因子库    |
 
 ## 三、后端类型系统 (Python)
 
@@ -145,9 +145,15 @@ class TransitionalConfig:
 export type StrategyCategory = 'factor_based' | 'non_factor' | 'transitional';
 
 export type StrategySubcategory =
-  | 'linear_multi_factor' | 'index_enhancement' | 'ml_nonlinear_factor'
-  | 'trend_cta' | 'arbitrage' | 'hft_microstructure' | 'macro_quant'
-  | 'event_driven' | 'e2e_ai_timeseries'
+  | 'linear_multi_factor'
+  | 'index_enhancement'
+  | 'ml_nonlinear_factor'
+  | 'trend_cta'
+  | 'arbitrage'
+  | 'hft_microstructure'
+  | 'macro_quant'
+  | 'event_driven'
+  | 'e2e_ai_timeseries'
   | 'event_sentiment_factor';
 ```
 
@@ -161,7 +167,7 @@ export interface StrategyRow {
   description: string;
   version: string;
   params: StrategyParamDef[];
-  workflowReady: boolean;     // 后端判断：策略已注册 + 有可用标的
+  workflowReady: boolean; // 后端判断：策略已注册 + 有可用标的
   backtestable: boolean;
   // 显示摘要（从最近一次回测结果提取）
   summary?: {
@@ -288,18 +294,18 @@ Data Management
 
 ### 6.1 端点全景
 
-| 端点 | 方法 | 用途 | 变更类型 |
-|------|------|------|----------|
-| `/api/strategies` | GET | 策略列表（含 category/subcategory/workflowReady） | 扩展 |
-| `/api/strategies/:name` | GET | 策略详情（含 params 含 uiConstraints） | 扩展 |
-| `/api/strategies/:name/config` | GET | 读取已保存配置 | 🆕 |
-| `/api/strategies/:name/config` | PUT | 保存配置（全量拍平） | 🆕 |
-| `/api/strategies/:name/preview` | POST | K线图信号预览（cursor 分页） | 🆕 |
-| `/api/tasks` | POST | 提交任务（configSnapshot 为唯一真相源） | 修改 |
-| `/api/tasks/:id` | GET | 查询任务（扩展 result_payload） | 扩展 |
-| `/api/tasks/:id/stream` | GET | SSE 事件流（扩展 result_id） | 扩展 |
-| `/api/diagnostics/:resultId` | GET | 查询持久化诊断结果 | 🆕 |
-| `/api/diagnostics` | GET | 列出策略的历史诊断结果 | 🆕 |
+| 端点                            | 方法 | 用途                                              | 变更类型 |
+| ------------------------------- | ---- | ------------------------------------------------- | -------- |
+| `/api/strategies`               | GET  | 策略列表（含 category/subcategory/workflowReady） | 扩展     |
+| `/api/strategies/:name`         | GET  | 策略详情（含 params 含 uiConstraints）            | 扩展     |
+| `/api/strategies/:name/config`  | GET  | 读取已保存配置                                    | 🆕       |
+| `/api/strategies/:name/config`  | PUT  | 保存配置（全量拍平）                              | 🆕       |
+| `/api/strategies/:name/preview` | POST | K线图信号预览（cursor 分页）                      | 🆕       |
+| `/api/tasks`                    | POST | 提交任务（configSnapshot 为唯一真相源）           | 修改     |
+| `/api/tasks/:id`                | GET  | 查询任务（扩展 result_payload）                   | 扩展     |
+| `/api/tasks/:id/stream`         | GET  | SSE 事件流（扩展 result_id）                      | 扩展     |
+| `/api/diagnostics/:resultId`    | GET  | 查询持久化诊断结果                                | 🆕       |
+| `/api/diagnostics`              | GET  | 列出策略的历史诊断结果                            | 🆕       |
 
 ### 6.2 端点详解
 
@@ -309,17 +315,19 @@ Data Management
 // Response 200
 [
   {
-    name: "linear_multi_factor_v1",
-    category: "factor_based",
-    subcategory: "linear_multi_factor",
-    description: "多因子选股策略——估值+动量+质量",
-    version: "1.0.0",
-    params: [ /* StrategyParamDef[] with uiConstraints */ ],
-    workflowReady: true,         // 后端判断
+    name: 'linear_multi_factor_v1',
+    category: 'factor_based',
+    subcategory: 'linear_multi_factor',
+    description: '多因子选股策略——估值+动量+质量',
+    version: '1.0.0',
+    params: [
+      /* StrategyParamDef[] with uiConstraints */
+    ],
+    workflowReady: true, // 后端判断
     backtestable: true,
-    summary: { sharpe: "1.42", return: "+32.5%", drawdown: "-15.2%" }
-  }
-]
+    summary: { sharpe: '1.42', return: '+32.5%', drawdown: '-15.2%' },
+  },
+];
 ```
 
 #### PUT /api/strategies/:name/config

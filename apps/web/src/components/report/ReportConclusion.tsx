@@ -61,14 +61,18 @@ export function ReportConclusion({ report, ui }: Props) {
           </div>
           <div className={styles.adviceItem}>
             <span className={styles.adviceLabel}>{labels.suggestedInitialPosition}</span>
-            <span className={styles.adviceValue}>{c.liveTradingAdvice.suggestedInitialPosition}</span>
+            <span className={styles.adviceValue}>
+              {c.liveTradingAdvice.suggestedInitialPosition}
+            </span>
           </div>
         </div>
         <div className={styles.rulesBlock}>
           <span className={styles.adviceLabel}>{labels.riskControlRules}</span>
           <div className={styles.rulesList}>
             {c.liveTradingAdvice.riskControlRules.map((rule, i) => (
-              <span key={i} className={styles.ruleChip}>{rule}</span>
+              <span key={i} className={styles.ruleChip}>
+                {rule}
+              </span>
             ))}
           </div>
         </div>
@@ -78,9 +82,12 @@ export function ReportConclusion({ report, ui }: Props) {
       <div className={styles.block}>
         <h4 className={styles.blockTitle}>{labels.suitableMarketRegime}</h4>
         <div className={styles.regimeList}>
-          {Array.isArray(c.suitableMarketRegime) && c.suitableMarketRegime.map((regime, i) => (
-            <span key={i} className={styles.regimeChip}>{regime}</span>
-          ))}
+          {Array.isArray(c.suitableMarketRegime) &&
+            c.suitableMarketRegime.map((regime, i) => (
+              <span key={i} className={styles.regimeChip}>
+                {regime}
+              </span>
+            ))}
         </div>
       </div>
     </section>

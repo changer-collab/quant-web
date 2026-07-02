@@ -38,16 +38,20 @@
   --trade-dot: 12px;
 
   /* Typography */
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-serif: Georgia, "Times New Roman", serif;
-  --font-mono: "Cascadia Code", Consolas, monospace;
-  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-mono: 'Cascadia Code', Consolas, monospace;
+  --font-display: 'Fraunces', Georgia, serif;
 
   /* Gradients */
   --gradient-panel: linear-gradient(135deg, rgba(17, 25, 23, 0.96), rgba(22, 33, 31, 0.82));
   --gradient-panel-hover: linear-gradient(135deg, rgba(17, 25, 23, 0.98), rgba(22, 33, 31, 0.9));
   --gradient-accent: linear-gradient(135deg, var(--green), var(--cyan));
-  --gradient-accent-subtle: linear-gradient(90deg, rgba(77, 240, 160, 0.14), rgba(98, 216, 255, 0.04));
+  --gradient-accent-subtle: linear-gradient(
+    90deg,
+    rgba(77, 240, 160, 0.14),
+    rgba(98, 216, 255, 0.04)
+  );
   --gradient-green-glow: linear-gradient(180deg, rgba(77, 240, 160, 0.9), rgba(77, 240, 160, 0.08));
 
   /* Shadows */
@@ -131,9 +135,13 @@ body {
     linear-gradient(90deg, rgba(77, 240, 160, 0.06) 1px, transparent 1px),
     linear-gradient(rgba(98, 216, 255, 0.04) 1px, transparent 1px),
     radial-gradient(ellipse at 20% 50%, rgba(77, 240, 160, 0.06), transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(98, 216, 255, 0.05), transparent 40%),
-    var(--bg);
-  background-size: 28px 28px, 28px 28px, auto, auto, auto;
+    radial-gradient(ellipse at 80% 20%, rgba(98, 216, 255, 0.05), transparent 40%), var(--bg);
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto,
+    auto,
+    auto;
   font-family: var(--font-sans);
 }
 
@@ -146,125 +154,260 @@ select {
 /* ── Animations ──────────────────────────────────────────── */
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpSm {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideRight {
-  from { opacity: 0; transform: translateX(-12px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes growBar {
-  from { transform: scaleY(0); }
-  to   { transform: scaleY(1); }
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
 }
 
 @keyframes progressPulse {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.6; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 18px var(--green); }
-  50%      { box-shadow: 0 0 28px var(--green), 0 0 48px rgba(77, 240, 160, 0.15); }
+  0%,
+  100% {
+    box-shadow: 0 0 18px var(--green);
+  }
+  50% {
+    box-shadow:
+      0 0 28px var(--green),
+      0 0 48px rgba(77, 240, 160, 0.15);
+  }
 }
 
 @keyframes statusPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.5; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 @keyframes countUp {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes chipEnter {
-  from { opacity: 0; transform: scale(0.92); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes ripple {
-  to { transform: scale(4); opacity: 0; }
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes breathe {
-  0%, 100% { opacity: 0.8; }
-  50%      { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpFade {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseGlowIntense {
-  0%, 100% { box-shadow: 0 0 18px var(--green); }
-  50%      { box-shadow: 0 0 35px var(--green), 0 0 60px rgba(77, 240, 160, 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 18px var(--green);
+  }
+  50% {
+    box-shadow:
+      0 0 35px var(--green),
+      0 0 60px rgba(77, 240, 160, 0.2);
+  }
 }
 
 @keyframes dataFlash {
-  0%   { background-color: rgba(77, 240, 160, 0.2); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: rgba(77, 240, 160, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
 @keyframes borderGlow {
-  0%, 100% { border-color: var(--line); }
-  50%      { border-color: rgba(77, 240, 160, 0.3); }
+  0%,
+  100% {
+    border-color: var(--line);
+  }
+  50% {
+    border-color: rgba(77, 240, 160, 0.3);
+  }
 }
 
 @keyframes chartLineReveal {
-  from { transform: skewY(-6deg) scaleX(0); }
-  to   { transform: skewY(-6deg) scaleX(1); }
+  from {
+    transform: skewY(-6deg) scaleX(0);
+  }
+  to {
+    transform: skewY(-6deg) scaleX(1);
+  }
 }
 
 @keyframes tradeDotPulse {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50%      { transform: scale(1.4); opacity: 0.5; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
 }
 
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Animation Utility Classes ───────────────────────────── */
 
-.fadeIn  { animation: fadeIn 0.4s ease-out both; }
-.slideUp { animation: slideUp 0.45s ease-out both; }
-.slideRight { animation: slideRight 0.4s ease-out both; }
-.pulseGlow { animation: pulseGlow 3s ease-in-out infinite; }
-.statusPulse { animation: statusPulse 2.5s ease-in-out infinite; }
-.scaleIn   { animation: scaleIn 0.35s var(--ease-out-expo) both; }
-.slideDown { animation: slideDown 0.3s ease-out both; }
-.slideUpFade { animation: slideUpFade 0.4s var(--ease-out-expo) both; }
+.fadeIn {
+  animation: fadeIn 0.4s ease-out both;
+}
+.slideUp {
+  animation: slideUp 0.45s ease-out both;
+}
+.slideRight {
+  animation: slideRight 0.4s ease-out both;
+}
+.pulseGlow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+.statusPulse {
+  animation: statusPulse 2.5s ease-in-out infinite;
+}
+.scaleIn {
+  animation: scaleIn 0.35s var(--ease-out-expo) both;
+}
+.slideDown {
+  animation: slideDown 0.3s ease-out both;
+}
+.slideUpFade {
+  animation: slideUpFade 0.4s var(--ease-out-expo) both;
+}
 
 /* ── Reduced Motion ──────────────────────────────────────── */
 

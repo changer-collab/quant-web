@@ -32,14 +32,19 @@ export function FactorTurnoverCost({ report, ui }: Props) {
         </div>
         <div className={s.kpiCard}>
           <div className={s.kpiLabel}>{u.topHoldingOverlap}</div>
-          <div className={`${s.kpiValue} ${s.positive}`}>{(turnover.topHoldingOverlap * 100).toFixed(0)}%</div>
+          <div className={`${s.kpiValue} ${s.positive}`}>
+            {(turnover.topHoldingOverlap * 100).toFixed(0)}%
+          </div>
         </div>
       </div>
 
       <FactorReportSection title={u.costSensitivity} defaultOpen={true}>
         <table className={s.dataTable}>
           <thead>
-            <tr><th>Fee (bps)</th><th>NAV Impact</th></tr>
+            <tr>
+              <th>Fee (bps)</th>
+              <th>NAV Impact</th>
+            </tr>
           </thead>
           <tbody>
             {turnover.costSensitivity.map((c, i) => (

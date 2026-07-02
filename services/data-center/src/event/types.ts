@@ -84,7 +84,12 @@ export interface EventDataProvider {
   /** 获取公告事件（PIT：按 eventTime 过滤） */
   getAnnouncementEvents(symbol: string, start?: number, end?: number): Promise<AnnouncementEvent[]>;
   /** 获取新闻 */
-  getNewsArticles(symbols: string[], start?: number, end?: number, limit?: number): Promise<NewsArticle[]>;
+  getNewsArticles(
+    symbols: string[],
+    start?: number,
+    end?: number,
+    limit?: number
+  ): Promise<NewsArticle[]>;
   /** 获取情绪序列 */
   getSentimentSeries(symbol: string, start?: number, end?: number): Promise<SentimentPoint[]>;
   /** 获取宏观指标列表 */

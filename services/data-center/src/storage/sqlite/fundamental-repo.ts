@@ -3,12 +3,7 @@
  */
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import type { DrizzleDb } from './connection.js';
-import {
-  financialReports,
-  financialRatios,
-  valuations,
-  shareholderMetrics,
-} from '../schema.js';
+import { financialReports, financialRatios, valuations, shareholderMetrics } from '../schema.js';
 import type {
   FinancialReportRepository,
   FinancialRatioRepository,
@@ -101,14 +96,21 @@ export class SqliteFinancialReportRepository implements FinancialReportRepositor
     }
   }
 
-  async query(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialReport[]> {
+  async query(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialReport[]> {
     try {
       const conditions = [eq(financialReports.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(financialReports.announceDate, start));
       if (end !== undefined) conditions.push(lte(financialReports.announceDate, end));
       // PIT 过滤：仅返回 announceDate <= asOfDate 的记录
       if (asOfDate !== undefined) conditions.push(lte(financialReports.announceDate, asOfDate));
-      const rows = await this.db.select().from(financialReports)
+      const rows = await this.db
+        .select()
+        .from(financialReports)
         .where(and(...conditions))
         .orderBy(financialReports.announceDate);
       return rows.map(reportToModel);
@@ -119,7 +121,9 @@ export class SqliteFinancialReportRepository implements FinancialReportRepositor
 
   async getLatest(symbol: string): Promise<FinancialReport | undefined> {
     try {
-      const rows = await this.db.select().from(financialReports)
+      const rows = await this.db
+        .select()
+        .from(financialReports)
         .where(eq(financialReports.symbol, symbol))
         .orderBy(desc(financialReports.announceDate))
         .limit(1);
@@ -141,10 +145,18 @@ export class SqliteFinancialRatioRepository implements FinancialRatioRepository 
       this.db.transaction((tx) => {
         for (const r of input) {
           const row = {
-            symbol: r.symbol, asOfDate: r.asOfDate,
-            roe: r.roe, roa: r.roa, eps: r.eps, pe: r.pe, pb: r.pb, ps: r.ps,
-            debtToEquity: r.debtToEquity, currentRatio: r.currentRatio,
-            grossMargin: r.grossMargin, netMargin: r.netMargin,
+            symbol: r.symbol,
+            asOfDate: r.asOfDate,
+            roe: r.roe,
+            roa: r.roa,
+            eps: r.eps,
+            pe: r.pe,
+            pb: r.pb,
+            ps: r.ps,
+            debtToEquity: r.debtToEquity,
+            currentRatio: r.currentRatio,
+            grossMargin: r.grossMargin,
+            netMargin: r.netMargin,
           };
           tx.insert(financialRatios)
             .values(row)
@@ -160,20 +172,35 @@ export class SqliteFinancialRatioRepository implements FinancialRatioRepository 
     }
   }
 
-  async query(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<FinancialRatio[]> {
+  async query(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<FinancialRatio[]> {
     try {
       const conditions = [eq(financialRatios.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(financialRatios.asOfDate, start));
       if (end !== undefined) conditions.push(lte(financialRatios.asOfDate, end));
       if (asOfDate !== undefined) conditions.push(lte(financialRatios.asOfDate, asOfDate));
-      const rows = await this.db.select().from(financialRatios)
+      const rows = await this.db
+        .select()
+        .from(financialRatios)
         .where(and(...conditions))
         .orderBy(desc(financialRatios.asOfDate));
       return rows.map((r) => ({
-        symbol: r.symbol, asOfDate: r.asOfDate,
-        roe: r.roe, roa: r.roa, eps: r.eps, pe: r.pe, pb: r.pb, ps: r.ps,
-        debtToEquity: r.debtToEquity, currentRatio: r.currentRatio,
-        grossMargin: r.grossMargin, netMargin: r.netMargin,
+        symbol: r.symbol,
+        asOfDate: r.asOfDate,
+        roe: r.roe,
+        roa: r.roa,
+        eps: r.eps,
+        pe: r.pe,
+        pb: r.pb,
+        ps: r.ps,
+        debtToEquity: r.debtToEquity,
+        currentRatio: r.currentRatio,
+        grossMargin: r.grossMargin,
+        netMargin: r.netMargin,
       }));
     } catch (err) {
       throw new QueryError(`查询财务比率失败: ${symbol}`, err);
@@ -216,13 +243,20 @@ export class SqliteShareholderMetricsRepository implements ShareholderMetricsRep
     }
   }
 
-  async query(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ShareholderMetrics[]> {
+  async query(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ShareholderMetrics[]> {
     try {
       const conditions = [eq(shareholderMetrics.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(shareholderMetrics.announceDate, start));
       if (end !== undefined) conditions.push(lte(shareholderMetrics.announceDate, end));
       if (asOfDate !== undefined) conditions.push(lte(shareholderMetrics.announceDate, asOfDate));
-      const rows = await this.db.select().from(shareholderMetrics)
+      const rows = await this.db
+        .select()
+        .from(shareholderMetrics)
         .where(and(...conditions))
         .orderBy(shareholderMetrics.announceDate);
       return rows.map((r) => ({
@@ -241,7 +275,9 @@ export class SqliteShareholderMetricsRepository implements ShareholderMetricsRep
 
   async getLatest(symbol: string): Promise<ShareholderMetrics | undefined> {
     try {
-      const rows = await this.db.select().from(shareholderMetrics)
+      const rows = await this.db
+        .select()
+        .from(shareholderMetrics)
         .where(eq(shareholderMetrics.symbol, symbol))
         .orderBy(desc(shareholderMetrics.announceDate))
         .limit(1);
@@ -271,10 +307,15 @@ export class SqliteValuationRepository implements ValuationRepository {
       this.db.transaction((tx) => {
         for (const v of input) {
           const row = {
-            symbol: v.symbol, timestamp: v.timestamp,
-            marketCap: v.marketCap, peTTM: v.peTTM, pb: v.pb,
-            psTTM: v.psTTM, dividendYield: v.dividendYield,
-            turnoverRate: v.turnoverRate, floatShares: v.floatShares,
+            symbol: v.symbol,
+            timestamp: v.timestamp,
+            marketCap: v.marketCap,
+            peTTM: v.peTTM,
+            pb: v.pb,
+            psTTM: v.psTTM,
+            dividendYield: v.dividendYield,
+            turnoverRate: v.turnoverRate,
+            floatShares: v.floatShares,
           };
           tx.insert(valuations)
             .values(row)
@@ -290,20 +331,32 @@ export class SqliteValuationRepository implements ValuationRepository {
     }
   }
 
-  async query(symbol: string, start?: number, end?: number, asOfDate?: number): Promise<ValuationPoint[]> {
+  async query(
+    symbol: string,
+    start?: number,
+    end?: number,
+    asOfDate?: number
+  ): Promise<ValuationPoint[]> {
     try {
       const conditions = [eq(valuations.symbol, symbol)];
       if (start !== undefined) conditions.push(gte(valuations.timestamp, start));
       if (end !== undefined) conditions.push(lte(valuations.timestamp, end));
       if (asOfDate !== undefined) conditions.push(lte(valuations.timestamp, asOfDate));
-      const rows = await this.db.select().from(valuations)
+      const rows = await this.db
+        .select()
+        .from(valuations)
         .where(and(...conditions))
         .orderBy(valuations.timestamp);
       return rows.map((r) => ({
-        symbol: r.symbol, timestamp: r.timestamp,
-        marketCap: r.marketCap ?? undefined, peTTM: r.peTTM ?? undefined, pb: r.pb ?? undefined,
-        psTTM: r.psTTM ?? undefined, dividendYield: r.dividendYield ?? undefined,
-        turnoverRate: r.turnoverRate ?? undefined, floatShares: r.floatShares ?? undefined,
+        symbol: r.symbol,
+        timestamp: r.timestamp,
+        marketCap: r.marketCap ?? undefined,
+        peTTM: r.peTTM ?? undefined,
+        pb: r.pb ?? undefined,
+        psTTM: r.psTTM ?? undefined,
+        dividendYield: r.dividendYield ?? undefined,
+        turnoverRate: r.turnoverRate ?? undefined,
+        floatShares: r.floatShares ?? undefined,
       }));
     } catch (err) {
       throw new QueryError(`查询估值失败: ${symbol}`, err);

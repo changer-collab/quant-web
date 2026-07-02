@@ -25,16 +25,19 @@ Before decomposing into user stories, audit the codebase from three dimensions t
 **Goal**: Confirm data producers (Python engine / API mapper) can output all fields the report needs.
 
 **Method**:
+
 1. Read data source type definitions (Python dataclass / TS interface), list all output fields
 2. Read report type definitions (`BacktestReportFull`), list all required fields
 3. Create a cross-reference table: which fields have data sources, which are missing, which need calculation
 
 **Common traps**:
+
 - Python engine only computes basic 6 metrics, but report framework needs 30+ (Sortino, Calmar, VaR, CVaR, volatility, etc.)
 - Derived stats (drawdownCurve, monthlyReturns) appended at CLI entry but not in Python dataclass
 - Naming inconsistencies: Python uses `return_pct`, TS type uses `return`, frontend uses `return_pct`
 
 **Output format**:
+
 ```
 | 报告字段 | 数据源 | 状态 |
 |---------|--------|------|
@@ -48,6 +51,7 @@ Before decomposing into user stories, audit the codebase from three dimensions t
 **Goal**: Confirm all report components don't crash or display garbage when data is null/empty/0.
 
 **Method**:
+
 1. Read report components one by one (`apps/web/src/components/report/Report*.tsx`)
 2. Check each component's handling of null/empty/0
 3. Classify into three categories:
@@ -56,12 +60,14 @@ Before decomposing into user stories, audit the codebase from three dimensions t
    - 🟢 **Safe**: has guard checks, renders placeholder or nothing on empty data
 
 **Common traps**:
+
 - Template string `${null} 天` renders as "null days"
 - `null * 100` is `0` in JS, shows "0.0%" but there's no data
 - ECharts with empty array `[]` doesn't crash but renders blank chart
 - Radar/bullet charts collapse to a point when all dimensions are 0
 
 **Output format**:
+
 ```
 | 组件 | 问题字段 | 严重性 | 修复方式 |
 |------|---------|--------|---------|
@@ -74,6 +80,7 @@ Before decomposing into user stories, audit the codebase from three dimensions t
 **Goal**: Confirm no field loss at each handoff: Python → Worker → API → DB → Frontend.
 
 **Method**:
+
 1. Trace data flow: Python `_result_to_dict()` → Worker `BacktestHandler.handle()` → API `taskRoutes` → `report-mapper` → DB `reportData` → API `GET /reports/:id` → Frontend `fetchReport()`
 2. At each handoff, check:
    - Field renaming (snake_case → camelCase, `return_pct` → `return`)
@@ -82,12 +89,14 @@ Before decomposing into user stories, audit the codebase from three dimensions t
    - `reportData` text column capacity (no truncation risk)
 
 **Common traps**:
+
 - API `BacktestReportFull` and Web `BacktestReportFull` are completely different interface definitions
 - `report-mapper.ts` output field names don't match Web types (`drawdownSeries` vs `drawdownCurve`)
 - `as any` casts hide type errors until runtime
 - Frontend `factories.ts` mapper and API mapper are two independent implementations with inconsistent field mappings
 
 **Output format**:
+
 ```
 | Handoff 点 | 问题 | 影响 |
 |-----------|------|------|
@@ -108,6 +117,7 @@ Before decomposing into user stories, audit the codebase from three dimensions t
 ```
 
 Common pattern:
+
 1. Fill in type definitions first (Python types / TS types)
 2. Implement core logic
 3. Connect integration points (API routes / CLI commands / Worker handlers)
@@ -116,15 +126,15 @@ Common pattern:
 
 ## Required Story Fields
 
-| Field | Requirement |
-|-------|------------|
-| `id` | `story-N`, incrementing from 1 |
-| `title` | One-line summary (Chinese) |
-| `description` | What's broken, which file, what to change |
+| Field                | Requirement                                                        |
+| -------------------- | ------------------------------------------------------------------ |
+| `id`                 | `story-N`, incrementing from 1                                     |
+| `title`              | One-line summary (Chinese)                                         |
+| `description`        | What's broken, which file, what to change                          |
 | `acceptanceCriteria` | Verifiable check items, must include quality check command results |
-| `agent` | Role per AGENTS.md based on sub-project touched |
-| `priority` | 1 = first, higher = later |
-| `dependsOn` | IDs of prerequisite stories (forms a DAG) |
+| `agent`              | Role per AGENTS.md based on sub-project touched                    |
+| `priority`           | 1 = first, higher = later                                          |
+| `dependsOn`          | IDs of prerequisite stories (forms a DAG)                          |
 
 ## Acceptance Criteria Guidelines
 
@@ -151,11 +161,13 @@ Common pattern:
 The final verification story (agent = `fullstack-agent`) **must** include two tiers of validation:
 
 ### Tier 1: Data Pipeline (CI-automatable)
+
 - API response structure fully aligned with frontend types
 - Numeric metrics meet business expectations (e.g., "drawdown > 0" not "non-null")
 - Chinese content renders correctly on frontend (no garbled text)
 
 ### Tier 2: UI Rendering (manual or screenshot comparison)
+
 - Core modules have data, not blank
 - Each card/chart has actual content
 - Console has no JS/TS errors
@@ -178,18 +190,18 @@ The final verification story (agent = `fullstack-agent`) **must** include two ti
 
 Use this checklist when writing or reviewing PRD acceptance criteria:
 
-| # | Check | Bad Example | Correct |
-|---|-------|-------------|---------|
-| 1 | **Type structure completeness** | "verify reportData contains drawdownCurve (non-empty array)" | "verify reportData.equityData.drawdownCurve is { timestamp, drawdown }[] with length > 0" |
-| 2 | **Nested object alignment** | Only checking top-level fields | Check overview/dataParams/executiveSummary sub-object field names match consumer side |
-| 3 | **Numeric semantic correctness** | "verify sortinoRatio > 0" (negative when strategy loses) | "verify sortinoRatio is non-null and non-undefined, negative is OK" |
-| 4 | **Upstream attribution for empty data** | Frontend blank → fix frontend | First check if API returns data, then if mapper maps it, then decide which layer |
-| 5 | **Chinese rendering verification** | Only test values in API JSON | Must observe actual frontend page for Chinese garbled text |
-| 6 | **Frontend runtime errors** | Don't check console | Acceptance criteria must include "no JS/TS errors in console" |
-| 7 | **Mock vs real data** | Tests pass with mock data but fail with real | Verification story must use real running services + real backtest data |
-| 8 | **Obsidian Builder completeness** | Builder only verifies old 6 metrics exist | Criteria must include all new metrics (sortinoRatio/calmarRatio/annualizedVolatility etc.) appearing in builder markdown output |
-| 9 | **Cross-resource type alignment** | Only verify JSON structure | For implementation stories, also verify `sync_backtest.py` `_dict_to_backtest_result()` and new builder field mappings match |
-| 10 | **SSE error isolation** | Don't test failure redirect | Verification must submit a failed backtest to confirm frontend doesn't redirect and state is correct |
+| #   | Check                                   | Bad Example                                                  | Correct                                                                                                                         |
+| --- | --------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Type structure completeness**         | "verify reportData contains drawdownCurve (non-empty array)" | "verify reportData.equityData.drawdownCurve is { timestamp, drawdown }[] with length > 0"                                       |
+| 2   | **Nested object alignment**             | Only checking top-level fields                               | Check overview/dataParams/executiveSummary sub-object field names match consumer side                                           |
+| 3   | **Numeric semantic correctness**        | "verify sortinoRatio > 0" (negative when strategy loses)     | "verify sortinoRatio is non-null and non-undefined, negative is OK"                                                             |
+| 4   | **Upstream attribution for empty data** | Frontend blank → fix frontend                                | First check if API returns data, then if mapper maps it, then decide which layer                                                |
+| 5   | **Chinese rendering verification**      | Only test values in API JSON                                 | Must observe actual frontend page for Chinese garbled text                                                                      |
+| 6   | **Frontend runtime errors**             | Don't check console                                          | Acceptance criteria must include "no JS/TS errors in console"                                                                   |
+| 7   | **Mock vs real data**                   | Tests pass with mock data but fail with real                 | Verification story must use real running services + real backtest data                                                          |
+| 8   | **Obsidian Builder completeness**       | Builder only verifies old 6 metrics exist                    | Criteria must include all new metrics (sortinoRatio/calmarRatio/annualizedVolatility etc.) appearing in builder markdown output |
+| 9   | **Cross-resource type alignment**       | Only verify JSON structure                                   | For implementation stories, also verify `sync_backtest.py` `_dict_to_backtest_result()` and new builder field mappings match    |
+| 10  | **SSE error isolation**                 | Don't test failure redirect                                  | Verification must submit a failed backtest to confirm frontend doesn't redirect and state is correct                            |
 
 ## Fault Investigation Order
 
@@ -203,22 +215,22 @@ When verification fails, investigate in this order — don't guess fixes:
 
 ## Agent Assignment Rules
 
-| Code Location | Agent |
-|---------------|-------|
-| `apps/api/` | api-agent |
-| `apps/web/` | frontend-agent |
-| `apps/worker/` | worker-agent |
-| `packages/backtest-engine/` | backtest-agent |
-| `packages/factor-lab/` | factor-lab-agent |
-| `packages/ai-engine/` | ai-agent |
+| Code Location                | Agent                  |
+| ---------------------------- | ---------------------- |
+| `apps/api/`                  | api-agent              |
+| `apps/web/`                  | frontend-agent         |
+| `apps/worker/`               | worker-agent           |
+| `packages/backtest-engine/`  | backtest-agent         |
+| `packages/factor-lab/`       | factor-lab-agent       |
+| `packages/ai-engine/`        | ai-agent               |
 | `packages/strategy-runtime/` | strategy-runtime-agent |
-| `packages/strategies/` | strategies-agent |
-| `packages/data-client/` | data-client-agent |
-| `packages/obsidian-sync/` | obsidian-sync-agent |
-| `packages/loop-engine/` | loop-engine-agent |
-| `services/data-center/` | data-center-agent |
-| `services/data-collector/` | data-collector-agent |
-| Cross-project | fullstack-agent |
+| `packages/strategies/`       | strategies-agent       |
+| `packages/data-client/`      | data-client-agent      |
+| `packages/obsidian-sync/`    | obsidian-sync-agent    |
+| `packages/loop-engine/`      | loop-engine-agent      |
+| `services/data-center/`      | data-center-agent      |
+| `services/data-collector/`   | data-collector-agent   |
+| Cross-project                | fullstack-agent        |
 
 ## dependsOn Rules
 
@@ -254,10 +266,7 @@ Write to `scripts/ralph/prd.json`:
       "id": "story-1",
       "title": "Story title",
       "description": "Detailed: current problem + scope + approach",
-      "acceptanceCriteria": [
-        "Specific check item",
-        "pnpm --filter @quant/xxx test passes"
-      ],
+      "acceptanceCriteria": ["Specific check item", "pnpm --filter @quant/xxx test passes"],
       "agent": "xxx-agent",
       "priority": 1,
       "passes": false
@@ -281,6 +290,7 @@ Write to `scripts/ralph/prd.json`:
 ## After Generation
 
 Inform the user:
+
 1. Story count and dependency graph
 2. Estimated execution order (topological sort by priority + dependsOn)
 3. Suggested max iterations (2-3 per story)
