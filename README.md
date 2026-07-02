@@ -5,10 +5,19 @@
 ## 核心闭环
 
 ```text
-选择策略 → 配置参数 → 运行回测/训练 → 查看任务和报告 → 迭代策略
+选择策略 → 配置参数 → 预览/诊断 → 运行回测 → 查看任务和报告 → 迭代策略
 ```
 
-前后端端到端闭环已打通：前端提交回测 → API → Worker → Python CLI → 真实回测指标 → SSE 推送 → 前端报告显示。
+前后端端到端闭环已打通：前端提交回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE 推送 → 前端报告显示。
+配置读写、策略预览、因子/非因子诊断均已接入主链路。
+
+## 核心契约
+
+- **策略分类**：`StrategyCategory` 三类（factor_based / non_factor / transitional），`StrategySubcategory` 十值（linear_multi_factor / index_enhancement / ml_nonlinear_factor / trend_cta / arbitrage / hft_microstructure / macro_quant / event_driven / e2e_ai_timeseries / event_sentiment_factor）。Python / API / 前端三层逐字对齐。
+- **ConfigSnapshot**：策略配置的唯一真相源，含 schemaVersion / strategy / strategyVersion / category / subcategory / params / hash / updatedAt。任务 payload 强制带 configSnapshot，顶层 params 被拒绝。
+- **TaskResultEnvelope**：SSE result 事件顶层含 `resultId` / `resultType`（diagnostics | backtest），完成后可恢复。
+- **ResultProcessor 注册表**：API complete handler 通过注册表分派给 BacktestResultProcessor / DiagnosticsResultProcessor，Repo 走 Fastify DI。
+- **Preview 契约**：`POST /api/strategies/:name/preview` 仅接受 chart_relevant 字段（非图表字段 422），合并 saved config 后计算。
 
 ## 模块连接图
 
@@ -68,6 +77,7 @@ data-collector → data-center (SQLite) → data-client → strategy-runtime CLI
 
 apps/web → apps/api → apps/worker → PythonBridge → strategy-runtime CLI
 apps/worker → apps/api → SSE → apps/web
+apps/api /api/strategies（catalog/config/preview）/api/diagnostics /api/tasks 已对齐 canonical 契约
 ```
 
 数据从采集到执行完整可跑，每个模块单独有测试覆盖。前端通过 API/SSE 已能提交回测任务并消费 `progress/log/status/result/error` 事件流，`WorkspacePage` 可渲染真实 `backtestResult` 的指标、权益曲线和交易明细。
