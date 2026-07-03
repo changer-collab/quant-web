@@ -10,7 +10,7 @@
 ## 当前阶段
 
 ```text
-已实现：独立进程入口 + HTTP 轮询 API 领取任务 + 五个任务处理器
+已实现：独立进程入口 + HTTP 轮询 API 领取任务 + 六个任务处理器
 ```
 
 ## 已实现
@@ -70,7 +70,7 @@ npm run dev   # tsx watch src/main.ts
 npm start     # tsx src/main.ts
 ```
 
-Worker 默认轮询 `http://127.0.0.1:3000/api/internal/tasks/pending`。
+Worker 默认轮询 `http://127.0.0.1:3002/api/internal/tasks/pending`。
 
 ## 后续扩展
 
