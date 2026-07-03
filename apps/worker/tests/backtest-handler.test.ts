@@ -34,11 +34,17 @@ describe('BacktestHandler', () => {
     queue.registerHandler(handler);
 
     const task = await queue.submit(TaskType.Backtest, {
-      strategyName: 'mock',
+      strategy: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
       initialCash: 1000000,
       slippage: 0.001,
+      configSnapshot: {
+        strategy: 'mock',
+        params: {},
+        category: 'non_factor',
+        subcategory: null,
+      },
     });
 
     await queue.processAll();
@@ -60,9 +66,15 @@ describe('BacktestHandler', () => {
     queue.registerHandler(handler);
 
     const task = await queue.submit(TaskType.Backtest, {
-      strategyName: 'mock',
+      strategy: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
+      configSnapshot: {
+        strategy: 'mock',
+        params: {},
+        category: 'non_factor',
+        subcategory: null,
+      },
     });
 
     await queue.processAll();
@@ -81,6 +93,12 @@ describe('BacktestHandler', () => {
       strategy: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
+      configSnapshot: {
+        strategy: 'mock',
+        params: {},
+        category: 'non_factor',
+        subcategory: null,
+      },
     });
 
     await queue.processAll();
@@ -130,6 +148,12 @@ describe('BacktestHandler', () => {
       strategy: 'mock',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
+      configSnapshot: {
+        strategy: 'mock',
+        params: {},
+        category: 'non_factor',
+        subcategory: null,
+      },
     });
 
     await queue.processAll();
@@ -176,30 +200,10 @@ describe('BacktestHandler - configSnapshot', () => {
     expect(config.category).toBe('non_factor');
     expect(config.subcategory).toBe('trend_cta');
     expect(config.snapshotParams).toEqual({ period: 20, offset: 5 });
-    expect(config.strategyParams).toEqual({ period: 20, offset: 5 });
   });
 
-  it('configSnapshot 缺失时降级到 payload.params 并输出 WARN', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    const callFn = vi.fn<() => Promise<PythonResult>>().mockResolvedValue({
-      ok: true,
-      data: {
-        config: {},
-        trades: [],
-        equityCurve: [],
-        metrics: {
-          totalReturn: 0.1,
-          annualizedReturn: 0.15,
-          sharpeRatio: 1.5,
-          maxDrawdown: 0.08,
-          winRate: 0.55,
-          totalTrades: 10,
-        },
-      },
-    });
-    const bridge = createMockBridge({ call: callFn });
-    const handler = new BacktestHandler(bridge);
+  it('configSnapshot 缺失时抛异常', async () => {
+    const handler = new BacktestHandler(createMockBridge());
     const queue = new TaskQueue();
     queue.registerHandler(handler);
 
@@ -207,31 +211,14 @@ describe('BacktestHandler - configSnapshot', () => {
       strategy: 'dual_ma',
       symbol: 'TEST',
       timeframe: TimeFrame.D1,
-      params: { period: 10 },
       // 没有 configSnapshot
     });
 
     await queue.processAll();
 
-    // 验证 WARN 日志
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'deprecated: payload.params will be removed, use configSnapshot.params'
-      )
-    );
-
-    // 验证 bridge 请求含降级后的 params
-    const calls = callFn.mock.calls;
-    const backtestCall = calls.find((c: unknown[]) => {
-      const req = c[0] as Record<string, unknown>;
-      return req?.command === 'backtest';
-    });
-    expect(backtestCall).toBeDefined();
-    const req = backtestCall![0] as Record<string, unknown>;
-    const config = req.config as Record<string, unknown>;
-    expect(config.snapshotParams).toEqual({ period: 10 });
-    expect(config.strategyParams).toEqual({ period: 10 });
-
-    warnSpy.mockRestore();
+    const tasks = await queue.list();
+    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
+    expect(failed).toBeDefined();
+    expect(failed!.error).toContain('configSnapshot required for backtest');
   });
 });

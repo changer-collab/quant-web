@@ -57,7 +57,7 @@
       "agent": "worker-agent",
       "priority": 3,
       "dependsOn": [],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-3b",

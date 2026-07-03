@@ -14,8 +14,7 @@ export interface BacktestPayload {
   slippage?: number;
   startTs?: number;
   endTs?: number;
-  params?: Record<string, unknown>;
-  configSnapshot?: {
+  configSnapshot: {
     strategy: string;
     params: Record<string, unknown>;
     category?: string;
@@ -42,19 +41,12 @@ export class BacktestHandler implements TaskHandler {
     const payload = task.payload as unknown as BacktestPayload;
     const configSnapshot = payload.configSnapshot;
 
-    // 优先使用 configSnapshot.params；configSnapshot 缺失时降级到 payload.params（已废弃）
-    let fallbackParams: Record<string, unknown>;
-    let snapshotParams: Record<string, unknown>;
-    if (configSnapshot) {
-      snapshotParams = configSnapshot.params ?? {};
-      fallbackParams = snapshotParams;
-    } else {
-      fallbackParams = payload.params ?? {};
-      snapshotParams = fallbackParams;
-      console.warn(
-        '[backtest-handler] deprecated: payload.params will be removed, use configSnapshot.params'
-      );
+    // configSnapshot 是必需的
+    if (!configSnapshot) {
+      throw new Error('configSnapshot required for backtest');
     }
+
+    const snapshotParams = configSnapshot.params ?? {};
 
     const request = {
       command: 'backtest',
@@ -62,10 +54,9 @@ export class BacktestHandler implements TaskHandler {
       config: {
         initialCash: payload.initialCash,
         slippage: payload.slippage,
-        category: configSnapshot?.category,
-        subcategory: configSnapshot?.subcategory ?? null,
+        category: configSnapshot.category,
+        subcategory: configSnapshot.subcategory ?? null,
         snapshotParams,
-        strategyParams: fallbackParams,
       },
       dataRange: {
         dbPath: payload.dbPath ?? resolveDbPath(),
