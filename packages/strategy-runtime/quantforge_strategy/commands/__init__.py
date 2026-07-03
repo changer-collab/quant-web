@@ -27,4 +27,13 @@ def run_diagnostics(*args, **kwargs):
     return _run_diagnostics(*args, **kwargs)
 
 
-__all__ = ["run_backtest", "run_factor_eval", "run_ai_train", "run_diagnostics"]
+def run_list_strategies(*args, **kwargs):
+    from .list_strategies import run_list_strategies as _run_list_strategies
+
+    return _run_list_strategies(*args, **kwargs)
+
+
+__all__ = [
+    "run_backtest", "run_factor_eval", "run_ai_train",
+    "run_diagnostics", "run_list_strategies",
+]

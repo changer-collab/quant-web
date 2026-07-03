@@ -1,69 +1,29 @@
-﻿濂界殑锛岀幇鍦ㄦ垜鏈夊畬鏁寸殑涓婁笅鏂囦簡銆傝鎴戝厛璇诲彇闇€瑕佷慨鏀圭殑鏂囦欢鏉ヤ簡瑙ｅ綋鍓嶇姸鎬併€?
----
+﻿Now let me assess the current state. I need to check:
+1. What branch we're on
+2. What happened in the previous attempt on story-6c
+3. Current state of the target filesLet me read the current state of the three files and check what tsc errors exist:Let me check the current BarData type and how the API returns bar data:Now I have a clear picture. Let me implement **story-6c** 鈥?the highest priority non-passing story. The previous iteration had pre-existing tsc errors from `strategy-grid.tsx` (deprecated file with deleted `ResearchModeId` type). I need to:
 
-**鍒嗘瀽涓婁竴杞け璐ワ紙Iteration 6锛?*锛氫笂涓€杞皾璇曚簡 story-5b锛圥hase 8a 瀹㈡埛绔眰锛夛紝澶辫触鍘熷洜鏄?`vitest_fail` + `pytest_fail`銆傞渶瑕佹煡鐪嬪綋鍓嶅疄鐜版潵鐞嗚В闂鎵€鍦ㄣ€?
-**褰撳墠鐘舵€?*锛?- 鍒嗘敮锛歚ralph/backend-sync-realign-phase6-9` 鉁?- 宸插畬鎴愶細story-1~5a锛堝潎涓?`passes: true`锛?- 寰呭畬鎴愭渶楂樹紭鍏堢骇锛?*story-5b**锛坧riority 7, Phase 8a 瀹㈡埛绔眰锛?
----
+1. `strategy-table.tsx`: `p.key` 鈫?`p.name`
+2. `strategy-grid.tsx`: `p.key` 鈫?`p.name` + fix `ResearchModeId` (pre-existing tsc blocker)
+3. `kline-chart.tsx`: bar shape adapter (old `{open,close,high,low,volume}` 鈫?new `{o,c,h,l,v}`)
 
-寮€濮嬪疄鐜?**story-5b**銆傚厛璋冪爺褰撳墠4涓狝PI瀹㈡埛绔枃浠讹細Let me also check the API-side `PersistedConfigResponse` type and the test files to understand the expected contract:Now let me look at the test setup and any tests that test the API clients:鐜板湪鎴戝鏁翠釜浠ｇ爜搴撴湁浜嗗畬鏁寸殑鐞嗚В銆傝鎴戝疄鐜?story-5b 鐨勬敼鍔細Now let me update `diagnostics.ts` to add error handling:Now update `preview.ts` to add error handling (signature unchanged per acceptance criteria):Now let me check for any callers that would be affected by the return type change:Now let me run the quality checks:I need to fix two issues: the `.catch()` type in tasks.ts and the backward-compat fields in `PersistedConfigResponse`:The remaining tsc errors are **pre-existing** and out of scope for this story:
-- `config-panel.tsx` 鈥?`target_field`/`target_value` 鈫?will be fixed in story-6a
-- `strategy-grid.tsx` 鈥?untracked file referencing removed `ResearchModeId`
+Let me start:Now let me implement the kline-chart.tsx adapter. I'll add the normalization function and update all drawing functions to use `{ts, o, h, l, c, v}` format:Now update `drawCandlesticks` to use `NormalizedBar`:Now update `drawSubChart` 鈥?signature and all field accesses:Now update the remaining `b.volume` 鈫?`b.v` references in drawSubChart:Now update `drawSignals`:Now update the draw callback's price range computation:Now update the tooltip state type:Now update `handleMouseMove` to normalize the bar data:Now update the tooltip rendering field accesses:Let me verify no remaining old field references in the modified files:Good 鈥?no `p.key` remaining, and old bar fields (`open`/`close`/etc.) only appear in the normalization function. Let me run quality checks:Actually, a cleaner approach with `as const`:TypeScript compiles cleanly! Now let me run tests:All 93 tests pass. Now let me run the build:Build passes. Let me run lint and verify acceptance criteria:All quality checks pass. Let me now do Doc Sync Gate evaluation and complete the story.All acceptance criteria verified. Doc Sync evaluation: this story is mechanical frontend migration (param key 鈫?name, bar adapter) in 3 component files 鈥?no API schema, DB schema, architectural boundary, or behavioral contract changes. No docs update needed.Now update prd.json and progress.txt, then commit:Now commit:Commit `0b38e30` successful. Story-6c complete.
 
-My changes introduced no new tsc errors. Let me run the tests:All **93/93 tests passed**. Now run lint and build:All quality checks pass:
-- **tsc**: No new errors (pre-existing 2 errors are out of scope)
-- **ESLint**: 0 errors
-- **Tests**: 93/93 passed (14 files)
-- **Build**: Successful (3.29s)
+**Summary:**
+- **strategy-table.tsx**: `p.key` 鈫?`p.name` (React key)
+- **strategy-grid.tsx**: `p.key` 鈫?`p.name` + fix `ResearchModeId` type (deprecated, converted to `as const`)
+- **kline-chart.tsx**: Added `NormalizedBar` interface + `normalizeBars()` function 鈥?old bars (`{timestamp,open,...}`) normalize to `{ts,o,h,l,c,v}`, new bars passthrough. All 4 drawing functions updated to use normalized format.
+- Quality: tsc OK, 93/93 tests, build 3.21s, lint 0 errors
+- Doc Sync: no docs update needed (mechanical component migration only)
 
-Now let me do a grep verification for the `params` field removal in tasks.ts and run API tests:鍏ㄩ儴妫€楠岄€氳繃锛?
-- **web tests**: 93/93 passed
-- **API tests**: 109/109 passed (鏃犲洖褰?
-- **lint**: 0 errors
-- **build**: 鎴愬姛 (3.29s)
-- **grep 楠岃瘉** `params:` 瀛楁宸蹭粠 `submitBacktest` payload 涓Щ闄?鉁?
-鐜板湪鎵ц Doc Sync Gate锛岀劧鍚庢彁浜わ細No docs reference this change 鈥?it's internal API client signature alignment. Now let me commit:Now update `prd.json` to mark story-5b as `passes: true`:Now append the progress log:Commit successful. Let me push:## 鏁呬簨 5b 瀹屾垚 鉁?
-### 淇敼鐨勬枃浠?
-| 鏂囦欢 | 鏀瑰姩 |
-|------|------|
-| `apps/web/src/api/strategies-config.ts` | `PersistedConfigResponse` 鏂扮被鍨嬶紙persisted+configSnapshot + 杩囨浮鏈熸棫瀛楁锛夛紱`saveStrategyConfig` 鍙岀鍚嶏紙鏂扮鍚?`(name,category,subcategory,params,expectedHash?)` + 鏃х鍚嶅悜鍚庡吋瀹癸級锛涙墍鏈夊嚱鏁?catch 閿欒澶勭悊 |
-| `apps/web/src/api/tasks.ts` | `submitBacktest` payload 绉婚櫎椤跺眰 `params` 瀛楁锛沜atch鈫抈{id:'',status:'failed'}` |
-| `apps/web/src/api/diagnostics.ts` | `fetchDiagnostic`/`fetchDiagnosticsByStrategy` catch鈫抧ull/[] |
-| `apps/web/src/api/preview.ts` | 绛惧悕涓嶅彉锛堝凡绗﹀悎 contract锛夛紝鏃犳敼鍔?|
+**Remaining stories** (still `passes: false`): story-7a (CLI listStrategies), story-7b (API strategy-sync PythonBridge), story-7c (Worker queue.ts deletion), story-8 (E2E acceptance).
+Commit `0b38e30` successful. Story-6c complete.
 
-### 楠岃瘉缁撴灉
+**Summary:**
+- **strategy-table.tsx**: `p.key` 鈫?`p.name` (React key)
+- **strategy-grid.tsx**: `p.key` 鈫?`p.name` + fix `ResearchModeId` type (deprecated, converted to `as const`)
+- **kline-chart.tsx**: Added `NormalizedBar` interface + `normalizeBars()` function 鈥?old bars (`{timestamp,open,...}`) normalize to `{ts,o,h,l,c,v}`, new bars passthrough. All 4 drawing functions updated to use normalized format.
+- Quality: tsc OK, 93/93 tests, build 3.21s, lint 0 errors
+- Doc Sync: no docs update needed (mechanical component migration only)
 
-- **tsc --noEmit**: 鏃犳柊澧為敊璇紙浠?2 涓瀛?scope澶栭敊璇細config-panel.tsx target_field 鈫?story-6a锛宻trategy-grid.tsx ResearchModeId 鈫?宸插垹闄ゆ湭璺熻釜鏂囦欢锛?- **ESLint**: 0 errors
-- **web tests**: 93/93 鉁?- **API tests**: 109/109 鉁咃紙鏃犲洖褰掞級
-- **vite build**: 3.29s 鎴愬姛 鉁?
-### 鍏抽敭璁捐鍐崇瓥
-
-1. **鍚戝悗鍏煎鍙岀鍚?*锛歚saveStrategyConfig` 閫氳繃 `categoryOrConfig: string | Record<string, unknown>` 鍒ゆ柇璋冪敤妯″紡锛屾棫璋冪敤 `(name, configPayload)` 璧板埌鏃у垎鏀笉鎶ラ敊
-2. **搴熷純瀛楁淇濈暀**锛歚PersistedConfigResponse` 淇濈暀 `config_json`/`hash`/`updated_at` 浣滀负 deprecated 瀛楁锛岀‘淇?workspace-page.tsx 璇?`res.config_json` 缂栬瘧閫氳繃锛坰tory-6b 杩佺Щ鍚庣Щ闄わ級
-3. **Error handling**锛歚fetchPreview` 涓嶆坊鍔?catch锛堢鍚嶄笉鍙橈紝璋冪敤鏂瑰凡鏈?try-catch锛?
-### 鍚庣画杩唬
-
-- **story-6a** 灏嗘洿鏂?`config-panel.tsx: handleSave` 浣跨敤鏂扮鍚?- **story-6b** 灏嗘洿鏂?`workspace-page.tsx` 璇?`res.configSnapshot` 鏇夸唬 `res.config_json`
-- 涓嬩竴涓緟瀹屾垚锛?*story-6a** (Phase 8b 鈥?ConfigPanel 缁勪欢瀵归綈)
-## 鏁呬簨 5b 瀹屾垚 鉁?
-### 淇敼鐨勬枃浠?
-| 鏂囦欢 | 鏀瑰姩 |
-|------|------|
-| `apps/web/src/api/strategies-config.ts` | `PersistedConfigResponse` 鏂扮被鍨嬶紙persisted+configSnapshot + 杩囨浮鏈熸棫瀛楁锛夛紱`saveStrategyConfig` 鍙岀鍚嶏紙鏂扮鍚?`(name,category,subcategory,params,expectedHash?)` + 鏃х鍚嶅悜鍚庡吋瀹癸級锛涙墍鏈夊嚱鏁?catch 閿欒澶勭悊 |
-| `apps/web/src/api/tasks.ts` | `submitBacktest` payload 绉婚櫎椤跺眰 `params` 瀛楁锛沜atch鈫抈{id:'',status:'failed'}` |
-| `apps/web/src/api/diagnostics.ts` | `fetchDiagnostic`/`fetchDiagnosticsByStrategy` catch鈫抧ull/[] |
-| `apps/web/src/api/preview.ts` | 绛惧悕涓嶅彉锛堝凡绗﹀悎 contract锛夛紝鏃犳敼鍔?|
-
-### 楠岃瘉缁撴灉
-
-- **tsc --noEmit**: 鏃犳柊澧為敊璇紙浠?2 涓瀛?scope澶栭敊璇細config-panel.tsx target_field 鈫?story-6a锛宻trategy-grid.tsx ResearchModeId 鈫?宸插垹闄ゆ湭璺熻釜鏂囦欢锛?- **ESLint**: 0 errors
-- **web tests**: 93/93 鉁?- **API tests**: 109/109 鉁咃紙鏃犲洖褰掞級
-- **vite build**: 3.29s 鎴愬姛 鉁?
-### 鍏抽敭璁捐鍐崇瓥
-
-1. **鍚戝悗鍏煎鍙岀鍚?*锛歚saveStrategyConfig` 閫氳繃 `categoryOrConfig: string | Record<string, unknown>` 鍒ゆ柇璋冪敤妯″紡锛屾棫璋冪敤 `(name, configPayload)` 璧板埌鏃у垎鏀笉鎶ラ敊
-2. **搴熷純瀛楁淇濈暀**锛歚PersistedConfigResponse` 淇濈暀 `config_json`/`hash`/`updated_at` 浣滀负 deprecated 瀛楁锛岀‘淇?workspace-page.tsx 璇?`res.config_json` 缂栬瘧閫氳繃锛坰tory-6b 杩佺Щ鍚庣Щ闄わ級
-3. **Error handling**锛歚fetchPreview` 涓嶆坊鍔?catch锛堢鍚嶄笉鍙橈紝璋冪敤鏂瑰凡鏈?try-catch锛?
-### 鍚庣画杩唬
-
-- **story-6a** 灏嗘洿鏂?`config-panel.tsx: handleSave` 浣跨敤鏂扮鍚?- **story-6b** 灏嗘洿鏂?`workspace-page.tsx` 璇?`res.configSnapshot` 鏇夸唬 `res.config_json`
-- 涓嬩竴涓緟瀹屾垚锛?*story-6a** (Phase 8b 鈥?ConfigPanel 缁勪欢瀵归綈)
+**Remaining stories** (still `passes: false`): story-7a (CLI listStrategies), story-7b (API strategy-sync PythonBridge), story-7c (Worker queue.ts deletion), story-8 (E2E acceptance).

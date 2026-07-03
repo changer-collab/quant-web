@@ -1005,8 +1005,8 @@ export interface ResultProcessor {
 
 **Steps:**
 
-- [ ] 在 CLI 注册 `listStrategies` command。
-- [ ] 添加 CLI test 覆盖输出 strategy meta list。
+- [x] 在 CLI 注册 `listStrategies` command。
+- [x] 添加 CLI test 覆盖输出 strategy meta list。
 - [ ] 修改 `strategy-sync.ts` 使用 PythonBridge 调用。
 - [ ] 删除内联 Python script string。
 - [ ] Run: `cd packages/strategy-runtime && pytest tests/test_cli_list_strategies.py -v`。

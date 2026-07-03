@@ -1981,3 +1981,30 @@ lint_error
   - strategy-grid.tsx 的 `ResearchModeId` 改为 `as const` 数组后仍保持窄字面量类型，`ui.strategyGridModeLabels` 索引不出错
   - story-7a (CLI listStrategies) 是下一个最高优先级未完成故事，不依赖本 story
 ---
+## [2026-07-03 19:00] — story-7a (Phase 9a — Python CLI 注册 listStrategies NDJSON 命令)
+- **新建文件**:
+  - `packages/strategy-runtime/quantforge_strategy/commands/list_strategies.py` — 实现 listStrategies 命令
+    - 延迟导入 `quantforge_strategies.registry.list_all()` 获取注册策略列表
+    - 遍历每个策略类，实例化后读取 `.meta` 属性
+    - 输出 NDJSON 数组，每项含 camelCase 字段：name/category/subcategory/version/description/workflowReady/backtestable/params
+    - params 子项也使用 camelCase：name/range/chartRelevant/uiConstraints（与 API mapMeta story-1 输出一致）
+    - uiConstraints 子字段 camelCase：targetField/targetValue/actionValue
+    - `workflowReady` = category∈canonical 3 ∧ subcategory∈canonical 10
+    - `backtestable` = callable on_bar（鉴别 combined vs selector/timer/sizer）
+  - `packages/strategy-runtime/tests/test_cli_list_strategies.py` — 6 个测试覆盖：
+    - result 事件存在、data 非空数组、顶层字段 camelCase、params 子字段 camelCase 含 name/range/chartRelevant/uiConstraints、dual_ma 预期值验证、subcategory=None 策略 workflowReady=False
+- **修改文件**:
+  - `packages/strategy-runtime/quantforge_strategy/commands/__init__.py` — 添加 `run_list_strategies` 延迟导入函数
+  - `packages/strategy-runtime/quantforge_strategy/cli.py` — 添加 `_run_list_strategies` 包装函数，注册到 `_COMMANDS["listStrategies"]`
+  - `packages/strategy-runtime/AGENT.md` — 命令分发列表追加 `listStrategies`
+  - `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md` — Task 9.1 前两个 checklist 项标记为 [x]
+- **验证**:
+  - `cd packages/strategy-runtime && python -m pytest tests/test_cli_list_strategies.py -v` → 6/6 passed ✅
+  - `cd packages/strategy-runtime && python -m pytest -v` → 190/191 passed（1 个预存失败：test_diagnostics_stub transitional 字段过期，与 story-7a 无关）✅
+- **Doc Sync**: updated `packages/strategy-runtime/AGENT.md` (command dispatch list) and `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md` (Task 9.1 checklist). The plan doc already anticipated the CLI command and test file creation. No other docs need updating.
+- **后续迭代注意事项：**
+  - `listStrategies` 命令是 story-7b (API strategy-sync PythonBridge) 的直接前提；story-7b 通过 `PythonBridge.call({command:'listStrategies'})` 获取策略元数据列表
+  - `backtestable` 判定使用 `callable(getattr(instance, 'on_bar', None))`，与 API 旧内联脚本一致
+  - 策略实例化失败时静默跳过（try/except），不导致整个命令失败
+  - uiConstraints 当前所有策略均未定义，输出为 null；当策略添加 UIConstraint 后自动跟随输出
+---

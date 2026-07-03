@@ -193,7 +193,7 @@
       "agent": "strategy-runtime-agent",
       "priority": 11,
       "dependsOn": [],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-7b",
