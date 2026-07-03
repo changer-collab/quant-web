@@ -68,6 +68,62 @@ describe('BacktestResultProcessor', () => {
     expect(savedReport.symbol).toBe('000300.SH');
   });
 
+  it('configSnapshot category/subcategory/hash flows to report metadata', async () => {
+    const mockSave = vi.fn().mockResolvedValue(undefined);
+    const mockRepo = { save: mockSave } as unknown as ReportRepository;
+    const processor = new BacktestResultProcessor(mockRepo);
+
+    await processor.process({
+      task: {
+        id: 'task-cfg',
+        type: TaskType.Backtest,
+        payload: {
+          strategy: 'test-ma',
+          symbol: '000300.SH',
+          timeframe: '1d',
+          configSnapshot: {
+            strategy: 'test-ma',
+            category: 'factor_based',
+            subcategory: 'linear_multi_factor',
+            hash: 'cfg-hash-abc',
+            params: { period: 20 },
+          },
+        },
+      },
+      result: {
+        backtestResult: {
+          config: {},
+          trades: [],
+          equityCurve: [{ timestamp: 1700000000000, equity: 1000000 }],
+          metrics: {
+            totalReturn: 0.05,
+            annualizedReturn: 0.12,
+            sharpeRatio: 1.5,
+            maxDrawdown: -0.05,
+            winRate: 0.6,
+            totalTrades: 10,
+            sortinoRatio: 1.2,
+            calmarRatio: 2.4,
+            annualizedVolatility: 0.08,
+            maxDrawdownDuration: 5,
+          },
+          profitLossRatio: 1.5,
+          avgHoldingDays: 3,
+          maxSingleProfit: 5000,
+          maxSingleLoss: -2000,
+          drawdownCurve: [],
+          monthlyReturns: [],
+          annualReturns: [],
+        },
+      },
+    });
+
+    const savedReport = mockSave.mock.calls[0][0] as BacktestReport;
+    expect(savedReport.reportData.strategyCategory).toBe('factor_based');
+    expect(savedReport.reportData.strategySubcategory).toBe('linear_multi_factor');
+    expect(savedReport.reportData.configHash).toBe('cfg-hash-abc');
+  });
+
   it('throws when report save fails', async () => {
     const mockSave = vi.fn().mockRejectedValue(new Error('DB error'));
     const mockRepo = { save: mockSave } as unknown as ReportRepository;

@@ -10,6 +10,9 @@ export function mapBacktestResultToReport(
     timeframe: string;
     startTime?: number;
     endTime?: number;
+    category?: string;
+    subcategory?: string;
+    configHash?: string;
   }
 ): BacktestReportFull {
   const metrics = result.metrics;
@@ -207,5 +210,9 @@ export function mapBacktestResultToReport(
       glossary: [],
       redLines: [],
     },
+
+    strategyCategory: metadata.category,
+    strategySubcategory: metadata.subcategory,
+    configHash: metadata.configHash,
   };
 }

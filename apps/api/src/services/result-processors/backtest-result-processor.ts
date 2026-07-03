@@ -43,7 +43,16 @@ export class BacktestResultProcessor implements ResultProcessor {
       initialCash?: number;
       slippage?: number;
       params?: Record<string, unknown>;
+      configSnapshot?: {
+        strategy: string;
+        category?: string;
+        subcategory?: string;
+        hash?: string;
+        params: Record<string, unknown>;
+      };
     };
+
+    const configSnapshot = payload.configSnapshot;
 
     const report = mapBacktestResultToReport(backtestResult, {
       strategyName: payload.strategy,
@@ -51,6 +60,9 @@ export class BacktestResultProcessor implements ResultProcessor {
       timeframe: payload.timeframe,
       startTime: payload.startTs,
       endTime: payload.endTs,
+      category: configSnapshot?.category,
+      subcategory: configSnapshot?.subcategory,
+      configHash: configSnapshot?.hash,
     });
 
     // 合并 AI 分析结果到报告（覆盖结论性字段）
