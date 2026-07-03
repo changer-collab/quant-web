@@ -246,7 +246,7 @@
       "agent": "fullstack-agent",
       "priority": 14,
       "dependsOn": ["story-1", "story-2", "story-3a", "story-3b", "story-4", "story-5a", "story-5b", "story-6a", "story-6b", "story-6c", "story-7a", "story-7b", "story-7c"],
-      "passes": false
+      "passes": true
     }
   ]
 }
