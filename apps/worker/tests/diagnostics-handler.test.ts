@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { DiagnosticsHandler } from '../src/handlers/diagnostics-handler.js';
-import { TaskQueue } from '../src/queue.js';
 import { TaskType, TaskStatus } from '../src/types.js';
 import type { PythonBridge, PythonResult } from '../src/python-bridge.js';
 
@@ -40,6 +39,17 @@ function createMockBridge(override?: Partial<PythonBridge>): PythonBridge {
   } as unknown as PythonBridge;
 }
 
+function makeTask(payload: Record<string, unknown>) {
+  return {
+    id: 'test-task',
+    type: TaskType.Diagnostics as never,
+    status: TaskStatus.Running,
+    payload,
+    submittedAt: Date.now(),
+    startedAt: Date.now(),
+  };
+}
+
 describe('DiagnosticsHandler - fail-closed', () => {
   it('Python 返回 ok:false 时抛出异常', async () => {
     const bridge = createMockBridge({
@@ -49,20 +59,16 @@ describe('DiagnosticsHandler - fail-closed', () => {
       }),
     });
     const handler = new DiagnosticsHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    await queue.submit(TaskType.Diagnostics, {
-      strategy: 'dual_ma',
-      category: 'non_factor',
-      configSnapshot: { strategy: 'dual_ma', params: { period: 20 } },
-    });
-
-    await queue.processAll();
-    const tasks = await queue.list();
-    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
-    expect(failed).toBeDefined();
-    expect(failed!.error).toContain('No price data');
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'dual_ma',
+          category: 'non_factor',
+          configSnapshot: { strategy: 'dual_ma', params: { period: 20 } },
+        }),
+        undefined
+      )
+    ).rejects.toThrow('No price data');
   });
 
   it('Python 返回 ok:true 但无 data 时抛出异常', async () => {
@@ -73,20 +79,16 @@ describe('DiagnosticsHandler - fail-closed', () => {
       }),
     });
     const handler = new DiagnosticsHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    await queue.submit(TaskType.Diagnostics, {
-      strategy: 'dual_ma',
-      category: 'non_factor',
-      configSnapshot: { strategy: 'dual_ma', params: { period: 20 } },
-    });
-
-    await queue.processAll();
-    const tasks = await queue.list();
-    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
-    expect(failed).toBeDefined();
-    expect(failed!.error).toContain('empty diagnostics result');
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'dual_ma',
+          category: 'non_factor',
+          configSnapshot: { strategy: 'dual_ma', params: { period: 20 } },
+        }),
+        undefined
+      )
+    ).rejects.toThrow('empty diagnostics result');
   });
 
   it('streamCall 返回 ok:false 时抛出异常', async () => {
@@ -176,22 +178,15 @@ describe('DiagnosticsHandler - fail-closed', () => {
       call: vi.fn<() => Promise<PythonResult>>().mockResolvedValue({ ok: true, data: diagData }),
     });
     const handler = new DiagnosticsHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    await queue.submit(TaskType.Diagnostics, {
-      strategy: 'dual_ma',
-      category: 'non_factor',
-      configSnapshot: { strategy: 'dual_ma', params: { period: 20 } },
-    });
-
-    await queue.processAll();
-    const tasks = await queue.list();
-    const completed = tasks.find((t) => t.status === TaskStatus.Completed);
-    expect(completed).toBeDefined();
-    expect(completed!.result).toBeDefined();
-
-    const result = completed!.result!;
+    const result = await handler.handle(
+      makeTask({
+        strategy: 'dual_ma',
+        category: 'non_factor',
+        configSnapshot: { strategy: 'dual_ma', params: { period: 20 } },
+      }),
+      undefined
+    );
+    expect(result).toBeDefined();
     expect(result.taskId).toBeDefined();
     expect(result.diagnostics).toEqual(diagData);
   });
@@ -204,19 +199,15 @@ describe('DiagnosticsHandler - fail-closed', () => {
       }),
     });
     const handler = new DiagnosticsHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    await queue.submit(TaskType.Diagnostics, {
-      strategy: 'dual_ma',
-      category: 'non_factor',
-      configSnapshot: { strategy: 'dual_ma', params: {} },
-    });
-
-    await queue.processAll();
-    const tasks = await queue.list();
-    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
-    expect(failed).toBeDefined();
-    expect(failed!.error).toContain('Python diagnostics failed');
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'dual_ma',
+          category: 'non_factor',
+          configSnapshot: { strategy: 'dual_ma', params: {} },
+        }),
+        undefined
+      )
+    ).rejects.toThrow('Python diagnostics failed');
   });
 });

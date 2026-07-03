@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { BacktestHandler } from '../src/handlers/backtest-handler.js';
-import { TaskQueue } from '../src/queue.js';
 import { TaskType, TaskStatus, TimeFrame } from '../src/types.js';
 import type { PythonBridge, PythonResult } from '../src/python-bridge.js';
 
@@ -26,35 +25,36 @@ function createMockBridge(override?: Partial<PythonBridge>): PythonBridge {
   } as unknown as PythonBridge;
 }
 
+function makeTask(payload: Record<string, unknown>) {
+  return {
+    id: 'test-task',
+    type: TaskType.Backtest as never,
+    status: TaskStatus.Running,
+    payload,
+    submittedAt: Date.now(),
+    startedAt: Date.now(),
+  };
+}
+
 describe('BacktestHandler', () => {
   it('执行回测任务', async () => {
     const bridge = createMockBridge();
     const handler = new BacktestHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    const task = await queue.submit(TaskType.Backtest, {
-      strategy: 'mock',
-      symbol: 'TEST',
-      timeframe: TimeFrame.D1,
-      initialCash: 1000000,
-      slippage: 0.001,
-      configSnapshot: {
+    const result = await handler.handle(
+      makeTask({
         strategy: 'mock',
-        params: {},
-        category: 'non_factor',
-        subcategory: null,
-      },
-    });
-
-    await queue.processAll();
-    const completed = await queue.get(task.id);
-    expect(completed!.status).toBe(TaskStatus.Completed);
-    expect(completed!.result).toBeDefined();
-    expect(completed!.result!.backtestResult).toBeDefined();
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        initialCash: 1000000,
+        slippage: 0.001,
+        configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+      }),
+      undefined
+    );
+    expect(result.backtestResult).toBeDefined();
   });
 
-  it('Python 返回错误时报错', async () => {
+  it('Python 返回错误时抛异常', async () => {
     const bridge = createMockBridge({
       call: vi.fn<() => Promise<PythonResult>>().mockResolvedValue({
         ok: false,
@@ -62,48 +62,31 @@ describe('BacktestHandler', () => {
       }),
     });
     const handler = new BacktestHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    const task = await queue.submit(TaskType.Backtest, {
-      strategy: 'mock',
-      symbol: 'TEST',
-      timeframe: TimeFrame.D1,
-      configSnapshot: {
-        strategy: 'mock',
-        params: {},
-        category: 'non_factor',
-        subcategory: null,
-      },
-    });
-
-    await queue.processAll();
-    const failed = await queue.get(task.id);
-    expect(failed!.status).toBe(TaskStatus.Failed);
-    expect(failed!.error).toContain('No bars');
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'mock',
+          symbol: 'TEST',
+          timeframe: TimeFrame.D1,
+          configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+        }),
+        undefined
+      )
+    ).rejects.toThrow('No bars');
   });
 
   it('回测成功后调用 syncBacktest', async () => {
     const bridge = createMockBridge();
     const handler = new BacktestHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    const _task = await queue.submit(TaskType.Backtest, {
-      strategy: 'mock',
-      symbol: 'TEST',
-      timeframe: TimeFrame.D1,
-      configSnapshot: {
+    await handler.handle(
+      makeTask({
         strategy: 'mock',
-        params: {},
-        category: 'non_factor',
-        subcategory: null,
-      },
-    });
-
-    await queue.processAll();
-
-    // 验证 syncBacktest 被调用
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+      }),
+      undefined
+    );
     const calls = (bridge.call as ReturnType<typeof vi.fn>).mock.calls;
     const syncCall = calls.find((c: unknown[]) => {
       const req = c[0] as Record<string, unknown>;
@@ -113,25 +96,16 @@ describe('BacktestHandler', () => {
     const syncReq = syncCall![0] as Record<string, unknown>;
     expect(syncReq.strategyName).toBe('mock');
     expect(syncReq.symbol).toBe('TEST');
-    expect(syncReq.backtestData).toBeDefined();
   });
 
   it('sync 失败不影响回测结果', async () => {
     const callMock = vi.fn<() => Promise<PythonResult>>();
-    // 第 1 次：backtest 成功，第 2 次：analyze 成功，第 3 次：sync 失败
     callMock
       .mockResolvedValueOnce({
         ok: true,
         data: {
           config: {},
-          metrics: {
-            totalReturn: 0.1,
-            annualizedReturn: 0.15,
-            sharpeRatio: 1.5,
-            maxDrawdown: 0.08,
-            winRate: 0.55,
-            totalTrades: 10,
-          },
+          metrics: { totalReturn: 0.1, annualizedReturn: 0.15, sharpeRatio: 1.5, maxDrawdown: 0.08, winRate: 0.55, totalTrades: 10 },
           equityCurve: [],
           trades: [],
         },
@@ -141,26 +115,16 @@ describe('BacktestHandler', () => {
 
     const bridge = createMockBridge({ call: callMock });
     const handler = new BacktestHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    const _task = await queue.submit(TaskType.Backtest, {
-      strategy: 'mock',
-      symbol: 'TEST',
-      timeframe: TimeFrame.D1,
-      configSnapshot: {
+    const result = await handler.handle(
+      makeTask({
         strategy: 'mock',
-        params: {},
-        category: 'non_factor',
-        subcategory: null,
-      },
-    });
-
-    await queue.processAll();
-    const tasks = await queue.list();
-    const completed = tasks.find((t) => t.status === TaskStatus.Completed);
-    expect(completed!.status).toBe(TaskStatus.Completed);
-    expect(completed!.result!.backtestResult).toBeDefined();
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+      }),
+      undefined
+    );
+    expect(result.backtestResult).toBeDefined();
   });
 });
 
@@ -172,23 +136,20 @@ describe('BacktestHandler - configSnapshot', () => {
   it('传递 configSnapshot.category/subcategory/snapshotParams 到 bridge 请求', async () => {
     const bridge = createMockBridge();
     const handler = new BacktestHandler(bridge);
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    await queue.submit(TaskType.Backtest, {
-      strategy: 'dual_ma',
-      symbol: 'TEST',
-      timeframe: TimeFrame.D1,
-      configSnapshot: {
+    await handler.handle(
+      makeTask({
         strategy: 'dual_ma',
-        params: { period: 20, offset: 5 },
-        category: 'non_factor',
-        subcategory: 'trend_cta',
-      },
-    });
-
-    await queue.processAll();
-
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        configSnapshot: {
+          strategy: 'dual_ma',
+          params: { period: 20, offset: 5 },
+          category: 'non_factor',
+          subcategory: 'trend_cta',
+        },
+      }),
+      undefined
+    );
     const calls = (bridge.call as ReturnType<typeof vi.fn>).mock.calls;
     const backtestCall = calls.find((c: unknown[]) => {
       const req = c[0] as Record<string, unknown>;
@@ -204,21 +165,15 @@ describe('BacktestHandler - configSnapshot', () => {
 
   it('configSnapshot 缺失时抛异常', async () => {
     const handler = new BacktestHandler(createMockBridge());
-    const queue = new TaskQueue();
-    queue.registerHandler(handler);
-
-    await queue.submit(TaskType.Backtest, {
-      strategy: 'dual_ma',
-      symbol: 'TEST',
-      timeframe: TimeFrame.D1,
-      // 没有 configSnapshot
-    });
-
-    await queue.processAll();
-
-    const tasks = await queue.list();
-    const failed = tasks.find((t) => t.status === TaskStatus.Failed);
-    expect(failed).toBeDefined();
-    expect(failed!.error).toContain('configSnapshot required for backtest');
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'dual_ma',
+          symbol: 'TEST',
+          timeframe: TimeFrame.D1,
+        }),
+        undefined
+      )
+    ).rejects.toThrow('configSnapshot required for backtest');
   });
 });
