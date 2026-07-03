@@ -30,6 +30,10 @@ def _camelize_params(params: list) -> list[dict]:
 
     每个 param 输出：
       - name: str               (取自 p.key)
+      - label: str              (取自 p.label)
+      - type: str | None        (取自 p.type.value)
+      - default: Any            (取自 p.default)
+      - options: list[str] | None (取自 p.options)
       - range: [number, number] (取自 p.min/max，缺省 0)
       - chartRelevant: bool     (取自 p.chart_relevant)
       - uiConstraints: [...] | None (子字段 camelCase)
@@ -49,6 +53,10 @@ def _camelize_params(params: list) -> list[dict]:
             ]
         result.append({
             "name": p.key,
+            "label": p.label,
+            "type": p.type.value if p.type else None,
+            "default": p.default,
+            "options": p.options,
             "range": [p.min or 0, p.max or 0],
             "chartRelevant": p.chart_relevant,
             "uiConstraints": uics,

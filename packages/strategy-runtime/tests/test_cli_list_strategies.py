@@ -167,3 +167,47 @@ class TestListStrategies:
         sizer = next((s for s in data if s["name"] == "equal_weight"), None)
         if sizer:
             assert sizer["backtestable"] is False
+
+
+def test_camelize_params_outputs_label_type_default_options():
+    """_camelize_params 应输出 label/type/default/options,不再丢失
+
+    ParamType 枚举实际值为 number/string/boolean/select（见 types.py），
+    故此处使用 ParamType.Number / ParamType.String 并期望输出 "number"/"string"。
+    """
+    from quantforge_strategy.commands.list_strategies import _camelize_params
+    from quantforge_strategy import StrategyParamDef, ParamType
+
+    params = [
+        StrategyParamDef(
+            key="period",
+            label="周期",
+            type=ParamType.Number,
+            default=20,
+            min=5,
+            max=100,
+            options=None,
+            chart_relevant=False,
+            ui_constraints=[],
+        ),
+        StrategyParamDef(
+            key="mode",
+            label="模式",
+            type=ParamType.String,
+            default="simple",
+            min=None,
+            max=None,
+            options=["simple", "advanced"],
+            chart_relevant=False,
+            ui_constraints=[],
+        ),
+    ]
+    result = _camelize_params(params)
+    assert result[0]["label"] == "周期"
+    assert result[0]["type"] == "number"
+    assert result[0]["default"] == 20
+    assert result[0]["options"] is None
+    assert result[1]["label"] == "模式"
+    assert result[1]["type"] == "string"
+    assert result[1]["default"] == "simple"
+    assert result[1]["options"] == ["simple", "advanced"]

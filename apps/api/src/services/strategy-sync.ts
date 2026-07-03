@@ -16,7 +16,7 @@ export interface PythonStrategyMeta {
     default: number | string | boolean;
     min?: number;
     max?: number;
-    options?: string[];
+    options?: string[] | null;
     chart_relevant?: boolean;
     ui_constraints?: Array<{
       kind: string;
@@ -98,11 +98,12 @@ function camelToSnakeMeta(camel: Record<string, unknown>): PythonStrategyMeta {
       const uics = (p.uiConstraints as Array<Record<string, unknown>>) ?? [];
       return {
         key: (p.name as string) ?? '',
-        label: (p.name as string) ?? '', // CLI 不输出 label，用 name 降级
-        type: 'number', // CLI 不输出 type，默认 number
-        default: 0, // CLI 不输出 default
+        label: (p.label as string) ?? (p.name as string) ?? '', // CLI 输出 label，缺省回退 name（向后兼容）
+        type: (p.type as string) ?? 'number', // CLI 输出 type，缺省回退 'number'
+        default: (p.default as number | string | boolean | null | undefined) ?? 0, // CLI 输出 default，缺省回退 0
         min: range[0] ?? 0,
         max: range[1] ?? 0,
+        options: p.options !== undefined ? (p.options as string[] | null) : undefined,
         chart_relevant: (p.chartRelevant as boolean) ?? false,
         ui_constraints: uics.map((c) => ({
           kind: (c.kind as string) ?? '',
@@ -198,6 +199,9 @@ class StrategySyncService {
       });
 
       // 写入请求 JSON 到 stdin
+      proc.stdin.on('error', () => {
+        // Python 进程已退出,EPIPE 静默吞掉,close 事件会处理
+      });
       proc.stdin.write(JSON.stringify(request));
       proc.stdin.end();
     });
