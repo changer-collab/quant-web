@@ -264,6 +264,7 @@ export const enContent: LanguageContent = {
       params: [
         {
           key: 'short_period',
+          name: 'short_period',
           label: 'Short MA Period',
           type: 'number',
           default: 5,
@@ -272,6 +273,7 @@ export const enContent: LanguageContent = {
         },
         {
           key: 'long_period',
+          name: 'long_period',
           label: 'Long MA Period',
           type: 'number',
           default: 20,
@@ -296,9 +298,10 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', label: 'RSI Period', type: 'number', default: 14, min: 2, max: 50 },
+        { key: 'period', name: 'period', label: 'RSI Period', type: 'number', default: 14, min: 2, max: 50 },
         {
           key: 'oversold',
+          name: 'oversold',
           label: 'Oversold Threshold',
           type: 'number',
           default: 30,
@@ -307,6 +310,7 @@ export const enContent: LanguageContent = {
         },
         {
           key: 'overbought',
+          name: 'overbought',
           label: 'Overbought Threshold',
           type: 'number',
           default: 70,
@@ -331,9 +335,10 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', label: 'Period', type: 'number', default: 20, min: 5, max: 100 },
+        { key: 'period', name: 'period', label: 'Period', type: 'number', default: 20, min: 5, max: 100 },
         {
           key: 'num_std',
+          name: 'num_std',
           label: 'Std Dev Multiplier',
           type: 'number',
           default: 2.0,
@@ -358,10 +363,11 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'fast_period', label: 'Fast Period', type: 'number', default: 12, min: 2, max: 100 },
-        { key: 'slow_period', label: 'Slow Period', type: 'number', default: 26, min: 5, max: 200 },
+        { key: 'fast_period', name: 'fast_period', label: 'Fast Period', type: 'number', default: 12, min: 2, max: 100 },
+        { key: 'slow_period', name: 'slow_period', label: 'Slow Period', type: 'number', default: 26, min: 5, max: 200 },
         {
           key: 'signal_period',
+          name: 'signal_period',
           label: 'Signal Period',
           type: 'number',
           default: 9,
@@ -387,9 +393,10 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', label: 'KDJ Period', type: 'number', default: 9, min: 2, max: 100 },
+        { key: 'period', name: 'period', label: 'KDJ Period', type: 'number', default: 9, min: 2, max: 100 },
         {
           key: 'oversold',
+          name: 'oversold',
           label: 'Oversold Threshold',
           type: 'number',
           default: 20,
@@ -398,6 +405,7 @@ export const enContent: LanguageContent = {
         },
         {
           key: 'overbought',
+          name: 'overbought',
           label: 'Overbought Threshold',
           type: 'number',
           default: 80,

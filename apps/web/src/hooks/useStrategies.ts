@@ -7,11 +7,13 @@ import type { StrategyRow, StrategyParam } from '../appData';
 function mapParam(api: ApiStrategyParam): StrategyParam {
   return {
     key: api.key,
+    name: api.key,
     label: api.label,
     type: api.type as StrategyParam['type'],
     default: api.default,
     min: api.min,
     max: api.max,
+    range: api.min !== undefined && api.max !== undefined ? [api.min, api.max] : undefined,
     options: api.options,
     chartRelevant: api.chart_relevant,
     uiConstraints: api.ui_constraints as StrategyParam['uiConstraints'],

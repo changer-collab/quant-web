@@ -1834,3 +1834,33 @@ lint_error
   - 新增字段全为可选（`?`），旧 report 读取 Zero 破坏
   - ConfigSnapshot.category/subcategory/hash 的提取路径：process.payload.configSnapshot → mapper metadata → report 顶层字段
 ---
+
+## [2026-07-03 02:08:37] - Iteration 5
+
+- Exit code: 0
+- Stories remaining: 9
+- **Detected issues:**
+```
+vitest_fail
+lint_error
+build_fail
+```
+
+## [2026-07-03 10:01] — story-5a (Phase 8a 类型层 — 前端 types.ts + appData.ts 参数类型迁移到 camelCase target contract)
+- **修改的文件**:
+  - `apps/web/src/data/types.ts` — UIConstraint 字段全 camelCase（target_field→targetField, target_value→targetValue, action_value→actionValue）；StrategyParam 新增 `name`(required) + `range?:[number,number]`，保留 `key`/`min`/`max` 为 deprecated 字段（`@deprecated` JSDoc）；BacktestReportFull 新增 `strategyCategory?`/`strategySubcategory?`/`configHash?` 可选字段
+  - `apps/web/src/data/en.ts` — 5 策略 13 个 StrategyParam 对象添加 `name:` 字段（值与 key 相同）
+  - `apps/web/src/data/zh.ts` — 5 策略 13 个 StrategyParam 对象添加 `name:` 字段
+  - `apps/web/src/hooks/useStrategies.ts` — mapParam() 返回对象添加 `name: api.key` 和 `range` 字段
+- **验证**:
+  - `npx tsc --noEmit` → 仅预存 error（strategy-grid.tsx 未跟踪文件 ResearchModeId + config-panel.tsx target_field 待 story-6a 修复）
+  - `npx vitest run` → 93/93 passed（14 files）
+  - `pnpm lint` → 0 errors
+  - `pnpm build` → 3.24s 成功
+- **Doc Sync**: no docs update needed because this is pure frontend type declaration layer alignment (types.ts + appData.ts) — adding camelCase fields while deprecating old ones. No API schema, DB schema, architectural boundary, or behavioral contract changes.
+- **后续迭代注意事项：**
+  - UIConstraint 的 `target_field`/`target_value`/`action_value` 已完全移除（无 deprecated 别名），组件使用这些字段需等 story-6a 迁移到 `targetField`/`targetValue`/`actionValue`
+  - StrategyParam 的 `key`/`min`/`max` 保留为 deprecated 字段，组件在 story-6a/b/c 迁移到 `name`/`range` 前可继续使用
+  - BacktestReportFull 新增可选字段 (`strategyCategory?`/`strategySubcategory?`/`configHash?`) 与 API story-4 对齐
+  - useStrategies.ts mapParam 现在将 `api.key` 映射到 `name` 和 `range`（从 min/max 派生），确保 API 数据正确桥接
+---

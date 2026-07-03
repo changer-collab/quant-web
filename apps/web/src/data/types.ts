@@ -132,12 +132,12 @@ export type StrategySubcategory =
   | 'e2e_ai_timeseries'
   | 'event_sentiment_factor';
 
-/** UI 约束条件（与 Python UIConstraint 对齐） */
+/** UI 约束条件（与 Python UIConstraint 对齐，字段为 camelCase） */
 export interface UIConstraint {
   kind: 'disable_when' | 'require_when' | 'set_default_when' | 'range_when';
-  target_field: string;
-  target_value: unknown;
-  action_value?: unknown;
+  targetField: string;
+  targetValue: unknown;
+  actionValue?: unknown;
 }
 
 export interface NavItem {
@@ -170,12 +170,19 @@ export interface AppState {
 }
 
 export interface StrategyParam {
+  /** @deprecated 使用 `name` 替代 */
   key: string;
+  /** 参数名（主字段，替代 key） */
+  name: string;
   label: string;
   type: 'number' | 'string' | 'boolean' | 'select';
   default: number | string | boolean;
+  /** @deprecated 使用 `range` 替代 */
   min?: number;
+  /** @deprecated 使用 `range` 替代 */
   max?: number;
+  /** 参数取值范围（替代 min/max） */
+  range?: [number, number];
   options?: string[];
   /** 是否在 K 线预览中显示（与 Python chart_relevant 对齐） */
   chartRelevant?: boolean;
@@ -1142,6 +1149,12 @@ export interface BacktestReportFull {
 
   status: string;
   generatedAt: string;
+  /** 策略分类（与 API BacktestReportFull.category 对齐） */
+  strategyCategory?: string;
+  /** 策略子分类（与 API BacktestReportFull.subcategory 对齐） */
+  strategySubcategory?: string | null;
+  /** 配置快照 hash（与 API BacktestReportFull.configHash 对齐） */
+  configHash?: string;
 }
 
 /** 报告 Tab ID */
