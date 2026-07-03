@@ -1887,3 +1887,37 @@ build_fail
   - `PersistedConfigResponse` 的 `config_json`/`hash`/`updated_at` 废弃字段在 story-6b 迁移完成后可移除
   - `tsc --noEmit` 当前有 2 个预存错误（config-panel.tsx target_field + strategy-grid.tsx ResearchModeId），均为本 story scope 外
 ---
+## [2026-07-02 - Iteration 7]
+
+- Exit code: 0
+- Stories remaining: 7
+- **Detected issues:**
+```
+vitest_fail
+pytest_fail
+lint_error
+```
+---
+
+## [2026-07-03 10:26] - story-6a (Phase 8b — ConfigPanel 组件对齐新 API wire)
+- **修改的文件：**
+  - `apps/web/src/components/config-panel.tsx` — 完整迁移到 camelCase：
+    - 所有 `param.key` → `param.name`（~11处渲染引用 + 工具函数）
+    - `c.target_field`/`c.target_value` → `c.targetField`/`c.targetValue`（isDisabled/isRequired）
+    - `chartRelevantParams` useMemo 使用 `p.name` 代替 `p.key`
+    - `handleSave` 改用新 `saveStrategyConfig(name, category, subcategory, params, expectedHash?)` 签名
+    - 新增 `configHash` state，保存成功后调用 `setConfigHash(result.configSnapshot.hash)`
+  - `apps/web/tests/setup.ts` — Mock PUT /config 返回 `{saved: true, configSnapshot: {strategy, params, hash}}` 对齐 `ApiConfigSaveResponse`
+- **CATEGORY_SUBCATEGORIES 补齐：** `index_enhancement`∈`factor_based`、`event_sentiment_factor`∈`transitional`
+- **Doc Sync**: no docs update needed because this is internal component migration (param.key→name, uiConstraints camelCase, saveStrategyConfig new signature). No API schema, DB schema, architectural boundary, or behavioral contract changes. The plan already documents the migration goal.
+- **验证：**
+  - `grep 'p\\.key' config-panel.tsx` → 无匹配 ✅
+  - `grep 'target_field\\|target_value\\|action_value' config-panel.tsx` → 无匹配 ✅
+  - `npx tsc --noEmit` → 仅预存 2 个 out-of-scope 错误 ✅
+  - `npx vitest run` → 93/93 passed（14 files）✅
+  - `pnpm lint` → 0 errors（11 预存 warnings）✅
+- **后续迭代注意事项：**
+  - handleSave 现在发送 `expectedHash` 作为乐观锁，初始为空字符串时 `configHash || undefined` 不发送 expectedHash
+  - 旧 `saveStrategyConfig` 签名分支（`typeof categoryOrConfig === 'object'`）在 story-6b/c 迁移完后可移除
+  - configHash 当前仅存储状态，story-6b WorkspacePage 接入后可用来做同步检测
+---

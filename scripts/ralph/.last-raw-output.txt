@@ -1,34 +1,69 @@
-﻿Let me continue reading progress.txt and check the current state:The highest priority `passes: false` story is **story-17** (Phase 5c 鈥?Worker diagnostics-handler fail-closed). The last iteration 16 tried it and failed with `vitest_fail` and `lint_error`. Let me first check the current state of the code.Now I have a clear picture of the codebase patterns. Let me implement story-17 鈥?change diagnostics-handler.ts to fail-closed and add unit tests.Good, the handler is updated. Now let me create the unit test file.Good. Now let me create the unit test file for diagnostics-handler:Now let me run the tests to verify:All 36 worker tests passed (including 6 new diagnostics-handler tests). Now let me run the full quality checks:Lint: 0 errors (only 11 pre-existing warnings). Now run full tests:All 10 packages passed tests. Now build:All quality checks pass. Let me check for AGENT.md and then execute Doc Sync Gate:The AGENT.md doesn't need updating 鈥?the fail-closed pattern is already the same pattern BacktestHandler uses, and no new architectural knowledge was introduced.
+﻿濂界殑锛岀幇鍦ㄦ垜鏈夊畬鏁寸殑涓婁笅鏂囦簡銆傝鎴戝厛璇诲彇闇€瑕佷慨鏀圭殑鏂囦欢鏉ヤ簡瑙ｅ綋鍓嶇姸鎬併€?
+---
 
-Now let me execute Doc Sync Gate and update the files:
+**鍒嗘瀽涓婁竴杞け璐ワ紙Iteration 6锛?*锛氫笂涓€杞皾璇曚簡 story-5b锛圥hase 8a 瀹㈡埛绔眰锛夛紝澶辫触鍘熷洜鏄?`vitest_fail` + `pytest_fail`銆傞渶瑕佹煡鐪嬪綋鍓嶅疄鐜版潵鐞嗚В闂鎵€鍦ㄣ€?
+**褰撳墠鐘舵€?*锛?- 鍒嗘敮锛歚ralph/backend-sync-realign-phase6-9` 鉁?- 宸插畬鎴愶細story-1~5a锛堝潎涓?`passes: true`锛?- 寰呭畬鎴愭渶楂樹紭鍏堢骇锛?*story-5b**锛坧riority 7, Phase 8a 瀹㈡埛绔眰锛?
+---
 
-**Doc Sync**: no docs update needed because this is purely internal worker handler refactoring (remove echo fallback, fail-closed on Python errors) 鈥?no API schema, DB schema, architectural boundary, or public behavioral contract changes. The fail-closed pattern is consistent with BacktestHandler's existing behavior (already catches `!result.ok` and throws). No AGENT.md update needed since the diagnostics handler wasn't documented in its "宸插疄鐜? list and the behavioral change follows existing patterns.
+寮€濮嬪疄鐜?**story-5b**銆傚厛璋冪爺褰撳墠4涓狝PI瀹㈡埛绔枃浠讹細Let me also check the API-side `PersistedConfigResponse` type and the test files to understand the expected contract:Now let me look at the test setup and any tests that test the API clients:鐜板湪鎴戝鏁翠釜浠ｇ爜搴撴湁浜嗗畬鏁寸殑鐞嗚В銆傝鎴戝疄鐜?story-5b 鐨勬敼鍔細Now let me update `diagnostics.ts` to add error handling:Now update `preview.ts` to add error handling (signature unchanged per acceptance criteria):Now let me check for any callers that would be affected by the return type change:Now let me run the quality checks:I need to fix two issues: the `.catch()` type in tasks.ts and the backward-compat fields in `PersistedConfigResponse`:The remaining tsc errors are **pre-existing** and out of scope for this story:
+- `config-panel.tsx` 鈥?`target_field`/`target_value` 鈫?will be fixed in story-6a
+- `strategy-grid.tsx` 鈥?untracked file referencing removed `ResearchModeId`
 
-Now let me update prd.json and progress.txt:Now commit and push:Network is unreachable (GitHub connection issue). The commit is saved locally 鈥?will push when connectivity resumes.
+My changes introduced no new tsc errors. Let me run the tests:All **93/93 tests passed**. Now run lint and build:All quality checks pass:
+- **tsc**: No new errors (pre-existing 2 errors are out of scope)
+- **ESLint**: 0 errors
+- **Tests**: 93/93 passed (14 files)
+- **Build**: Successful (3.29s)
 
-Let me check the remaining state:## 鉁?Story-17 瀹屾垚
-
-**Phase 5c 鈥?Worker diagnostics-handler fail-closed锛堢Щ闄?echo fallback锛?*
-
-### 淇敼鐨勬枃浠?| 鏂囦欢 | 鍙樻洿 |
+Now let me do a grep verification for the `params` field removal in tasks.ts and run API tests:鍏ㄩ儴妫€楠岄€氳繃锛?
+- **web tests**: 93/93 passed
+- **API tests**: 109/109 passed (鏃犲洖褰?
+- **lint**: 0 errors
+- **build**: 鎴愬姛 (3.29s)
+- **grep 楠岃瘉** `params:` 瀛楁宸蹭粠 `submitBacktest` payload 涓Щ闄?鉁?
+鐜板湪鎵ц Doc Sync Gate锛岀劧鍚庢彁浜わ細No docs reference this change 鈥?it's internal API client signature alignment. Now let me commit:Now update `prd.json` to mark story-5b as `passes: true`:Now append the progress log:Commit successful. Let me push:## 鏁呬簨 5b 瀹屾垚 鉁?
+### 淇敼鐨勬枃浠?
+| 鏂囦欢 | 鏀瑰姩 |
 |------|------|
-| `apps/worker/src/handlers/diagnostics-handler.ts` | 绉婚櫎 echo fallback 鈫?fail-closed (throw on error) |
-| `apps/worker/tests/diagnostics-handler.test.ts` | **鏂板缓** 鈥?6 涓祴璇曡鐩栨墍鏈?fail-closed 璺緞 |
-| `scripts/ralph/prd.json` | story-17 鈫?`passes: true` |
-| `scripts/ralph/progress.txt` | 杩藉姞 story-17 杩涘害 |
+| `apps/web/src/api/strategies-config.ts` | `PersistedConfigResponse` 鏂扮被鍨嬶紙persisted+configSnapshot + 杩囨浮鏈熸棫瀛楁锛夛紱`saveStrategyConfig` 鍙岀鍚嶏紙鏂扮鍚?`(name,category,subcategory,params,expectedHash?)` + 鏃х鍚嶅悜鍚庡吋瀹癸級锛涙墍鏈夊嚱鏁?catch 閿欒澶勭悊 |
+| `apps/web/src/api/tasks.ts` | `submitBacktest` payload 绉婚櫎椤跺眰 `params` 瀛楁锛沜atch鈫抈{id:'',status:'failed'}` |
+| `apps/web/src/api/diagnostics.ts` | `fetchDiagnostic`/`fetchDiagnosticsByStrategy` catch鈫抧ull/[] |
+| `apps/web/src/api/preview.ts` | 绛惧悕涓嶅彉锛堝凡绗﹀悎 contract锛夛紝鏃犳敼鍔?|
 
-### 璐ㄩ噺妫€鏌?- 鉁?`pnpm lint` 鈫?0 errors (浠呴瀛?warnings)
-- 鉁?`pnpm test` 鈫?10/10 鍖呭叏閮ㄩ€氳繃 (worker 36/36, 鍚?6 涓柊娴嬭瘯)
-- 鉁?`pnpm build` 鈫?5/5 successful
+### 楠岃瘉缁撴灉
 
-### 鍏抽敭鏀瑰姩
-1. **绉婚櫎 echo fallback**锛歚{ok:false}` 鈫?`throw Error(result.error?.message ?? 'Python diagnostics failed')`
-2. **绌烘暟鎹娴?*锛歚{ok:true,data:undefined}` 鈫?`throw Error('empty diagnostics result')`
-3. **涓嶈嚜宸?try-catch**锛氱敱 main.ts `processTask` 缁熶竴 catch 鈫?璋冪敤 `/fail` 鏍囪浠诲姟 failed
-4. **鍒犻櫎**锛氭簮鐮佷腑涓嶅啀鍑虹幇 `'not implemented'` / `'echoing input'` 瀛楃涓?
-### 浠嶅緟澶勭悊
-- `story-18` (E2E 楠屾敹) 鈥?`passes: false`锛岀瓑寰呬笅涓€杞凯浠tories remaining: **story-18** (E2E 楠屾敹). Per the one-story-per-iteration rule, this iteration is complete. Next iteration will handle story-18.
+- **tsc --noEmit**: 鏃犳柊澧為敊璇紙浠?2 涓瀛?scope澶栭敊璇細config-panel.tsx target_field 鈫?story-6a锛宻trategy-grid.tsx ResearchModeId 鈫?宸插垹闄ゆ湭璺熻釜鏂囦欢锛?- **ESLint**: 0 errors
+- **web tests**: 93/93 鉁?- **API tests**: 109/109 鉁咃紙鏃犲洖褰掞級
+- **vite build**: 3.29s 鎴愬姛 鉁?
+### 鍏抽敭璁捐鍐崇瓥
 
-鈿狅笍 **娉ㄦ剰**锛欸it push 鍥犵綉缁滆繛鎺ラ棶棰樺け璐ワ紙鏃犳硶杩炴帴 github.com:443锛夈€傛彁浜ゅ凡鏈湴淇濆瓨锛坄43f45bd`锛夛紝闇€鍦ㄤ笅涓€杞帹閫併€?Stories remaining: **story-18** (E2E 楠屾敹). Per the one-story-per-iteration rule, this iteration is complete. Next iteration will handle story-18.
+1. **鍚戝悗鍏煎鍙岀鍚?*锛歚saveStrategyConfig` 閫氳繃 `categoryOrConfig: string | Record<string, unknown>` 鍒ゆ柇璋冪敤妯″紡锛屾棫璋冪敤 `(name, configPayload)` 璧板埌鏃у垎鏀笉鎶ラ敊
+2. **搴熷純瀛楁淇濈暀**锛歚PersistedConfigResponse` 淇濈暀 `config_json`/`hash`/`updated_at` 浣滀负 deprecated 瀛楁锛岀‘淇?workspace-page.tsx 璇?`res.config_json` 缂栬瘧閫氳繃锛坰tory-6b 杩佺Щ鍚庣Щ闄わ級
+3. **Error handling**锛歚fetchPreview` 涓嶆坊鍔?catch锛堢鍚嶄笉鍙橈紝璋冪敤鏂瑰凡鏈?try-catch锛?
+### 鍚庣画杩唬
 
-鈿狅笍 **娉ㄦ剰**锛欸it push 鍥犵綉缁滆繛鎺ラ棶棰樺け璐ワ紙鏃犳硶杩炴帴 github.com:443锛夈€傛彁浜ゅ凡鏈湴淇濆瓨锛坄43f45bd`锛夛紝闇€鍦ㄤ笅涓€杞帹閫併€
+- **story-6a** 灏嗘洿鏂?`config-panel.tsx: handleSave` 浣跨敤鏂扮鍚?- **story-6b** 灏嗘洿鏂?`workspace-page.tsx` 璇?`res.configSnapshot` 鏇夸唬 `res.config_json`
+- 涓嬩竴涓緟瀹屾垚锛?*story-6a** (Phase 8b 鈥?ConfigPanel 缁勪欢瀵归綈)
+## 鏁呬簨 5b 瀹屾垚 鉁?
+### 淇敼鐨勬枃浠?
+| 鏂囦欢 | 鏀瑰姩 |
+|------|------|
+| `apps/web/src/api/strategies-config.ts` | `PersistedConfigResponse` 鏂扮被鍨嬶紙persisted+configSnapshot + 杩囨浮鏈熸棫瀛楁锛夛紱`saveStrategyConfig` 鍙岀鍚嶏紙鏂扮鍚?`(name,category,subcategory,params,expectedHash?)` + 鏃х鍚嶅悜鍚庡吋瀹癸級锛涙墍鏈夊嚱鏁?catch 閿欒澶勭悊 |
+| `apps/web/src/api/tasks.ts` | `submitBacktest` payload 绉婚櫎椤跺眰 `params` 瀛楁锛沜atch鈫抈{id:'',status:'failed'}` |
+| `apps/web/src/api/diagnostics.ts` | `fetchDiagnostic`/`fetchDiagnosticsByStrategy` catch鈫抧ull/[] |
+| `apps/web/src/api/preview.ts` | 绛惧悕涓嶅彉锛堝凡绗﹀悎 contract锛夛紝鏃犳敼鍔?|
+
+### 楠岃瘉缁撴灉
+
+- **tsc --noEmit**: 鏃犳柊澧為敊璇紙浠?2 涓瀛?scope澶栭敊璇細config-panel.tsx target_field 鈫?story-6a锛宻trategy-grid.tsx ResearchModeId 鈫?宸插垹闄ゆ湭璺熻釜鏂囦欢锛?- **ESLint**: 0 errors
+- **web tests**: 93/93 鉁?- **API tests**: 109/109 鉁咃紙鏃犲洖褰掞級
+- **vite build**: 3.29s 鎴愬姛 鉁?
+### 鍏抽敭璁捐鍐崇瓥
+
+1. **鍚戝悗鍏煎鍙岀鍚?*锛歚saveStrategyConfig` 閫氳繃 `categoryOrConfig: string | Record<string, unknown>` 鍒ゆ柇璋冪敤妯″紡锛屾棫璋冪敤 `(name, configPayload)` 璧板埌鏃у垎鏀笉鎶ラ敊
+2. **搴熷純瀛楁淇濈暀**锛歚PersistedConfigResponse` 淇濈暀 `config_json`/`hash`/`updated_at` 浣滀负 deprecated 瀛楁锛岀‘淇?workspace-page.tsx 璇?`res.config_json` 缂栬瘧閫氳繃锛坰tory-6b 杩佺Щ鍚庣Щ闄わ級
+3. **Error handling**锛歚fetchPreview` 涓嶆坊鍔?catch锛堢鍚嶄笉鍙橈紝璋冪敤鏂瑰凡鏈?try-catch锛?
+### 鍚庣画杩唬
+
+- **story-6a** 灏嗘洿鏂?`config-panel.tsx: handleSave` 浣跨敤鏂扮鍚?- **story-6b** 灏嗘洿鏂?`workspace-page.tsx` 璇?`res.configSnapshot` 鏇夸唬 `res.config_json`
+- 涓嬩竴涓緟瀹屾垚锛?*story-6a** (Phase 8b 鈥?ConfigPanel 缁勪欢瀵归綈)

@@ -38,7 +38,7 @@ export const mockFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
     }
   } else if (method === 'PUT') {
     if (url.includes('/config')) {
-      body = { saved: true, hash: 'mock-hash' };
+      body = { saved: true, configSnapshot: { strategy: '', params: {}, hash: 'mock-hash' } };
     } else {
       body = { success: true };
     }

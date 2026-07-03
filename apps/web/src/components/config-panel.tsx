@@ -14,7 +14,7 @@ import s from '../styles/config-panel.module.css';
 // ─── 子分类隶属关系 ─────────────────────────────────────
 
 const CATEGORY_SUBCATEGORIES: Record<StrategyCategory, string[]> = {
-  factor_based: ['linear_multi_factor', 'ml_nonlinear_factor'],
+  factor_based: ['linear_multi_factor', 'ml_nonlinear_factor', 'index_enhancement'],
   non_factor: [
     'trend_cta',
     'arbitrage',
@@ -23,7 +23,7 @@ const CATEGORY_SUBCATEGORIES: Record<StrategyCategory, string[]> = {
     'event_driven',
     'e2e_ai_timeseries',
   ],
-  transitional: [],
+  transitional: ['event_sentiment_factor'],
 };
 
 // ─── Props ──────────────────────────────────────────────
@@ -46,7 +46,7 @@ function clamp(val: number, min: number, max: number): number {
 function buildInitialParams(params: StrategyParam[]): Record<string, unknown> {
   const map: Record<string, unknown> = {};
   for (const p of params) {
-    map[p.key] = p.default;
+    map[p.name] = p.default;
   }
   return map;
 }
@@ -55,7 +55,7 @@ function buildInitialParams(params: StrategyParam[]): Record<string, unknown> {
 function isDisabled(param: StrategyParam, allValues: Record<string, unknown>): boolean {
   if (!param.uiConstraints) return false;
   for (const c of param.uiConstraints) {
-    if (c.kind === 'disable_when' && allValues[c.target_field] === c.target_value) {
+    if (c.kind === 'disable_when' && allValues[c.targetField] === c.targetValue) {
       return true;
     }
   }
@@ -66,7 +66,7 @@ function isDisabled(param: StrategyParam, allValues: Record<string, unknown>): b
 function isRequired(param: StrategyParam, allValues: Record<string, unknown>): boolean {
   if (!param.uiConstraints) return false;
   for (const c of param.uiConstraints) {
-    if (c.kind === 'require_when' && allValues[c.target_field] === c.target_value) {
+    if (c.kind === 'require_when' && allValues[c.targetField] === c.targetValue) {
       return true;
     }
   }
@@ -140,6 +140,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [configHash, setConfigHash] = useState<string>('');
 
   // 当 strategy 切换时重置所有表单状态
   const prevStrategyRef = useRef(strategy.id);
@@ -171,6 +172,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
       setSaving(false);
       setSaved(false);
       setError(null);
+      setConfigHash('');
     }
   }, [strategy.id, strategy.category, strategy.subcategory, strategy.params]);
 
@@ -181,8 +183,8 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
   const chartRelevantParams = useMemo(() => {
     const relevant: Record<string, unknown> = {};
     for (const p of strategy.params ?? []) {
-      if (p.chartRelevant && paramValues[p.key] !== undefined) {
-        relevant[p.key] = paramValues[p.key];
+      if (p.chartRelevant && paramValues[p.name] !== undefined) {
+        relevant[p.name] = paramValues[p.name];
       }
     }
     return relevant;
@@ -233,9 +235,8 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
     setSaving(true);
     setError(null);
     try {
-      const configPayload = {
-        strategy: strategy.name,
-        params: paramValues,
+      const fullParams: Record<string, unknown> = {
+        ...paramValues,
         ...(activeCategory === 'factor_based' && {
           factorPool,
           preprocessing: {
@@ -260,9 +261,18 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
           mappingTarget,
         }),
       };
-      const result = await saveStrategyConfig(strategy.name, configPayload);
-      if (result.saved) {
+      const result = await saveStrategyConfig(
+        strategy.name,
+        activeCategory,
+        activeSubcategory,
+        fullParams,
+        configHash || undefined
+      );
+      if (result && result.saved) {
         setSaved(true);
+        if (result.configSnapshot?.hash) {
+          setConfigHash(result.configSnapshot.hash);
+        }
         setError(null);
       } else {
         setError(ui.configPanelSaveError ?? 'Save failed');
@@ -352,7 +362,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
               const required = isRequired(param, paramValues);
               return (
                 <div
-                  key={param.key}
+                  key={param.name}
                   className={`${s.paramRow} ${disabled ? s.paramRowDisabled : ''}`}
                 >
                   <span className={s.paramLabel}>
@@ -365,18 +375,18 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
                         <input
                           type="checkbox"
                           className={s.checkbox}
-                          checked={!!paramValues[param.key]}
-                          onChange={(e) => handleParamChange(param.key, e.target.checked)}
+                          checked={!!paramValues[param.name]}
+                          onChange={(e) => handleParamChange(param.name, e.target.checked)}
                         />
                         <span className={s.checkboxLabel}>
-                          {paramValues[param.key] ? 'On' : 'Off'}
+                          {paramValues[param.name] ? 'On' : 'Off'}
                         </span>
                       </div>
                     ) : param.type === 'select' ? (
                       <select
                         className={s.select}
-                        value={String(paramValues[param.key] ?? '')}
-                        onChange={(e) => handleParamChange(param.key, e.target.value)}
+                        value={String(paramValues[param.name] ?? '')}
+                        onChange={(e) => handleParamChange(param.name, e.target.value)}
                       >
                         {(param.options ?? []).map((opt) => (
                           <option key={opt} value={opt}>
@@ -392,8 +402,8 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
                           min={param.min ?? 0}
                           max={param.max ?? 100}
                           step={Number.isInteger(param.default) ? 1 : 0.1}
-                          value={Number(paramValues[param.key] ?? 0)}
-                          onChange={(e) => handleParamChange(param.key, Number(e.target.value))}
+                          value={Number(paramValues[param.name] ?? 0)}
+                          onChange={(e) => handleParamChange(param.name, Number(e.target.value))}
                         />
                         <input
                           type="number"
@@ -401,14 +411,14 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
                           min={param.min ?? 0}
                           max={param.max ?? 100}
                           step={Number.isInteger(param.default) ? 1 : 0.1}
-                          value={Number(paramValues[param.key] ?? 0)}
+                          value={Number(paramValues[param.name] ?? 0)}
                           onChange={(e) => {
                             const v = clamp(
                               Number(e.target.value),
                               param.min ?? -Infinity,
                               param.max ?? Infinity
                             );
-                            handleParamChange(param.key, v);
+                            handleParamChange(param.name, v);
                           }}
                         />
                       </div>
@@ -416,8 +426,8 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
                       <input
                         type="text"
                         className={s.textInput}
-                        value={String(paramValues[param.key] ?? '')}
-                        onChange={(e) => handleParamChange(param.key, e.target.value)}
+                        value={String(paramValues[param.name] ?? '')}
+                        onChange={(e) => handleParamChange(param.name, e.target.value)}
                       />
                     )}
                   </div>
