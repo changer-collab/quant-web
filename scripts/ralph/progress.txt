@@ -1864,3 +1864,26 @@ build_fail
   - BacktestReportFull 新增可选字段 (`strategyCategory?`/`strategySubcategory?`/`configHash?`) 与 API story-4 对齐
   - useStrategies.ts mapParam 现在将 `api.key` 映射到 `name` 和 `range`（从 min/max 派生），确保 API 数据正确桥接
 ---
+
+## [2026-07-03 02:16:40] - Iteration 6
+
+## [2026-07-03 10:25] — story-5b (Phase 8a 客户端层 — 4 API client 签名对齐 API 新契约)
+- **修改的文件**:
+  - `apps/web/src/api/strategies-config.ts` — `ApiConfigResponse`→`PersistedConfigResponse`（persisted+configSnapshot + 过渡期兼容旧 config_json/hash/updated_at）；`saveStrategyConfig` 支持新旧双签名（新签名: (name,category,subcategory,params,expectedHash?) body={category,subcategory,params,expectedHash}；旧签名向后兼容）；所有函数 catch→返回结构化错误/null
+  - `apps/web/src/api/tasks.ts` — `submitBacktest` payload 移除 `params` 顶层字段（grep 确认无 params 残留）；error handling: catch→{id:'',status:'failed'}
+  - `apps/web/src/api/diagnostics.ts` — `fetchDiagnostic`/`fetchDiagnosticsByStrategy` 添加 catch→null/[] error handling
+  - `apps/web/src/api/preview.ts` — 签名不变（已符合 contract），无改动
+- **Doc Sync**: no docs update needed because this story only aligns 4 frontend API client signatures (strategies-config.ts/tasks.ts/diagnostics.ts/preview.ts) with the already-implemented API backend contracts (Phase 3c config route + Phase 5a task validation + story-3 DiagnosticResultWire). No API schema, DB schema, architectural boundary, or behavioral contract changes. The existing backward-compat fields (config_json/hash/updated_at) are retained in the PersistedConfigResponse type for component migration in story-6a/b/c.
+- **验证**:
+  - `npx tsc --noEmit`: 无新增错误（仅预存 config-panel.tsx target_field + strategy-grid.tsx ResearchModeId — 均为上一故事已存在的 scope 外问题）
+  - `npx eslint apps/web/src/api/`: 0 errors
+  - `npx vitest run`: 93/93 passed（14 files）
+  - `npx vite build`: 3.29s 成功
+  - `cd apps/api && npx vitest run`: 109/109 passed（14 files，无回归）
+- **后续迭代注意事项：**
+  - story-6a (ConfigPanel 组件对齐) 依赖本 story 的 `saveStrategyConfig` 新签名，需要将 `handleSave` 调用改为 `saveStrategyConfig(name, category, subcategory, params, expectedHash)`
+  - story-6b (WorkspacePage) 依赖本 story 的 `fetchStrategyConfig` 新返回类型，需要将 `res.config_json` 改为 `res.configSnapshot.params`
+  - 向后兼容的双签名模式（`categoryOrConfig: string | Record<string, unknown>`）在 story-6a 迁移完成后可移除旧签名分支
+  - `PersistedConfigResponse` 的 `config_json`/`hash`/`updated_at` 废弃字段在 story-6b 迁移完成后可移除
+  - `tsc --noEmit` 当前有 2 个预存错误（config-panel.tsx target_field + strategy-grid.tsx ResearchModeId），均为本 story scope 外
+---
