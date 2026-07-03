@@ -1921,3 +1921,28 @@ lint_error
   - 旧 `saveStrategyConfig` 签名分支（`typeof categoryOrConfig === 'object'`）在 story-6b/c 迁移完后可移除
   - configHash 当前仅存储状态，story-6b WorkspacePage 接入后可用来做同步检测
 ---
+
+## [2026-07-03 10:45] - story-6b (Phase 8c — WorkspacePage + workspace.tsx 对齐新 API wire)
+- **修改的文件：**
+  - `apps/web/src/components/workspace-page.tsx`:
+    - loadConfig: `res.config_json` → `res.configSnapshot`（对齐 `PersistedConfigResponse` 新契约）
+    - diagnostics 空态: `diagnosticReady` 但无数据时显示"暂无诊断数据"（非白屏 fallback）
+  - `apps/web/src/components/workspace.tsx`:
+    - `param.key` → `param.name`（3 处：React key、输入框 value 索引、onChange 更新索引）
+  - `apps/web/tests/workspace-page.test.tsx`:
+    - Mock `fetchStrategyConfig` 返回 `PersistedConfigResponse` 新 shape（含 `persisted` + `configSnapshot` 字段）
+- **无需改动的任务（已是正确状态）：**
+  - submitBacktest payload 已无顶层 params（story-5b 已处理）
+  - diagnostics 渲染已使用真实 API DiagnosticResultWire data（story-21 已处理）
+- **验证：**
+  - `grep 'param\\.key' workspace.tsx` → 无匹配 ✅
+  - `grep 'config_json' workspace-page.tsx` → 无匹配 ✅
+  - `npx tsc --noEmit` → 仅预存 2 个 out-of-scope 错误 ✅
+  - `npx vitest run` → 93/93 passed（14 files）✅
+  - `npx eslint apps/web/src/components/workspace-page.tsx apps/web/src/components/workspace.tsx` → 0 errors ✅
+  - `npx vite build` → 3.16s 成功 ✅
+- **Doc Sync**: no docs update needed because this is internal component migration (workspace-page fetchStrategyConfig config_json→configSnapshot + workspace.tsx param.key→param.name) within the existing component tree. No API schema, DB schema, architectural boundary, or behavioral contract changes. The plan already documents the migration goal from story-6b.
+- **后续迭代注意事项：**
+  - story-6c (Phase 8d KlineChart+Table+Grid) 是下一个最高优先级未完成故事
+  - 旧 `fetchStrategyConfig` 返回值中的 `config_json` deprecated 字段在 story-6b 迁移完成后可考虑移除
+  - diagnostics 空态使用 `language` prop 实现中/英文切换

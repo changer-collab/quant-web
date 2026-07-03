@@ -341,7 +341,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     configDefaultsApplied.current = false;
     fetchStrategyConfig(strategy.name)
       .then((res) => {
-        setConfigSnapshot(res ? { strategy: strategy.name, params: res.config_json } : null);
+        setConfigSnapshot(res?.configSnapshot ?? null);
       })
       .catch((err) => {
         console.warn('Failed to fetch strategy config:', err);
@@ -591,6 +591,13 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     }
 
     if (!diagnosticData) {
+      if (diagnosticReady) {
+        return (
+          <div className={s.emptyState}>
+            {language === 'zh' ? '暂无诊断数据' : 'No diagnostic data available'}
+          </div>
+        );
+      }
       return null;
     }
 

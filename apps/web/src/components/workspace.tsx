@@ -125,16 +125,16 @@ function WorkspaceMockup({
               />
             </div>
             {(selectedStrategy.params ?? []).map((param) => (
-              <div className={workspace.configItem} key={param.key}>
+              <div className={workspace.configItem} key={param.name}>
                 <span className={workspace.configLabel}>{param.label}</span>
                 <input
                   type={param.type === 'number' ? 'number' : 'text'}
-                  value={String(backtestConfig.params[param.key] ?? param.default)}
+                  value={String(backtestConfig.params[param.name] ?? param.default)}
                   onChange={(e) => {
                     const val = param.type === 'number' ? Number(e.target.value) : e.target.value;
                     onConfigChange({
                       ...backtestConfig,
-                      params: { ...backtestConfig.params, [param.key]: val },
+                      params: { ...backtestConfig.params, [param.name]: val },
                     });
                   }}
                   className={workspace.configInput}

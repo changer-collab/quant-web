@@ -19,6 +19,8 @@ vi.mock('../src/api/diagnostics', () => ({
 
 vi.mock('../src/api/strategies-config', () => ({
   fetchStrategyConfig: vi.fn().mockResolvedValue({
+    persisted: true,
+    configSnapshot: { strategy: 'dual_ma', params: { symbol: '000001', timeframe: '1h', initialCash: 2_000_000 } },
     config_json: { symbol: '000001', timeframe: '1h', initialCash: 2_000_000 },
     hash: 'hash',
     updated_at: 1,
