@@ -1802,3 +1802,35 @@ lint_error
   - story-4 (report metadata) 现在解除阻塞（story-3a + story-3b 均完成），可开始实施
   - `_build_strategy` 函数签名不变，仍接受 `(name, params)`，params=None 时默认构造
 ---
+
+## [2026-07-03 02:03:44] - Iteration 4
+
+- Exit code: 0
+- Stories remaining: 10
+- **Detected issues:**
+```
+vitest_fail
+lint_error
+```
+---
+
+## [2026-07-03 10:35] — story-4 (Phase 7b — report mapper + BacktestResultProcessor 传递 category/subcategory/configHash)
+- **修改的文件**:
+  - `apps/api/src/types.ts` — BacktestReportFull 新增 `strategyCategory?/strategySubcategory?/configHash?` 可选字段
+  - `apps/api/src/services/report-mapper.ts` — mapBacktestResultToReport metadata 新增 `category?/subcategory?/configHash?` 可选参数，赋值到 report 顶层字段
+  - `apps/api/src/services/result-processors/backtest-result-processor.ts` — 从 `ctx.task.payload.configSnapshot` 提取 category/subcategory/hash 传入 mapper
+  - `apps/api/tests/services/report-mapper.test.ts` — 新增 2 个测试：传入→字段有值；不传→undefined
+  - `apps/api/tests/services/result-processors.test.ts` — 新增 1 个测试：configSnapshot category/subcategory/hash 流到 report 元数据
+- **验证**:
+  - `cd apps/api && npx tsc --noEmit` → 编译通过
+  - `cd apps/api && npx vitest run tests/services/report-mapper.test.ts` → 10/10 passed（含 2 个新测试）
+  - `cd apps/api && npx vitest run tests/services/result-processors.test.ts` → 8/8 passed（含 1 个新测试）
+  - `cd apps/api && pnpm --filter @quant/api test` → 109/109 passed（14 files）
+  - `pnpm lint` → 0 errors
+  - API build → 通过（web build 预存 strategy-grid.tsx ResearchModeId 错误，与本 story 无关）
+- **Doc Sync**: no docs update needed because this is internal API type enrichment with purely optional backward-compatible fields — no API schema, DB schema, architectural boundary, or behavioral contract changes. The AGENT.md already documents the ResultProcessor registry pattern from story-5. No `docs/plans/*` or `docs/superpowers/specs/*` files reference this specific behavior.
+- **后续迭代注意事项：**
+  - story-5a (Phase 8a 前端类型层) 依赖 story-4 的 BacktestReportFull 新字段已满足，可开始实施
+  - 新增字段全为可选（`?`），旧 report 读取 Zero 破坏
+  - ConfigSnapshot.category/subcategory/hash 的提取路径：process.payload.configSnapshot → mapper metadata → report 顶层字段
+---
