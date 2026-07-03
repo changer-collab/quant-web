@@ -1695,3 +1695,22 @@ pytest_fail
 lint_error
 ```
 ---
+
+# Branch changed to ralph/backend-sync-realign-phase6-9
+
+## [2026-07-03 09:48] — story-1 (Phase 2 延后 — API strategy route mapMeta camelCase param wire + deprecated 双字段)
+- **修改的文件**:
+  - `apps/api/src/routes/strategy.ts` — mapMeta() 新增 `name`(主字段, 取 p.key) + `range:[p.min??0,p.max??0]`(替代 min/max 平铺) + `chartRelevant`(取 chart_relevant) + `uiConstraints`(子字段 targetField/targetValue/actionValue camelCase)；保持 `key/min/max/chart_relevant/ui_constraints` deprecated 字段
+  - `apps/api/tests/routes/strategy.test.ts` — 更新所有 mock 数据含 chart_relevant/ui_constraints；新增 camelCase 字段断言 + deprecated 字段断言；GET /:name 验证 shape 一致性
+- **验证**:
+  - `cd apps/api && npx vitest run tests/routes/strategy.test.ts` → 7/7 passed
+  - `cd apps/api && npx vitest run` → 106/106 passed（14 文件）
+  - `cd apps/api && npx tsc --noEmit` → 编译通过
+  - `pnpm lint` → 0 errors（仅预存 11 web + 3 dc warnings）
+  - Web build 预存失败：`strategy-grid.tsx` 引用已删除的 `ResearchModeId`（残留 untracked 文件，本 story scope 外）
+- **Doc Sync**: no docs update needed because this story only transforms the API response shape in mapMeta() — adding camelCase fields while retaining deprecated snake_case fields for backward compatibility. No API schema, DB schema, architectural boundary, or behavioral contract changes.
+- **后续迭代注意事项：**
+  - story-2 (Phase 6.3 transitional 诊断算法) 是下一个未完成 story，不依赖本 story
+  - Web build 失败是预存的 `strategy-grid.tsx` 未跟踪文件问题，不影响 API 层
+  - `strategy-grid.tsx` 显示为 `??` (untracked)，之前应已被删除但 branch 切换时可能被恢复
+---

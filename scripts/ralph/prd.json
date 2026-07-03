@@ -1,7 +1,7 @@
 {
-  "feature": "backend-sync-realign",
-  "branchName": "ralph/backend-sync-realign",
-  "description": "整合主线切片 2（18 story，高质量细粒度，Phase 2-5）。Phase 2 canonical taxonomy 5 故事（Python→API→前端 lockstep）→ Phase 3 ConfigSnapshot 7 故事（类型→Service→Route→DB→双 Repo）→ Phase 4 Preview 2 故事（校验+合并）→ Phase 5 Task/Worker 3 故事（验证+fail-closed）→ E2E 验收。不覆盖 Phase 6（transitional 算法）/Phase 7（回测 E2E，留后续切片）。整个切片不打断前端运行时：bar shape 留旧名、backtest handler 保留 params fallback（WARN deprecated）、config route 双 shape 兼容。",
+  "feature": "backend-sync-realign-phase6-9",
+  "branchName": "ralph/backend-sync-realign-phase6-9",
+  "description": "整合主线切片 3（14 story，Phase 2 延后项 + Phase 6-9 收尾，每个 story 单文件/单关注点）。Phase 2 延后：API param wire → camelCase → Phase 6.3 transitional 诊断算法 → Phase 7a Worker 去 fallback → Phase 7a Python 对齐 snapshotParams → Phase 7b report metadata → Phase 8a 前端类型+客户端 → Phase 8b ConfigPanel → Phase 8c WorkspacePage → Phase 8d KlineChart+Grid+Table → Phase 9a CLI listStrategies → Phase 9b API strategy-sync PythonBridge → Phase 9c Worker 死队列删除 → E2E 验收。",
   "qualityChecks": {
     "js": "pnpm lint && pnpm test && pnpm build",
     "python": "cd packages/strategy-runtime && python -m pytest -v && cd ../strategies && python -m pytest -v"
@@ -9,317 +9,244 @@
   "userStories": [
     {
       "id": "story-1",
-      "title": "Phase 2a — Python StrategySubcategory 枚举迁移到 canonical 10 值",
-      "description": "**实测**: types.py:89-102 StrategySubcategory 仍是旧 10 值。NONLINEAR_ML='nonlinear_ml'/HIGH_FREQUENCY='high_frequency'/MEAN_REVERSION/TAIL_RISK_HEDGING 需删/改。真实 8 策略只用 TREND_CTA/E2E_AI_TIMESERIES/LINEAR_MULTI_FACTOR（全是目标态稳定值），零引用。\n\n**任务**:\n1. types.py StrategySubcategory:保留 LINEAR_MULTI_FACTOR/TREND_CTA/ARBITRAGE/MACRO_QUANT/EVENT_DRIVEN/E2E_AI_TIMESERIES;改名 NONLINEAR_ML→ML_NONLINEAR_FACTOR('ml_nonlinear_factor')/HIGH_FREQUENCY→HFT_MICROSTRUCTURE('hft_microstructure');删除 MEAN_REVERSION/TAIL_RISK_HEDGING;新增 INDEX_ENHANCEMENT('index_enhancement')/EVENT_SENTIMENT_FACTOR('event_sentiment_factor')。\n2. 更新 test_strategy_categories.py:断言 canonical 10 存在+旧 4 不存在。\n3. grep -rn packages/ 确认无残留引用旧成员。\n\nINDEX_ENHANCEMENT/EVENT_SENTIMENT_FACTOR 仅补枚举入口，不建新策略。",
+      "title": "Phase 2 延后 — API strategy route mapMeta 输出 camelCase param wire（含 deprecated 双字段）",
+      "description": "**单文件关注点**: apps/api/src/routes/strategy.ts 的 mapMeta() 函数。\n\n**当前**: mapMeta(:37-48) 直接透传 Python 的 snake_case 字段名到 HTTP response——`key/min/max/chart_relevant/ui_constraints`，UIConstraint 子字段也是 `target_field/target_value/action_value`。\n\n**目标**: Plan §1.2 contract——`name`(非 key)、`range:[number,number]`(替代 min/max)、`chartRelevant`/`uiConstraints`/`targetField`/`targetValue`/`actionValue` 全 camelCase。\n\n**任务**:\n1. 只改 strategy.ts 的 mapMeta() 函数（~30 行），不改 strategy-sync.ts 的 Python 端。\n2. 每个 param 输出：`name`(新主字段，取 p.key 值) + `range:[p.min??0, p.max??0]`(替代 min/max 平铺) + `chartRelevant`(取 chart_relevant) + `uiConstraints`(子字段改名)。\n3. 短期双字段兼容：同时保留 `key/min/max/chart_relevant/ui_constraints` deprecated 字段（与 name 同值），旧前端不崩溃。\n4. 更新 strategy.test.ts：断言每个 param 含 `name`/`range`/`chartRelevant`/`uiConstraints` camelCase + deprecated `key` 存在。",
       "acceptanceCriteria": [
-        "StrategySubcategory 恰好 canonical 10 成员，值字符串:linear_multi_factor/index_enhancement/ml_nonlinear_factor/trend_cta/arbitrage/hft_microstructure/macro_quant/event_driven/e2e_ai_timeseries/event_sentiment_factor",
-        "访问 StrategySubcategory.MEAN_REVERSION→AttributeError（枚举不存在该成员）",
-        "grep packages/ 无 HIGH_FREQUENCY/NONLINEAR_ML/MEAN_REVERSION/TAIL_RISK_HEDGING 残留",
-        "现有 8 策略 meta 构造不报错（category/subcategory 用 enum 成员，改名自动跟随）",
-        "cd packages/strategy-runtime && python -m pytest -v 通过；cd ../strategies && python -m pytest -v 通过"
+        "GET /api/strategies 每个 param 含 `name`(非空 string) + deprecated `key`(与 name 同值)",
+        "param 含 `range:[number,number]`，min=max=0 时 range=[0,0]",
+        "param 顶级 camelCase: `chartRelevant`、`uiConstraints`",
+        "每个 UIConstraint: `targetField`(非 target_field)、`targetValue`(非 target_value)、`actionValue`(非 action_value)",
+        "DEPRECATED 字段仍存在: `key`/`min`/`max`/`chart_relevant`/`ui_constraints`（短期过渡）",
+        "GET /api/strategies/:name 与列表项 shape 一致",
+        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test -- tests/routes/strategy.test.ts 通过"
       ],
-      "agent": "strategy-runtime-agent",
+      "agent": "api-agent",
       "priority": 1,
       "passes": true
     },
     {
       "id": "story-2",
-      "title": "Phase 2b — API types.ts StrategySubcategory union + strategy route workflowReady 收敛",
-      "description": "**实测**: API types.ts:336-346 union 旧 10 值；routes/strategy.ts:30 与 :58 两处各自内联 workflowReady=`category==='transitional'||subcategory!=null`，重复且不符合 plan 的 canonical 成员校验。\n\n**任务**:\n1. types.ts StrategySubcategory union→canonical 10 值（与 story-1 逐字一致）。\n2. routes/strategy.ts 提取共享 isWorkflowReady(cat,sub):subcategory∈canonical 10 值集且 category∈canonical 3→true;subcategory=null→false。消除两处内联 `subcategory!==null`。\n3. 参数映射保持现状（key/min/max/chart_relevant/ui_constraints snake_case 不动）。\n4. strategy.test.ts 更新/新增用例。",
+      "title": "Phase 6.3 — transitional/event_sentiment_factor 诊断真实算法（替换 stub）",
+      "description": "**单文件关注点**: packages/strategy-runtime/quantforge_strategy/commands/diagnostics/transitional.py。\n\n**当前**: transitional.py:29-43 返回硬编码全零 stub（sentiment_curve 不存在，返回 factor 风格的 ic_series/layered_returns 全零）。\n\n**任务**:\n1. 实现 sentiment event 加载：从 configSnapshot.params.dataSource 加载事件数据，缺省用价格波动率代理 sentiment score。\n2. 实现 exponential decay scoring：half_life 从 configSnapshot.params.sentiment_decay_half_life（默认 5 天）。\n3. 实现 outlier checks：z-score >3σ 标记为 outlier。\n4. 实现 target factor mapping：sentiment score 与 target_factor_pool 各因子的 Spearman 相关性。\n5. 输出 type='transitional' 结果：sentiment_curve([{ts,score}])、mapping_metrics({factor_id:correlation})、outlier_count、validation_passed(bool)。\n6. 无 data_source 且无价格→emit warning+返回空结果（非崩溃）。\n7. 创建/更新 test_diagnostics_transitional.py。",
       "acceptanceCriteria": [
-        "API StrategySubcategory union 恰为 canonical 10 值，与 Python types.py 逐字一致",
-        "GET / 与 GET /:name 的 workflowReady 由同一 isWorkflowReady() helper 计算，不再有重复内联 `subcategory!==null`",
-        "curl GET /api/strategies → subcategory='trend_cta' 策略 workflowReady=true；subcategory=null sizer workflowReady=false",
-        "策略列表不出现 nonlinear_ml/high_frequency/mean_reversion/tail_risk_hedging",
-        "失败路径：未知 subcategory 值 → workflowReady=false，不抛异常",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过；pnpm build 通过"
+        "transitional.py 不再返回硬编码全零 stub；sentiment_curve 为 [{ts,score}] 数组",
+        "mapping_metrics 返回 {string:number}，key 为 target_factor_pool 因子 ID",
+        "decay_half_life 参数生效：half_life=3 快于 half_life=10",
+        "无数据→返回结构化空结果（type='transitional'字段存在，数组为空），不抛异常",
+        "test_diagnostics_transitional.py: 正常流程 + 缺数据 + decay 参数 + outlier 检测各 1 条",
+        "cd packages/strategy-runtime && python -m pytest tests/test_diagnostics_transitional.py -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 无回归"
       ],
-      "agent": "api-agent",
+      "agent": "strategy-runtime-agent",
       "priority": 2,
-      "dependsOn": ["story-1"],
-      "passes": true
+      "dependsOn": [],
+      "passes": false
     },
     {
-      "id": "story-3",
-      "title": "Phase 2c — 前端 types.ts StrategySubcategory union + strategySubcategoryLabels 同步",
-      "description": "**实测**: web/types.ts:123-133 union 旧 10 值；strategySubcategoryLabels（types.ts ~474）是 `Record<StrategySubcategory,string>` 硬对象——union 改名/删键不同步会直接断 tsc 编译。\n\n**任务**:\n1. types.ts StrategySubcategory union→canonical 10 值（与 story-2 逐字一致）。\n2. strategySubcategoryLabels 键集同步：删 mean_reversion/tail_risk_hedging 键，加 index_enhancement/event_sentiment_factor 键。\n3. appData.ts 重新导出新 union 和 labels。\n\n仅改 types 层，不改 mock 数据或组件。",
+      "id": "story-3a",
+      "title": "Phase 7a Worker — backtest-handler 移除 payload.params fallback，单一 snapshotParams 字段",
+      "description": "**单文件关注点**: apps/worker/src/handlers/backtest-handler.ts。\n\n**当前**: 52-54 行保留 `payload.params ?? {}` fallback + WARN deprecated 日志。68 行发双写 `snapshotParams`+`strategyParams`。\n\n**任务**:\n1. 删除 payload.params fallback 分支：configSnapshot 缺失时 throw Error('configSnapshot required for backtest')。\n2. 移除请求中 legacy `strategyParams` 字段，只发 `config.snapshotParams`。\n3. 更新 backtest-handler.test.ts: 新增 configSnapshot 缺失→throw 测试 + snapshotParams 单字段测试。\n\n只改 handler + 测试，不改 Python。",
       "acceptanceCriteria": [
-        "web StrategySubcategory union 恰为 canonical 10 值，与 API types.ts 逐字一致",
-        "strategySubcategoryLabels 键集 = canonical 10，旧键 mean_reversion/tail_risk_hedging 已删除，新键 index_enhancement/event_sentiment_factor 存在且有 label 值",
-        "cd apps/web && npx tsc --noEmit 无错误（union 改完后 Record 类型编译通过）",
-        "pnpm --filter @quant/web test 通过；pnpm build 通过"
+        "grep 'payload\\.params' apps/worker/src/handlers/backtest-handler.ts 无匹配（已删除）",
+        "grep 'strategyParams' apps/worker/src/handlers/backtest-handler.ts 无匹配（已删除）",
+        "configSnapshot 缺失→handler throw Error('configSnapshot required for backtest')→main.ts catch→标记 failed",
+        "configSnapshot.params={period:20}→bridge 请求 config.snapshotParams={period:20}（单一字段）",
+        "unit test: 无 configSnapshot→throw; 有 configSnapshot.params→bridge 请求含 snapshotParams",
+        "cd apps/worker && npx tsc --noEmit 无错误；pnpm --filter @quant/worker test -- tests/backtest-handler.test.ts 通过"
       ],
-      "agent": "frontend-agent",
+      "agent": "worker-agent",
       "priority": 3,
-      "dependsOn": ["story-1"],
-      "passes": true
+      "dependsOn": [],
+      "passes": false
+    },
+    {
+      "id": "story-3b",
+      "title": "Phase 7a Python — backtest.py 优先读 snapshotParams，降级 strategyParams 兼容",
+      "description": "**单文件关注点**: packages/strategy-runtime/quantforge_strategy/commands/backtest.py。\n\n**当前**: _build_strategy(:67) 只读 `config.get('strategyParams')`，不知 snapshotParams 存在。\n\n**任务**:\n1. _build_strategy 优先读 `config.get('snapshotParams')`，降级 `config.get('strategyParams')`（兼容过渡期 Worker 双写）。\n2. _run_single 日志输出 `config.get('category','unknown')`。\n3. 无任何 params→策略 cls() 默认构造（不抛 KeyError）。\n4. 更新 test_backtest_command_market_rules.py: snapshotParams 优先 + strategyParams 降级 + 无参默认构造。",
+      "acceptanceCriteria": [
+        "config.snapshotParams={period:5}→策略构造用 period=5（优先读）",
+        "config 无 snapshotParams 但有 strategyParams={period:10}→降级读 strategyParams",
+        "config 无 snapshotParams 也无 strategyParams→策略 cls() 无参实例化（不崩溃）",
+        "_run_single 日志含 category 信息",
+        "Python test: 三条路径均有覆盖",
+        "cd packages/strategy-runtime && python -m pytest tests/test_backtest_command_market_rules.py -v 通过"
+      ],
+      "agent": "strategy-runtime-agent",
+      "priority": 4,
+      "dependsOn": [],
+      "passes": false
     },
     {
       "id": "story-4",
-      "title": "Phase 2d — 前端 en.ts/zh.ts mock 数据迁移旧 subcategory 值",
-      "description": "**实测**: en.ts/zh.ts mock StrategyRow 含 mean_reversion(:204,225,266,336)、high_frequency(:284,349,362)、nonlinear_ml(:388)。虽然 story-3 改了枚举值，mock 数据是纯字符串字面量（非类型绑定），不阻断 build——但运行时 labels 查不到旧 key 会显示空白。\n\n**任务**:\n1. en.ts/zh.ts 所有 mock StrategyRow subcategory 重映射:high_frequency→hft_microstructure、nonlinear_ml→ml_nonlinear_factor；mean_reversion 无 canonical 对应→trend_cta（最近的 non_factor 择时风格）。tail_risk_hedging 在 mock 中定义为 label 但无 strategy 行使用，label 删（story-3 已删 labels 键），确认无残留。\n2. grep apps/web/src/data 确认旧字符串全消失。\n\n不改组件文件。",
+      "title": "Phase 7b — report mapper + BacktestResultProcessor 传递 category/subcategory/configHash",
+      "description": "**单模块关注点**: apps/api/src/services/report-mapper.ts + backtest-result-processor.ts（同 services 目录，~60 行改动）。\n\n**当前**: report-mapper.ts metadata 参数无 category/subcategory/hash。BacktestResultProcessor 不提取 configSnapshot 元数据。\n\n**任务**:\n1. report-mapper.ts mapBacktestResultToReport metadata 参数加 category?/subcategory?/configHash?（可选，不影响旧调用）。\n2. BacktestReportFull 类型加 strategyCategory?/strategySubcategory?/configHash?（API types.ts 同步）。\n3. BacktestResultProcessor 从 `ctx.task.payload.configSnapshot` 提取 category/subcategory/hash 传入 mapper。\n4. 添加 mapper unit test: 传 category='factor_based'+subcategory='linear_multi_factor'→report 含对应字段；不传→字段 undefined。\n\n仅改 report 层，不改 Worker/Python/前端。",
       "acceptanceCriteria": [
-        "grep 'mean_reversion|high_frequency|nonlinear_ml|tail_risk_hedging' apps/web/src/data/en.ts 无匹配",
-        "grep 'mean_reversion|high_frequency|nonlinear_ml|tail_risk_hedging' apps/web/src/data/zh.ts 无匹配",
-        "mock 数据中 hft_microstructure/ml_nonlinear_factor/trend_cta 行数与迁移前一致（仅改名，不删行）",
+        "mapBacktestResultToReport metadata 参数可接收 category?/subcategory?/configHash?",
+        "BacktestReportFull 含 strategyCategory?/strategySubcategory?/configHash? 可选字段",
+        "BacktestResultProcessor.process 传入 category/subcategory/hash 到 mapper→report 含对应值",
+        "mapper test: 传入→字段有值；不传→undefined（不破坏旧 report 读取）",
+        "report save 不因新增可选字段失败",
+        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过"
+      ],
+      "agent": "api-agent",
+      "priority": 5,
+      "dependsOn": ["story-3a", "story-3b"],
+      "passes": false
+    },
+    {
+      "id": "story-5a",
+      "title": "Phase 8a 类型层 — 前端 types.ts + appData.ts 参数类型迁移到 camelCase target contract",
+      "description": "**纯类型声明层**: apps/web/src/data/types.ts + appData.ts（2 个文件，不改任何 API client 或组件）。\n\n**types.ts 改动**:\n1. StrategyParam: 新增 `name` 字段（主字段，取原 key 值）+ `range?:[number,number]`（替代 min/max）。保留 `key`/`min`/`max` 为 deprecated 可选字段（组件继续用旧字段可编译，story-6a/b/c 逐步迁移）。\n2. UIConstraint: `target_field`→`targetField`、`target_value`→`targetValue`、`action_value`→`actionValue`。\n3. StrategyRow: params 字段类型改为 `StrategyParamDefWire[]`（挂载 story-1 API 的 camelCase wire）。\n4. 确认 ConfigSnapshot/DiagnosticResult/BacktestReportFull 已对齐（story-6/7/8 产物）。\n\n**appData.ts 改动**:\n5. 重新导出新类型：确保 UIConstraint/StrategyParam 的新字段名可通过 appData 访问（组件通常 import from appData）。\n\n不新增 API client 改动，不碰任何 .tsx 组件。deprecated 字段确保组件短期间不爆编译。",
+      "acceptanceCriteria": [
+        "types.ts StrategyParam 含 `name`(string,required) + deprecated `key`(string,optional) + `range?:[number,number]`",
+        "types.ts UIConstraint 字段全 camelCase: targetField/targetValue/actionValue（grep 'target_field|target_value|action_value' types.ts 无匹配）",
+        "types.ts StrategyCategory/StrategySubcategory 已为 canonical 10 值（story-3 完成，确认无退化）",
+        "appData.ts 导出 UIConstraint/StrategyParam/StrategyRow/ConfigSnapshot/DiagnosticResult 新类型",
+        "cd apps/web && npx tsc --noEmit 无错误（组件侧仍用 p.key/p.min → deprecated 字段不爆编译）",
+        "pnpm --filter @quant/web test 通过"
+      ],
+      "agent": "frontend-agent",
+      "priority": 6,
+      "dependsOn": ["story-1", "story-4"],
+      "passes": false
+    },
+    {
+      "id": "story-5b",
+      "title": "Phase 8a 客户端层 — 4 API client 签名对齐 API 新契约",
+      "description": "**纯 API client 签名层**: apps/web/src/api/ 下 4 个文件（strategies-config.ts + tasks.ts + diagnostics.ts + preview.ts），不改类型文件。\n\n**改动**:\n1. strategies-config.ts: ApiConfigResponse→PersistedConfigResponse（`{persisted:boolean,configSnapshot:ConfigSnapshot}`，不用 config_json/hash/updated_at）。saveStrategyConfig 签名改为 `(name:string,category:StrategyCategory,subcategory:StrategySubcategory,params:Record<string,unknown>,expectedHash?:string)`，body 为 `{category,subcategory,params,expectedHash}`。\n2. tasks.ts: submitBacktest payload 移除顶层 `params` 字段，只传 `{strategy,symbol,timeframe,configSnapshot,...}`。submitDiagnostics 同理。\n3. diagnostics.ts: fetchDiagnostic 返回类型对齐 DiagnosticResultWire（resultId/resultType/category/subcategory/configSnapshot/data/expiresAt/engineVersion）。\n4. preview.ts: 确认 fetchPreview 签名与 contract 一致（preview_params 字段名、bars 返回 shape）。\n\n不改类型文件和组件文件。API client 函数返回类型依赖 story-5a 的新类型。",
+      "acceptanceCriteria": [
+        "strategies-config.ts: fetchStrategyConfig 返回 PersistedConfigResponse（persisted+configSnapshot），不用 config_json/hash/updated_at",
+        "strategies-config.ts: saveStrategyConfig 签名 (name,category,subcategory,params,expectedHash?)，body={category,subcategory,params,expectedHash}",
+        "tasks.ts: submitBacktest payload 不含顶层 params（grep 'params:' submitBacktest 调用无 params 字段）",
+        "diagnostics.ts: fetchDiagnostic 返回类型含 resultId/resultType/category/subcategory/configSnapshot/data/expiresAt/engineVersion",
+        "preview.ts: fetchPreview 签名不变（当前已符合 contract），无需实际改动",
+        "失败路径: 所有 API client catch→返回结构化错误/null（调用方可判空，不抛未捕获异常）",
         "cd apps/web && npx tsc --noEmit 无错误；pnpm --filter @quant/web test 通过"
       ],
       "agent": "frontend-agent",
-      "priority": 4,
-      "dependsOn": ["story-3"],
-      "passes": true
+      "priority": 7,
+      "dependsOn": ["story-5a"],
+      "passes": false
     },
     {
-      "id": "story-5",
-      "title": "Phase 2e — 前端 config-panel + kline-chart 硬编码子分类字符串迁移",
-      "description": "**实测**: config-panel.tsx 子分类列表(~17-28 行)含 nonlinear_ml/high_frequency/mean_reversion，及 high_frequency 条件分支(:263 盘口深度、:620 渲染、:706 排除列表)。kline-chart.tsx 副图路由(:294-335 硬编码 mean_reversion/high_frequency/nonlinear_ml，:555-557 条件)。story-3 改了 union 但组件仍用硬编码字符串字面量，CASE 不匹配会导致功能静默失效（如 high_frequency 订单簿深度不显示）。\n\n**任务**:\n1. config-panel.tsx:所有旧子分类字符串→canonical 值（nonlinear_ml→ml_nonlinear_factor、high_frequency→hft_microstructure）；mean_reversion 分支→trend_cta（择时参数区复用，去掉均值回复专属逻辑）；tail_risk_hedging 分支移除。\n2. kline-chart.tsx:副图路由子分类条件同步改名/删。\n\n不改 types/labels/mock 数据（已由 story-3/4 完成）。",
+      "id": "story-6a",
+      "title": "Phase 8b — ConfigPanel 组件对齐新 API wire",
+      "description": "**单组件关注点**: apps/web/src/components/config-panel.tsx。\n\n**当前状态**: 使用 `p.key` 作参数字段名、`p.min/p.max` 作范围、`target_field/target_value` 读 uiConstraints、saveStrategyConfig 用旧签名 (name,config,hash)、子分类列表缺少 index_enhancement/event_sentiment_factor。\n\n**任务**:\n1. `p.key`→`p.name`，`param.key`→`param.name`（~20 处）。handleParamChange 用 name 索引 paramValues。\n2. uiConstraints 字段迁移到 camelCase: `c.target_field`→`c.targetField`、`c.target_value`→`c.targetValue`。\n3. handleSave 调 saveStrategyConfig(name, category, subcategory, params, expectedHash)，成功后 `setConfigHash(snapshot.hash)`。\n4. CATEGORY_SUBCATEGORIES 补齐: index_enhancement∈factor_based、event_sentiment_factor∈transitional。\n5. 失败路径：保存失败→显示错误 toast（不静默失败）。\n\n只改 config-panel.tsx，不改其他组件。",
       "acceptanceCriteria": [
-        "grep -n 'nonlinear_ml|high_frequency|mean_reversion|tail_risk_hedging' apps/web/src/components/config-panel.tsx 无匹配",
-        "grep -n 'nonlinear_ml|high_frequency|mean_reversion|tail_risk_hedging' apps/web/src/components/kline-chart.tsx 无匹配",
-        "config-panel 子分类列表显示 hft_microstructure/ml_nonlinear_factor/trend_cta（而非旧名）",
-        "kline-chart 副图按 canonical 子分类路由（trend_cta/arbitrage/hft_microstructure 等各自有对应副图），不因字符串不匹配渲染空白",
-        "失败路径：未知/新 canonical 子分类（如 index_enhancement）→渲染默认副图而非崩溃",
+        "grep 'p\\.key\\b' apps/web/src/components/config-panel.tsx 无匹配；全部为 p.name",
+        "grep 'target_field\\|target_value\\|action_value' apps/web/src/components/config-panel.tsx 无匹配；全部为 targetField/targetValue/actionValue",
+        "handleSave 调 saveStrategyConfig(name,category,subcategory,params,expectedHash)；保存后 configHash 更新",
+        "CATEGORY_SUBCATEGORIES 含 index_enhancement∈factor_based、event_sentiment_factor∈transitional",
+        "失败路径: saveStrategyConfig 异常→显示错误提示（非静默失败/白屏）",
+        "cd apps/web && npx tsc --noEmit 无错误；pnpm --filter @quant/web test 通过"
+      ],
+      "agent": "frontend-agent",
+      "priority": 8,
+      "dependsOn": ["story-5b"],
+      "passes": false
+    },
+    {
+      "id": "story-6b",
+      "title": "Phase 8c — WorkspacePage + workspace.tsx 对齐新 API wire",
+      "description": "**双文件关注点**: apps/web/src/components/workspace-page.tsx + workspace.tsx（同 workspace 域，~8 处 param.key 引用 + 加载/提交流程）。\n\n**当前状态**:\n- workspace-page.tsx: fetchStrategyConfig 返回旧 `ApiConfigResponse|null`、submitBacktest 传顶层 params、diagnostics 渲染用旧字段。\n- workspace.tsx: `param.key` 读 backtestConfig.params。\n\n**任务**:\n1. workspace-page.tsx mount: loadConfig 改调 fetchStrategyConfig→取 `configSnapshot`（非 config_json）。\n2. workspace-page.tsx submitBacktest: payload={strategy,symbol,timeframe,configSnapshot}，移除顶层 params。\n3. workspace-page.tsx diagnostics: 渲染真实 API DiagnosticResultWire data（ic_series/layered_returns/summary），无数据→显示空态。\n4. workspace.tsx: `param.key`→`param.name`（~4 处）。\n\n只改这两个文件。",
+      "acceptanceCriteria": [
+        "grep 'param\\.key' apps/web/src/components/workspace.tsx 无匹配；全部为 param.name",
+        "WorkspacePage mount: fetchStrategyConfig→{persisted,configSnapshot}→setConfigSnapshot(configSnapshot)",
+        "WorkspacePage submitBacktest payload={strategy,symbol,timeframe,configSnapshot}，grep 'params:' payload 构造无顶层 params",
+        "WorkspacePage diagnostics 渲染: 有 data→渲染 ic_series/layered_returns/summary；无 data→显示空态'暂无诊断数据'（非白屏）",
+        "失败路径: configSnapshot 加载失败→显示'暂无配置'（非崩溃/白屏）",
+        "cd apps/web && npx tsc --noEmit 无错误；pnpm --filter @quant/web test 通过"
+      ],
+      "agent": "frontend-agent",
+      "priority": 9,
+      "dependsOn": ["story-6a"],
+      "passes": false
+    },
+    {
+      "id": "story-6c",
+      "title": "Phase 8d — KlineChart + StrategyTable + StrategyGrid 对齐（preview adapter + param chip 迁移）",
+      "description": "**三文件机械改动**: kline-chart.tsx + strategy-table.tsx + strategy-grid.tsx（~5 处 param key 引用 + preview bar adapter）。\n\n**任务**:\n1. strategy-table.tsx:55 `p.key`→`p.name`（1 处 React key + 1 处显示）。\n2. strategy-grid.tsx:68 `p.key`→`p.name`（1 处 React key + 1 处显示）。\n3. kline-chart.tsx: preview bars adapter——若 API 返回旧 shape `{time,open,close,high,low,volume}` 先转为 `{ts,o,h,l,c,v}` 目标 shape 再渲染；若已是目标 shape 直通。\n4. kline-chart.tsx: 副图路由已迁移 canonical 值（story-5 完成），确认无旧 snake_case 子分类引用残留。\n5. 未知子分类→默认副图（不崩溃）。\n\n三个文件全为机械改动，不加新逻辑（kline-chart adapter 除外）。",
+      "acceptanceCriteria": [
+        "grep 'p\\.key' apps/web/src/components/strategy-table.tsx 无匹配",
+        "grep 'p\\.key' apps/web/src/components/strategy-grid.tsx 无匹配",
+        "KlineChart: 旧 bar {time,open,close,high,low,volume}→映射为 {ts,o,h,l,c,v} 正常渲染",
+        "KlineChart: 新 bar {ts,o,h,l,c,v} 直通渲染",
+        "KlineChart: 未知 canonical 子分类→默认副图（不崩溃/不白屏）",
         "cd apps/web && npx tsc --noEmit 无错误；pnpm --filter @quant/web test 通过；pnpm build 通过"
       ],
       "agent": "frontend-agent",
-      "priority": 5,
-      "dependsOn": ["story-3"],
-      "passes": true
-    },
-    {
-      "id": "story-6",
-      "title": "Phase 3a — API types.ts ConfigSnapshot 富化 + 三类 Param 接口",
-      "description": "**实测**: API types.ts ConfigSnapshot={strategy,params}(无 schemaVersion/category/hash)。Plan §1.3 要求含 schemaVersion/strategyVersion/category/subcategory/params/hash/updatedAt 及三类 category-specific params。\n\n**任务**:\n1. types.ts 新增 ConfigSchemaVersion=1。扩展 ConfigSnapshot:{schemaVersion,strategy,strategyVersion,category,subcategory,params,hash,updatedAt}。新字段可选 ?（兼容现有引用不强制全量赋值）。\n2. 定义 FactorBasedConfigParams(factor_pool/winsorize/neutralization/standardization/interaction_terms/max_interaction_order)、NonFactorConfigParams(lookback_window/hold_period/indicators/indicator_params/dynamic_params)、TransitionalConfigParams(data_source/sentiment_decay_half_life/target_factor_pool)。\n3. 现有引用 ConfigSnapshot 的代码（DiagnosticResultWire/DiagnosticResult 等）需检查：新字段 ? 可选不引发 tsc 报错；若某处用 `as ConfigSnapshot` 断言可能丢失新字段（运行时 undefined，不报错）。\n\n仅类型层，不改 service/route/DB。",
-      "acceptanceCriteria": [
-        "API ConfigSnapshot 含 schemaVersion(1|number)/strategy/strategyVersion/category/subcategory/params/hash/updatedAt",
-        "FactorBasedConfigParams 含 winsorize([number,number])/neutralization(string[])/standardization('zscore'|'quantile'|'rank')",
-        "NonFactorConfigParams 含 lookback_window/hold_period/indicators/indicator_params/dynamic_params",
-        "TransitionalConfigParams 含 data_source/sentiment_decay_half_life/target_factor_pool",
-        "cd apps/api && npx tsc --noEmit 无新增错误（现有引用用可选字段兼容）"
-      ],
-      "agent": "api-agent",
-      "priority": 6,
-      "dependsOn": ["story-2"],
-      "passes": true
-    },
-    {
-      "id": "story-7",
-      "title": "Phase 3a′ — 前端 types.ts ConfigSnapshot 镜像扩展",
-      "description": "**实测**: web/types.ts ConfigSnapshot={strategy,params},与 API 当前一致但落后 story-6 的富化版本。前端 DiagnosticResult/ConfigPanel/WorkspacePage 引用 ConfigSnapshot。\n\n**任务**:\n1. web/types.ts ConfigSnapshot 镜像 API 新结构（含 schemaVersion/strategyVersion/category/subcategory/hash/updatedAt）。\n2. 同步三类 Param 接口声明（FactorBasedConfigParams 等）。\n3. appData.ts 重新导出。\n4. 现有引用处（workspace-page.tsx 的 configSnapshot state、config-panel.tsx 的 configPayload）检查：旧代码只读 params 和 strategy，不改动。\n\n仅类型层，前端不产生新的 configSnapshot 构造（仍只传 {strategy,params}，新字段 undefined，API 侧 story-8 补默认值）。",
-      "acceptanceCriteria": [
-        "web ConfigSnapshot 字段名与嵌套与 API ConfigSnapshot 逐字一致（schemaVersion/strategyVersion/category/subcategory/params/hash/updatedAt）",
-        "appData.ts 导出 FactorBasedConfigParams/NonFactorConfigParams/TransitionalConfigParams",
-        "cd apps/web && npx tsc --noEmit 无新增错误（现有赋值 {strategy,params} 兼容，新字段 ?）",
-        "pnpm build 通过"
-      ],
-      "agent": "frontend-agent",
-      "priority": 7,
-      "dependsOn": ["story-3", "story-6"],
-      "passes": true
-    },
-    {
-      "id": "story-8",
-      "title": "Phase 3b — ConfigService：默认快照构建器 + canonical hash + getOrDefault + save(expectedHash)",
-      "description": "**实测**: config-service.ts:9-21 仅有 getConfig→null（无默认值）和 saveConfig(configJson,hash)（无 hash 冲突校验）。Plan 要求 GET 无配置时返回 defaults、PUT 校验 expectedHash 冲突→409、canonical JSON hash。\n\n**任务**:\n1. 新增 buildDefaultSnapshot(strategy,strategyVersion,category?)→ConfigSnapshot:用 SHA256(canonicalJSON({strategy,strategyVersion,category,params:{}})) 生成 hash,schemaVersion=1,updatedAt=Date.now()。canonical JSON = 键排序 + 无空格 的 JSON.stringify。\n2. getConfig→getOrDefault(strategy,strategyVersion):调用 repo 查 DB→有则 {persisted:true,configSnapshot};无→{persisted:false,configSnapshot:buildDefaultSnapshot(...)}。\n3. saveConfig→save(snapshot,expectedHash?):若 expectedHash 提供且 DB 当前 hash 不同→throw ConfigHashConflictError(含 currentHash,currentSnapshot);匹配或首存→repo.save+返回保存后 ConfigSnapshot。\n4. 导出 ConfigHashConflictError 类供 route 返回 409。\n5. 添加 service unit test 覆盖 default/hash 冲突/保存。",
-      "acceptanceCriteria": [
-        "buildDefaultSnapshot('dual_ma','1.0')→{schemaVersion:1,strategy:'dual_ma',strategyVersion:'1.0',category:'non_factor',params:{},hash 非空 16 位 hex,updatedAt≈now}",
-        "getOrDefault('dual_ma','1.0') 无 DB 数据→{persisted:false,configSnapshot:default};先 save→再 getOrDefault→{persisted:true,configSnapshot:保存值}",
-        "canonical hash 同内容同 hash（键序不影响），不同内容不同 hash",
-        "save(snapshot,expectedHash='sha256:old') 与 DB hash 不一致→throw ConfigHashConflictError;expectedHash=undefined→成功",
-        "失败路径：category=invalid→throw validation error；strategy=''(空)→throw",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过"
-      ],
-      "agent": "api-agent",
-      "priority": 8,
-      "dependsOn": ["story-6"],
-      "passes": true
-    },
-    {
-      "id": "story-9",
-      "title": "Phase 3c — Config routes GET/PUT 合约对齐（向后兼容旧 body）",
-      "description": "**实测**: config.ts GET 无配置返回 404；PUT 接受 {config,hash}。Plan 要求 GET 200(defaults)、PUT {category,subcategory,params,expectedHash}、hash 冲突 409。\n\n**任务**:\n1. GET /:name/config:调 configService.getOrDefault(name,version)。version 从 strategySyncService.syncFromPython() 查对应策略 meta.version 获得（若策略不在 registry→404）。始终 200，不返回 404。\n2. PUT /:name/config:支持旧 shape({config,hash})与新 shape({category,subcategory,params,expectedHash})。旧 shape 自动封装为 ConfigSnapshot(schemaVersion=1,category 从 registry 推导降级 non_factor,params=config,hash 用请求体的 hash)。新 shape 直接构造成 ConfigSnapshot。expectedHash offer→pass to save;无→save 不校验。\n3. PUT 响应:201+{saved:true,configSnapshot}（旧 client 收到 saved:true 仍兼容，加 configSnapshot 不影响）。hash 冲突→409+{error,currentHash,currentSnapshot}。\n4. 添加 route test 覆盖旧 body 兼容性+GET defaults+hash 冲突。",
-      "acceptanceCriteria": [
-        "GET /api/strategies/dual_ma/config(无保存)→200,body={persisted:false,configSnapshot:{schemaVersion:1,category:'non_factor',params:{},hash,...}}",
-        "PUT /config body={config:{period:20},hash:'sha256:abc'}→201+{saved:true,configSnapshot}（旧 client 的修复不打断）",
-        "PUT body={category:'non_factor',subcategory:'trend_cta',params:{period:20},expectedHash:'...'}→201（新 shape 对称处理）",
-        "PUT expectedHash 与 DB 当前 hash 不一致→409+{error:'Config hash conflict',currentHash,currentSnapshot}",
-        "失败路径:不存在的 strategy→404;category='trash_cat'→422;空 body→400",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过；pnpm build 通过"
-      ],
-      "agent": "api-agent",
-      "priority": 9,
-      "dependsOn": ["story-8"],
-      "passes": true
-    },
-    {
-      "id": "story-10",
-      "title": "Phase 3d — DB schema additive migration（strategy_configs + diagnostic_results 加列）",
-      "description": "**实测**: strategy_configs 列=strategy/config_json/hash/updated_at(缺 category/subcategory/schemaVersion)。diagnostic_results 列=id/task_id/strategy/category/config_snapshot/data_json/created_at(缺 subcategory/engineVersion/expiresAt)。\n\n**任务**:\n1. schema.ts strategyConfigs Drizzle def 加 category(text,notNull,'non_factor')/subcategory(text,nullable)/schemaVersion(integer,notNull,1)。\n2. schema.ts diagnosticResults Drizzle def 加 subcategory(text,nullable)/engineVersion(text,notNull,'legacy')/expiresAt(integer,notNull)。\n3. connection.ts 同步新增列（ALTER TABLE ADD COLUMN 或 IF NOT EXISTS 在 CREATE TABLE 内）。\n\n只加列不改名/删列（safe additive），所有新列 DEFAULT 或 nullable，旧 rows 不受影响。",
-      "acceptanceCriteria": [
-        "strategy_configs 表含 category(TEXT NOT NULL DEFAULT 'non_factor')/subcategory(TEXT)/schemaVersion(INTEGER NOT NULL DEFAULT 1)",
-        "diagnostic_results 表含 subcategory(TEXT)/engineVersion(TEXT NOT NULL DEFAULT 'legacy')/expiresAt(INTEGER NOT NULL)",
-        "旧 DB 文件（无新列）启动后 schema 增补列，SELECT 返回 DEFAULT 值而非 NULL/crash",
-        "sql.js 环境建表成功，无 native module 依赖引入",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过"
-      ],
-      "agent": "api-agent",
       "priority": 10,
-      "dependsOn": ["story-9"],
-      "passes": true
+      "dependsOn": ["story-6b"],
+      "passes": false
     },
     {
-      "id": "story-11",
-      "title": "Phase 3e — SqliteConfigRepo 读写新字段 + interfaces.ts 签名更新",
-      "description": "**实测**: SqliteConfigRepo.save 写 strategy/config_json/hash/updated_at 4 列，get 返回 {config_json,hash,updated_at} 扁平结构。现在 DB 有 category/subcategory/schemaVersion 新列（story-10），repo 需同步读写。\n\n**任务**:\n1. SqliteConfigRepo.save:接收 ConfigSnapshot 对象（含 category/subcategory/schemaVersion/strategyVersion），写 strategy/category/subcategory/schemaVersion/config_json/hash/updated_at 列。strategyVersion 写在 config_json 内或新增列均可（建议新增 strategy_version TEXT）。\n2. SqliteConfigRepo.get:返回 ConfigSnapshot 对象（读 category/subcategory/schemaVersion 列，缺省补 'non_factor'/null/1）。\n3. SqliteConfigHistoryRepo.append:同步记录 category/subcategory/schemaVersion/strategyVersion。\n4. interfaces.ts IConfigRepo.save 签名从 (strategy,configJson,hash) 更新为 (snapshot:ConfigSnapshot,expectedHash?)。updateStrategy 接口 get 返回类型从 StrategyConfig|null 改为 {persisted:boolean,configSnapshot:ConfigSnapshot}。\n5. 类型改动波及的调用处(config-service.ts/config.ts)需同步更新（story-8/9 的产出与之一致）。",
+      "id": "story-7a",
+      "title": "Phase 9a — Python CLI 注册 listStrategies NDJSON 命令",
+      "description": "**单文件关注点**: packages/strategy-runtime/quantforge_strategy/cli.py（+ 新 test 文件）。\n\n**任务**:\n1. cli.py _COMMANDS 注册 `listStrategies`→输出 NDJSON 策略元数据列表。\n2. NDJSON 字段用 camelCase（对齐 API wire）：name/category/subcategory/version/description/workflowReady/backtestable。params 输出 camelCase shape（与 story-1 的 mapMeta 输出一致）。\n3. 新建 test_cli_list_strategies.py: 断言输出至少 1 条策略、字段齐全。\n\n不改现有 backtest/diagnostics command 逻辑。",
       "acceptanceCriteria": [
-        "SqliteConfigRepo.save(snapshot) 写 category/subcategory/schemaVersion 列，get 回读 field-by-field 一致",
-        "SqliteConfigRepo.get 对旧 row(无新列)→category='non_factor'/subcategory=null/schemaVersion=1（mapper 补默认值）",
-        "configHistory 表记录含 strategy_version/category/subcategory（history list 返回含这些字段）",
-        "IConfigRepo 接口 save 参数为 ConfigSnapshot，get 返回 {persisted,configSnapshot}",
-        "cd apps/api && npx tsc --noEmit 无错误（repo 改后所有按接口编程的 service/route 编译通过）",
-        "pnpm --filter @quant/api test 通过"
+        "CLI --command listStrategies 输出 NDJSON，每行含 name/category/subcategory/version/description/workflowReady/backtestable（camelCase）",
+        "params 子数组每项含 name/range/chartRelevant/uiConstraints（与 API mapMeta 输出一致）",
+        "test_cli_list_strategies.py: 输出非空、字段名 camelCase、策略数≥1",
+        "cd packages/strategy-runtime && python -m pytest tests/test_cli_list_strategies.py -v 通过",
+        "cd packages/strategy-runtime && python -m pytest -v 无回归"
       ],
-      "agent": "api-agent",
+      "agent": "strategy-runtime-agent",
       "priority": 11,
-      "dependsOn": ["story-10"],
-      "passes": true
+      "dependsOn": [],
+      "passes": false
     },
     {
-      "id": "story-12",
-      "title": "Phase 3f — SqliteDiagnosticRepo 读写 subcategory/engineVersion/expiresAt",
-      "description": "**实测**: SqliteDiagnosticRepo.save 写 DiagnosticResult(id/taskId/strategy/category/configSnapshot/dataJson/createdAt),getById/listByStrategy 读同样字段。DB 已有新列（story-10）但 repo 未读写。\n\n**任务**:\n1. SqliteDiagnosticRepo.save:补写 subcategory/engineVersion/expiresAt 列。expiresAt=createdAt+7*24*3600*1000;engineVersion 从 result-processor 传入（缺省 'legacy'）。\n2. SqliteDiagnosticRepo.getById/listByStrategy:mapper 读新列，旧 row 缺省 engineVersion='legacy'/expiresAt=createdAt+7天/subcategory=null。\n3. IDiagnosticRepo 接口:DiagnosticResult 类型增加 subcategory:string|null/engineVersion:string/expiresAt:number 字段。\n4. diagnostics.ts route mapper(toWire)利用 repo 返回的新字段直接投影（不再静态补 expiresAt=createdAt+7），子类 subcategory 若为 null 保持 null。\n5. 波及:diagnostics-result-processor.ts 构造 DiagnosticResult 时传 subcategory（从 configSnapshot.subcategory 或降级 null）/engineVersion（从 result.data.engine_version 或 'legacy'）。",
+      "id": "story-7b",
+      "title": "Phase 9b — API strategy-sync.ts 用 PythonBridge 替换内联 Python script string",
+      "description": "**单文件关注点**: apps/api/src/services/strategy-sync.ts。\n\n**当前**: 55-100 行内联 Python heredoc script string→写 tempfile→exec 获取策略列表。\n\n**任务**:\n1. 用 PythonBridge.call({command:'listStrategies'}) → 解析 NDJSON → 返回 PythonStrategyMeta[]。\n2. 删除内联 script string 和 tempfile 逻辑。\n3. mapMeta 已在 story-1 改为输出 camelCase（CLI 直接输出 camelCase 后 mapMeta 可简化或变为 pass-through）。\n4. PythonBridge 不可用→返回 [] + console.warn（不抛异常，API 启动不崩溃）。\n5. 更新 strategy-sync test。\n\n只改这一个文件。",
       "acceptanceCriteria": [
-        "save(diagnosticResult)→DB row 含 subcategory/engineVersion/expiresAt,getById 回读一致",
-        "旧 row(无新列)→mapper 补 engineVersion='legacy'/expiresAt=createdAt+7天/subcategory=null（不抛异常）",
-        "diagnostics route GET /:resultId→response 含 engineVersion（永不为 undefined），expiresAt>createdAt",
-        "IDiagnosticRepo 签名含 subcategory/engineVersion/expiresAt",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过；pnpm build 通过"
+        "grep '\"\"\"' apps/api/src/services/strategy-sync.ts 无匹配（或非策略元数据用途）",
+        "syncFromPython 使用 PythonBridge.call({command:'listStrategies'}) 解析 NDJSON 返回策略列表",
+        "PythonBridge 不可用→返回 [] + console.warn（不抛异常→API 启动不崩溃）",
+        "GET /api/strategies 返回 shape 与 story-1 一致（字段名不变，底层来源从 inline script 改为 CLI）",
+        "cd apps/api && pnpm --filter @quant/api test 通过（strategy.test.ts 无回归）"
       ],
       "agent": "api-agent",
       "priority": 12,
-      "dependsOn": ["story-10"],
-      "passes": true,
-      "_runtime": {
-        "attempts": 1,
-        "lastError": null
-      }
+      "dependsOn": ["story-7a", "story-6c"],
+      "passes": false
     },
     {
-      "id": "story-13",
-      "title": "Phase 4a — Preview chart_relevant 参数校验→422",
-      "description": "**实测**: preview route 不做 preview_params 过滤，任意 key 均可传入（包括非图表相关参数）。Plan 要求非 chart_relevant 字段返回 422。\n\n**任务**:\n1. preview route 新增 validatePreviewParams(strategyName,preview_params):查 strategy registry meta(params 列表),若 preview_params 有任一 key 对应的 param 的 chart_relevant!==true→返回 422 {error:'preview_params contains non-chart-relevant fields',fields:[...]}。\n2. 若 preview_params 为空→跳过校验（空 params 不算违规）。\n3. 若策略不在 registry→404（不做校验）。\n4. 仅校验,不改变 PreviewService.computePreview 本身的逻辑。\n5. 添加 route test:chart_relevant=false 的参数被拒绝 422;chart_relevant=true 的通过。",
+      "id": "story-7c",
+      "title": "Phase 9c — 删除 Worker 死队列 queue.ts + 类型迁移",
+      "description": "**单模块关注点**: apps/worker/src/queue.ts 删除 + 类型迁移。\n\n**当前**: queue.ts（7834 bytes）定义 TaskRecord/TaskHandler/TaskEventHandler + better-sqlite3 本地队列实现。Worker main.ts 实际通过 HTTP poll `/api/internal/tasks/pending`。\n\n**任务**:\n1. 确认 TaskRecord/TaskHandler/TaskEventHandler 的所有引用方（rg 搜索）。\n2. 将这些类型定义移到 apps/worker/src/types.ts（当前已有 TaskType/TaskStatus/StreamEvent 在该文件）。\n3. 更新所有 import from './queue.js'→import from './types.js'。\n4. 删除 queue.ts。\n5. rg 'better-sqlite3' apps/worker/package.json: 若仅 queue.ts 使用则移除 dependency；若其他文件也用（如测试 fixture）则保留。\n6. 运行 worker tests 确认无回归。",
       "acceptanceCriteria": [
-        "策略 dual_ma 有 chart_relevant=false 的 param='offset',preview_params={offset:5}→422,body.fields=['offset']",
-        "chart_relevant=true 的 'period'→preview_params={period:20}→不触发 422,正常计算",
-        "preview_params={}→跳过校验,正常返回 preview",
-        "不存在的策略 → 404（不做校验，route 早返回）",
-        "失败路径：preview_params 含多个非 chart 字段→422 列出所有违规字段名",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过；pnpm build 通过"
+        "apps/worker/src/queue.ts 已删除（文件不存在）",
+        "TaskRecord/TaskHandler/TaskEventHandler 类型定义在 types.ts 中（grep 验证）",
+        "rg 'from.*\\./queue\\.js' apps/worker/src 无匹配（所有 import 已迁移到 types.ts）",
+        "Worker 编译通过：cd apps/worker && npx tsc --noEmit 无错误",
+        "rg 'better-sqlite3' apps/worker/package.json → 无匹配（仅当 queue.ts 独占时移除）",
+        "cd apps/worker && pnpm --filter @quant/worker test 通过（功能不退化）"
       ],
-      "agent": "api-agent",
+      "agent": "worker-agent",
       "priority": 13,
-      "dependsOn": ["story-9"],
-      "passes": true
+      "dependsOn": ["story-6c"],
+      "passes": false
     },
     {
-      "id": "story-14",
-      "title": "Phase 4b — Preview config 合并（saved/default configSnapshot.params 为 baseline）",
-      "description": "**实测**: preview route 只用 preview_params 调用 PreviewService，不合并已保存配置。如果用户已保存 config={period:20} 但只传 preview_params={offset:5}→computePreview 少收到 period=20。\n\n**任务**:\n1. preview route 执行 validatePreviewParams 后，从 configService.getOrDefault(strategyName,version) 获取 saved/default configSnapshot.params。用该 params 作 baseline→preview_params 覆盖（Object.assign 浅合即可）。合并后的 params 传给 PreviewService.computePreview。\n2. 若 configService 未注入（legacy app），降级只用 preview_params（日志 WARN），不崩溃。\n\n不改 PreviewService 本身。不改变 bar shape。",
+      "id": "story-8",
+      "title": "端到端验收 — 全链路 4 轨道验证（不改代码）",
+      "description": "启动 api+worker+web，按 4 条轨道逐项验收。仅验证，不改代码。发现问题按 Fault Investigation Order 逐层定位（API response→类型定义→前端请求→组件渲染）。\n\n**轨道 A — Param Wire**: API GET /api/strategies camelCase 字段完整性\n**轨道 B — Diagnostics**: transitional 真实算法输出 + fail-closed\n**轨道 C — Backtest E2E**: configSnapshot 必需→去 fallback→report metadata\n**轨道 D — 清理确认**: queue.ts 不存在、strategy-sync 用 PythonBridge\n**Tier 2**: 前端组件渲染无崩、类型锁步一致",
       "acceptanceCriteria": [
-        "已保存 config(params={period:20,offset:5}),preview_params={period:10}→合并后 params={period:10,offset:5}（客户端覆盖优先）",
-        "无保存 config→baseline 为 default configSnapshot.params={}→preview_params 全量生效",
-        "preview_params={}→只用 baseline params 计算（不因缺少参数而空白）",
-        "configService 未注入(undefined)→降级只用 preview_params,日志 WARN,不崩溃",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过；pnpm build 通过"
-      ],
-      "agent": "api-agent",
-      "priority": 14,
-      "dependsOn": ["story-9", "story-13"],
-      "passes": true
-    },
-    {
-      "id": "story-15",
-      "title": "Phase 5a — API 任务 payload ConfigSnapshot 校验",
-      "description": "**实测**: API task.ts POST handler 对 payload 零校验（裸透传）。Plan 要求 backtest/diagnostics 任务强制含 configSnapshot、拒绝顶层 params、校验 strategy 一致+canonical category。\n\n**任务**:\n1. task.ts 新增 validateTaskPayload(type,payload):\n  - backtest/diagnostics:configSnapshot 必须存在且含 strategy(非空)→否则 400。\n  - payload.configSnapshot.strategy 必须 === payload.strategy→否则 400(mismatch)。\n  - payload.configSnapshot.category 必须 ∈ canonical 3→否则 400。\n  - 顶层 payload.params 拒绝(在 configSnapshot.params 之外再传顶层 params→400)。\n  - collect:放行（不校验 configSnapshot）。factor_compute/factor_eval/ai_train:拒绝 400('not supported in this workflow')。\n2. 校验集成到 POST /api/tasks 路由。\n3. 添加 task route test 覆盖所有拒绝分支。",
-      "acceptanceCriteria": [
-        "POST /api/tasks type=backtest 无 configSnapshot→400,error 含 'configSnapshot required'",
-        "type=backtest,payload.strategy='dual_ma'≠configSnapshot.strategy='macd'→400,error 含 'strategy mismatch'",
-        "type=backtest,configSnapshot.category='mean_reversion'（非 canonical 3 值）→400",
-        "type=diagnostics,payload={params:{...},configSnapshot:{...}}→400,error 含 'params not allowed at top level'",
-        "type=collect→放行,不触发 configSnapshot 校验",
-        "失败路径:payload={} → 400（非 500/未捕获异常）",
-        "cd apps/api && npx tsc --noEmit 无错误；pnpm --filter @quant/api test 通过；pnpm build 通过"
-      ],
-      "agent": "api-agent",
-      "priority": 15,
-      "dependsOn": ["story-6"],
-      "passes": true,
-      "_runtime": {
-        "attempts": 2,
-        "lastError": null
-      }
-    },
-    {
-      "id": "story-16",
-      "title": "Phase 5b — Worker backtest-handler：传递 configSnapshot.category + 标记 params fallback deprecated",
-      "description": "**实测**: backtest-handler.ts:45 `payload.configSnapshot?.params ?? payload.params ?? {}` 保留顶层 params fallback，且 configSnapshot.category/subcategory 完全未传给 Python。Python backtest.py 不知道策略分类。\n\n**任务**:\n1. backtest-handler.ts 构造 PythonBridge 请求时新增 config.category=configSnapshot.category/config.subcategory=configSnapshot.subcategory,config.snapshotParams=configSnapshot.params（与现有 config.strategyParams 双写，Python 本切片仍读 strategyParams）。\n2. payload.params fallback 改为：先读 configSnapshot.params→有则用;无则读 payload.params→用但 emit WARN 'deprecated: payload.params will be removed, use configSnapshot.params'（不抛异常,不阻塞）。\n3. 添加 handler unit test:断言 config.snapshotParams/category/subcategory 出现在 PythonBridge 请求中。\n\n不改 Python backtest.py 读参逻辑（双写保证 Python 用旧字段 strategyParams 仍能跑）。",
-      "acceptanceCriteria": [
-        "backtest-handler 构造请求:config.category=configSnapshot.category,config.subcategory=configSnapshot.subcategory,config.snapshotParams=configSnapshot.params（除旧 strategyParams 外新增三个字段）",
-        "configSnapshot.params 存在时只用 configSnapshot.params（不读 payload.params）",
-        "configSnapshot 缺失时读 payload.params 但日志 WARN 'deprecated'，不崩溃",
-        "unit test:mock payload.configSnapshot.params={period:20}→bridge 请求 config.snapshotParams={period:20}、config.category='non_factor'",
-        "失败路径:configSnapshot=undefined,payload.params={period:10}→请求含 snapshotParams={period:10}+日志 WARN",
-        "cd apps/worker && npx tsc --noEmit 无错误；pnpm --filter @quant/worker test 通过；pnpm build 通过"
-      ],
-      "agent": "worker-agent",
-      "priority": 16,
-      "dependsOn": ["story-15"],
-      "passes": true
-    },
-    {
-      "id": "story-17",
-      "title": "Phase 5c — Worker diagnostics-handler fail-closed（移除 echo fallback）",
-      "description": "**实测**: diagnostics-handler.ts:51:58 在 Python 返回 !ok 或 !data 时 echo 输入（{rawPayload,note:'...not implemented, echoing input'}）→任务 completed（伪装成功）。Python factor/non_factor 诊断已全部真实算法（非 stub），echo 路径不再合理。\n\n**任务**:\n1. diagnostics-handler.ts:移除 echo fallback。streamCall/call 返回 {ok:false}→throw Error(UNCALLABLE_COMMAND 或 error.message);无 data→throw Error('empty diagnostics result')。\n2. handler 自己不 try-catch（由 main.ts processTask 的 catch 统一处理→调用 /fail 标记任务 failed）。\n3. 添加 handler unit test:mock bridge 返回 {ok:false}→handler throw;mock ok:true but data undefined→handler throw。\n\n不改 Python diagnostics 代码（它已经产出真实 data）。",
-      "acceptanceCriteria": [
-        "diagnostics handler PythonBridge 返回 {ok:false,error:{message:'boom'}}→throw Error('boom'),任务被 main.ts catch 标记 failed",
-        "返回 {ok:true,data:undefined}→throw Error('empty diagnostics result'),任务 failed",
-        "返回 {ok:true,data:{type:'factor_based',ic_series:[...]}}→正常返回 diagnostics data,任务 completed",
-        "handler 源码不再出现 'not implemented' / 'echoing input' 字符串",
-        "unit test 覆盖 fail-closed 两条路径（!ok / no data）",
-        "cd apps/worker && npx tsc --noEmit 无错误；pnpm --filter @quant/worker test 通过"
-      ],
-      "agent": "worker-agent",
-      "priority": 17,
-      "dependsOn": ["story-15"],
-      "passes": true
-    },
-    {
-      "id": "story-18",
-      "title": "端到端验收 — canonical taxonomy + configSnapshot + preview + task/worker 全链路一致",
-      "description": "启动 api+worker，跑通策略列表/配置读写/预览/诊断任务四条流程，验证 story-1~17 的契约改造全链路一致且无回归。仅验证，不改代码。若发现问题按 prd-generation.md Fault Investigation Order 逐层定位。\n\n**关键验证点**：\n- Taxonomy：Python/API/前端 canonical 10 值锁步一致，无旧值泄漏\n- Config：GET defaults/PUT 保存/hash 冲突/旧 body 兼容\n- Preview：chart_relevant 校验 422 + saved config 合并\n- Task：configSnapshot 强制校验/拒绝顶层 params\n- Worker：backtest handler 传 category/snapshotParams；diagnostics fail-closed\n- 前端：策略总览页/配置面板/K 线图不崩，标签中文无乱码",
-      "acceptanceCriteria": [
-        "Tier1 Taxonomy:grep 全代码库 nonlinear_ml/high_frequency/mean_reversion/tail_risk_hedging 仅出现在 docs/plan（代码/tests 中无踪）；Python+API+Web 三 union 逐字 canonical 10",
-        "Tier1 Config:GET /config(无保存)→200+persisted=false+defaults;PUT 旧 body {config,hash}→201;PUT 新 body {category,subcategory,params}→201;hash 冲突→409;不存在的策略→404",
-        "Tier1 Preview:POST /preview chart_relevant=false→422;preview_params 覆盖 saved config;bars 实际返回数据非空",
-        "Tier1 Task:POST /api/tasks backtest 缺 configSnapshot→400;含 configSnapshot→accepted;顶层 params→rejected",
-        "Tier1 Worker:回测 handler 请求含 snapshotParams/category;诊断 handler Python 失败→任务 failed（非 echo success）",
-        "Tier2 渲染:StrategyPage canonical 子分类分组展示 label 中文无乱码;KlineChart 预览 bars 渲染不崩;ConfigPanel 保存后 config 可回读;浏览器 console 无 JS/TS 异常",
-        "失败路径:无 configSnapshot 提交→400(非 500/白屏);Worker Python 崩溃→failed(非 completed+假数据);DB 无配置→GET 200+defaults(非 404/崩)",
-        "pnpm lint && pnpm test && pnpm build 全通过；cd packages/strategy-runtime && python -m pytest -v 通过；cd packages/strategies && python -m pytest -v 通过；若存在则 bash scripts/smoke-test.sh 通过"
+        "轨道 A: curl GET /api/strategies → 每个 param 含 name/range/chartRelevant/uiConstraints(targetField/targetValue) camelCase + deprecated key 存在",
+        "轨道 B: Python CLI diagnostics transitional → sentiment_curve 非空+mapping_metrics 非空（非硬编码 stub）",
+        "轨道 B: POST /api/tasks diagnostics 含 configSnapshot→accepted",
+        "轨道 C: POST /api/tasks backtest 缺 configSnapshot→400；Worker 无 configSnapshot→throw→failed",
+        "轨道 C: 回测成功→report 含 strategyCategory/strategySubcategory/configHash（非 undefined）",
+        "轨道 D: apps/worker/src/queue.ts 不存在；GET /api/strategies 非空且 API 日志无 inline script fallback",
+        "Tier2 前端: ConfigPanel 保存用新签名；Workspace 加载 configSnapshot；KlineChart bars 正常渲染",
+        "Tier2 全量: grep mean_reversion/tail_risk_hedging 全代码库仅出现在 docs/；target_field/target_value 不在组件中",
+        "全量 smoke: pnpm lint && pnpm test && pnpm build 通过；pytest 全通过"
       ],
       "agent": "fullstack-agent",
-      "priority": 18,
-      "dependsOn": [
-        "story-1", "story-2", "story-3", "story-4", "story-5",
-        "story-6", "story-7", "story-8", "story-9", "story-10",
-        "story-11", "story-12", "story-13", "story-14",
-        "story-15", "story-16", "story-17"
-      ],
-      "passes": true,
-      "_runtime": {
-        "attempts": 1,
-        "lastError": null
-      }
+      "priority": 14,
+      "dependsOn": ["story-1", "story-2", "story-3a", "story-3b", "story-4", "story-5a", "story-5b", "story-6a", "story-6b", "story-6c", "story-7a", "story-7b", "story-7c"],
+      "passes": false
     }
   ]
 }
