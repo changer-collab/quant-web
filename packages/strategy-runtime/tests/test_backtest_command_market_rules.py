@@ -275,3 +275,75 @@ def test_no_params_default_construction(monkeypatch):
     assert captured["params"] is None, (
         f"无任何 params 时应传 None（默认构造）, got {captured['params']}"
     )
+
+
+def test_run_composite_prefers_snapshot_params(monkeypatch, tmp_path):
+    """组合策略回测应优先使用 snapshotParams 而非 components.*.params
+
+    验证 _run_composite 通过 _resolve_params helper 读取每个 component 的
+    snapshotParams（优先）或 params（降级），且无数据时返回 NO_DATA 不抛 KeyError。
+    """
+    from quantforge_strategy.commands.backtest import run_backtest
+    from quantforge_strategy import TimeFrame
+
+    # mock DataClient：构造不校验 db 路径，方法返回受控数据
+    class _FakeClient:
+        def __init__(self, db_path):
+            pass
+
+        def get_active_symbols(self, as_of_ts):
+            return ["TEST1", "TEST2"]
+
+        def query_bars(self, symbol, timeframe, start_ts=None, end_ts=None):
+            return []
+
+    import quantforge_strategy.commands.backtest as bt_mod
+    monkeypatch.setattr(bt_mod, "DataClient", _FakeClient)
+
+    # 捕获每个 component 实际收到的 params，验证 snapshotParams 优先
+    captured: list[tuple[str, dict | None]] = []
+
+    def fake_build(name, params=None):
+        captured.append((name, params))
+        return object()
+
+    monkeypatch.setattr(bt_mod, "_build_strategy", fake_build)
+
+    result = run_backtest({
+        "strategy": "composite",
+        "config": {
+            "components": {
+                "selector": {
+                    "name": "ma_selector",
+                    "snapshotParams": {"period": 10},
+                    "params": {"period": 20},
+                },
+                "timer": {
+                    "name": "threshold_timer",
+                    "snapshotParams": {"threshold": 0.5},
+                    "params": {"threshold": 0.3},
+                },
+                "sizer": {
+                    "name": "fixed_sizer",
+                    "snapshotParams": {"ratio": 0.2},
+                    "params": {"ratio": 0.1},
+                },
+            },
+        },
+        "dataRange": {
+            "dbPath": str(tmp_path / "test.db"),
+            "timeframe": "1d",
+            "symbols": ["TEST1", "TEST2"],
+            "startTs": 1000000000,
+        },
+    })
+
+    # 无数据时应返回 NO_DATA,但验证 snapshotParams 被读取不抛 KeyError
+    assert result["ok"] is False
+    assert result["error"]["code"] == "NO_DATA"
+    # 三个 component 都应收到 snapshotParams 的值,而非 params
+    assert captured == [
+        ("ma_selector", {"period": 10}),
+        ("threshold_timer", {"threshold": 0.5}),
+        ("fixed_sizer", {"ratio": 0.2}),
+    ], f"snapshotParams 应优先于 params, got {captured}"

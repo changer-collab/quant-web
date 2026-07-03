@@ -52,6 +52,17 @@ def _build_strategy(name: str, params: dict[str, Any] | None = None):
     return cls()
 
 
+def _resolve_params(config: dict[str, Any], fallback_key: str = "strategyParams") -> dict[str, Any] | None:
+    """优先读 snapshotParams,降级 fallback_key(默认 strategyParams)。
+
+    用于统一 _run_single 和 _run_composite 的参数来源,保持单一真相源。
+    """
+    snapshot = config.get("snapshotParams")
+    if snapshot is not None:
+        return snapshot
+    return config.get(fallback_key)
+
+
 def _run_single(
     strategy_name: str,
     config: dict[str, Any],
@@ -66,9 +77,7 @@ def _run_single(
     _emit("log", {"level": "info", "message": f"Category: {config.get('category', 'unknown')}"})
 
     # 优先读 snapshotParams，降级 strategyParams（过渡兼容）
-    snapshot_params = config.get("snapshotParams")
-    strategy_params = config.get("strategyParams")
-    params = snapshot_params if snapshot_params is not None else strategy_params
+    params = _resolve_params(config)
     strategy = _build_strategy(strategy_name, params)
     client = DataClient(db_path)
     bars = client.query_bars(symbol, timeframe, start_ts=start_ts, end_ts=end_ts)
@@ -151,9 +160,9 @@ def _run_composite(
 
     _emit("log", {"level": "info", "message": "Building composite strategy"})
 
-    selector = _build_strategy(selector_cfg.get("name", ""), selector_cfg.get("params"))
-    timer = _build_strategy(timer_cfg.get("name", ""), timer_cfg.get("params"))
-    sizer = _build_strategy(sizer_cfg.get("name", ""), sizer_cfg.get("params"))
+    selector = _build_strategy(selector_cfg.get("name", ""), _resolve_params(selector_cfg, "params"))
+    timer = _build_strategy(timer_cfg.get("name", ""), _resolve_params(timer_cfg, "params"))
+    sizer = _build_strategy(sizer_cfg.get("name", ""), _resolve_params(sizer_cfg, "params"))
 
     strategy = DefaultComposite(selector=selector, timer=timer, sizer=sizer)
 

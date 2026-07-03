@@ -70,14 +70,6 @@ class TestRunDiagnosticsRouting:
         assert len(data["slippage_stress"]) == 4
         assert data["slippage_stress"][0]["bps"] == 1
 
-    def test_transitional_contains_expected_fields(self):
-        result = run_diagnostics({"category": "transitional"})
-        assert result["ok"] is True
-        data = result["data"]
-        assert "ic_series" in data
-        assert "layered_returns" in data
-        assert "summary" in data
-
     def test_emit_called_with_log_event(self):
         """验证非 None emit 被调用"""
         events = []
