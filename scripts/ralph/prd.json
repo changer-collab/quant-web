@@ -40,7 +40,7 @@
       "agent": "strategy-runtime-agent",
       "priority": 2,
       "dependsOn": [],
-      "passes": false
+      "passes": true
     },
     {
       "id": "story-3a",

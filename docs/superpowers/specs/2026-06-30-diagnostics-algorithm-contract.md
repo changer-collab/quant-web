@@ -20,7 +20,7 @@
 
 | Date       | Change                                                                       |
 | ---------- | ---------------------------------------------------------------------------- |
-| 2026-06-30 | v1 冻结 — 基于 factor.py / non_factor.py 真实实现 + transitional.py 契约定义 |
+| 2026-07-03 | v2 — transitional 从 stub 替换为真实算法（sentiment_curve / mapping_metrics / outlier_count / validation_passed），输出结构与 v1 目标结构不同，以 story-2 实现为准 |
 
 ---
 
@@ -320,92 +320,60 @@ params = {
     "configSnapshot": {             # 配置快照
         "strategy": str,
         "params": {
-            "dataSource": str,         # 事件/情感数据源
-            "decayHalfLife": int,      # 衰减半衰期（天）
-            "targetFactor": str,       # 映射目标因子 ID
+            "dataSource": str,                          # 事件/情感数据源（预留，当前用价格波动率代理）
+            "sentiment_decay_half_life": int,           # 衰减半衰期（天），默认 5
+            "target_factor_pool": list[str],            # 映射目标因子 ID 列表，默认 ["mom"]
             ...
         }
     },
     "synthetic": bool | None,
-    "_bars_df": pd.DataFrame | None
+    "_bars_df": pd.DataFrame | None  # 测试用预加载数据，非 None 时跳过 DataClient
 }
 ```
 
-### 6.2 最小算法规则（Phase 6 实现，当前为 stub）
+### 6.2 最小算法规则（已实现 — story-2 Phase 6.3）
 
-> **⚠️ 当前过渡形态诊断返回 stub 空结果（字段结构同 factor_based 空结果）。以下规则为 Phase 6 目标行为，暂未实现。**
+1. **情感得分计算**：从 `configSnapshot.params.dataSource` 加载事件情感数据（预留接口），缺省从价格波动率代理情感得分：计算日收益率 → 滚动波动率（5 期）→ 风险调整收益率 → z-score 归一化 → clip(-5, 5)。
+2. **指数衰减**：以 `sentiment_decay_half_life` 为 span 进行 EWM 平滑，span 越小衰减越快（更敏感），span 越大越平滑。平滑后重新 z-score 归一化 → clip(-3, 3)。
+3. **异常检测**：z-score > 3σ 标记为 outlier，统计 total outlier 数量。
+4. **目标因子映射**：对 `target_factor_pool` 中各因子，通过 `FormulaFactor` 计算因子值序列，与衰减后情感得分做 Spearman 秩相关。
+5. **映射验证**：若 mapping_metrics 中最大 |ρ| > 0.1，validation_passed=True。
+6. 数据不足：K 线 < 30 根、缺少 close 列、情感有效点 < 10 时，返回空结果（不崩溃）。
 
-1. **情感衰减曲线**：对 event-sentiment records，按 `decayHalfLife` 计算指数衰减加权的情感得分序列。
-2. **映射目标指标**：将衰减后的情感得分映射为目标因子值（通过 `targetFactor` 指定的映射函数），计算映射后的因子与原始目标因子的相关性。
-3. **标准化因子质量**：对映射后的因子计算均值、标准差、偏度、峰度、Sharpe 比率等标准化质量指标。
-4. **映射验证**：对映射结果进行回测验证，比较映射因子与原始因子的分层收益差异。
-5. 数据不足：event-sentiment records 为空或不足时返回空结果。
-
-### 6.3 输出结构（目标结构，Phase 6 实现后使用）
+### 6.3 输出结构
 
 ```python
 {
     "type": "transitional",
     # ── 情感衰减曲线（Sentiment Decay Curve）──
-    "decay_curve": {                         # 指数衰减情感得分
-        "dates": [str, ...],                 # 日期标签
-        "raw_sentiment": [float, ...],       # 原始情感得分序列
-        "decayed_sentiment": [float, ...],   # 衰减后情感得分序列
-        "half_life": int                     # 使用的半衰期（天）
+    "sentiment_curve": [                     # 衰减后情感得分时间序列
+        {
+            "ts": int,                      # 时间戳（epoch 秒/毫秒，与输入一致）
+            "score": float                  # 衰减归一化情感得分，保留 6 位小数
+        },
+        ...
+    ],
+    # ── 目标因子映射（Target Factor Mapping）──
+    "mapping_metrics": {                     # 情感得分与各因子的 Spearman 相关性
+        "factor_id": float,                 # key=因子 ID, value=Spearman ρ（保留 4 位小数）
+        ...
     },
-    # ── 映射目标指标（Mapping Target Indicators）──
-    "mapping_metrics": {
-        "target_factor_id": str,             # 目标因子 ID
-        "correlation_with_target": float,    # 衰减情感与目标因子的 Pearson 相关系数
-        "spearman_with_target": float,       # Spearman 相关系数
-        "mapping_rmse": float                # 映射均方根误差
-    },
-    # ── 标准化因子质量（Standardized Factor Quality）──
-    "factor_quality": {
-        "mean": float,                       # 映射因子均值
-        "std": float,                        # 映射因子标准差
-        "skewness": float,                   # 偏度
-        "kurtosis": float,                   # 峰度
-        "sharpe": float                      # 映射因子的夏普比率
-    },
+    # ── 异常统计（Outlier Statistics）──
+    "outlier_count": int,                   # z-score > 3σ 的异常点数量
     # ── 映射验证（Mapping Validation）──
-    "mapping_validation": {
-        "mapped_layered_returns": {          # 映射因子的分层收益
-            "Q1": [float, ...],
-            "Q2": [float, ...],
-            "Q3": [float, ...],
-            "Q4": [float, ...],
-            "Q5": [float, ...]
-        },
-        "target_layered_returns": {          # 目标因子的分层收益（对比基准）
-            "Q1": [float, ...],
-            "Q2": [float, ...],
-            "Q3": [float, ...],
-            "Q4": [float, ...],
-            "Q5": [float, ...]
-        },
-        "spread_correlation": float          # 映射与目标因子分层收益 spread 的相关性
-    }
+    "validation_passed": bool               # 最大 |ρ| > 0.1 时 True
 }
 ```
 
-### 6.4 当前 stub 输出（Phase 6 前）
+### 6.4 空结果
 
 ```python
 {
     "type": "transitional",
-    "ic_series": [],
-    "layered_returns": {
-        "Q1": [], "Q2": [], "Q3": [], "Q4": [], "Q5": []
-    },
-    "correlation_matrix": [],
-    "factor_labels": [],
-    "summary": {
-        "mean_ic": 0.0,
-        "ic_std": 0.0,
-        "ic_ir": 0.0,
-        "mean_rank_ic": 0.0
-    }
+    "sentiment_curve": [],
+    "mapping_metrics": {},
+    "outlier_count": 0,
+    "validation_passed": False
 }
 ```
 
@@ -421,7 +389,7 @@ params = {
 | -------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `factor_based` | `parseFactorDiagnostics()`            | ic_series → BarChart, layered_returns → HBarChart, correlation_matrix → HeatmapChart, summary → MiniGrid |
 | `non_factor`   | `parseNonFactorDiagnostics()`         | param_sensitivity.sharpe → HeatmapChart, signal_quality → MiniGrid, slippage_stress.return → LineChart   |
-| `transitional` | 与 factor_based 复用路径（当前 stub） | ic_series → BarChart, layered_returns → HBarChart                                                        |
+| `transitional` | 独立渲染路径（story-2 Phase 6.3） | `sentiment_curve` → LineChart, `mapping_metrics` → MiniGrid, `outlier_count` → 统计卡 |
 
 ### 7.2 synthetic 标记
 
@@ -435,4 +403,4 @@ params = {
 | ------------ | --------------------- | ------------------------------------------------- |
 | factor_based | ✅ 已实现（story-19） | `diagnostics/factor.py`                           |
 | non_factor   | ✅ 已实现（story-20） | `diagnostics/non_factor.py`                       |
-| transitional | ⏳ stub（story-18）   | `diagnostics/transitional.py`，真实算法待 Phase 6 |
+| transitional | ✅ 已实现（story-2 Phase 6.3） | `diagnostics/transitional.py` — 情感衰减曲线 + 目标因子映射 + 异常检测 |
