@@ -164,3 +164,114 @@ def test_run_composite_returns_no_active_symbols_error(monkeypatch):
 
     assert result["ok"] is False
     assert result["error"]["code"] == "NO_ACTIVE_SYMBOLS"
+
+
+def test_snapshot_params_priority(monkeypatch):
+    """当同时存在 snapshotParams 和 strategyParams 时，优先使用 snapshotParams"""
+    captured: dict[str, object] = {}
+
+    def fake_build_strategy(name, params=None):
+        captured["params"] = params
+        return object()
+
+    class FakeRunner:
+        def __init__(self, strategy, bars, initial_cash=None, slippage=None, market_rules=None):
+            pass
+
+        def run(self, on_progress=None):
+            return object()
+
+    monkeypatch.setattr(backtest_cmd, "DataClient", FakeDataClient)
+    monkeypatch.setattr(backtest_cmd, "BacktestRunner", FakeRunner)
+    monkeypatch.setattr(backtest_cmd, "_build_strategy", fake_build_strategy)
+    monkeypatch.setattr(backtest_cmd, "_result_to_dict", lambda result: {"sentinel": True})
+
+    result = backtest_cmd._run_single(
+        strategy_name="dual_ma",
+        config={"snapshotParams": {"period": 5}, "strategyParams": {"period": 10}},
+        symbol="600000",
+        db_path="unused.db",
+        timeframe=TimeFrame.D1,
+        start_ts=None,
+        end_ts=None,
+        _emit=lambda *args: None,
+    )
+
+    assert result["ok"] is True
+    assert captured["params"] == {"period": 5}, (
+        f"snapshotParams 应优先于 strategyParams, got {captured['params']}"
+    )
+
+
+def test_strategy_params_fallback(monkeypatch):
+    """当无 snapshotParams 但有 strategyParams 时，降级使用 strategyParams"""
+    captured: dict[str, object] = {}
+
+    def fake_build_strategy(name, params=None):
+        captured["params"] = params
+        return object()
+
+    class FakeRunner:
+        def __init__(self, strategy, bars, initial_cash=None, slippage=None, market_rules=None):
+            pass
+
+        def run(self, on_progress=None):
+            return object()
+
+    monkeypatch.setattr(backtest_cmd, "DataClient", FakeDataClient)
+    monkeypatch.setattr(backtest_cmd, "BacktestRunner", FakeRunner)
+    monkeypatch.setattr(backtest_cmd, "_build_strategy", fake_build_strategy)
+    monkeypatch.setattr(backtest_cmd, "_result_to_dict", lambda result: {"sentinel": True})
+
+    result = backtest_cmd._run_single(
+        strategy_name="dual_ma",
+        config={"strategyParams": {"period": 10}},
+        symbol="600000",
+        db_path="unused.db",
+        timeframe=TimeFrame.D1,
+        start_ts=None,
+        end_ts=None,
+        _emit=lambda *args: None,
+    )
+
+    assert result["ok"] is True
+    assert captured["params"] == {"period": 10}, (
+        f"无 snapshotParams 时应降级 strategyParams, got {captured['params']}"
+    )
+
+
+def test_no_params_default_construction(monkeypatch):
+    """当无 snapshotParams 也无 strategyParams 时，策略默认构造（params=None）"""
+    captured: dict[str, object] = {}
+
+    def fake_build_strategy(name, params=None):
+        captured["params"] = params
+        return object()
+
+    class FakeRunner:
+        def __init__(self, strategy, bars, initial_cash=None, slippage=None, market_rules=None):
+            pass
+
+        def run(self, on_progress=None):
+            return object()
+
+    monkeypatch.setattr(backtest_cmd, "DataClient", FakeDataClient)
+    monkeypatch.setattr(backtest_cmd, "BacktestRunner", FakeRunner)
+    monkeypatch.setattr(backtest_cmd, "_build_strategy", fake_build_strategy)
+    monkeypatch.setattr(backtest_cmd, "_result_to_dict", lambda result: {"sentinel": True})
+
+    result = backtest_cmd._run_single(
+        strategy_name="dual_ma",
+        config={},
+        symbol="600000",
+        db_path="unused.db",
+        timeframe=TimeFrame.D1,
+        start_ts=None,
+        end_ts=None,
+        _emit=lambda *args: None,
+    )
+
+    assert result["ok"] is True
+    assert captured["params"] is None, (
+        f"无任何 params 时应传 None（默认构造）, got {captured['params']}"
+    )

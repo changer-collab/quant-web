@@ -1777,3 +1777,28 @@ lint_error
   - story-4 (report metadata) 依赖 story-3a + story-3b，需等 story-3b 完成后才能实施
 ---
 ---
+
+## [2026-07-03 02:00:16] - Iteration 3
+
+- Exit code: 0
+- Stories remaining: 11
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-03 10:30] — story-3b (Phase 7a Python — backtest.py 优先读 snapshotParams，降级 strategyParams 兼容)
+- **修改的文件**:
+  - `packages/strategy-runtime/quantforge_strategy/commands/backtest.py` — `_run_single` 中 `config.get("strategyParams")` → 优先读 `config.get("snapshotParams")`，降级 `config.get("strategyParams")`（过渡兼容 Worker 双写时期）；新增 category 日志输出
+  - `packages/strategy-runtime/tests/test_backtest_command_market_rules.py` — 新增 3 个测试：snapshotParams 优先、strategyParams 降级、无参默认构造
+- **验证**:
+  - `python -m pytest tests/test_backtest_command_market_rules.py -v` → 7/7 passed（4 现有 + 3 新增）
+  - `python -m pytest -v` → 184/185 passed（1 个预存失败：test_diagnostics_stub transitional 字段过期，与 story-3b 无关）
+- **Doc Sync**: no docs update needed because this is pure Python internal implementation change (config param priority logic) within the existing backtest command — no API schema, DB schema, architectural boundary, or behavioral contract changes
+- **后续迭代注意事项：**
+  - `_run_composite` 中的子组件（selector/timer/sizer）使用 `selector_cfg.get("params")` 独立于顶层 snapshotParams/strategyParams 逻辑，不受影响
+  - 预存测试失败：`test_diagnostics_stub.py::test_transitional_contains_expected_fields` 仍断言 `ic_series`，但 story-2 已将 transitional 输出改为 `sentiment_curve`，测试未同步更新
+  - story-4 (report metadata) 现在解除阻塞（story-3a + story-3b 均完成），可开始实施
+  - `_build_strategy` 函数签名不变，仍接受 `(name, params)`，params=None 时默认构造
+---

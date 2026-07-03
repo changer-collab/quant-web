@@ -63,8 +63,13 @@ def _run_single(
     _emit: Callable[[str, dict], None],
 ) -> dict[str, Any]:
     _emit("log", {"level": "info", "message": f"Loading data for {symbol} {timeframe.value}"})
+    _emit("log", {"level": "info", "message": f"Category: {config.get('category', 'unknown')}"})
 
-    strategy = _build_strategy(strategy_name, config.get("strategyParams"))
+    # 优先读 snapshotParams，降级 strategyParams（过渡兼容）
+    snapshot_params = config.get("snapshotParams")
+    strategy_params = config.get("strategyParams")
+    params = snapshot_params if snapshot_params is not None else strategy_params
+    strategy = _build_strategy(strategy_name, params)
     client = DataClient(db_path)
     bars = client.query_bars(symbol, timeframe, start_ts=start_ts, end_ts=end_ts)
 
