@@ -44,3 +44,16 @@ scripts/ralph/archive/
 
 # claude-mem project memory data (shared across team via git)
 .claude/settings.json
+
+# Ralph autonomous agent loop (runtime artifacts) - extended
+scripts/ralph/.current-prompt.md
+scripts/ralph/.last-error.json
+scripts/ralph/.last-raw-output.txt
+scripts/ralph/.last-output.txt
+scripts/ralph/.prd.state.json
+
+# Trae skills (IDE-local)
+.trae/
+
+# CLAUDE.md (Claude Code local, not project-shared)
+CLAUDE.md
