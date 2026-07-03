@@ -33,6 +33,39 @@ const OVERSOLD = 30;
 const DEFAULT_RSI_PERIOD = 14;
 const FINGERPRINT_TOAST_DURATION = 3000;
 
+// ─── Bar 归一化 ──────────────────────────────────────────
+// 支持新旧两种 API 返回格式：
+//   旧格式: { timestamp, open, high, low, close, volume }
+//   新格式: { ts, o, h, l, c, v }
+
+interface NormalizedBar {
+  ts: number;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  v: number;
+}
+
+function normalizeBars(bars: BarData[]): NormalizedBar[] {
+  return bars.map((b) => {
+    // 检测是否为新格式（有 ts 字段）
+    if ('ts' in (b as any)) {
+      const nb = b as any;
+      return { ts: nb.ts, o: nb.o, h: nb.h, l: nb.l, c: nb.c, v: nb.v };
+    }
+    // 旧格式
+    return {
+      ts: (b as any).timestamp,
+      o: (b as any).open,
+      h: (b as any).high,
+      l: (b as any).low,
+      c: (b as any).close,
+      v: (b as any).volume,
+    };
+  });
+}
+
 // ─── 工具函数 ────────────────────────────────────────────
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -196,7 +229,7 @@ function drawGrid(
 /** 绘制 K 线蜡烛 */
 function drawCandlesticks(
   ctx: CanvasRenderingContext2D,
-  bars: BarData[],
+  bars: NormalizedBar[],
   layout: ChartLayout,
   priceMin: number,
   priceMax: number
@@ -209,12 +242,12 @@ function drawCandlesticks(
   for (let i = 0; i < bars.length; i++) {
     const b = bars[i];
     const x = main.x + i * barWidth + barWidth / 2;
-    const isUp = b.close >= b.open;
+    const isUp = b.c >= b.o;
     const color = isUp ? COLOR_UP : COLOR_DOWN;
-    const openY = main.y + main.h - ((b.open - priceMin) / range) * main.h;
-    const closeY = main.y + main.h - ((b.close - priceMin) / range) * main.h;
-    const highY = main.y + main.h - ((b.high - priceMin) / range) * main.h;
-    const lowY = main.y + main.h - ((b.low - priceMin) / range) * main.h;
+    const openY = main.y + main.h - ((b.o - priceMin) / range) * main.h;
+    const closeY = main.y + main.h - ((b.c - priceMin) / range) * main.h;
+    const highY = main.y + main.h - ((b.h - priceMin) / range) * main.h;
+    const lowY = main.y + main.h - ((b.l - priceMin) / range) * main.h;
 
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
@@ -273,17 +306,17 @@ function drawOverlays(
 }
 
 /** 绘制成交量柱状图 */
-function drawVolume(ctx: CanvasRenderingContext2D, bars: BarData[], layout: ChartLayout) {
+function drawVolume(ctx: CanvasRenderingContext2D, bars: NormalizedBar[], layout: ChartLayout) {
   const { volume, barWidth } = layout;
   if (volume.h <= 0) return;
 
-  const maxVol = Math.max(...bars.map((b) => b.volume), 1);
+  const maxVol = Math.max(...bars.map((b) => b.v), 1);
   const halfW = Math.max(1, (barWidth * CANDLE_WIDTH_RATIO) / 2);
 
   for (let i = 0; i < bars.length; i++) {
     const b = bars[i];
-    const isUp = b.close >= b.open;
-    const h = (b.volume / maxVol) * volume.h;
+    const isUp = b.c >= b.o;
+    const h = (b.v / maxVol) * volume.h;
     ctx.fillStyle = isUp ? COLOR_VOLUME_UP : COLOR_VOLUME_DOWN;
     ctx.fillRect(
       volume.x + i * barWidth + barWidth / 2 - halfW,
@@ -297,7 +330,7 @@ function drawVolume(ctx: CanvasRenderingContext2D, bars: BarData[], layout: Char
 /** 绘制策略专属副图 */
 function drawSubChart(
   ctx: CanvasRenderingContext2D,
-  bars: BarData[],
+  bars: NormalizedBar[],
   subcategory: string | null | undefined,
   layout: ChartLayout,
   subLabel: string
@@ -305,7 +338,7 @@ function drawSubChart(
   const { sub, barWidth } = layout;
   if (sub.h <= 0) return;
 
-  const closes = bars.map((b) => b.close);
+  const closes = bars.map((b) => b.c);
   const subcat = subcategory ?? '';
 
   let data: (number | null)[];
@@ -319,7 +352,7 @@ function drawSubChart(
     yMax = 100;
   } else if (subcat === 'arbitrage' || subcat === 'hft_microstructure') {
     // 价差 = (high - low) / close
-    data = bars.map((b) => ((b.high - b.low) / b.close) * 100);
+    data = bars.map((b) => ((b.h - b.l) / b.c) * 100);
     yMin = 0;
     const vals = data.filter((d): d is number => d != null);
     yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 10;
@@ -347,8 +380,8 @@ function drawSubChart(
     yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 5;
   } else if (subcat === 'event_driven' || subcat === 'transitional') {
     // 情感得分：成交量相对均值偏离
-    const avgVol = bars.reduce((s, b) => s + b.volume, 0) / bars.length || 1;
-    data = bars.map((b) => ((b.volume - avgVol) / avgVol) * 100);
+    const avgVol = bars.reduce((s, b) => s + b.v, 0) / bars.length || 1;
+    data = bars.map((b) => ((b.v - avgVol) / avgVol) * 100);
     const vals = data.filter((d): d is number => d != null);
     yMin = Math.min(...vals) * 1.2;
     yMax = Math.max(...vals) * 1.2;
@@ -423,7 +456,7 @@ function drawSubChart(
 function drawSignals(
   ctx: CanvasRenderingContext2D,
   signals: PreviewSignal[],
-  bars: BarData[],
+  bars: NormalizedBar[],
   layout: ChartLayout,
   priceMin: number,
   priceMax: number,
@@ -442,8 +475,8 @@ function drawSignals(
     const isBuy = sig.side === 'buy';
     const color = isBuy ? COLOR_UP : COLOR_DOWN;
     const yBase = isBuy
-      ? main.y + main.h - ((bar.low - priceMin) / range) * main.h - 4
-      : main.y + main.h - ((bar.high - priceMin) / range) * main.h + 4;
+      ? main.y + main.h - ((bar.l - priceMin) / range) * main.h - 4
+      : main.y + main.h - ((bar.h - priceMin) / range) * main.h + 4;
 
     const isHovered = hoveredSignal === si;
     const size = isHovered ? 7 : 5;
@@ -503,7 +536,7 @@ export function KlineChart({
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
-    data: BarData;
+    data: NormalizedBar;
     signals: PreviewSignal[];
   } | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -555,15 +588,16 @@ export function KlineChart({
     // 空数据
     if (!previewData || previewData.bars.length === 0) return;
 
-    const { bars, overlays, signals } = previewData;
+    const { bars: rawBars, overlays, signals } = previewData;
+    const bars = normalizeBars(rawBars);
     const layout = computeLayout(w, h, bars.length, true);
 
     // 价格范围
     let priceMin = Infinity;
     let priceMax = -Infinity;
     for (const b of bars) {
-      if (b.low < priceMin) priceMin = b.low;
-      if (b.high > priceMax) priceMax = b.high;
+      if (b.l < priceMin) priceMin = b.l;
+      if (b.h > priceMax) priceMax = b.h;
     }
     // 加入均线范围
     for (const ov of overlays) {
@@ -661,7 +695,8 @@ export function KlineChart({
         setHoveredSignal(sigIdx >= 0 ? sigIdx : null);
       }
 
-      const bar = previewData.bars[idx];
+      const rawBar = previewData.bars[idx];
+      const bar = normalizeBars([rawBar])[0];
       const barSignals = previewData.signals.filter((s) => s.bar_index === idx);
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
@@ -774,23 +809,23 @@ export function KlineChart({
             <div className={s.tooltipTitle}>{ui.klineChartOHLC}</div>
             <div className={s.tooltipRow}>
               <span>O</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.open)}</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.o)}</span>
             </div>
             <div className={s.tooltipRow}>
               <span>H</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.high)}</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.h)}</span>
             </div>
             <div className={s.tooltipRow}>
               <span>L</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.low)}</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.l)}</span>
             </div>
             <div className={s.tooltipRow}>
               <span>C</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.close)}</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.c)}</span>
             </div>
             <div className={s.tooltipRow}>
               <span>Vol</span>
-              <span className={s.tooltipRowValue}>{tooltip.data.volume.toLocaleString()}</span>
+              <span className={s.tooltipRowValue}>{tooltip.data.v.toLocaleString()}</span>
             </div>
             {tooltip.signals.map((sig, i) => (
               <div key={i} className={s.tooltipSignal}>

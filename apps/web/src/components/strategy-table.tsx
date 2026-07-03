@@ -52,7 +52,7 @@ export function StrategyTable({
                 {strategy.params && strategy.params.length > 0 ? (
                   <div className={table.paramCell}>
                     {strategy.params.map((p) => (
-                      <span className={table.paramChip} key={p.key}>
+                      <span className={table.paramChip} key={p.name}>
                         {p.label}={String(p.default)}
                       </span>
                     ))}

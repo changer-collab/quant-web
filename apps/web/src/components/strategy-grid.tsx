@@ -3,7 +3,7 @@
  * 保留以维护 git blame。
  */
 
-import type { ResearchModeId, StrategyRow, UiCopy } from '../appData';
+import type { StrategyRow, UiCopy } from '../appData';
 import s from '../styles/strategy-grid.module.css';
 
 function statusMod(status: string) {
@@ -14,7 +14,7 @@ function statusMod(status: string) {
   return '';
 }
 
-const MODE_ORDER: ResearchModeId[] = ['traditional', 'hft', 'ai'];
+const MODE_ORDER = ['traditional', 'hft', 'ai'] as const;
 
 export function StrategyGrid({
   strategies,
@@ -65,7 +65,7 @@ export function StrategyGrid({
                     {strategy.params && strategy.params.length > 0 && (
                       <div className={s.paramList}>
                         {strategy.params.map((p) => (
-                          <span className={s.paramChip} key={p.key}>
+                          <span className={s.paramChip} key={p.name}>
                             {p.label}: <b>{String(p.default)}</b>
                           </span>
                         ))}

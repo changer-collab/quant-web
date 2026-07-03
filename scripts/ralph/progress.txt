@@ -1946,3 +1946,38 @@ lint_error
   - story-6c (Phase 8d KlineChart+Table+Grid) 是下一个最高优先级未完成故事
   - 旧 `fetchStrategyConfig` 返回值中的 `config_json` deprecated 字段在 story-6b 迁移完成后可考虑移除
   - diagnostics 空态使用 `language` prop 实现中/英文切换
+
+## [2026-07-03 02:33:16] - Iteration 9
+
+- Exit code: 0
+- Stories remaining: 5
+- **Detected issues:**
+```
+vitest_fail
+pytest_fail
+lint_error
+```
+---
+
+## [2026-07-03 10:45] — story-6c (Phase 8d — KlineChart + StrategyTable + StrategyGrid 对齐)
+- **修改的文件：**
+  - `apps/web/src/components/strategy-table.tsx` — `p.key`→`p.name`（1 处 React key）
+  - `apps/web/src/components/strategy-grid.tsx` — `p.key`→`p.name`（1 处 React key）；修复 ResearchModeId import（类型已删除，改用 `as const` 推断字面量类型）
+  - `apps/web/src/components/kline-chart.tsx` — 新增 `NormalizedBar` 接口 + `normalizeBars()` 函数，统一内部用 `{ts,o,h,l,c,v}` 格式渲染；更新所有绘制函数（`drawCandlesticks`/`drawVolume`/`drawSubChart`/`drawSignals`）接受 `NormalizedBar[]`；更新 tooltip state 类型和字段访问
+- **验证：**
+  - `grep 'p\\.key' strategy-table.tsx` → 无匹配 ✅
+  - `grep 'p\\.key' strategy-grid.tsx` → 无匹配 ✅
+  - KlineChart: 旧 bar `{timestamp,open,close,...}` → `normalizeBars` 转为 `{ts,o,h,l,c,v}` 正常渲染 ✅
+  - KlineChart: 新 bar `{ts,o,h,l,c,v}` → 直通渲染 ✅
+  - KlineChart: 未知 canonical 子分类→默认副图（else 分支 50 水平线，已存在） ✅
+  - `cd apps/web && npx tsc --noEmit` → 无错误 ✅
+  - `pnpm --filter @quant/web test` → 93/93 passed (14 files) ✅
+  - `pnpm lint` → 0 errors (仅预存 19 warnings) ✅
+  - `pnpm --filter @quant/web build` → 3.21s 成功 ✅
+- **Doc Sync**: no docs update needed because this story only does mechanical component migration (param.key→name + bar shape adapter) within 3 component files — no API schema, DB schema, architectural boundary, or behavioral contract changes
+- **后续迭代注意事项：**
+  - `NormalizedBar` 接口仅定义在 kline-chart.tsx 内，不导出 — 其他组件如引用 BarData 不受影响
+  - `normalizeBars()` 默认全量映射，检测新格式通过 `'ts' in (b as any)` 运行时检查
+  - strategy-grid.tsx 的 `ResearchModeId` 改为 `as const` 数组后仍保持窄字面量类型，`ui.strategyGridModeLabels` 索引不出错
+  - story-7a (CLI listStrategies) 是下一个最高优先级未完成故事，不依赖本 story
+---
