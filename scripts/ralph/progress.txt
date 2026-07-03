@@ -2008,3 +2008,45 @@ lint_error
   - 策略实例化失败时静默跳过（try/except），不导致整个命令失败
   - uiConstraints 当前所有策略均未定义，输出为 null；当策略添加 UIConstraint 后自动跟随输出
 ---
+
+## [2026-07-03 02:44:50] - Iteration 11
+
+- Exit code: 0
+- Stories remaining: 3
+- **Detected issues:**
+```
+vitest_fail
+lint_error
+```
+---
+
+## [2026-07-03 18:50] — story-7b (Phase 9b — API strategy-sync.ts 用 PythonBridge 替换内联 Python script string)
+- **修改的文件**:
+  - `apps/api/src/services/strategy-sync.ts` — 完全重写：
+    - 删除 ~80 行内联 Python heredoc script string + tempfile 写入/执行/清理逻辑
+    - 新增 `_callCLI()`: 通过 `spawn('python', ['-m', 'quantforge_strategy'])` + stdin JSON + NDJSON stdout 模式调用 CLI，等效于 Worker 的 PythonBridge.call()
+    - 新增 `parseCLIOutput()`: 解析 NDJSON 事件流，从后往前匹配 result/error 终态事件
+    - 新增 `camelToSnakeMeta()`: 将 CLI listStrategies 输出的 camelCase 字段（name/range/chartRelevant/uiConstraints with targetField/targetValue/actionValue）映射回内部 PythonStrategyMeta 的 snake_case 接口
+    - 错误处理：CLI 不可用/超时/返回 error → console.warn + 返回 []（不抛异常，API 启动不崩溃）
+    - 缓存机制保持不变（60s TTL）
+    - 导出 `parseCLIOutput`/`camelToSnakeMeta` 供测试直接调用
+  - `apps/api/tests/services/strategy-sync.test.ts`（新建，11 个测试）：
+    - parseCLIOutput: result 事件、error 事件、跳转中间事件、空输入、非法 JSON 容错（5 个）
+    - camelToSnakeMeta: 完整字段映射、缺省字段默认值（2 个）
+    - StrategySyncService: CLI 不可用→[]、error→[]、空数据→[]、有效数据映射+缓存验证（4 个）
+  - `apps/api/AGENT.md` — 记录 Phase 9b Python CLI bridge 模式
+- **验证**:
+  - `cd apps/api && npx vitest run tests/services/strategy-sync.test.ts` → 11/11 passed ✅
+  - `cd apps/api && npx vitest run` → 120/120 passed（15 files）✅
+  - `cd apps/api && npx tsc --noEmit` → 编译通过 ✅
+  - `pnpm lint` → 0 errors（仅预存 warnings）✅
+  - `pnpm build` → 5/5 successful ✅
+  - `cd packages/strategy-runtime && python -m pytest tests/test_cli_list_strategies.py -v` → 6/6 passed ✅
+- **Doc Sync**: updated `apps/api/AGENT.md` with Phase 9b Python CLI bridge pattern (spawn + NDJSON + camelToSnake). The integrated plan doc and spec docs remain accurate — this story only changes the internal implementation of strategy metadata fetching without affecting API response shapes or architecture.
+- **后续迭代注意事项：**
+  - `_callCLI` 方法可以复用于其他需要 Python CLI 的 API 服务场景（只需换 command）
+  - `parseCLIOutput` 从后往前匹配最后一个 result/error 事件，中间 progress/log 事件自动跳过
+  - `camelToSnakeMeta` 中的 label/type/default/options/modes/kind 字段因 CLI 不输出而使用降级默认值；这些字段在策略 HTTP 响应中映射为 deprecated 字段，不影响新前端
+  - `strategy.test.ts` 等现有测试使用 `vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue(...)` 完全 mock syncFromPython，不受底层实现变更影响
+  - story-7c (Phase 9c Worker 死队列删除) 和 story-8 (E2E 验收) 是剩余未完成故事
+---

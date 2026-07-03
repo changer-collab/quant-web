@@ -55,6 +55,12 @@
   - SqliteDiagnosticRepo.getById/listByStrategy 读新列，旧 row 缺省 engineVersion='legacy'/expiresAt=createdAt+7天/subcategory=null
   - diagnostics.ts toWire() 直接投影 repo 返回值（不再静态 expiresAt=createdAt+7 和 engineVersion='legacy'）
   - DiagnosticsResultProcessor 从 configSnapshot.subcategory 取 subcategory，从 result.engine_version 取 engineVersion（均降级 null/'legacy'）
+- Phase 9b StrategySyncService：通过 spawn('python', ['-m', 'quantforge_strategy']) + stdin JSON + NDJSON stdout 替代内联 Python heredoc + tempfile
+  - _callCLI(): 模仿 Worker PythonBridge.call()，发送 {command:'listStrategies'} 到 CLI，解析 NDJSON event stream
+  - parseCLIOutput(): 从后往前匹配 result/error NDJSON 事件（兼容中间 progress/log 事件）
+  - camelToSnakeMeta(): 将 CLI 的 camelCase 输出（name/range/chartRelevant/uiConstraints）映射回内部 PythonStrategyMeta（snake_case）
+  - CLI 不可用/超时/返回 error → 返回 [] + console.warn（不抛异常，API 启动不崩溃）
+  - 导出 parseCLIOutput/camelToSnakeMeta 供测试直接调用（无需 mock child_process）
 
 ## 边界
 
