@@ -1,6 +1,6 @@
 import { TaskType, TimeFrame } from '../types.js';
 import type { Bar } from '../types.js';
-import type { TaskHandler, TaskRecord } from '../queue.js';
+import type { TaskHandler, TaskRecord } from '../types.js';
 import type { DataCenter } from '@quant/data-center';
 
 /** 因子计算引擎接口（待 factor-lab 实现） */

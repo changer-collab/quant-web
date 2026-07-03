@@ -5,7 +5,7 @@
  * 循环状态由 Worker 通过 API 任务表持久化，不在 Handler 内部管理。
  */
 import { TaskType } from '../types.js';
-import type { TaskHandler, TaskRecord } from '../queue.js';
+import type { TaskHandler, TaskRecord } from '../types.js';
 import type { AgentExecutor, AgentRequest } from '../agents/base.js';
 import type { PythonBridge } from '../python-bridge.js';
 import { createBacktestAgent } from '../agents/index.js';

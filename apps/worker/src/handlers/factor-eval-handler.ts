@@ -1,5 +1,5 @@
 import { TaskType } from '../types.js';
-import type { TaskHandler, TaskRecord } from '../queue.js';
+import type { TaskHandler, TaskRecord } from '../types.js';
 
 /** 因子评估调度器接口（待 factor-lab 实现） */
 export interface FactorEvalScheduler {

@@ -2050,3 +2050,40 @@ lint_error
   - `strategy.test.ts` 等现有测试使用 `vi.spyOn(strategySyncService, 'syncFromPython').mockResolvedValue(...)` 完全 mock syncFromPython，不受底层实现变更影响
   - story-7c (Phase 9c Worker 死队列删除) 和 story-8 (E2E 验收) 是剩余未完成故事
 ---
+
+## [2026-07-03 02:50:58] - Iteration 12
+
+- Exit code: 0
+- Stories remaining: 2
+- **Detected issues:**
+```
+lint_error
+```
+---
+
+## [2026-07-03 19:40] — story-7c (Phase 9c — 删除 Worker 死队列 queue.ts + 类型迁移)
+- **类型迁移**:
+  - 将 `TaskRecord`、`TaskHandler`、`TaskEventHandler` 类型定义从 queue.ts 迁移到 `apps/worker/src/types.ts`
+  - 类型定义不变，仅迁移位置（TaskRecord/StreamEvent 已在 types.ts 中）
+- **删除死代码**:
+  - `apps/worker/src/queue.ts` — 已删除（含 TaskQueue 类 + better-sqlite3 本地队列）
+  - `apps/worker/src/worker.ts` — 已删除（Worker 类仅封装已删除的 TaskQueue，属死代码）
+- **更新导入路径**:
+  - 所有 6 个 handler 文件的 `import from '../queue.js'` → `import from '../types.js'`
+  - `main.ts` 的 `import from './queue.js'` → `import from './types.js'`
+  - `index.ts` 导出从 `./queue.js`/`./worker.js` 迁移到 `./types.js`
+- **依赖清理**: 从 `package.json` 移除 `better-sqlite3` 和 `@types/better-sqlite3`
+- **Doc Sync**:
+  - 更新 `apps/worker/AGENT.md`：移除 TaskQueue/Worker 主类，更新已实现列表
+  - 更新 `docs/dev-workflow.md`：TaskQueue better-sqlite3 引用 → Worker 已删除 TaskQueue
+  - `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md` 和 `docs/plans/2026-06-30-backend-realign-design.md` 已记载删除意图，无需额外更新
+- **验证**:
+  - `cd apps/worker && npx tsc --noEmit` → 编译通过 ✅（仅 src/ 目录，tsconfig 不含 tests/）
+  - `pnpm lint` → 0 errors（仅预存 19 warnings）✅
+  - `pnpm build` → 5/5 successful ✅
+  - Worker tests: 4 test files fail（queue.test.ts/worker.test.ts/backtest-handler.test.ts/diagnostics-handler.test.ts — 引用已删除的 TaskQueue 类，属预期，按核心规则保持红色）
+- **后续迭代注意事项：**
+  - queue.test.ts、worker.test.ts、backtest-handler.test.ts、diagnostics-handler.test.ts 因引用已删除的 TaskQueue 类而失败，按核心规则不修改测试文件
+  - `TaskRecord`/`TaskHandler`/`TaskEventHandler` 现定义在 types.ts 中，供 6 个 handler 和 main.ts 使用
+  - `index.ts` 不再导出 TaskQueue/Worker — 外部消费者（`run-backtest.ts`）只导入 PythonBridge，不受影响
+  - story-8 (E2E 验收) 是最后一个未完成故事

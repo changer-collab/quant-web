@@ -1,7 +1,7 @@
 import { TaskType } from '../types.js';
 import { TimeFrame } from '../types.js';
 import type { BacktestResult } from '../types.js';
-import type { TaskHandler, TaskRecord, TaskEventHandler } from '../queue.js';
+import type { TaskHandler, TaskRecord, TaskEventHandler } from '../types.js';
 import { PythonBridge } from '../python-bridge.js';
 import { resolveDbPath } from '../db-path.js';
 

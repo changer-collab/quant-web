@@ -10,20 +10,22 @@
 ## 当前阶段
 
 ```text
-已实现：独立进程入口 + HTTP 轮询 API 领取任务 + 三个任务处理器 + Worker 主类
+已实现：独立进程入口 + HTTP 轮询 API 领取任务 + 五个任务处理器
 ```
 
 ## 已实现
 
 ```text
-- TaskQueue：内存任务队列，支持 submit/get/list/cancel/processNext/processAll
-- TaskHandler 接口：统一任务处理器契约
-- Worker 主类：组装 DataCenter 和 Handler，暴露 submit/getTask/listTasks/processAll/close
+- TaskHandler 接口：统一任务处理器契约（定义在 types.ts）
 - BacktestHandler：回测任务处理器，从 DataCenter 加载行情，调用 BacktestRunner 执行回测
+- DiagnosticsHandler：诊断任务处理器，通过 PythonBridge 调用 diagnostics CLI
 - FactorComputeHandler：因子计算任务处理器，从 DataCenter 加载行情，调用 FactorEngine 批量计算
 - FactorEvalHandler：因子评估任务处理器，调用 FactorEvalScheduler 评估因子
+- CollectHandler：数据采集任务处理器，调用 data-collector
+- LoopHandler：循环任务处理器，编排多次子任务迭代
 - main.ts 独立入口：通过 HTTP 轮询 API /api/internal/tasks/* 领取、执行、上报任务，不依赖与 API 同进程
-- 14 个测试通过
+- queue.ts（含 TaskQueue + better-sqlite3 本地队列）已删除，被 HTTP 轮询替代
+- worker.ts（Worker 主类）已删除，为死代码
 ```
 
 ## 边界
