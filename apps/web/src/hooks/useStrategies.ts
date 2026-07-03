@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { useApi } from './useApi';
 import { fetchStrategies, type ApiStrategy, type ApiStrategyParam } from '../api/strategies';
-import type { StrategyRow, StrategyParam } from '../appData';
+import type { StrategyRow, StrategyParam, UIConstraint } from '../appData';
 
 /** 将 API 策略参数映射为前端 StrategyParam */
-function mapParam(api: ApiStrategyParam): StrategyParam {
+export function mapParam(api: ApiStrategyParam): StrategyParam {
   return {
     key: api.key,
     name: api.key,
@@ -16,7 +16,12 @@ function mapParam(api: ApiStrategyParam): StrategyParam {
     range: api.min !== undefined && api.max !== undefined ? [api.min, api.max] : undefined,
     options: api.options,
     chartRelevant: api.chart_relevant,
-    uiConstraints: api.ui_constraints as StrategyParam['uiConstraints'],
+    uiConstraints: (api.ui_constraints ?? []).map((c) => ({
+      kind: c.kind as UIConstraint['kind'],
+      targetField: c.target_field,
+      targetValue: c.target_value,
+      actionValue: c.action_value,
+    })),
   };
 }
 

@@ -58,9 +58,7 @@ export function submitBacktest(payload: {
   endTs?: number;
   configSnapshot?: ConfigSnapshot;
 }): Promise<{ id: string; status: ApiTaskStatus }> {
-  return apiPost<{ id: string; status: ApiTaskStatus }>('/tasks', { type: 'backtest', payload }).catch(
-    () => ({ id: '' as string, status: 'failed' as ApiTaskStatus })
-  );
+  return apiPost<{ id: string; status: ApiTaskStatus }>('/tasks', { type: 'backtest', payload });
 }
 
 export function submitFactorEval(
