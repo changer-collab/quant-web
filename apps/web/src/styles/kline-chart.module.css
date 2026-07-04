@@ -105,10 +105,21 @@
   min-height: 0;
 }
 
-.chartCanvas {
+.baseCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
+}
+
+.overlayCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  z-index: 2;
+  pointer-events: none;
 }
 
 /* ─── Tooltip ─── */

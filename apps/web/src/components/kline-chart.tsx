@@ -7,22 +7,28 @@ import type {
   ChartOverlay,
   PreviewSignal,
 } from '../appData';
+import {
+  normalizeBars,
+  computeLayout,
+  downsample,
+  maxByReduce,
+  CHART_TOP,
+  CHART_BOTTOM,
+  CHART_LEFT,
+  CHART_RIGHT,
+  GAP_BETWEEN_CHARTS,
+  CANDLE_WIDTH_RATIO,
+  MIN_BAR_WIDTH,
+  type NormalizedBar,
+  type ChartLayout,
+} from './kline-chart-utils';
 import s from '../styles/kline-chart.module.css';
 
-// ─── 常量 ────────────────────────────────────────────────
-
-const CHART_TOP = 36;
-const CHART_BOTTOM = 28;
-const CHART_LEFT = 54;
-const CHART_RIGHT = 10;
-const GAP_BETWEEN_CHARTS = 2;
-
-const CANDLE_WIDTH_RATIO = 0.6; // 蜡烛体占 bar 宽度的比例
-const MIN_BAR_WIDTH = 3;
+const MAX_BARS = 1500;
 
 const MA_COLORS = ['#62d8ff', '#e9c46a', '#f472b6', '#a78bfa'];
-const COLOR_UP = '#ef4444'; // 红涨
-const COLOR_DOWN = '#22c55e'; // 绿跌
+const COLOR_UP = '#ef4444';
+const COLOR_DOWN = '#22c55e';
 const COLOR_GRID = 'rgba(98, 110, 110, 0.15)';
 const COLOR_TEXT = 'rgba(150, 160, 160, 0.7)';
 const COLOR_VOLUME_UP = 'rgba(239, 68, 68, 0.35)';
@@ -33,46 +39,10 @@ const OVERSOLD = 30;
 const DEFAULT_RSI_PERIOD = 14;
 const FINGERPRINT_TOAST_DURATION = 3000;
 
-// ─── Bar 归一化 ──────────────────────────────────────────
-// 支持新旧两种 API 返回格式：
-//   旧格式: { timestamp, open, high, low, close, volume }
-//   新格式: { ts, o, h, l, c, v }
-
-interface NormalizedBar {
-  ts: number;
-  o: number;
-  h: number;
-  l: number;
-  c: number;
-  v: number;
-}
-
-function normalizeBars(bars: BarData[]): NormalizedBar[] {
-  return bars.map((b) => {
-    // 检测是否为新格式（有 ts 字段）
-    if ('ts' in (b as any)) {
-      const nb = b as any;
-      return { ts: nb.ts, o: nb.o, h: nb.h, l: nb.l, c: nb.c, v: nb.v };
-    }
-    // 旧格式
-    return {
-      ts: (b as any).timestamp,
-      o: (b as any).open,
-      h: (b as any).high,
-      l: (b as any).low,
-      c: (b as any).close,
-      v: (b as any).volume,
-    };
-  });
-}
-
-// ─── 工具函数 ────────────────────────────────────────────
-
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(Math.max(v, lo), hi);
 }
 
-/** 计算 SMA */
 function computeSMA(values: (number | null)[], period: number): (number | null)[] {
   const out: (number | null)[] = [];
   for (let i = 0; i < values.length; i++) {
@@ -94,7 +64,6 @@ function computeSMA(values: (number | null)[], period: number): (number | null)[
   return out;
 }
 
-/** 计算 RSI (Wilder 平滑) */
 function computeRSI(closes: number[], period: number): (number | null)[] {
   if (closes.length < period + 1) return closes.map(() => null);
   const gains: number[] = [];
@@ -117,7 +86,6 @@ function computeRSI(closes: number[], period: number): (number | null)[] {
   return rsi;
 }
 
-/** 格式化价格（根据数值自动决定小数位） */
 function formatPrice(v: number): string {
   if (v >= 1000) return v.toFixed(2);
   if (v >= 10) return v.toFixed(2);
@@ -125,43 +93,6 @@ function formatPrice(v: number): string {
   return v.toFixed(4);
 }
 
-// ─── 布局计算 ────────────────────────────────────────────
-
-interface ChartLayout {
-  main: { x: number; y: number; w: number; h: number };
-  volume: { x: number; y: number; w: number; h: number };
-  sub: { x: number; y: number; w: number; h: number };
-  barWidth: number;
-  visibleCount: number;
-}
-
-function computeLayout(
-  cw: number,
-  ch: number,
-  barCount: number,
-  hasSubChart: boolean
-): ChartLayout {
-  const volH = 50;
-  const subH = hasSubChart ? 50 : 0;
-  const mainH = ch - CHART_TOP - CHART_BOTTOM - volH - subH - GAP_BETWEEN_CHARTS * 2;
-  const chartW = cw - CHART_LEFT - CHART_RIGHT;
-  const barWidth = Math.max(MIN_BAR_WIDTH, chartW / barCount);
-  const visibleCount = Math.floor(chartW / barWidth);
-
-  return {
-    main: { x: CHART_LEFT, y: CHART_TOP, w: chartW, h: mainH },
-    volume: { x: CHART_LEFT, y: CHART_TOP + mainH + GAP_BETWEEN_CHARTS, w: chartW, h: volH },
-    sub: hasSubChart
-      ? { x: CHART_LEFT, y: CHART_TOP + mainH + volH + GAP_BETWEEN_CHARTS * 2, w: chartW, h: subH }
-      : { x: 0, y: 0, w: 0, h: 0 },
-    barWidth,
-    visibleCount,
-  };
-}
-
-// ─── Canvas 绘制函数 ─────────────────────────────────────
-
-/** 绘制网格和坐标轴 */
 function drawGrid(
   ctx: CanvasRenderingContext2D,
   layout: ChartLayout,
@@ -172,8 +103,6 @@ function drawGrid(
   const { main, volume } = layout;
   ctx.strokeStyle = COLOR_GRID;
   ctx.lineWidth = 0.5;
-
-  // 水平网格线（主图 5 条）
   const priceSteps = 5;
   const areas = [main];
   if (volume.h > 0) areas.push(volume);
@@ -186,8 +115,6 @@ function drawGrid(
       ctx.stroke();
     }
   }
-
-  // 垂直网格线
   const vStep = Math.max(1, Math.floor(barCount / 8));
   for (let i = 0; i < barCount; i += vStep) {
     const x = main.x + i * layout.barWidth;
@@ -199,8 +126,6 @@ function drawGrid(
     );
     ctx.stroke();
   }
-
-  // 价格标签（右轴）
   ctx.fillStyle = COLOR_TEXT;
   ctx.font = '10px monospace';
   ctx.textAlign = 'right';
@@ -209,8 +134,6 @@ function drawGrid(
     const y = main.y + (main.h / priceSteps) * i;
     ctx.fillText(formatPrice(price), main.x - 4, y + 3);
   }
-
-  // 时间标签（底轴）
   ctx.textAlign = 'center';
   for (let i = 0; i < barCount; i += vStep) {
     const x = main.x + i * layout.barWidth + layout.barWidth / 2;
@@ -226,7 +149,6 @@ function drawGrid(
   }
 }
 
-/** 绘制 K 线蜡烛 */
 function drawCandlesticks(
   ctx: CanvasRenderingContext2D,
   bars: NormalizedBar[],
@@ -238,7 +160,6 @@ function drawCandlesticks(
   const range = priceMax - priceMin || 1;
   const candleW = Math.max(2, barWidth * CANDLE_WIDTH_RATIO);
   const halfW = candleW / 2;
-
   for (let i = 0; i < bars.length; i++) {
     const b = bars[i];
     const x = main.x + i * barWidth + barWidth / 2;
@@ -248,17 +169,12 @@ function drawCandlesticks(
     const closeY = main.y + main.h - ((b.c - priceMin) / range) * main.h;
     const highY = main.y + main.h - ((b.h - priceMin) / range) * main.h;
     const lowY = main.y + main.h - ((b.l - priceMin) / range) * main.h;
-
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
-
-    // 上/下影线
     ctx.beginPath();
     ctx.moveTo(x, highY);
     ctx.lineTo(x, lowY);
     ctx.stroke();
-
-    // 蜡烛体
     const bodyTop = Math.min(openY, closeY);
     const bodyBot = Math.max(openY, closeY);
     const bodyH = Math.max(1, bodyBot - bodyTop);
@@ -267,7 +183,6 @@ function drawCandlesticks(
   }
 }
 
-/** 绘制均线叠加 */
 function drawOverlays(
   ctx: CanvasRenderingContext2D,
   overlays: ChartOverlay[],
@@ -277,13 +192,11 @@ function drawOverlays(
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
-
   for (let oi = 0; oi < overlays.length; oi++) {
     const overlay = overlays[oi];
     const color = MA_COLORS[oi % MA_COLORS.length];
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
-
     ctx.beginPath();
     let started = false;
     for (let i = 0; i < overlay.values.length; i++) {
@@ -305,14 +218,11 @@ function drawOverlays(
   }
 }
 
-/** 绘制成交量柱状图 */
 function drawVolume(ctx: CanvasRenderingContext2D, bars: NormalizedBar[], layout: ChartLayout) {
   const { volume, barWidth } = layout;
   if (volume.h <= 0) return;
-
-  const maxVol = Math.max(...bars.map((b) => b.v), 1);
+  const maxVol = maxByReduce(bars.map((b) => b.v)) || 1;
   const halfW = Math.max(1, (barWidth * CANDLE_WIDTH_RATIO) / 2);
-
   for (let i = 0; i < bars.length; i++) {
     const b = bars[i];
     const isUp = b.c >= b.o;
@@ -327,7 +237,6 @@ function drawVolume(ctx: CanvasRenderingContext2D, bars: NormalizedBar[], layout
   }
 }
 
-/** 绘制策略专属副图 */
 function drawSubChart(
   ctx: CanvasRenderingContext2D,
   bars: NormalizedBar[],
@@ -337,63 +246,49 @@ function drawSubChart(
 ) {
   const { sub, barWidth } = layout;
   if (sub.h <= 0) return;
-
   const closes = bars.map((b) => b.c);
   const subcat = subcategory ?? '';
-
   let data: (number | null)[];
   let yMin = 0;
   let yMax = 100;
-
   if (subcat === 'trend_cta') {
-    // RSI
     data = computeRSI(closes, DEFAULT_RSI_PERIOD);
     yMin = 0;
     yMax = 100;
   } else if (subcat === 'arbitrage' || subcat === 'hft_microstructure') {
-    // 价差 = (high - low) / close
     data = bars.map((b) => ((b.h - b.l) / b.c) * 100);
     yMin = 0;
     const vals = data.filter((d): d is number => d != null);
-    yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 10;
+    yMax = vals.length > 0 ? maxByReduce(vals) * 1.2 : 10;
   } else if (subcat === 'macro_quant') {
-    // 滚动波动率
     const returns = closes.map((c, i) => (i === 0 ? 0 : (c - closes[i - 1]) / closes[i - 1]));
-    data = computeSMA(
-      returns.map((r) => Math.abs(r) * 100),
-      10
-    );
+    data = computeSMA(returns.map((r) => Math.abs(r) * 100), 10);
     const vals = data.filter((d): d is number => d != null);
     yMin = 0;
-    yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 5;
+    yMax = vals.length > 0 ? maxByReduce(vals) * 1.2 : 5;
   } else if (
     subcat === 'e2e_ai_timeseries' ||
     subcat === 'factor_based' ||
     subcat === 'ml_nonlinear_factor' ||
     subcat === 'linear_multi_factor'
   ) {
-    // 模拟 IC 状曲线：close 的归一化变化
     const base = closes[0] || 1;
     data = closes.map((c) => ((c - base) / base) * 100);
     const vals = data.filter((d): d is number => d != null);
     yMin = vals.length > 0 ? Math.min(...vals) * 1.2 : -5;
-    yMax = vals.length > 0 ? Math.max(...vals) * 1.2 : 5;
+    yMax = vals.length > 0 ? maxByReduce(vals) * 1.2 : 5;
   } else if (subcat === 'event_driven' || subcat === 'transitional') {
-    // 情感得分：成交量相对均值偏离
     const avgVol = bars.reduce((s, b) => s + b.v, 0) / bars.length || 1;
     data = bars.map((b) => ((b.v - avgVol) / avgVol) * 100);
     const vals = data.filter((d): d is number => d != null);
     yMin = Math.min(...vals) * 1.2;
-    yMax = Math.max(...vals) * 1.2;
+    yMax = maxByReduce(vals) * 1.2;
   } else {
     data = closes.map(() => 50);
     yMin = 0;
     yMax = 100;
   }
-
   const range = yMax - yMin || 1;
-
-  // 画参考线（RSI 的 70/30）
   if (subcat === 'trend_cta') {
     ctx.strokeStyle = 'rgba(233, 196, 106, 0.25)';
     ctx.lineWidth = 0.5;
@@ -406,24 +301,12 @@ function drawSubChart(
       ctx.stroke();
     }
     ctx.setLineDash([]);
-
-    // 标签
     ctx.fillStyle = COLOR_TEXT;
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(
-      String(OVERBOUGHT),
-      sub.x - 2,
-      sub.y + sub.h - ((OVERBOUGHT - yMin) / range) * sub.h + 3
-    );
-    ctx.fillText(
-      String(OVERSOLD),
-      sub.x - 2,
-      sub.y + sub.h - ((OVERSOLD - yMin) / range) * sub.h + 3
-    );
+    ctx.fillText(String(OVERBOUGHT), sub.x - 2, sub.y + sub.h - ((OVERBOUGHT - yMin) / range) * sub.h + 3);
+    ctx.fillText(String(OVERSOLD), sub.x - 2, sub.y + sub.h - ((OVERSOLD - yMin) / range) * sub.h + 3);
   }
-
-  // 画副图数据线
   ctx.strokeStyle = '#62d8ff';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -444,15 +327,12 @@ function drawSubChart(
     }
   }
   ctx.stroke();
-
-  // 副图标签
   ctx.fillStyle = COLOR_TEXT;
   ctx.font = '9px monospace';
   ctx.textAlign = 'left';
   ctx.fillText(subLabel, sub.x + 4, sub.y + 12);
 }
 
-/** 绘制买卖信号箭头 */
 function drawSignals(
   ctx: CanvasRenderingContext2D,
   signals: PreviewSignal[],
@@ -464,12 +344,10 @@ function drawSignals(
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
-
   for (let si = 0; si < signals.length; si++) {
     const sig = signals[si];
     const idx = sig.bar_index;
     if (idx < 0 || idx >= bars.length) continue;
-
     const bar = bars[idx];
     const x = main.x + idx * barWidth + barWidth / 2;
     const isBuy = sig.side === 'buy';
@@ -477,27 +355,21 @@ function drawSignals(
     const yBase = isBuy
       ? main.y + main.h - ((bar.l - priceMin) / range) * main.h - 4
       : main.y + main.h - ((bar.h - priceMin) / range) * main.h + 4;
-
     const isHovered = hoveredSignal === si;
     const size = isHovered ? 7 : 5;
-
     ctx.fillStyle = color;
     ctx.beginPath();
     if (isBuy) {
-      // 上箭头
       ctx.moveTo(x, yBase - size);
       ctx.lineTo(x - size, yBase);
       ctx.lineTo(x + size, yBase);
     } else {
-      // 下箭头
       ctx.moveTo(x, yBase + size);
       ctx.lineTo(x - size, yBase);
       ctx.lineTo(x + size, yBase);
     }
     ctx.closePath();
     ctx.fill();
-
-    // 高亮 glow
     if (isHovered) {
       ctx.shadowColor = color;
       ctx.shadowBlur = 8;
@@ -506,8 +378,6 @@ function drawSignals(
     }
   }
 }
-
-// ─── Props ────────────────────────────────────────────────
 
 export interface KlineChartProps {
   previewData: PreviewResponse | null;
@@ -519,8 +389,6 @@ export interface KlineChartProps {
   loading?: boolean;
 }
 
-// ─── 主组件 ───────────────────────────────────────────────
-
 export function KlineChart({
   previewData,
   subcategory,
@@ -531,8 +399,16 @@ export function KlineChart({
   loading = false,
 }: KlineChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const baseCanvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const prevFingerprintRef = useRef<string | null>(null);
+  const hoveredSignalRef = useRef<number | null>(null);
+  const normalizedBarsRef = useRef<NormalizedBar[]>([]);
+  const layoutRef = useRef<ChartLayout | null>(null);
+  const priceRangeRef = useRef<{ min: number; max: number } | null>(null);
+  const rafRef = useRef<number | undefined>(undefined);
+  const mouseRafRef = useRef<number | undefined>(undefined);
+
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
@@ -542,10 +418,9 @@ export function KlineChart({
   const [showToast, setShowToast] = useState(false);
   const [toastHiding, setToastHiding] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [hoveredSignal, setHoveredSignal] = useState<number | null>(null);
-  const [containerDims, setContainerDims] = useState({ w: 600, h: 400 });
+  const [downsampled, setDownsampled] = useState(false);
 
-  // ── fingerprint 变更检测 ─────────────────────────────────
+  // fingerprint 变更检测
   useEffect(() => {
     if (!previewData) return;
     const fp = previewData.fingerprint;
@@ -561,46 +436,55 @@ export function KlineChart({
     prevFingerprintRef.current = fp;
   }, [previewData]);
 
-  // ── Canvas 绘制 ─────────────────────────────────────────
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
+  // 归一化 + 降采样缓存
+  useEffect(() => {
+    if (!previewData || previewData.bars.length === 0) {
+      normalizedBarsRef.current = [];
+      setDownsampled(false);
+      return;
+    }
+    const bars = normalizeBars(previewData.bars);
+    if (bars.length > MAX_BARS) {
+      normalizedBarsRef.current = downsample(bars, MAX_BARS);
+      setDownsampled(true);
+    } else {
+      normalizedBarsRef.current = bars;
+      setDownsampled(false);
+    }
+  }, [previewData]);
+
+  // 基础层绘制
+  const drawBase = useCallback(() => {
+    const canvas = baseCanvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     const w = rect.width;
     const h = rect.height;
-
+    if (w === 0 || h === 0) return;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     ctx.scale(dpr, dpr);
-
-    // 清空
     ctx.clearRect(0, 0, w, h);
 
-    // 空数据
-    if (!previewData || previewData.bars.length === 0) return;
+    const bars = normalizedBarsRef.current;
+    if (!previewData || bars.length === 0) return;
 
-    const { bars: rawBars, overlays, signals } = previewData;
-    const bars = normalizeBars(rawBars);
     const layout = computeLayout(w, h, bars.length, true);
+    layoutRef.current = layout;
 
-    // 价格范围
     let priceMin = Infinity;
     let priceMax = -Infinity;
     for (const b of bars) {
       if (b.l < priceMin) priceMin = b.l;
       if (b.h > priceMax) priceMax = b.h;
     }
-    // 加入均线范围
-    for (const ov of overlays) {
+    for (const ov of previewData.overlays) {
       for (const v of ov.values) {
         if (v != null && !Number.isNaN(v)) {
           if (v < priceMin) priceMin = v;
@@ -611,68 +495,98 @@ export function KlineChart({
     const pricePad = (priceMax - priceMin) * 0.05 || 1;
     priceMin -= pricePad;
     priceMax += pricePad;
+    priceRangeRef.current = { min: priceMin, max: priceMax };
 
-    // 1. 网格
     drawGrid(ctx, layout, priceMin, priceMax, bars.length);
-
-    // 2. 成交量
     drawVolume(ctx, bars, layout);
-
-    // 3. 主图 K 线
     drawCandlesticks(ctx, bars, layout, priceMin, priceMax);
+    drawOverlays(ctx, previewData.overlays, layout, priceMin, priceMax);
 
-    // 4. 均线叠加
-    drawOverlays(ctx, overlays, layout, priceMin, priceMax);
-
-    // 5. 策略专属副图
     let subLabel = ui.klineChartRSI;
     if (subcategory && ['arbitrage', 'hft_microstructure'].includes(subcategory)) {
       subLabel = ui.klineChartSpread;
     } else if (
       subcategory &&
-      ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(
-        subcategory
-      )
+      ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(subcategory)
     ) {
       subLabel = ui.klineChartIC;
     } else if (subcategory && ['transitional', 'event_driven'].includes(subcategory)) {
       subLabel = ui.klineChartSentiment;
     }
     drawSubChart(ctx, bars, subcategory, layout, subLabel);
+  }, [previewData, subcategory, ui]);
 
-    // 6. 信号
-    drawSignals(ctx, signals, bars, layout, priceMin, priceMax, hoveredSignal);
-  }, [previewData, subcategory, hoveredSignal, ui]);
+  // 叠加层绘制（只画信号箭头）
+  const drawOverlay = useCallback(() => {
+    const canvas = overlayCanvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = rect.width;
+    const h = rect.height;
+    if (w === 0 || h === 0) return;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
 
-  // 窗口 resize
+    const bars = normalizedBarsRef.current;
+    const layout = layoutRef.current;
+    const priceRange = priceRangeRef.current;
+    if (!previewData || bars.length === 0 || !layout || !priceRange) return;
+
+    drawSignals(
+      ctx,
+      previewData.signals,
+      bars,
+      layout,
+      priceRange.min,
+      priceRange.max,
+      hoveredSignalRef.current
+    );
+  }, [previewData]);
+
+  // 基础层重绘 + ResizeObserver 防抖
   useEffect(() => {
-    draw();
+    drawBase();
+    drawOverlay();
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      draw();
-      const entry = entries[0];
-      if (entry) {
-        setContainerDims({ w: entry.contentRect.width, h: entry.contentRect.height });
-      }
+    const ro = new ResizeObserver(() => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        drawBase();
+        drawOverlay();
+      });
     });
     ro.observe(el);
-    return () => ro.disconnect();
-  }, [draw]);
+    return () => {
+      ro.disconnect();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [drawBase, drawOverlay]);
 
-  // ── 鼠标事件 ────────────────────────────────────────────
+  // 数据变化时重绘
+  useEffect(() => {
+    drawBase();
+    drawOverlay();
+  }, [drawBase, drawOverlay]);
 
   const getBarIndexFromX = useCallback(
     (clientX: number): number | null => {
       const container = containerRef.current;
-      const canvas = canvasRef.current;
-      if (!container || !canvas || !previewData) return null;
+      const layout = layoutRef.current;
+      if (!container || !layout || !previewData) return null;
       const rect = container.getBoundingClientRect();
       const x = clientX - rect.left - CHART_LEFT;
       if (x < 0) return null;
-      const layout = computeLayout(rect.width, rect.height, previewData.bars.length, true);
       const idx = Math.floor(x / layout.barWidth);
-      if (idx < 0 || idx >= previewData.bars.length) return null;
+      if (idx < 0 || idx >= normalizedBarsRef.current.length) return null;
       return idx;
     },
     [previewData]
@@ -680,55 +594,58 @@ export function KlineChart({
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      const idx = getBarIndexFromX(e.clientX);
-      if (idx == null || !previewData) {
-        setTooltip(null);
-        setHoveredSignal(null);
-        return;
-      }
-
-      // 检测是否悬停在信号上
-      const container = containerRef.current;
-      const canvas = canvasRef.current;
-      if (container && canvas && previewData) {
+      if (mouseRafRef.current) cancelAnimationFrame(mouseRafRef.current);
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      mouseRafRef.current = requestAnimationFrame(() => {
+        const idx = getBarIndexFromX(clientX);
+        if (idx == null || !previewData) {
+          setTooltip(null);
+          if (hoveredSignalRef.current !== null) {
+            hoveredSignalRef.current = null;
+            drawOverlay();
+          }
+          return;
+        }
         const sigIdx = previewData.signals.findIndex((sig) => sig.bar_index === idx);
-        setHoveredSignal(sigIdx >= 0 ? sigIdx : null);
-      }
-
-      const rawBar = previewData.bars[idx];
-      const bar = normalizeBars([rawBar])[0];
-      const barSignals = previewData.signals.filter((s) => s.bar_index === idx);
-      const containerRect = containerRef.current?.getBoundingClientRect();
-      if (containerRect) {
-        setTooltip({
-          x: e.clientX - containerRect.left,
-          y: e.clientY - containerRect.top,
-          data: bar,
-          signals: barSignals,
-        });
-      }
+        const next = sigIdx >= 0 ? sigIdx : null;
+        if (hoveredSignalRef.current !== next) {
+          hoveredSignalRef.current = next;
+          drawOverlay();
+        }
+        const bar = normalizedBarsRef.current[idx];
+        if (bar) {
+          const containerRect = containerRef.current?.getBoundingClientRect();
+          if (containerRect) {
+            setTooltip({
+              x: clientX - containerRect.left,
+              y: clientY - containerRect.top,
+              data: bar,
+              signals: previewData.signals.filter((s) => s.bar_index === idx),
+            });
+          }
+        }
+      });
     },
-    [getBarIndexFromX, previewData]
+    [getBarIndexFromX, previewData, drawOverlay]
   );
 
   const handleMouseLeave = useCallback(() => {
     setTooltip(null);
-    setHoveredSignal(null);
-  }, []);
-
-  // ── 时间轴拖拽 / 滚轮加载更多 ──────────────────────────
+    if (hoveredSignalRef.current !== null) {
+      hoveredSignalRef.current = null;
+      drawOverlay();
+    }
+  }, [drawOverlay]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
-      // 滚动到左边界触发加载更多
       if (onLoadMore && e.deltaX < 0 && previewData?.pagination?.next_cursor) {
         onLoadMore(previewData.pagination.next_cursor);
       }
     },
     [onLoadMore, previewData]
   );
-
-  // ── 搜索 ────────────────────────────────────────────────
 
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -739,16 +656,11 @@ export function KlineChart({
     [searchValue, onSymbolChange]
   );
 
-  // ── 底部信号计数 ────────────────────────────────────────
-
   const buyCount = previewData?.signals.filter((s) => s.side === 'buy').length ?? 0;
   const sellCount = previewData?.signals.filter((s) => s.side === 'sell').length ?? 0;
 
-  // ── Render ──────────────────────────────────────────────
-
   return (
     <div className={s.klineContainer}>
-      {/* 顶部工具栏 */}
       <div className={s.toolbar}>
         <input
           className={s.symbolSearch}
@@ -761,13 +673,17 @@ export function KlineChart({
         {loading && (
           <span style={{ fontSize: 10, color: 'var(--muted)' }}>{ui.klineChartLoading}</span>
         )}
+        {downsampled && (
+          <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+            {language === 'zh' ? `已降采样至 ${MAX_BARS} 条` : `Downsampled to ${MAX_BARS}`}
+          </span>
+        )}
         <div className={s.previewBadge}>
           {ui.klineChartPreviewEngine}
           <div className={s.previewTooltip}>{ui.klineChartPreviewEngineTooltip}</div>
         </div>
       </div>
 
-      {/* Canvas 区域 */}
       <div
         className={s.chartWrapper}
         ref={containerRef}
@@ -775,58 +691,38 @@ export function KlineChart({
         onMouseLeave={handleMouseLeave}
         onWheel={handleWheel}
       >
-        <canvas ref={canvasRef} className={s.chartCanvas} />
+        <canvas ref={baseCanvasRef} className={s.baseCanvas} />
+        <canvas ref={overlayCanvasRef} className={s.overlayCanvas} />
 
-        {/* Loading overlay */}
         {loading && <div className={s.loadingOverlay}>{ui.klineChartLoading}</div>}
 
-        {/* 空状态 */}
         {!loading && (!previewData || previewData.bars.length === 0) && (
           <div className={s.emptyState}>
             <span>{language === 'zh' ? '暂无 K 线数据' : 'No bar data'}</span>
             <span>
-              {language === 'zh'
-                ? '请选择一个标的并点击"预览"'
-                : 'Select a symbol and click Preview'}
+              {language === 'zh' ? '请选择一个标的并点击"预览"' : 'Select a symbol and click Preview'}
             </span>
           </div>
         )}
 
-        {/* Loading beacon（滚动加载更多） */}
         {loading && previewData && previewData.bars.length > 0 && (
           <div className={s.loadingBeacon}>{ui.klineChartLoading}</div>
         )}
 
-        {/* Tooltip */}
         {tooltip && (
           <div
             className={s.tooltipOverlay}
             style={{
-              left: clamp(tooltip.x, 80, containerDims.w - 80),
-              top: clamp(tooltip.y, 60, containerDims.h - 60),
+              left: clamp(tooltip.x, 80, (containerRef.current?.getBoundingClientRect().width ?? 600) - 80),
+              top: clamp(tooltip.y, 60, (containerRef.current?.getBoundingClientRect().height ?? 400) - 60),
             }}
           >
             <div className={s.tooltipTitle}>{ui.klineChartOHLC}</div>
-            <div className={s.tooltipRow}>
-              <span>O</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.o)}</span>
-            </div>
-            <div className={s.tooltipRow}>
-              <span>H</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.h)}</span>
-            </div>
-            <div className={s.tooltipRow}>
-              <span>L</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.l)}</span>
-            </div>
-            <div className={s.tooltipRow}>
-              <span>C</span>
-              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.c)}</span>
-            </div>
-            <div className={s.tooltipRow}>
-              <span>Vol</span>
-              <span className={s.tooltipRowValue}>{tooltip.data.v.toLocaleString()}</span>
-            </div>
+            <div className={s.tooltipRow}><span>O</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.o)}</span></div>
+            <div className={s.tooltipRow}><span>H</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.h)}</span></div>
+            <div className={s.tooltipRow}><span>L</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.l)}</span></div>
+            <div className={s.tooltipRow}><span>C</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.c)}</span></div>
+            <div className={s.tooltipRow}><span>Vol</span><span className={s.tooltipRowValue}>{tooltip.data.v.toLocaleString()}</span></div>
             {tooltip.signals.map((sig, i) => (
               <div key={i} className={s.tooltipSignal}>
                 <div className={sig.side === 'buy' ? s.tooltipBuy : s.tooltipSell}>
@@ -835,9 +731,7 @@ export function KlineChart({
                   {sig.type}
                 </div>
                 {sig.reason && (
-                  <div className={s.tooltipReason}>
-                    {ui.klineChartReason}: {sig.reason}
-                  </div>
+                  <div className={s.tooltipReason}>{ui.klineChartReason}: {sig.reason}</div>
                 )}
                 {sig.factor_snapshot && Object.keys(sig.factor_snapshot).length > 0 && (
                   <div className={s.tooltipReason}>
@@ -849,7 +743,6 @@ export function KlineChart({
           </div>
         )}
 
-        {/* Fingerprint change toast */}
         {showToast && (
           <div className={`${s.toast} ${toastHiding ? s.toastHiding : ''}`}>
             {ui.klineChartFingerprintChanged}
@@ -857,19 +750,12 @@ export function KlineChart({
         )}
       </div>
 
-      {/* 底部信号计数 */}
       {previewData && previewData.bars.length > 0 && (
         <div className={s.signalBar}>
           <span>{language === 'zh' ? '信号' : 'Signals'}:</span>
-          <span className={s.signalCountBuy}>
-            ▲ {ui.klineChartBuy} {buyCount}
-          </span>
-          <span className={s.signalCountSell}>
-            ▼ {ui.klineChartSell} {sellCount}
-          </span>
-          <span>
-            {language === 'zh' ? 'K线' : 'Bars'}: {previewData.bars.length}
-          </span>
+          <span className={s.signalCountBuy}>▲ {ui.klineChartBuy} {buyCount}</span>
+          <span className={s.signalCountSell}>▼ {ui.klineChartSell} {sellCount}</span>
+          <span>{language === 'zh' ? 'K线' : 'Bars'}: {previewData.bars.length}</span>
           <span>ID: {previewData.fingerprint?.slice(0, 12) ?? '-'}</span>
         </div>
       )}
