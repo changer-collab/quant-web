@@ -21,7 +21,6 @@ function categoryIconClass(cat: string, styles: Record<string, string>): string 
 
 interface StrategyGridNewProps {
   strategies: StrategyRow[];
-  onSelectStrategy: (strategy: StrategyRow) => void;
   onEnterWorkspace: (strategy: StrategyRow) => void;
   ui: UiCopy;
   language: LanguageCode;
@@ -29,7 +28,6 @@ interface StrategyGridNewProps {
 
 export function StrategyGridNew({
   strategies,
-  onSelectStrategy,
   onEnterWorkspace,
   ui,
   language,
@@ -117,9 +115,19 @@ export function StrategyGridNew({
                     <div className={s.cardGrid}>
                       {groupItems.map((strategy) => (
                         <div
-                          className={s.card}
+                          className={`${s.card} ${strategy.workflowReady ? s.cardClickable : s.cardDisabled}`}
                           key={strategy.id}
-                          onClick={() => onSelectStrategy(strategy)}
+                          onClick={() => {
+                            if (strategy.workflowReady) onEnterWorkspace(strategy);
+                          }}
+                          role="button"
+                          tabIndex={strategy.workflowReady ? 0 : -1}
+                          onKeyDown={(e) => {
+                            if ((e.key === 'Enter' || e.key === ' ') && strategy.workflowReady) {
+                              e.preventDefault();
+                              onEnterWorkspace(strategy);
+                            }
+                          }}
                         >
                           <div className={s.cardName}>{strategy.name}</div>
                           <div className={s.cardMeta}>
@@ -132,21 +140,6 @@ export function StrategyGridNew({
                           {strategy.description && (
                             <p className={s.cardDesc}>{strategy.description}</p>
                           )}
-                          <div className={s.cardAction}>
-                            <button
-                              className={s.workspaceButton}
-                              disabled={!strategy.workflowReady}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (strategy.workflowReady) {
-                                  onEnterWorkspace(strategy);
-                                }
-                              }}
-                              type="button"
-                            >
-                              {ui.enterWorkspace}
-                            </button>
-                          </div>
                         </div>
                       ))}
                     </div>

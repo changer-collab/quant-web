@@ -178,6 +178,22 @@
   box-shadow: var(--shadow-md);
 }
 
+.cardClickable {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.cardClickable:hover {
+  box-shadow: 0 4px 16px rgba(98, 216, 255, 0.15);
+  border-color: rgba(98, 216, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.cardDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .cardSelected {
   border-color: rgba(77, 240, 160, 0.5);
   background: rgba(77, 240, 160, 0.06);
