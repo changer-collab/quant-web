@@ -275,6 +275,11 @@ export interface BacktestReportFull {
 
   status: string;
   generatedAt: string;
+
+  // 19. 策略元数据（由 BacktestResultProcessor 从 configSnapshot 注入）
+  strategyCategory?: string;
+  strategySubcategory?: string;
+  configHash?: string;
 }
 
 export interface BacktestReportSummary {

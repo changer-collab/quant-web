@@ -12,7 +12,7 @@ import { CollectHandler } from './handlers/collect-handler.js';
 import { DiagnosticsHandler } from './handlers/diagnostics-handler.js';
 import { PythonBridge } from './python-bridge.js';
 import { TaskStatus, type StreamEvent } from './types.js';
-import type { TaskRecord, TaskHandler } from './queue.js';
+import type { TaskRecord, TaskHandler } from './types.js';
 
 /** 根据任务类型创建对应的 handler */
 function createHandler(taskType: string): TaskHandler | null {

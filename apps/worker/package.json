@@ -17,11 +17,9 @@
   },
   "dependencies": {
     "@quant/data-center": "workspace:*",
-    "@quant/data-collector": "workspace:*",
-    "better-sqlite3": "^12.11.1"
+    "@quant/data-collector": "workspace:*"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
     "typescript": "^5.9.3",
     "vitest": "^3.2.6",
     "tsx": "^4.19.0"

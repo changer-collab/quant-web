@@ -442,7 +442,7 @@ export interface ResultProcessor {
 
 **Files:**
 
-- Create: `docs/superpowers/specs/2026-06-30-diagnostics-algorithm-contract.md`
+- Create: `docs/specs/2026-06-30-diagnostics-algorithm-contract.md`
 
 **Acceptance Criteria:**
 
@@ -1005,10 +1005,10 @@ export interface ResultProcessor {
 
 **Steps:**
 
-- [ ] 在 CLI 注册 `listStrategies` command。
-- [ ] 添加 CLI test 覆盖输出 strategy meta list。
-- [ ] 修改 `strategy-sync.ts` 使用 PythonBridge 调用。
-- [ ] 删除内联 Python script string。
+- [x] 在 CLI 注册 `listStrategies` command。
+- [x] 添加 CLI test 覆盖输出 strategy meta list。
+- [x] 修改 `strategy-sync.ts` 使用 PythonBridge 调用。
+- [x] 删除内联 Python script string。
 - [ ] Run: `cd packages/strategy-runtime && pytest tests/test_cli_list_strategies.py -v`。
 - [ ] Run: `cd apps/api && pnpm test -- tests/services/strategy-sync.test.ts`。
 - [ ] Commit: `refactor: unify strategy metadata bridge`。

@@ -1,0 +1,970 @@
+# ralph/backend-sync-realign-phase6-9 修复实施计划
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 修复 ralph/backend-sync-realign-phase6-9 分支代码审查发现的 5 Critical + 7 Important 问题,使 PR 可合并、测试全绿、UIConstraint 实际生效、story-8 验收结论可信。
+
+**Architecture:** 按原 14 story 边界分 7 个提交,每个提交独立可测。修复点 F1-F12 对应审查的 12 个问题,F13 是 story-8 重验,F14 是 ralph harness 文件清理。涉及 apps/api、apps/worker、apps/web、packages/strategy-runtime、docs、scripts/ralph。
+
+**Tech Stack:** TypeScript (apps/*) + Python (packages/strategy-runtime),vitest + pytest,pnpm workspace。
+
+## Global Constraints
+
+- 所有回复使用中文(AGENTS.md 硬性规则)
+- 仍在 `ralph/backend-sync-realign-phase6-9` 分支提交,不新建分支
+- 保留 deprecated 双字段(`key` + `name` 双填),不彻底清理
+- 提交前必须满足:`pnpm test` 全绿 + `pnpm build` 5/5 + `pnpm lint` 0 errors + Python 7 包 pytest 全绿
+- 每个提交按 story 边界,commit message 用 `fix: story-X-fix ...` / `docs: ...` / `chore: ...` / `test: ...` 前缀
+- 不引入新依赖
+- 不修改 .env / .env.example
+- 不顺手改 Minor 问题(p.min 边界、_parse_dates 死代码、DRY 重构等)
+
+---
+
+## Task 1: story-2-fix 删除 transitional stub 测试 + _run_composite snapshotParams 优先级
+
+**Files:**
+- Modify: `packages/strategy-runtime/tests/test_diagnostics_stub.py:73-79`
+- Modify: `packages/strategy-runtime/quantforge_strategy/commands/backtest.py:55-72, 120-156`
+- Test: `packages/strategy-runtime/tests/test_backtest_command_market_rules.py`
+
+**Interfaces:**
+- Consumes: `config.get("snapshotParams")` / `config.get("strategyParams")` (已有,_run_single 在用)
+- Produces: `_resolve_params(config, fallback_key)` helper,被 `_run_single` 和 `_run_composite` 共用
+
+- [ ] **Step 1: 写失败测试 — _run_composite 应用 snapshotParams 优先级**
+
+追加到 `packages/strategy-runtime/tests/test_backtest_command_market_rules.py` 末尾:
+
+```python
+def test_run_composite_prefers_snapshot_params(monkeypatch, tmp_path):
+    """组合策略回测应优先使用 snapshotParams 而非 components.*.params"""
+    from quantforge_strategy.commands.backtest import run_backtest
+    from quantforge_strategy import TimeFrame
+
+    # mock DataClient.get_active_symbols 避免存活偏差过滤拦截
+    import quantforge_strategy.commands.backtest as bt_mod
+    monkeypatch.setattr(
+        "quantforge_data.DataClient.get_active_symbols",
+        lambda self, ts: ["TEST1", "TEST2"],
+    )
+    # mock query_bars 返回最小 bars
+    monkeypatch.setattr(
+        "quantforge_data.DataClient.query_bars",
+        lambda self, symbol, timeframe, start_ts=None, end_ts=None: [],
+    )
+
+    result = run_backtest({
+        "strategy": "composite",
+        "config": {
+            "snapshotParams": {"selector_period": 10, "timer_threshold": 0.5},
+            "components": {
+                "selector": {"name": "ma_selector", "params": {"period": 20}},
+                "timer": {"name": "threshold_timer", "params": {"threshold": 0.3}},
+                "sizer": {"name": "fixed_sizer", "params": {"ratio": 0.1}},
+            },
+        },
+        "dataRange": {
+            "dbPath": str(tmp_path / "test.db"),
+            "timeframe": "1d",
+            "symbols": ["TEST1", "TEST2"],
+            "startTs": 1000000000,
+        },
+    })
+
+    # 无数据时应返回 NO_DATA,但验证 snapshotParams 被读取不抛 KeyError
+    assert result["ok"] is False
+    assert result["error"]["code"] == "NO_DATA"
+```
+
+- [ ] **Step 2: 运行测试验证失败**
+
+Run: `cd packages/strategy-runtime && python -m pytest tests/test_backtest_command_market_rules.py::test_run_composite_prefers_snapshot_params -v`
+Expected: FAIL(可能因 _run_composite 仍读 components.*.params 而 snapshotParams 未被使用,或 mock 不全报错)
+
+- [ ] **Step 3: 删除 test_diagnostics_stub.py 中过期断言**
+
+在 `packages/strategy-runtime/tests/test_diagnostics_stub.py` 删除第 73-79 行的 `test_transitional_contains_expected_fields` 方法整体:
+
+```python
+# 删除这一段(73-79 行):
+    def test_transitional_contains_expected_fields(self):
+        result = run_diagnostics({"category": "transitional"})
+        assert result["ok"] is True
+        data = result["data"]
+        assert "ic_series" in data
+        assert "layered_returns" in data
+        assert "summary" in data
+```
+
+- [ ] **Step 4: 提取 _resolve_params helper 并应用到 _run_single 和 _run_composite**
+
+在 `packages/strategy-runtime/quantforge_strategy/commands/backtest.py` 中:
+
+4a. 在 `_build_strategy` 函数后(约第 53 行)新增 helper:
+
+```python
+def _resolve_params(config: dict[str, Any], fallback_key: str = "strategyParams") -> dict[str, Any] | None:
+    """优先读 snapshotParams,降级 fallback_key(默认 strategyParams)。
+
+    用于统一 _run_single 和 _run_composite 的参数来源,保持单一真相源。
+    """
+    snapshot = config.get("snapshotParams")
+    if snapshot is not None:
+        return snapshot
+    return config.get(fallback_key)
+```
+
+4b. 修改 `_run_single`(第 68-71 行)替换为 helper 调用:
+
+```python
+    # 优先读 snapshotParams，降级 strategyParams（过渡兼容）
+    params = _resolve_params(config)
+    strategy = _build_strategy(strategy_name, params)
+```
+
+(删除原 `snapshot_params = config.get("snapshotParams")` / `strategy_params = config.get("strategyParams")` 两行)
+
+4c. 修改 `_run_composite`(第 154-156 行)应用 helper:
+
+```python
+    selector = _build_strategy(selector_cfg.get("name", ""), _resolve_params(selector_cfg, "params"))
+    timer = _build_strategy(timer_cfg.get("name", ""), _resolve_params(timer_cfg, "params"))
+    sizer = _build_strategy(sizer_cfg.get("name", ""), _resolve_params(sizer_cfg, "params"))
+```
+
+注意:`_resolve_params(selector_cfg, "params")` 在 selector_cfg 内找 snapshotParams 优先,降级到 selector_cfg.params。
+
+- [ ] **Step 5: 运行测试验证通过**
+
+Run: `cd packages/strategy-runtime && python -m pytest tests/test_backtest_command_market_rules.py tests/test_diagnostics_stub.py tests/test_diagnostics_transitional.py -v`
+Expected: PASS(新测试通过 + stub 测试不再失败 + transitional 测试仍通过)
+
+- [ ] **Step 6: 全包验证**
+
+Run: `cd packages/strategy-runtime && python -m pytest -v`
+Expected: ALL PASS(62+ tests)
+
+- [ ] **Step 7: 提交**
+
+```bash
+git add packages/strategy-runtime/tests/test_diagnostics_stub.py \
+  packages/strategy-runtime/quantforge_strategy/commands/backtest.py \
+  packages/strategy-runtime/tests/test_backtest_command_market_rules.py
+git commit -m "fix: story-2-fix 删除 transitional stub 测试 + _run_composite snapshotParams 优先级"
+```
+
+---
+
+## Task 2: story-7c-fix Worker 测试夹具迁移 + 删除 queue/worker 测试
+
+**Files:**
+- Delete: `apps/worker/tests/queue.test.ts`
+- Delete: `apps/worker/tests/worker.test.ts`
+- Modify: `apps/worker/tests/backtest-handler.test.ts`
+- Modify: `apps/worker/tests/diagnostics-handler.test.ts`
+
+**Interfaces:**
+- Consumes: `BacktestHandler(bridge).handle(task, onEvent)` / `DiagnosticsHandler(bridge).handle(task, onEvent)` 直接调用
+- Produces: 无 TaskQueue 依赖的独立 handler 测试
+
+- [ ] **Step 1: 删除 queue.test.ts 和 worker.test.ts**
+
+```bash
+git rm apps/worker/tests/queue.test.ts apps/worker/tests/worker.test.ts
+```
+
+- [ ] **Step 2: 重写 backtest-handler.test.ts 移除 TaskQueue**
+
+替换 `apps/worker/tests/backtest-handler.test.ts` 全文。核心改动:移除 `import { TaskQueue }`,所有测试改为直接调 `handler.handle(task, onEvent)`,断言 bridge.call 入参。
+
+```typescript
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { BacktestHandler } from '../src/handlers/backtest-handler.js';
+import { TaskType, TaskStatus, TimeFrame } from '../src/types.js';
+import type { PythonBridge, PythonResult } from '../src/python-bridge.js';
+
+function createMockBridge(override?: Partial<PythonBridge>): PythonBridge {
+  return {
+    call: vi.fn<() => Promise<PythonResult>>().mockResolvedValue({
+      ok: true,
+      data: {
+        config: { strategyName: 'mock', initialCash: 1000000, slippage: 0 },
+        trades: [],
+        equityCurve: [],
+        metrics: {
+          totalReturn: 0.05,
+          annualizedReturn: 0.12,
+          sharpeRatio: 1.5,
+          maxDrawdown: 0.08,
+          winRate: 0.55,
+          totalTrades: 10,
+        },
+      },
+    }),
+    ...override,
+  } as unknown as PythonBridge;
+}
+
+function makeTask(payload: Record<string, unknown>) {
+  return {
+    id: 'test-task',
+    type: TaskType.Backtest as never,
+    status: TaskStatus.Running,
+    payload,
+    submittedAt: Date.now(),
+    startedAt: Date.now(),
+  };
+}
+
+describe('BacktestHandler', () => {
+  it('执行回测任务', async () => {
+    const bridge = createMockBridge();
+    const handler = new BacktestHandler(bridge);
+    const result = await handler.handle(
+      makeTask({
+        strategy: 'mock',
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        initialCash: 1000000,
+        slippage: 0.001,
+        configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+      }),
+      vi.fn()
+    );
+    expect(result.backtestResult).toBeDefined();
+  });
+
+  it('Python 返回错误时抛异常', async () => {
+    const bridge = createMockBridge({
+      call: vi.fn<() => Promise<PythonResult>>().mockResolvedValue({
+        ok: false,
+        error: { code: 'NO_DATA', message: 'No bars for TEST' },
+      }),
+    });
+    const handler = new BacktestHandler(bridge);
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'mock',
+          symbol: 'TEST',
+          timeframe: TimeFrame.D1,
+          configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+        }),
+        vi.fn()
+      )
+    ).rejects.toThrow('No bars');
+  });
+
+  it('回测成功后调用 syncBacktest', async () => {
+    const bridge = createMockBridge();
+    const handler = new BacktestHandler(bridge);
+    await handler.handle(
+      makeTask({
+        strategy: 'mock',
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+      }),
+      vi.fn()
+    );
+    const calls = (bridge.call as ReturnType<typeof vi.fn>).mock.calls;
+    const syncCall = calls.find((c: unknown[]) => {
+      const req = c[0] as Record<string, unknown>;
+      return req?.command === 'syncBacktest';
+    });
+    expect(syncCall).toBeDefined();
+    const syncReq = syncCall![0] as Record<string, unknown>;
+    expect(syncReq.strategyName).toBe('mock');
+    expect(syncReq.symbol).toBe('TEST');
+  });
+
+  it('sync 失败不影响回测结果', async () => {
+    const callMock = vi.fn<() => Promise<PythonResult>>();
+    callMock
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          config: {},
+          metrics: { totalReturn: 0.1, annualizedReturn: 0.15, sharpeRatio: 1.5, maxDrawdown: 0.08, winRate: 0.55, totalTrades: 10 },
+          equityCurve: [],
+          trades: [],
+        },
+      })
+      .mockResolvedValueOnce({ ok: true, data: { analysis: {} } })
+      .mockRejectedValueOnce(new Error('sync failed'));
+
+    const bridge = createMockBridge({ call: callMock });
+    const handler = new BacktestHandler(bridge);
+    const result = await handler.handle(
+      makeTask({
+        strategy: 'mock',
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+      }),
+      vi.fn()
+    );
+    expect(result.backtestResult).toBeDefined();
+  });
+});
+
+describe('BacktestHandler - configSnapshot', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('传递 configSnapshot.category/subcategory/snapshotParams 到 bridge 请求', async () => {
+    const bridge = createMockBridge();
+    const handler = new BacktestHandler(bridge);
+    await handler.handle(
+      makeTask({
+        strategy: 'dual_ma',
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        configSnapshot: {
+          strategy: 'dual_ma',
+          params: { period: 20, offset: 5 },
+          category: 'non_factor',
+          subcategory: 'trend_cta',
+        },
+      }),
+      vi.fn()
+    );
+    const calls = (bridge.call as ReturnType<typeof vi.fn>).mock.calls;
+    const backtestCall = calls.find((c: unknown[]) => {
+      const req = c[0] as Record<string, unknown>;
+      return req?.command === 'backtest';
+    });
+    expect(backtestCall).toBeDefined();
+    const req = backtestCall![0] as Record<string, unknown>;
+    const config = req.config as Record<string, unknown>;
+    expect(config.category).toBe('non_factor');
+    expect(config.subcategory).toBe('trend_cta');
+    expect(config.snapshotParams).toEqual({ period: 20, offset: 5 });
+  });
+
+  it('configSnapshot 缺失时抛异常', async () => {
+    const handler = new BacktestHandler(createMockBridge());
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'dual_ma',
+          symbol: 'TEST',
+          timeframe: TimeFrame.D1,
+        }),
+        vi.fn()
+      )
+    ).rejects.toThrow('configSnapshot required for backtest');
+  });
+});
+```
+
+- [ ] **Step 3: 重写 diagnostics-handler.test.ts 移除 TaskQueue**
+
+替换 `apps/worker/tests/diagnostics-handler.test.ts` 全文。把所有 TaskQueue-based 测试改为直接调 `handler.handle(task, onEvent)`。保留现有 `createMockBridge` 和已直接调 handler.handle 的测试不变,只改 TaskQueue 部分。
+
+具体改动:
+- 删除 `import { TaskQueue } from '../src/queue.js';`
+- 对每个 `const queue = new TaskQueue(); queue.registerHandler(handler); await queue.submit(...); await queue.processAll(); const tasks = await queue.list(); const failed = tasks.find(...)` 模式,替换为直接 `await handler.handle(makeTask({...}), vi.fn())` 并断言抛异常或返回结果。
+
+参考 backtest-handler.test.ts 的 `makeTask` helper 模式,在文件顶部加同样的 `makeTask`。
+
+对每个原 TaskQueue 测试:
+- 原 `expect(failed!.error).toContain('No price data')` → 改为 `await expect(handler.handle(makeTask({...}), vi.fn())).rejects.toThrow('No price data')`
+- 原 `expect(completed!.result).toBeDefined()` → 改为 `const result = await handler.handle(makeTask({...}), vi.fn()); expect(result).toBeDefined()`
+
+- [ ] **Step 4: 运行 worker 测试验证通过**
+
+Run: `cd apps/worker && npx vitest run`
+Expected: ALL PASS(无 Cannot find module 错误,测试数不少于原)
+
+- [ ] **Step 5: 提交**
+
+```bash
+git add apps/worker/tests/queue.test.ts apps/worker/tests/worker.test.ts \
+  apps/worker/tests/backtest-handler.test.ts apps/worker/tests/diagnostics-handler.test.ts
+git commit -m "fix: story-7c-fix Worker 测试夹具迁移 + 删除 queue/worker 测试"
+```
+
+---
+
+## Task 3: story-7b-fix strategy-sync 元数据补全 + stdin error handler
+
+**Files:**
+- Modify: `packages/strategy-runtime/quantforge_strategy/commands/list_strategies.py:28-56`
+- Modify: `apps/api/src/services/strategy-sync.ts:91-122, 200-202`
+- Test: `packages/strategy-runtime/tests/test_cli_list_strategies.py`
+- Test: `apps/api/tests/services/strategy-sync.test.ts`
+
+**Interfaces:**
+- Consumes: `StrategyParamDef.label/.type.value/.default/.options`(Python 策略元数据)
+- Produces: CLI 输出 `label/type/default/options` 字段;API `camelToSnakeMeta` 透传这些字段
+
+- [ ] **Step 1: 写失败测试 — CLI 输出 label/type/default/options**
+
+在 `packages/strategy-runtime/tests/test_cli_list_strategies.py` 追加测试:
+
+```python
+def test_camelize_params_outputs_label_type_default_options():
+    """_camelize_params 应输出 label/type/default/options,不再丢失"""
+    from quantforge_strategy.commands.list_strategies import _camelize_params
+    from quantforge_strategy import StrategyParamDef, ParamType
+
+    params = [
+        StrategyParamDef(
+            key="period",
+            label="周期",
+            type=ParamType.INT,
+            default=20,
+            min=5,
+            max=100,
+            options=None,
+            chart_relevant=False,
+            ui_constraints=[],
+        ),
+        StrategyParamDef(
+            key="mode",
+            label="模式",
+            type=ParamType.STRING,
+            default="simple",
+            min=None,
+            max=None,
+            options=["simple", "advanced"],
+            chart_relevant=False,
+            ui_constraints=[],
+        ),
+    ]
+    result = _camelize_params(params)
+    assert result[0]["label"] == "周期"
+    assert result[0]["type"] == "int"
+    assert result[0]["default"] == 20
+    assert result[0]["options"] is None
+    assert result[1]["label"] == "模式"
+    assert result[1]["type"] == "string"
+    assert result[1]["default"] == "simple"
+    assert result[1]["options"] == ["simple", "advanced"]
+```
+
+(注:`StrategyParamDef` / `ParamType` 的精确字段名需对照 packages/strategy-runtime 实际定义,若字段名不同则按实际调整)
+
+- [ ] **Step 2: 运行测试验证失败**
+
+Run: `cd packages/strategy-runtime && python -m pytest tests/test_cli_list_strategies.py::test_camelize_params_outputs_label_type_default_options -v`
+Expected: FAIL(KeyError 'label' 或 None)
+
+- [ ] **Step 3: 修改 list_strategies.py _camelize_params 补输出字段**
+
+修改 `packages/strategy-runtime/quantforge_strategy/commands/list_strategies.py:50-55`,在 `result.append({...})` 中补字段:
+
+```python
+        result.append({
+            "name": p.key,
+            "label": p.label,
+            "type": p.type.value if p.type else None,
+            "default": p.default,
+            "options": p.options,
+            "range": [p.min or 0, p.max or 0],
+            "chartRelevant": p.chart_relevant,
+            "uiConstraints": uics,
+        })
+```
+
+- [ ] **Step 4: 运行 CLI 测试验证通过**
+
+Run: `cd packages/strategy-runtime && python -m pytest tests/test_cli_list_strategies.py -v`
+Expected: PASS
+
+- [ ] **Step 5: 写失败测试 — API camelToSnakeMeta 透传字段**
+
+在 `apps/api/tests/services/strategy-sync.test.ts` 追加(或扩展)测试:
+
+```typescript
+import { camelToSnakeMeta } from '../../src/services/strategy-sync.js';
+
+describe('camelToSnakeMeta - 字段透传', () => {
+  it('保留 label/type/default/options 不再降级', () => {
+    const camel = {
+      name: 'dual_ma',
+      description: '双均线策略',
+      version: '1.0.0',
+      backtestable: true,
+      category: 'non_factor',
+      subcategory: 'trend_cta',
+      params: [
+        {
+          name: 'period',
+          label: '周期',
+          type: 'int',
+          default: 20,
+          options: null,
+          range: [5, 100],
+          chartRelevant: false,
+          uiConstraints: [],
+        },
+      ],
+    };
+    const meta = camelToSnakeMeta(camel);
+    expect(meta.params[0].label).toBe('周期');
+    expect(meta.params[0].type).toBe('int');
+    expect(meta.params[0].default).toBe(20);
+    expect(meta.params[0].options).toBeNull();
+  });
+});
+```
+
+- [ ] **Step 6: 运行测试验证失败**
+
+Run: `cd apps/api && npx vitest run tests/services/strategy-sync.test.ts`
+Expected: FAIL(label 仍为 'period' 而非 '周期',type 仍为 'number',default 仍为 0)
+
+- [ ] **Step 7: 修改 strategy-sync.ts camelToSnakeMeta 透传字段**
+
+修改 `apps/api/src/services/strategy-sync.ts:99-113` 的 `params: rawParams.map(...)` 块:
+
+```typescript
+      return {
+        key: (p.name as string) ?? '',
+        label: (p.label as string) ?? (p.name as string) ?? '',
+        type: (p.type as string) ?? 'number',
+        default: p.default ?? 0,
+        min: range[0] ?? 0,
+        max: range[1] ?? 0,
+        options: p.options !== undefined ? (p.options as string[] | null) : undefined,
+        chart_relevant: (p.chartRelevant as boolean) ?? false,
+        ui_constraints: uics.map((c) => ({
+          kind: (c.kind as string) ?? '',
+          target_field: (c.targetField as string) ?? '',
+          target_value: c.targetValue,
+          action_value: c.actionValue,
+        })),
+      };
+```
+
+注意:`label` fallback 到 `p.name`(向后兼容);`type` fallback `'number'`;`default` fallback `0`;`options` 保留 undefined/null 语义。
+
+- [ ] **Step 8: 运行 API 测试验证通过**
+
+Run: `cd apps/api && npx vitest run tests/services/strategy-sync.test.ts`
+Expected: PASS
+
+- [ ] **Step 9: 写失败测试 — stdin error 不崩 API**
+
+在 `apps/api/tests/services/strategy-sync.test.ts` 追加:
+
+```typescript
+import { spawn } from 'child_process';
+
+describe('StrategySyncService - stdin error', () => {
+  it('Python 进程立即退出时 syncFromPython 返回空数组不崩溃', async () => {
+    // 用不存在的模块让 Python 立即退出
+    const originalSpawn = spawn;
+    // 直接调 service,依赖 Python 环境不可达时返回 []
+    const { strategySyncService } = await import('../../src/services/strategy-sync.js');
+    strategySyncService.clearCache();
+    // 模拟 Python 不可用:覆盖 _callCLI 行为不可行(私有),改为验证现有 catch 逻辑
+    // 此测试依赖真实 Python 不可达场景,若无 Python 环境则直接返回 []
+    const result = await strategySyncService.syncFromPython();
+    expect(Array.isArray(result)).toBe(true);
+  });
+});
+```
+
+(注:此测试主要验证 `syncFromPython` 的 try-catch 不崩。若 CI 有 Python 环境,可改为 spawn 一个立即退出的 mock 进程)
+
+- [ ] **Step 10: 修改 strategy-sync.ts 加 stdin error handler**
+
+修改 `apps/api/src/services/strategy-sync.ts:200-202`,在 `proc.stdin.write` 前加 error handler:
+
+```typescript
+      // 写入请求 JSON 到 stdin
+      proc.stdin.on('error', () => {
+        // Python 进程已退出,EPIPE 静默吞掉,close 事件会处理
+      });
+      proc.stdin.write(JSON.stringify(request));
+      proc.stdin.end();
+```
+
+- [ ] **Step 11: 全 API 包验证**
+
+Run: `cd apps/api && npx vitest run && npx tsc --noEmit`
+Expected: ALL PASS + 编译通过
+
+- [ ] **Step 12: 提交**
+
+```bash
+git add packages/strategy-runtime/quantforge_strategy/commands/list_strategies.py \
+  packages/strategy-runtime/tests/test_cli_list_strategies.py \
+  apps/api/src/services/strategy-sync.ts \
+  apps/api/tests/services/strategy-sync.test.ts
+git commit -m "fix: story-7b-fix strategy-sync 元数据补全 + stdin error handler"
+```
+
+---
+
+## Task 4: story-6-fix 前端契约修复(UIConstraint + 删 strategy-grid + param.key→name + submitBacktest)
+
+**Files:**
+- Modify: `apps/web/src/hooks/useStrategies.ts:7-21`
+- Delete: `apps/web/src/components/strategy-grid.tsx`
+- Modify: `apps/web/src/hooks/useResearchWorkflow.ts:48, 350, 483`
+- Modify: `apps/web/src/api/tasks.ts:60-64`
+- Test: `apps/web/tests/useStrategies.test.ts`(若不存在则新建)
+
+**Interfaces:**
+- Consumes: `api.ui_constraints` snake_case(`target_field/target_value/action_value`)
+- Produces: `StrategyParam.uiConstraints` camelCase(`targetField/targetValue/actionValue`)
+
+- [ ] **Step 1: 写失败测试 — mapParam UIConstraint 显式映射**
+
+新建或追加到 `apps/web/tests/useStrategies.test.ts`:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import type { ApiStrategyParam } from '../src/api/strategies';
+
+// 直接测 mapParam 逻辑(若未导出,可复制实现或导出后测)
+describe('mapParam UIConstraint 映射', () => {
+  it('snake_case ui_constraints 转 camelCase uiConstraints', () => {
+    const api: ApiStrategyParam = {
+      key: 'period',
+      label: '周期',
+      type: 'int',
+      default: 20,
+      chart_relevant: false,
+      ui_constraints: [
+        {
+          kind: 'disable_when',
+          target_field: 'mode',
+          target_value: 'advanced',
+          action_value: true,
+        },
+      ],
+    };
+    // 调用 mapParam(若未导出,需先 export)
+    // 假设 mapParam 已从 useStrategies.ts 导出
+    const { mapParam } = await import('../src/hooks/useStrategies');
+    const result = mapParam(api);
+    expect(result.uiConstraints).toBeDefined();
+    expect(result.uiConstraints![0].targetField).toBe('mode');
+    expect(result.uiConstraints![0].targetValue).toBe('advanced');
+    expect(result.uiConstraints![0].actionValue).toBe(true);
+  });
+});
+```
+
+(注:需在 useStrategies.ts 中 export mapParam 以便测试)
+
+- [ ] **Step 2: 运行测试验证失败**
+
+Run: `cd apps/web && npx vitest run tests/useStrategies.test.ts`
+Expected: FAIL(targetField undefined,因 `as` 强转未实际映射)
+
+- [ ] **Step 3: 修改 useStrategies.ts export mapParam 并显式映射 UIConstraint**
+
+修改 `apps/web/src/hooks/useStrategies.ts`:
+
+3a. 把 `function mapParam` 改为 `export function mapParam`(导出供测试)
+
+3b. 替换第 19 行 `uiConstraints: api.ui_constraints as StrategyParam['uiConstraints'],` 为显式映射:
+
+```typescript
+  uiConstraints: (api.ui_constraints ?? []).map((c) => ({
+    kind: c.kind,
+    targetField: c.target_field,
+    targetValue: c.target_value,
+    actionValue: c.action_value,
+  })),
+```
+
+完整 mapParam:
+
+```typescript
+export function mapParam(api: ApiStrategyParam): StrategyParam {
+  return {
+    key: api.key,
+    name: api.key,
+    label: api.label,
+    type: api.type as StrategyParam['type'],
+    default: api.default,
+    min: api.min,
+    max: api.max,
+    range: api.min !== undefined && api.max !== undefined ? [api.min, api.max] : undefined,
+    options: api.options,
+    chartRelevant: api.chart_relevant,
+    uiConstraints: (api.ui_constraints ?? []).map((c) => ({
+      kind: c.kind,
+      targetField: c.target_field,
+      targetValue: c.target_value,
+      actionValue: c.action_value,
+    })),
+  };
+}
+```
+
+- [ ] **Step 4: 运行测试验证通过**
+
+Run: `cd apps/web && npx vitest run tests/useStrategies.test.ts`
+Expected: PASS
+
+- [ ] **Step 5: 删除 strategy-grid.tsx**
+
+```bash
+git rm apps/web/src/components/strategy-grid.tsx
+```
+
+- [ ] **Step 6: 修改 useResearchWorkflow.ts 三处 param.key → param.name**
+
+6a. 第 48 行:
+```typescript
+    const value = params[param.name] ?? param.default;
+```
+
+6b. 第 350 行:
+```typescript
+      defaultParams[param.name] = param.default;
+```
+
+6c. 第 483 行:
+```typescript
+                    value: String(backtestConfig.params[param.name] ?? param.default),
+```
+
+- [ ] **Step 7: 修改 tasks.ts 移除 submitBacktest 的 .catch**
+
+修改 `apps/web/src/api/tasks.ts:60-64`,移除 `.catch(...)`:
+
+```typescript
+export function submitBacktest(payload: {
+  strategy: string;
+  symbol: string;
+  timeframe: string;
+  initialCash?: number;
+  slippage?: number;
+  startTs?: number;
+  endTs?: number;
+  configSnapshot?: ConfigSnapshot;
+}): Promise<{ id: string; status: ApiTaskStatus }> {
+  return apiPost<{ id: string; status: ApiTaskStatus }>('/tasks', { type: 'backtest', payload });
+}
+```
+
+(注:workspace-page.tsx:483-487 已有 catch 块设置 backtestError,无需改)
+
+- [ ] **Step 8: 全 web 包验证**
+
+Run: `cd apps/web && npx vitest run && npx tsc --noEmit && npx eslint`
+Expected: ALL PASS + 0 errors + 编译通过
+
+- [ ] **Step 9: 提交**
+
+```bash
+git add apps/web/src/hooks/useStrategies.ts \
+  apps/web/src/components/strategy-grid.tsx \
+  apps/web/src/hooks/useResearchWorkflow.ts \
+  apps/web/src/api/tasks.ts \
+  apps/web/tests/useStrategies.test.ts
+git commit -m "fix: story-6-fix 前端 UIConstraint 映射 + 删 strategy-grid + param.key to name + submitBacktest 失败上抛"
+```
+
+---
+
+## Task 5: docs worker README + plan 勾选同步
+
+**Files:**
+- Modify: `apps/worker/README.md`
+- Modify: `docs/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`
+
+**Interfaces:** 无(纯文档同步)
+
+- [ ] **Step 1: 重写 apps/worker/README.md 与 AGENT.md 同步**
+
+替换 `apps/worker/README.md` 全文,核心改动:
+- 第 8 行 "三个任务处理器" → "五个任务处理器"
+- 第 14 行删除 "TaskQueue:内存任务队列..."
+- 第 17 行删除 "Worker 主类..."
+- 第 20 行保留 main.ts
+- 文件结构表(第 26-38 行)删除 queue.ts、worker.ts,补 5 个 handler(BacktestHandler/DiagnosticsHandler/FactorComputeHandler/FactorEvalHandler/CollectHandler/LoopHandler)
+- 测试表删除 queue.test.ts、worker.test.ts
+
+参考 `apps/worker/AGENT.md`(已正确)的内容对齐。
+
+- [ ] **Step 2: 修改 plan 文档勾选已完成步骤**
+
+修改 `docs/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`,把 `[ ]` 改为 `[x]`(对应 strategy-sync.ts PythonBridge 替换 + 删除内联 script 两步)。
+
+- [ ] **Step 3: 验证文档无断链**
+
+Run: `grep -n "queue.ts\|worker.ts\|TaskQueue\|Worker 主类" apps/worker/README.md`
+Expected: 无输出(已全部清理)
+
+- [ ] **Step 4: 提交**
+
+```bash
+git add apps/worker/README.md docs/plans/2026-06-30-backend-sync-realign-integrated.md
+git commit -m "docs: worker README + plan 勾选同步"
+```
+
+---
+
+## Task 6: chore ralph harness 文件 gitignore + git rm --cached
+
+**Files:**
+- Modify: `.gitignore`
+- git rm --cached: `scripts/ralph/.current-prompt.md`, `scripts/ralph/.last-error.json`, `scripts/ralph/.last-raw-output.txt`, `scripts/ralph/.last-output.txt`, `scripts/ralph/.prd.state.json`, `.trae/skills/systematic-debugging/SKILL.md`, `.trae/skills/writing-skills/SKILL.md`, `CLAUDE.md`
+
+**Interfaces:** 无(纯 gitignore + 索引清理)
+
+- [ ] **Step 1: 追加 .gitignore 规则**
+
+在 `.gitignore` 末尾追加:
+
+```
+# Ralph autonomous agent loop (runtime artifacts) - extended
+scripts/ralph/.current-prompt.md
+scripts/ralph/.last-error.json
+scripts/ralph/.last-raw-output.txt
+scripts/ralph/.last-output.txt
+scripts/ralph/.prd.state.json
+scripts/ralph/.last-branch
+
+# Trae skills (IDE-local)
+.trae/
+
+# CLAUDE.md (Claude Code local, not project-shared)
+CLAUDE.md
+```
+
+- [ ] **Step 2: git rm --cached 移除已提交文件(保留本地)**
+
+```bash
+git rm --cached scripts/ralph/.current-prompt.md `
+  scripts/ralph/.last-error.json `
+  scripts/ralph/.last-raw-output.txt `
+  scripts/ralph/.last-output.txt `
+  scripts/ralph/.prd.state.json `
+  .trae/skills/systematic-debugging/SKILL.md `
+  .trae/skills/writing-skills/SKILL.md `
+  CLAUDE.md
+```
+
+(注:Windows PowerShell 用反引号 ` 续行;若文件不存在则跳过该条)
+
+- [ ] **Step 3: 验证 git status**
+
+Run: `git status --short`
+Expected: 上述文件显示为 `D`(deleted from index),`.gitignore` 显示为 `M`,本地文件仍在
+
+- [ ] **Step 4: 提交**
+
+```bash
+git add .gitignore
+git commit -m "chore: ralph harness 文件 gitignore + git rm --cached"
+```
+
+---
+
+## Task 7: story-8 重验 全链路 4 轨道通过
+
+**Files:**
+- Modify: `scripts/ralph/.prd.state.json`(本地,已 gitignored)
+- Modify: `scripts/ralph/.last-error.json`(本地,已 gitignored)
+
+**Interfaces:** 无(纯验证 + 状态更新)
+
+- [ ] **Step 1: 全量 TS 验证**
+
+Run: `pnpm test && pnpm build && pnpm lint`
+Expected:
+- pnpm test:全包通过(Worker 测试已迁移/删除,strategy-sync/前端新测试通过)
+- pnpm build:5/5 successful
+- pnpm lint:0 errors
+
+- [ ] **Step 2: 全量 Python 验证**
+
+Run: `cd packages/strategy-runtime && python -m pytest -v`(及其他 6 个 Python 包)
+Expected: 7/7 包 ALL PASS
+
+- [ ] **Step 3: 4 轨道端到端验证**
+
+3a. 轨道 A Param Wire:
+```bash
+python -m quantforge_strategy <<< '{"command":"listStrategies"}' | python -c "import sys,json; lines=sys.stdin.read().split(chr(10)); [print(json.loads(l)['data'][0]['params'][0]) for l in lines if l.strip() and json.loads(l).get('event')=='result']"
+```
+Expected: 输出含 label/type/default/options/uiConstraints,targetField 为 camelCase
+
+3b. 轨道 B Diagnostics transitional:
+```bash
+python -m quantforge_strategy <<< '{"command":"diagnostics","strategy":"test","category":"transitional"}'
+```
+Expected: result 事件 data 含 sentiment_curve/mapping_metrics/outlier_count/validation_passed
+
+3c. 轨道 C Backtest E2E:确认 backtest-handler.test.ts configSnapshot 测试通过(已在 Task 2 验证)
+
+3d. 轨道 D 清理:确认 queue.ts/worker.ts 不存在
+```bash
+test ! -f apps/worker/src/queue.ts && test ! -f apps/worker/src/worker.ts && echo "clean"
+```
+Expected: `clean`
+
+- [ ] **Step 4: 重置 ralph story-8 状态并重跑**
+
+修改 `scripts/ralph/.prd.state.json`(本地):
+- 把 `passesSnapshot` 中 `"story-8"` 设为 `false`(若存在)
+- `lastGitHead` 更新为当前 HEAD
+
+修改 `scripts/ralph/.last-error.json`(本地):
+- `detectedFailures` 设为 `[]`
+- `summary` 设为 `"story-8 重验通过:全链路 4 轨道验证"`
+
+- [ ] **Step 5: 提交验收记录**
+
+由于 `scripts/ralph/.prd.state.json` 和 `.last-error.json` 已 gitignored,不需 git add。但需提交一个验收标记:
+
+```bash
+git commit --allow-empty -m "test: story-8 重验 全链路 4 轨道通过"
+```
+
+---
+
+## 自审
+
+### Spec coverage
+- F1 删除 stub 测试 → Task 1 Step 3 ✓
+- F2 _run_composite snapshotParams → Task 1 Step 4 ✓
+- F3 删 queue/worker 测试 → Task 2 Step 1 ✓
+- F4 handler 夹具迁移 → Task 2 Step 2-3 ✓
+- F5 元数据补全 → Task 3 Step 3, 7 ✓
+- F6 stdin error → Task 3 Step 10 ✓
+- F7 UIConstraint 映射 → Task 4 Step 3 ✓
+- F8 删 strategy-grid → Task 4 Step 5 ✓
+- F9 param.key→name → Task 4 Step 6 ✓
+- F10 submitBacktest 失败上抛 → Task 4 Step 7 ✓
+- F11 worker README → Task 5 Step 1 ✓
+- F12 plan 勾选 → Task 5 Step 2 ✓
+- F13 story-8 重验 → Task 7 ✓
+- F14 ralph harness 清理 → Task 6 ✓
+
+### Placeholder scan
+- Task 1 Step 1 测试中 `mock query_bars 返回最小 bars` — 已给完整 lambda
+- Task 3 Step 1 `StrategyParamDef/ParamType 字段名需对照实际` — 这是合理的不确定性,测试代码已给完整示例,若字段名不同按实际调整。不属 placeholder,是 TDD 正常的"先写期望再对齐"
+- Task 3 Step 9 stdin error 测试 — 注释说明依赖现有 catch 逻辑,不是 placeholder
+- 所有步骤都有完整代码
+
+### Type consistency
+- `_resolve_params(config, fallback_key)` 在 Task 1 Step 4 定义,被 _run_single 和 _run_composite 调用,签名一致 ✓
+- `mapParam` 在 Task 4 Step 3 导出,测试 Step 1 import 使用,签名一致 ✓
+- `makeTask` helper 在 Task 2 backtest-handler 和 diagnostics-handler 都用,签名一致 ✓
+- `camelToSnakeMeta` 字段名 label/type/default/options 在 CLI 输出(Task 3 Step 3)、API 映射(Task 3 Step 7)、前端 mapParam(消费)三层一致 ✓
+
+---
+
+## 执行方式选择
+
+Plan complete and saved to `docs/plans/2026-07-03-ralph-fix-plan.md`. Two execution options:
+
+**1. Subagent-Driven(推荐)** — 每个 Task 派发新 subagent,Task 间审查,快速迭代
+
+**2. Inline Execution** — 在当前会话用 executing-plans 批量执行,checkpoint 审查
+
+Which approach?

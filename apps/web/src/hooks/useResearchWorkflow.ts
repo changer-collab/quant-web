@@ -45,7 +45,7 @@ function formatParamSummary(
   params: Record<string, unknown>
 ): string {
   const entries = (strategy?.params ?? []).map((param) => {
-    const value = params[param.key] ?? param.default;
+    const value = params[param.name] ?? param.default;
     return `${param.label}=${String(value)}`;
   });
   return entries.join(', ');
@@ -347,7 +347,7 @@ export function useResearchWorkflow(language: LanguageCode) {
     // 用策略定义的默认值初始化参数
     const defaultParams: Record<string, unknown> = {};
     for (const param of strategy.params ?? []) {
-      defaultParams[param.key] = param.default;
+      defaultParams[param.name] = param.default;
     }
     setBacktestConfig((current) => ({ ...current, params: defaultParams }));
     setState((current) => ({ ...current, activePage: 'workspace' }));
@@ -480,7 +480,7 @@ export function useResearchWorkflow(language: LanguageCode) {
                     []
                   ).map((param) => ({
                     label: param.label,
-                    value: String(backtestConfig.params[param.key] ?? param.default),
+                    value: String(backtestConfig.params[param.name] ?? param.default),
                   })),
                 },
               });

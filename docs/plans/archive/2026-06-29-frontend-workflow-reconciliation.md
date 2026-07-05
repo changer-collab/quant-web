@@ -1,6 +1,6 @@
-# 策略分类体系下前端工作流对齐与诊断链路打通草案
+﻿# 策略分类体系下前端工作流对齐与诊断链路打通草案
 
-> **状态：历史草案。** 当前策略分类实施入口为 [../superpowers/plans/2026-06-30-backend-sync-realign-integrated.md](../superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)。本文保留为前端双流程、配置链路和 diagnostics 补洞的迁移背景参考。
+> **状态：历史草案。** 当前策略分类实施入口为 [../2026-06-30-backend-sync-realign-integrated.md](../2026-06-30-backend-sync-realign-integrated.md)。本文保留为前端双流程、配置链路和 diagnostics 补洞的迁移背景参考。
 
 > **背景**：前端已完成大型重构，按策略分类（FACTOR_BASED / NON_FACTOR / TRANSITIONAL）构建了因子型/非因子型双流程。本文档用于记录前端迁移后的工作流对齐、配置链路打通和 diagnostics 后端补洞草案；**不作为完整后端匹配设计**。
 >
@@ -14,11 +14,11 @@
 
 ### 0.1 原始权威入口（已失效）
 
-> 本节为 2026-06-29 当时的文档治理关系。当前执行入口已改为 `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md`。
+> 本节为 2026-06-29 当时的文档治理关系。当前执行入口已改为 `docs/plans/2026-06-30-backend-sync-realign-integrated.md`。
 
 | 用途                       | 权威文件                                                                    | 更新频率                                     |
 | -------------------------- | --------------------------------------------------------------------------- | -------------------------------------------- |
-| 策略分类全栈目标契约       | `docs/superpowers/specs/2026-06-29-strategy-classification-architecture.md` | 历史关系；现在仅作背景参考                   |
+| 策略分类全栈目标契约       | `docs/specs/2026-06-29-strategy-classification-architecture.md` | 历史关系；现在仅作背景参考                   |
 | 策略分类当前施工路线       | `docs/plans/2026-06-29-frontend-workflow-reconciliation.md`                 | 历史关系；现在仅作背景参考                   |
 | Ralph / Agent 执行收敛规则 | `.skills/ralph-harness/` 与 `scripts/ralph/AGENT_PROMPT.md`                 | 中频：当执行闭环发现可复用规则或反模式时更新 |
 
@@ -465,7 +465,7 @@ packages/strategy-runtime/quantforge_strategy/commands/
 
 | #   | 任务                     | 层     | 文件                                 | 说明                                                 |
 | --- | ------------------------ | ------ | ------------------------------------ | ---------------------------------------------------- |
-| 3.1 | 算法设计文档             | 文档   | `docs/superpowers/specs/`            | 先出设计，**你评审后再动手写代码**                   |
+| 3.1 | 算法设计文档             | 文档   | `docs/specs/`            | 先出设计，**你评审后再动手写代码**                   |
 | 3.2 | Python diagnostics 入口  | Python | `commands/diagnostics.py`            | 按 category 分支调度                                 |
 | 3.3 | 因子型诊断算法           | Python | `commands/diagnostics/factor.py`     | IC/分层/相关性                                       |
 | 3.4 | 非因子型诊断算法         | Python | `commands/diagnostics/non_factor.py` | 参数敏感/信号/滑点                                   |

@@ -36,8 +36,8 @@
 ### 1. 策略分类后端契约整合与结构整理
 
 - **目标**：按当前整合计划统一后端产品契约与内部结构，解决 `ConfigSnapshot`、Preview、Task/SSE、Diagnostics、Worker/Python CLI 和 API 路由/Processor 整理问题。
-- **权威计划**：[superpowers/plans/2026-06-30-backend-sync-realign-integrated.md](./superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)
-- **产品基准**：[superpowers/specs/2026-06-28-strategy-classification-and-config-design.md](./superpowers/specs/2026-06-28-strategy-classification-and-config-design.md)
+- **权威计划**：[plans/2026-06-30-backend-sync-realign-integrated.md](./plans/2026-06-30-backend-sync-realign-integrated.md)
+- **产品基准**：[specs/2026-06-28-strategy-classification-and-config-design.md](./specs/2026-06-28-strategy-classification-and-config-design.md)
 - **涉及**：api, worker, strategy-runtime, strategies, web
 - **备注**：`2026-06-29-backend-sync-to-strategy-classification-target.md` 已并入整合计划，后续不再作为当前执行入口。
 

@@ -1,5 +1,5 @@
 import { TaskType } from '../types.js';
-import type { TaskHandler, TaskRecord, TaskEventHandler } from '../queue.js';
+import type { TaskHandler, TaskRecord, TaskEventHandler } from '../types.js';
 import { resolveDbPath } from '../db-path.js';
 import { createDataCenter } from '@quant/data-center/storage';
 import { createCollector, CollectorPresets, CollectorScheduler } from '@quant/data-collector';

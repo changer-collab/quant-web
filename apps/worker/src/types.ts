@@ -49,3 +49,27 @@ export interface StreamEvent {
   data?: unknown;
   error?: { code: string; message: string };
 }
+
+/** 任务记录 */
+export interface TaskRecord {
+  id: string;
+  type: TaskType;
+  status: TaskStatus;
+  payload: Record<string, unknown>;
+  submittedAt: number;
+  startedAt?: number;
+  completedAt?: number;
+  result?: Record<string, unknown>;
+  error?: string;
+  progress?: number;
+  lines?: string[];
+}
+
+/** 任务事件回调 */
+export type TaskEventHandler = (event: StreamEvent) => void;
+
+/** 任务处理器接口 */
+export interface TaskHandler {
+  readonly type: TaskType;
+  handle(task: TaskRecord, onEvent?: TaskEventHandler): Promise<Record<string, unknown>>;
+}

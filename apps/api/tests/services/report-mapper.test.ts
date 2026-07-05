@@ -161,6 +161,33 @@ describe('mapBacktestResultToReport', () => {
     expect(report.riskMetrics.calmarRatio).toBe(0);
   });
 
+  it('传入 category/subcategory/configHash → report 含对应值', () => {
+    const report = mapBacktestResultToReport(baseResult, {
+      strategyName: 'dual_ma',
+      symbol: '600519',
+      timeframe: '1d',
+      category: 'factor_based',
+      subcategory: 'linear_multi_factor',
+      configHash: 'abc123',
+    });
+
+    expect(report.strategyCategory).toBe('factor_based');
+    expect(report.strategySubcategory).toBe('linear_multi_factor');
+    expect(report.configHash).toBe('abc123');
+  });
+
+  it('不传 category/subcategory/configHash → 字段为 undefined（不破坏旧 report 读取）', () => {
+    const report = mapBacktestResultToReport(baseResult, {
+      strategyName: 'dual_ma',
+      symbol: '600519',
+      timeframe: '1d',
+    });
+
+    expect(report.strategyCategory).toBeUndefined();
+    expect(report.strategySubcategory).toBeUndefined();
+    expect(report.configHash).toBeUndefined();
+  });
+
   it('生成空风险点（AI 分析阶段填充）', () => {
     const result: BacktestResult = {
       config: {},

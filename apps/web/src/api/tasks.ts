@@ -56,10 +56,9 @@ export function submitBacktest(payload: {
   slippage?: number;
   startTs?: number;
   endTs?: number;
-  params?: Record<string, unknown>;
   configSnapshot?: ConfigSnapshot;
 }): Promise<{ id: string; status: ApiTaskStatus }> {
-  return apiPost('/tasks', { type: 'backtest', payload });
+  return apiPost<{ id: string; status: ApiTaskStatus }>('/tasks', { type: 'backtest', payload });
 }
 
 export function submitFactorEval(

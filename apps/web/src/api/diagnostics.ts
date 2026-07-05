@@ -1,12 +1,16 @@
 import { apiGet } from './client';
 import type { DiagnosticResult } from '../data/types';
 
-/** 获取单个诊断结果 */
+/** 获取单个诊断结果（失败返回 null） */
 export function fetchDiagnostic(resultId: string): Promise<DiagnosticResult | null> {
-  return apiGet<DiagnosticResult | null>(`/diagnostics/${encodeURIComponent(resultId)}`);
+  return apiGet<DiagnosticResult>(`/diagnostics/${encodeURIComponent(resultId)}`).catch(
+    () => null
+  );
 }
 
-/** 按策略名称获取诊断历史 */
+/** 按策略名称获取诊断历史（失败返回空数组） */
 export function fetchDiagnosticsByStrategy(strategyName: string): Promise<DiagnosticResult[]> {
-  return apiGet<DiagnosticResult[]>(`/diagnostics?strategy=${encodeURIComponent(strategyName)}`);
+  return apiGet<DiagnosticResult[]>(
+    `/diagnostics?strategy=${encodeURIComponent(strategyName)}`
+  ).catch(() => []);
 }

@@ -36,6 +36,17 @@ function mapMeta(m: Awaited<ReturnType<typeof strategySyncService.syncFromPython
     name: m.name,
     description: m.description,
     params: m.params.map((p) => ({
+      // ── 新 camelCase 主字段 ──
+      name: p.key,
+      range: [p.min ?? 0, p.max ?? 0] as [number, number],
+      chartRelevant: p.chart_relevant ?? false,
+      uiConstraints: (p.ui_constraints ?? []).map((c) => ({
+        kind: c.kind,
+        targetField: c.target_field,
+        targetValue: c.target_value,
+        actionValue: c.action_value,
+      })),
+      // ── DEPRECATED 字段（短期过渡兼容，后续移除） ──
       key: p.key,
       label: p.label,
       type: p.type,

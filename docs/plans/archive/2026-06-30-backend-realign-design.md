@@ -1,6 +1,6 @@
-# 后端结构对齐前端 — 设计方案 (backend-realign)
+﻿# 后端结构对齐前端 — 设计方案 (backend-realign)
 
-> **状态：历史结构整理设计，已并入当前整合计划。** 后续执行请以 [../superpowers/plans/2026-06-30-backend-sync-realign-integrated.md](../superpowers/plans/2026-06-30-backend-sync-realign-integrated.md) 为准。本文保留为 06-30 后端结构整理方案的原始记录。
+> **状态：历史结构整理设计，已并入当前整合计划。** 后续执行请以 [../2026-06-30-backend-sync-realign-integrated.md](../2026-06-30-backend-sync-realign-integrated.md) 为准。本文保留为 06-30 后端结构整理方案的原始记录。
 
 > **日期**: 2026-06-30
 > **状态**: 设计已定稿；P0-P1 已拆为 `scripts/ralph/prd.json` 的 6 个 story；P2-P3 待排期。
@@ -11,8 +11,8 @@
 
 | 文档                                                                                  | 关系                                                                                                                                                                                 |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `docs/superpowers/specs/2026-06-28-strategy-classification-and-config-design.md`      | 前端构建的**目标产品基准**（分类/配置/Preview/诊断）                                                                                                                                 |
-| `docs/superpowers/plans/2026-06-29-backend-sync-to-strategy-classification-target.md` | **另一条更激进的轨道**：把后端迁到 06-28 _目标 taxonomy_（canonical 枚举、完整 ConfigSnapshot、诊断算法、13 tasks/8 phases）。本方案与其互补：那条管"产品正确性"，本方案管"结构整洁" |
+| `docs/specs/2026-06-28-strategy-classification-and-config-design.md`      | 前端构建的**目标产品基准**（分类/配置/Preview/诊断）                                                                                                                                 |
+| `docs/plans/2026-06-29-backend-sync-to-strategy-classification-target.md` | **另一条更激进的轨道**：把后端迁到 06-28 _目标 taxonomy_（canonical 枚举、完整 ConfigSnapshot、诊断算法、13 tasks/8 phases）。本方案与其互补：那条管"产品正确性"，本方案管"结构整洁" |
 | `scripts/ralph/prd.json` (feature: backend-realign)                                   | 本方案 **P0-P1** 的可执行落地（6 个 story）                                                                                                                                          |
 
 > ⚠️ 两条轨道有边缘重叠：06-29 计划的 Task 4（Repo 走 DI）、Task 6（SSE resultId/resultType）与本方案的 P0b/P1b 触碰同一批文件。落地时若两者并行，需协调 `apps/api/src/routes/task.ts` 的改动顺序，避免互相覆盖。

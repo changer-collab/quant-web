@@ -265,9 +265,9 @@ CI 配置位于 `.github/workflows/ci.yml`，包含两个并行 Job：
 
 - `services/data-center` — `createSqliteContext()` 打开磁盘库（WAL 模式），写入即落盘；`flush()` 做 WAL 检查点
 - `apps/api` — `initApiDb()` 同样使用 better-sqlite3，`closeApiDb(persist=true)` 关闭前做 WAL 检查点
-- `apps/worker` — `TaskQueue` 使用 better-sqlite3 的 `prepare/get/all/run` API
+- `apps/worker` — 已删除 `TaskQueue`（含 better-sqlite3 本地队列），Worker 通过 HTTP 轮询 API 领取任务
 
-三个模块共享 `drizzle-orm` 的通用 API（`insert`/`select`/`delete`），repo 查询层对驱动切换透明。**注意**：better-sqlite3 是同步驱动，Drizzle 事务回调必须是同步函数（`db.transaction((tx) => {...})`），且事务内的写语句必须显式 `.run()`，否则静默不执行。
+两个模块共享 `drizzle-orm` 的通用 API（`insert`/`select`/`delete`），repo 查询层对驱动切换透明。**注意**：better-sqlite3 是同步驱动，Drizzle 事务回调必须是同步函数（`db.transaction((tx) => {...})`），且事务内的写语句必须显式 `.run()`，否则静默不执行。
 
 ### 前端测试 Mock
 

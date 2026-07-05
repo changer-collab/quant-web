@@ -7,7 +7,7 @@
  */
 
 import { TaskType } from '../types.js';
-import type { TaskHandler, TaskRecord, TaskEventHandler } from '../queue.js';
+import type { TaskHandler, TaskRecord, TaskEventHandler } from '../types.js';
 import { PythonBridge } from '../python-bridge.js';
 
 /** 诊断任务参数 */

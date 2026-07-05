@@ -1,10 +1,5 @@
-// queue
-export { TaskQueue } from './queue.js';
-export type { TaskRecord, TaskHandler } from './queue.js';
-
-// worker
-export { Worker } from './worker.js';
-export type { WorkerConfig } from './worker.js';
+// types (migrated from deleted queue.ts)
+export type { TaskRecord, TaskHandler, TaskEventHandler } from './types.js';
 
 // python bridge
 export { PythonBridge } from './python-bridge.js';

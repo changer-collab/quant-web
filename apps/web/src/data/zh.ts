@@ -199,8 +199,8 @@ export const zhContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'short_period', label: '短均线周期', type: 'number', default: 5, min: 2, max: 50 },
-        { key: 'long_period', label: '长均线周期', type: 'number', default: 20, min: 5, max: 200 },
+        { key: 'short_period', name: 'short_period', label: '短均线周期', type: 'number', default: 5, min: 2, max: 50 },
+        { key: 'long_period', name: 'long_period', label: '长均线周期', type: 'number', default: 20, min: 5, max: 200 },
       ],
     },
     {
@@ -219,9 +219,9 @@ export const zhContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', label: 'RSI 周期', type: 'number', default: 14, min: 2, max: 50 },
-        { key: 'oversold', label: '超卖阈值', type: 'number', default: 30, min: 10, max: 50 },
-        { key: 'overbought', label: '超买阈值', type: 'number', default: 70, min: 50, max: 90 },
+        { key: 'period', name: 'period', label: 'RSI 周期', type: 'number', default: 14, min: 2, max: 50 },
+        { key: 'oversold', name: 'oversold', label: '超卖阈值', type: 'number', default: 30, min: 10, max: 50 },
+        { key: 'overbought', name: 'overbought', label: '超买阈值', type: 'number', default: 70, min: 50, max: 90 },
       ],
     },
     {
@@ -240,8 +240,8 @@ export const zhContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', label: '周期', type: 'number', default: 20, min: 5, max: 100 },
-        { key: 'num_std', label: '标准差倍数', type: 'number', default: 2.0, min: 0.5, max: 4.0 },
+        { key: 'period', name: 'period', label: '周期', type: 'number', default: 20, min: 5, max: 100 },
+        { key: 'num_std', name: 'num_std', label: '标准差倍数', type: 'number', default: 2.0, min: 0.5, max: 4.0 },
       ],
     },
     {
@@ -260,9 +260,9 @@ export const zhContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'fast_period', label: '快线周期', type: 'number', default: 12, min: 2, max: 100 },
-        { key: 'slow_period', label: '慢线周期', type: 'number', default: 26, min: 5, max: 200 },
-        { key: 'signal_period', label: '信号周期', type: 'number', default: 9, min: 2, max: 50 },
+        { key: 'fast_period', name: 'fast_period', label: '快线周期', type: 'number', default: 12, min: 2, max: 100 },
+        { key: 'slow_period', name: 'slow_period', label: '慢线周期', type: 'number', default: 26, min: 5, max: 200 },
+        { key: 'signal_period', name: 'signal_period', label: '信号周期', type: 'number', default: 9, min: 2, max: 50 },
       ],
     },
     {
@@ -281,9 +281,9 @@ export const zhContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', label: 'KDJ 周期', type: 'number', default: 9, min: 2, max: 100 },
-        { key: 'oversold', label: '超卖阈值', type: 'number', default: 20, min: 5, max: 40 },
-        { key: 'overbought', label: '超买阈值', type: 'number', default: 80, min: 60, max: 95 },
+        { key: 'period', name: 'period', label: 'KDJ 周期', type: 'number', default: 9, min: 2, max: 100 },
+        { key: 'oversold', name: 'oversold', label: '超卖阈值', type: 'number', default: 20, min: 5, max: 40 },
+        { key: 'overbought', name: 'overbought', label: '超买阈值', type: 'number', default: 80, min: 60, max: 95 },
       ],
     },
     {
@@ -757,6 +757,11 @@ export const zhContent: LanguageContent = {
     workspaceBacktestStartDate: '起始日期',
     workspaceBacktestEndDate: '结束日期',
     workspaceBacktestConfigTitle: '回测参数配置',
+    // ─── 三 Tab 导航 ───
+    workspaceTabConfig: '参数配置',
+    workspaceTabDiagnose: '诊断',
+    workspaceTabBacktest: '回测',
+    workspaceNoConfigHint: '请先在「参数配置」Tab 保存配置',
   },
   runningState: '运行中',
   completedState: '已完成',

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WorkspacePage } from '../src/components/workspace-page';
 import { getUiCopy } from '../src/appData';
-import type { StrategyRow } from '../src/appData';
+import type { StrategyRow, UiCopy, LanguageCode } from '../src/appData';
 
 const apiMockState = vi.hoisted(() => ({
   savedTaskPayloads: [] as Array<Record<string, unknown>>,
@@ -19,10 +19,13 @@ vi.mock('../src/api/diagnostics', () => ({
 
 vi.mock('../src/api/strategies-config', () => ({
   fetchStrategyConfig: vi.fn().mockResolvedValue({
+    persisted: true,
+    configSnapshot: { strategy: 'dual_ma', params: { symbol: '000001', timeframe: '1h', initialCash: 2_000_000 } },
     config_json: { symbol: '000001', timeframe: '1h', initialCash: 2_000_000 },
     hash: 'hash',
     updated_at: 1,
   }),
+  saveStrategyConfig: vi.fn().mockResolvedValue({ ok: true, hash: 'hash', updated_at: 1 }),
 }));
 
 vi.mock('../src/api/tasks', () => ({
@@ -94,6 +97,14 @@ vi.mock('../src/api/tasks', () => ({
   }),
 }));
 
+vi.mock('../src/api/preview', () => ({
+  fetchPreview: vi.fn().mockResolvedValue({
+    bars: [],
+    signals: [],
+    pagination: { next_cursor: null, has_more: false },
+  }),
+}));
+
 const strategy: StrategyRow = {
   id: 'dual_ma',
   mode: 'traditional',
@@ -110,6 +121,93 @@ const strategy: StrategyRow = {
   params: [],
 };
 
+// ── 供三 Tab 交互用例使用的精简 mock ──
+const mockUi = {
+  workspaceBackButton: 'Back',
+  workspaceStep1Label: 'Diagnose',
+  workspaceStep1Desc: 'Run diagnostics',
+  workspaceStep2Label: 'Backtest',
+  workspaceStep2Desc: 'Run backtest',
+  workspaceRunDiagnostics: 'Run Diagnostics',
+  workspaceConfirmStep2: 'Next',
+  workspaceDiagnosticsRunning: 'Running...',
+  workspaceDiagnosticsFailed: 'Failed',
+  workspaceDiagnosticExpired: 'Expired',
+  workspaceBacktestFailed: 'Failed',
+  workspaceBacktestRunning: 'Running...',
+  workspaceSubmitBacktest: 'Submit',
+  workspaceBacktestConfigTitle: 'Config',
+  workspaceBacktestSymbol: 'Symbol',
+  workspaceBacktestTimeframe: 'Timeframe',
+  workspaceBacktestInitialCapital: 'Capital',
+  workspaceBacktestStartDate: 'Start',
+  workspaceBacktestEndDate: 'End',
+  workspaceConfigSummary: 'Summary',
+  workspacePerformanceTitle: 'Performance',
+  workspaceEquityCurve: 'Equity',
+  workspaceTradeDetails: 'Trades',
+  workspaceICSeries: 'IC',
+  workspaceLayeredReturns: 'Layers',
+  workspaceCorrelationHeatmap: 'Correlation',
+  workspaceParamSensitivity: 'Sensitivity',
+  workspaceSignalDist: 'Signal',
+  workspaceSlippageStress: 'Slippage',
+  workspaceSignalMetrics: 'Metrics',
+  configPanelSaved: 'Saved',
+  configPanelSave: 'Save',
+  configPanelSaving: 'Saving',
+  configPanelPreview: 'Preview',
+  configPanelSubmitTask: 'Submit Task',
+  configPanelSaveError: 'Save failed',
+  configPanelBasicParams: 'Params',
+  configPanelCategoryTabs: { factor_based: 'F', non_factor: 'N', transitional: 'T' },
+  configPanelFactorPool: 'Factor Pool',
+  configPanelFactorPoolPlaceholder: 'Search',
+  configPanelPreprocessing: 'Preprocess',
+  configPanelWinsorization: 'Winsor',
+  configPanelNeutralization: 'Neutral',
+  configPanelStandardization: 'Standard',
+  configPanelWindowParams: 'Window',
+  configPanelLookbackWindow: 'Lookback',
+  configPanelHoldPeriod: 'Hold',
+  configPanelIndicatorToolbox: 'Indicators',
+  configPanelMACD: 'MACD',
+  configPanelRSI: 'RSI',
+  configPanelBollinger: 'Bollinger',
+  configPanelDynamicParams: 'Dynamic',
+  configPanelDataSource: 'Data Source',
+  configPanelDecayHalfLife: 'Decay',
+  configPanelMappingTarget: 'Mapping',
+  klineChartSymbolSearch: 'Search',
+  klineChartLoading: 'Loading',
+  klineChartPreviewEngine: 'Preview',
+  klineChartPreviewEngineTooltip: 'Tooltip',
+  klineChartOHLC: 'OHLC',
+  klineChartBuy: 'Buy',
+  klineChartSell: 'Sell',
+  klineChartReason: 'Reason',
+  klineChartFactorSnapshot: 'Factors',
+  klineChartFingerprintChanged: 'Changed',
+  klineChartRSI: 'RSI',
+  klineChartSpread: 'Spread',
+  klineChartIC: 'IC',
+  klineChartSentiment: 'Sentiment',
+  strategySubcategoryLabels: {},
+  workspaceTabConfig: '参数配置',
+  workspaceTabDiagnose: '诊断',
+  workspaceTabBacktest: '回测',
+  workspaceNoConfigHint: '请先保存配置',
+} as unknown as UiCopy;
+
+const mockStrategy = {
+  id: 's1',
+  name: 'dual_ma',
+  description: '双均线',
+  category: 'non_factor',
+  subcategory: 'trend_cta',
+  params: [],
+} as unknown as StrategyRow;
+
 describe('WorkspacePage', () => {
   beforeEach(() => {
     apiMockState.savedTaskPayloads = [];
@@ -122,9 +220,17 @@ describe('WorkspacePage', () => {
       <WorkspacePage strategy={strategy} onBack={vi.fn()} language="zh" ui={getUiCopy('zh')} />
     );
 
+    // 新 UI：默认在「参数配置」Tab，需先切换到「诊断」Tab
+    await user.click(screen.getByText('诊断'));
+
     await user.click(screen.getByRole('button', { name: '开始诊断' }));
-    await screen.findByRole('button', { name: '确认 → 进入回测' });
-    await user.click(screen.getByRole('button', { name: '确认 → 进入回测' }));
+
+    // 旧 Stepper 的「确认 → 进入回测」按钮已移除，等待诊断内容渲染完成
+    await screen.findByText('信号数量/质量分布');
+
+    // 切换到「回测」Tab（替代旧 Stepper 的 step 2）
+    await user.click(screen.getByText('回测'));
+
     await user.click(screen.getByRole('button', { name: '提交回测' }));
 
     await waitFor(() => {
@@ -138,5 +244,51 @@ describe('WorkspacePage', () => {
         initialCash: 2_000_000,
       })
     );
+  });
+
+  it('defaults to config tab', () => {
+    render(
+      <WorkspacePage
+        strategy={mockStrategy}
+        onBack={() => {}}
+        language={'zh' as LanguageCode}
+        ui={mockUi}
+      />
+    );
+    expect(screen.getByText('参数配置')).toBeDefined();
+  });
+
+  it('switches to diagnose tab on click', async () => {
+    render(
+      <WorkspacePage
+        strategy={mockStrategy}
+        onBack={() => {}}
+        language={'zh' as LanguageCode}
+        ui={mockUi}
+      />
+    );
+    // 等待 configSnapshot 异步加载完成（fetchStrategyConfig 已 resolve）
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fireEvent.click(screen.getByText('诊断'));
+    expect(screen.getByText('Run Diagnostics')).toBeDefined();
+  });
+
+  it('switches to backtest tab on click', async () => {
+    render(
+      <WorkspacePage
+        strategy={mockStrategy}
+        onBack={() => {}}
+        language={'zh' as LanguageCode}
+        ui={mockUi}
+      />
+    );
+    // 等待 configSnapshot 异步加载完成（fetchStrategyConfig 已 resolve）
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fireEvent.click(screen.getByText('回测'));
+    expect(screen.getByText('Symbol')).toBeDefined();
   });
 });
