@@ -33,6 +33,7 @@ interface ConfigPanelProps {
   ui: UiCopy;
   language: LanguageCode;
   onPreviewUpdate?: (data: PreviewResponse | null) => void;
+  onConfigSaved?: () => void;
 }
 
 // ─── 工具函数 ───────────────────────────────────────────
@@ -97,7 +98,7 @@ const MOCK_DATA_SOURCES = [
 
 // ─── 组件 ──────────────────────────────────────────────
 
-export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigPanelProps) {
+export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigSaved }: ConfigPanelProps) {
   // ── 分类 Tab 状态 ──
   const [activeCategory, setActiveCategory] = useState<StrategyCategory>(
     (strategy.category as StrategyCategory) ?? 'non_factor'
@@ -274,6 +275,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate }: ConfigP
           setConfigHash(result.configSnapshot.hash);
         }
         setError(null);
+        onConfigSaved?.();
       } else {
         setError(ui.configPanelSaveError ?? 'Save failed');
       }
