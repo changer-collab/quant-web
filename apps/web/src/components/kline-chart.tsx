@@ -3,7 +3,6 @@ import type {
   PreviewResponse,
   UiCopy,
   LanguageCode,
-  BarData,
   ChartOverlay,
   PreviewSignal,
 } from '../appData';

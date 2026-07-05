@@ -4,13 +4,6 @@
 
 /* ─── Grid 视图（策略总览） ─── */
 
-.overviewHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-lg);
-}
-
 .backButton {
   display: inline-flex;
   align-items: center;
@@ -194,11 +187,6 @@
   cursor: not-allowed;
 }
 
-.cardSelected {
-  border-color: rgba(77, 240, 160, 0.5);
-  background: rgba(77, 240, 160, 0.06);
-}
-
 .cardName {
   font-weight: 600;
   font-size: var(--text-base);
@@ -255,46 +243,7 @@
   min-height: 2.8em;
 }
 
-.cardAction {
-  margin-top: auto;
-  padding-top: 8px;
-}
-
-.workspaceButton {
-  width: 100%;
-  padding: 6px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    color 0.15s,
-    background 0.15s;
-  text-align: center;
-}
-
-.workspaceButton:hover:not(:disabled) {
-  border-color: rgba(77, 240, 160, 0.4);
-  color: var(--green);
-  background: rgba(77, 240, 160, 0.06);
-}
-
-.workspaceButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 /* ─── Config 视图（左右两栏） ─── */
-
-.configLayout {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: var(--space-xl);
-  min-height: 60vh;
-}
 
 .configPanel {
   border: 1px solid var(--line);
@@ -306,15 +255,6 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   overflow: hidden;
-}
-
-.panelHeader {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--muted);
-  background: rgba(8, 16, 15, 0.4);
 }
 
 .placeholderContent {
@@ -336,31 +276,4 @@
   color: var(--muted);
   text-align: center;
   font-size: var(--text-sm);
-}
-
-/* ─── 策略选择器（config 视图顶部） ─── */
-
-.strategySelector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: var(--space-lg);
-  padding: 12px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: rgba(8, 16, 15, 0.3);
-}
-
-.strategySelectorName {
-  font-weight: 700;
-  font-size: var(--text-base);
-  flex: 1;
-}
-
-.strategySelectorMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: var(--text-xs);
 }
