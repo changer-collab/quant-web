@@ -39,6 +39,15 @@ Error Boundary
   - 类型集中在 src/data/types.ts，Mock 数据集中在 src/data/mock/report.ts，UI 文案进入 zh.ts/en.ts
   - Playwright 视觉验证通过：18 Tab + 3 分辨率（1920×1080/1366×768/768×1024）响应式验证
   - 修复 ECharts DrawdownChart 的 visualMap 配置导致的 coord undefined 运行时错误
+研究台三 Tab 架构（WorkspacePage）：参数配置 + K线预览 / 诊断 / 回测三个 Tab 串联研究闭环
+  - Tab 1（config）：ConfigPanel 参数编辑 + K线预览（点"预览"按钮拉取 bars 渲染）
+  - Tab 2（diagnose）：基于 configSnapshot 的运行配置诊断
+  - Tab 3（backtest）：基于 configSnapshot 的回测表单
+  - 无 configSnapshot 时 Tab 2/3 显示空态提示，强制用户先保存配置
+K线图双 canvas 分层渲染：baseCanvas 绘制 K线 + 副图，overlayCanvas 绘制十字光标和信号标记
+  - 鼠标 hover 只重绘 overlayCanvas，避免 K线重绘开销
+  - MAX_BARS=1500 限制单次渲染 K线数量，防止性能退化
+策略总览整卡点击直接进入研究台 config Tab，删除 config 中间页
 ```
 
 暂未引入：

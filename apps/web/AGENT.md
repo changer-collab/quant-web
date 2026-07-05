@@ -33,6 +33,16 @@ Error Boundary 已集成
   - 类型集中在 src/data/types.ts，UI 文案进入 zh.ts/en.ts
   - Playwright 视觉验证通过：18 Tab + 3 分辨率响应式验证
   - 修复 ECharts DrawdownChart 的 visualMap 配置导致的 coord undefined 运行时错误
+研究台三 Tab 架构（WorkspacePage）：config / diagnose / backtest 三个 Tab 串联研究闭环
+  - config Tab：ConfigPanel 参数编辑 + K线预览，保存配置后写入 configSnapshot
+  - diagnose Tab：基于 configSnapshot 运行配置诊断；configSnapshot 缺失时显示空态
+  - backtest Tab：基于 configSnapshot 渲染回测表单；configSnapshot 缺失时显示空态
+K线图双 canvas 分层（KlineChart）
+  - baseCanvas 绘制 K线 + 副图，overlayCanvas 绘制十字光标和信号标记
+  - 鼠标 hover 只触发 overlayCanvas 重绘，K线层不重绘
+  - hoveredSignal 用 ref 解耦，避免因信号高亮变更触发 React 重渲染
+  - MAX_BARS=1500 限制单次渲染 K线数量
+策略总览（StrategyGrid）：删除 config 中间页，整卡点击直接进入研究台 config Tab
 ```
 
 ## 验证命令
