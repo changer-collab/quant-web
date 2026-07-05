@@ -773,7 +773,7 @@ git commit -m "fix: story-6-fix 前端 UIConstraint 映射 + 删 strategy-grid +
 
 **Files:**
 - Modify: `apps/worker/README.md`
-- Modify: `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`
+- Modify: `docs/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`
 
 **Interfaces:** 无(纯文档同步)
 
@@ -791,7 +791,7 @@ git commit -m "fix: story-6-fix 前端 UIConstraint 映射 + 删 strategy-grid +
 
 - [ ] **Step 2: 修改 plan 文档勾选已完成步骤**
 
-修改 `docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`,把 `[ ]` 改为 `[x]`(对应 strategy-sync.ts PythonBridge 替换 + 删除内联 script 两步)。
+修改 `docs/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`,把 `[ ]` 改为 `[x]`(对应 strategy-sync.ts PythonBridge 替换 + 删除内联 script 两步)。
 
 - [ ] **Step 3: 验证文档无断链**
 
@@ -801,7 +801,7 @@ Expected: 无输出(已全部清理)
 - [ ] **Step 4: 提交**
 
 ```bash
-git add apps/worker/README.md docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md
+git add apps/worker/README.md docs/plans/2026-06-30-backend-sync-realign-integrated.md
 git commit -m "docs: worker README + plan 勾选同步"
 ```
 
@@ -961,7 +961,7 @@ git commit --allow-empty -m "test: story-8 重验 全链路 4 轨道通过"
 
 ## 执行方式选择
 
-Plan complete and saved to `docs/superpowers/plans/2026-07-03-ralph-fix-plan.md`. Two execution options:
+Plan complete and saved to `docs/plans/2026-07-03-ralph-fix-plan.md`. Two execution options:
 
 **1. Subagent-Driven(推荐)** — 每个 Task 派发新 subagent,Task 间审查,快速迭代
 

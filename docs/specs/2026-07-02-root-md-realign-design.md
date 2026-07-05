@@ -1,6 +1,6 @@
 # 根目录文档对齐 backend-sync-realign plan 设计
 
-> 对齐基准：`docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md` 的 Phase 0-5（已落地）。Phase 6-9 未完成，不在本次文档描述范围内。
+> 对齐基准：`docs/plans/2026-06-30-backend-sync-realign-integrated.md` 的 Phase 0-5（已落地）。Phase 6-9 未完成，不在本次文档描述范围内。
 
 ## 目标
 
@@ -80,7 +80,7 @@ apps/api /api/strategies（catalog/config/preview）/api/diagnostics /api/tasks 
 更新为：
 
 ```
-- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)。
+- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/plans/2026-06-30-backend-sync-realign-integrated.md)。
 ```
 
 #### 3.2 已知陷阱（第 49-56 行）补充两条

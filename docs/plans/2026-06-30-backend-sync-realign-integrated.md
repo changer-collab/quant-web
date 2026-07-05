@@ -442,7 +442,7 @@ export interface ResultProcessor {
 
 **Files:**
 
-- Create: `docs/superpowers/specs/2026-06-30-diagnostics-algorithm-contract.md`
+- Create: `docs/specs/2026-06-30-diagnostics-algorithm-contract.md`
 
 **Acceptance Criteria:**
 

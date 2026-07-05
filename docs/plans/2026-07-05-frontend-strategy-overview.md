@@ -224,7 +224,7 @@ export function downsample<T>(arr: T[], maxCount: number): T[] {
 }
 
 export function maxByReduce(arr: number[]): number {
-  return arr.reduce((m, v) => (v > m ? v : m), 0);
+  return arr.length === 0 ? 0 : arr.reduce((m, v) => (v > m ? v : m), -Infinity);
 }
 ```
 

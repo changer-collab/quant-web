@@ -17,7 +17,7 @@
 - Git 提交在当前 `ralph/backend-sync-realign` 分支
 - 每个 Task 结束后独立提交，commit message 用 `docs:` 前缀
 
-**Spec:** `docs/superpowers/specs/2026-07-02-root-md-realign-design.md`
+**Spec:** `docs/specs/2026-07-02-root-md-realign-design.md`
 
 ---
 
@@ -191,7 +191,7 @@ old_string:
 new_string:
 
 ```
-- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/superpowers/plans/2026-06-30-backend-sync-realign-integrated.md)。
+- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/plans/2026-06-30-backend-sync-realign-integrated.md)。
 ```
 
 - [ ] **Step 2: 在"已知陷阱"末尾追加两条**
