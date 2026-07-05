@@ -615,3 +615,64 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+
+/* ── Tab Navigation (replaces Stepper) ── */
+.tabNav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+
+.tabButton {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tabButton:hover {
+  color: var(--text);
+}
+
+.tabButtonActive {
+  color: var(--green, #62d8ff);
+  border-bottom-color: var(--green, #62d8ff);
+}
+
+.tabContent {
+  min-height: 400px;
+}
+
+.configTabLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 500px;
+}
+
+@media (max-width: 1024px) {
+  .configTabLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.configPanelWrapper {
+  min-height: 500px;
+  overflow-y: auto;
+}
+
+.klinePanelWrapper {
+  min-height: 500px;
+}
+
+.noConfigHint {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+}

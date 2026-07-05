@@ -651,6 +651,11 @@ export interface UiCopy {
   workspaceBacktestStartDate: string;
   workspaceBacktestEndDate: string;
   workspaceBacktestConfigTitle: string;
+  /** ─── 三 Tab 导航 ─── */
+  workspaceTabConfig: string;
+  workspaceTabDiagnose: string;
+  workspaceTabBacktest: string;
+  workspaceNoConfigHint: string;
 }
 
 export interface LanguageContent {

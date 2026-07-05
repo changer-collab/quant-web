@@ -757,6 +757,11 @@ export const zhContent: LanguageContent = {
     workspaceBacktestStartDate: '起始日期',
     workspaceBacktestEndDate: '结束日期',
     workspaceBacktestConfigTitle: '回测参数配置',
+    // ─── 三 Tab 导航 ───
+    workspaceTabConfig: '参数配置',
+    workspaceTabDiagnose: '诊断',
+    workspaceTabBacktest: '回测',
+    workspaceNoConfigHint: '请先在「参数配置」Tab 保存配置',
   },
   runningState: '运行中',
   completedState: '已完成',

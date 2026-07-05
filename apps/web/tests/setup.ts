@@ -2,6 +2,17 @@ import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
 
 /**
+ * ResizeObserver polyfill — jsdom 不提供 ResizeObserver，但 KlineChart 等
+ * 组件在 useEffect 中实例化它。提供一个空实现即可让组件挂载/卸载正常工作。
+ */
+class ResizeObserverPolyfill {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal('ResizeObserver', ResizeObserverPolyfill);
+
+/**
  * Mock globalThis.fetch 防止测试中发起真实网络请求。
  *
  * 按请求方法和 URL 模式返回合理的空响应：

@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot } from '../appData';
+import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot, PreviewResponse } from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
 import { fetchDiagnostic } from '../api/diagnostics';
 import { submitBacktest, streamTask as streamBacktestTask } from '../api/tasks';
 import { fetchStrategyConfig } from '../api/strategies-config';
+import { ConfigPanel } from './config-panel';
+import { KlineChart } from './kline-chart';
+import { fetchPreview } from '../api/preview';
 import s from '../styles/workspace-page.module.css';
 
 // ── Types ────────────────────────────────────────────────────
@@ -16,6 +19,7 @@ interface WorkspacePageProps {
   ui: UiCopy;
 }
 
+type WorkspaceTab = 'config' | 'diagnose' | 'backtest';
 type ProgressState = { percent: number; message: string } | null;
 
 interface BacktestMetricsView {
@@ -283,21 +287,26 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void 
 // ── Main WorkspacePage ───────────────────────────────────────
 
 export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageProps) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('config');
   const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
+  const [configVersion, setConfigVersion] = useState(0);
+  const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
+  const [klineLoading, setKlineLoading] = useState(false);
+  const [klineSymbol, setKlineSymbol] = useState('600519');
+
+  // 诊断状态（原 step 1）
   const [diagnosticData, setDiagnosticData] = useState<Record<string, unknown> | null>(null);
   const [diagnosticLoading, setDiagnosticLoading] = useState(false);
   const [diagnosticProgress, setDiagnosticProgress] = useState<ProgressState>(null);
   const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
   const [diagnosticReady, setDiagnosticReady] = useState(false);
 
+  // 回测状态（原 step 2）
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestProgress, setBacktestProgress] = useState<ProgressState>(null);
   const [backtestError, setBacktestError] = useState<string | null>(null);
   const [backtestResult, setBacktestResult] = useState<Record<string, unknown> | null>(null);
   const [backtestSubmitted, setBacktestSubmitted] = useState(false);
-
-  // ── Backtest parameter form state (step 2) ──
   const [backtestSymbol, setBacktestSymbol] = useState('600519');
   const [backtestTimeframe, setBacktestTimeframe] = useState('1d');
   const [backtestInitialCapital, setBacktestInitialCapital] = useState(1_000_000);
@@ -306,9 +315,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     d.setFullYear(d.getFullYear() - 1);
     return d.toISOString().slice(0, 10);
   });
-  const [backtestEndDate, setBacktestEndDate] = useState(() => {
-    return new Date().toISOString().slice(0, 10);
-  });
+  const [backtestEndDate, setBacktestEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const configDefaultsApplied = useRef(false);
 
   const category = strategy.category ?? 'non_factor';
@@ -319,10 +326,6 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     const params = new URLSearchParams(window.location.search);
     const id = params.get('diagnosticId');
     if (id) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('diagnosticId', id);
-      window.history.replaceState({}, '', url.toString());
-
       fetchDiagnostic(id)
         .then((data) => {
           if (data) {
@@ -337,6 +340,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 读取 configSnapshot，依赖 configVersion（ConfigPanel 保存后递增触发刷新）
   useEffect(() => {
     configDefaultsApplied.current = false;
     fetchStrategyConfig(strategy.name)
@@ -346,7 +350,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       .catch((err) => {
         console.warn('Failed to fetch strategy config:', err);
       });
-  }, [strategy.name]);
+  }, [strategy.name, configVersion]);
 
   // ── Set backtest form defaults from configSnapshot when it loads ──
   useEffect(() => {
@@ -366,6 +370,59 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [configSnapshot]);
+
+  const handleConfigSaved = useCallback(() => {
+    setConfigVersion((v) => v + 1);
+  }, []);
+
+  const handlePreviewUpdate = useCallback((data: PreviewResponse | null) => {
+    setPreviewData(data);
+  }, []);
+
+  const handleSymbolChange = useCallback(
+    async (newSymbol: string) => {
+      setKlineSymbol(newSymbol);
+      setKlineLoading(true);
+      try {
+        const data = await fetchPreview(strategy.name, {
+          symbol: newSymbol,
+          timeframe: '1d',
+          limit: 120,
+          preview_params: {},
+        });
+        setPreviewData(data);
+      } catch {
+        // 静默失败
+      } finally {
+        setKlineLoading(false);
+      }
+    },
+    [strategy.name]
+  );
+
+  const handleLoadMore = useCallback(
+    async (cursor: number) => {
+      if (!previewData) return;
+      setKlineLoading(true);
+      try {
+        const data = await fetchPreview(strategy.name, {
+          symbol: klineSymbol,
+          timeframe: '1d',
+          cursor,
+          limit: 50,
+          preview_params: {},
+        });
+        if (data.bars.length > 0) {
+          setPreviewData({ ...data, bars: [...data.bars, ...previewData.bars] });
+        }
+      } catch {
+        // 静默失败
+      } finally {
+        setKlineLoading(false);
+      }
+    },
+    [strategy.name, klineSymbol, previewData]
+  );
 
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {
@@ -579,7 +636,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     };
   }
 
-  // ── Step 1 Diagnostics Content ──
+  // ── Diagnostics Content（在 diagnose Tab 内直接调用） ──
   function renderDiagnosticContent() {
     if (diagnosticLoading && !diagnosticData) {
       return (
@@ -683,7 +740,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     );
   }
 
-  // ── Step 2 Backtest Content ──
+  // ── Backtest Content（在 backtest Tab 内直接调用） ──
   function renderBacktestContent() {
     const metrics = parsedBacktest?.metrics;
     const equityPoints = parsedBacktest?.equityCurve?.map((point) => point.equity) ?? [];
@@ -906,71 +963,102 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         <span className={s.workspaceSubtitle}>{strategy.description}</span>
       </div>
 
-      {/* Stepper */}
-      <div className={s.stepper}>
-        <div className={`${s.step} ${step === 1 ? s.stepActive : s.stepCompleted}`}>
-          <div className={s.stepCircle}>{step > 1 ? '✓' : '1'}</div>
-          <div className={s.stepLabel}>
-            <span className={s.stepTitle}>{ui.workspaceStep1Label}</span>
-            <span className={s.stepDesc}>{ui.workspaceStep1Desc}</span>
-          </div>
-        </div>
-        <div className={s.stepConnector}>
-          <div className={`${s.connectorLine} ${step > 1 ? s.connectorActive : ''}`} />
-        </div>
-        <div className={`${s.step} ${step === 2 ? s.stepActive : ''}`}>
-          <div className={s.stepCircle}>2</div>
-          <div className={s.stepLabel}>
-            <span className={s.stepTitle}>{ui.workspaceStep2Label}</span>
-            <span className={s.stepDesc}>{ui.workspaceStep2Desc}</span>
-          </div>
-        </div>
+      {/* Tab 导航（替代原 Stepper） */}
+      <div className={s.tabNav}>
+        {([
+          { key: 'config' as const, label: ui.workspaceTabConfig },
+          { key: 'diagnose' as const, label: ui.workspaceTabDiagnose },
+          { key: 'backtest' as const, label: ui.workspaceTabBacktest },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            className={`${s.tabButton} ${activeTab === tab.key ? s.tabButtonActive : ''}`}
+            onClick={() => setActiveTab(tab.key)}
+            type="button"
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Step 1: Diagnostics */}
-      {step === 1 && (
-        <div className={s.stepContent}>
-          <div className={s.diagnosticActions}>
-            <button
-              className={s.primaryButton}
-              onClick={handleRunDiagnostics}
-              disabled={diagnosticLoading}
-              type="button"
-            >
-              {diagnosticLoading ? ui.workspaceDiagnosticsRunning : ui.workspaceRunDiagnostics}
-            </button>
-          </div>
-
-          <ProgressBar progress={diagnosticProgress} />
-          {diagnosticError && <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />}
-
-          {renderDiagnosticContent()}
-
-          {diagnosticReady && (
-            <button className={s.confirmButton} onClick={() => setStep(2)} type="button">
-              {ui.workspaceConfirmStep2}
-            </button>
-          )}
-
-          {!diagnosticLoading && !diagnosticError && !diagnosticReady && !diagnosticData && (
-            <div className={s.emptyState}>
-              <span>
-                {language === 'zh'
-                  ? '点击「开始诊断」分析策略特征'
-                  : 'Click "Run Diagnostics" to analyze'}
-              </span>
+      <div className={s.tabContent}>
+        {/* Tab 1: 参数配置（ConfigPanel + KlineChart） */}
+        {activeTab === 'config' && (
+          <div className={s.configTabLayout}>
+            <div className={s.configPanelWrapper}>
+              <ConfigPanel
+                strategy={strategy}
+                ui={ui}
+                language={language}
+                onPreviewUpdate={handlePreviewUpdate}
+                onConfigSaved={handleConfigSaved}
+              />
             </div>
-          )}
-        </div>
-      )}
+            <div className={s.klinePanelWrapper}>
+              <KlineChart
+                previewData={previewData}
+                subcategory={strategy.subcategory}
+                ui={ui}
+                language={language}
+                onSymbolChange={handleSymbolChange}
+                onLoadMore={handleLoadMore}
+                loading={klineLoading}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* Step 2: Backtest */}
-      {step === 2 && (
-        <div className={s.stepContent}>
-          <div className={s.chartCardTitle}>{ui.workspaceConfigSummary}</div>
-          {renderBacktestContent()}
-        </div>
-      )}
+        {/* Tab 2: 诊断（原 step 1） */}
+        {activeTab === 'diagnose' && (
+          <div>
+            {!configSnapshot ? (
+              <div className={s.noConfigHint}>{ui.workspaceNoConfigHint}</div>
+            ) : (
+              <>
+                <div className={s.diagnosticActions}>
+                  <button
+                    className={s.primaryButton}
+                    onClick={handleRunDiagnostics}
+                    disabled={diagnosticLoading}
+                    type="button"
+                  >
+                    {diagnosticLoading ? ui.workspaceDiagnosticsRunning : ui.workspaceRunDiagnostics}
+                  </button>
+                </div>
+
+                <ProgressBar progress={diagnosticProgress} />
+                {diagnosticError && <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />}
+
+                {renderDiagnosticContent()}
+
+                {!diagnosticLoading && !diagnosticError && !diagnosticReady && !diagnosticData && (
+                  <div className={s.emptyState}>
+                    <span>
+                      {language === 'zh'
+                        ? '点击「开始诊断」分析策略特征'
+                        : 'Click "Run Diagnostics" to analyze'}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: 回测（原 step 2） */}
+        {activeTab === 'backtest' && (
+          <div>
+            {!configSnapshot ? (
+              <div className={s.noConfigHint}>{ui.workspaceNoConfigHint}</div>
+            ) : (
+              <>
+                <div className={s.chartCardTitle}>{ui.workspaceConfigSummary}</div>
+                {renderBacktestContent()}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

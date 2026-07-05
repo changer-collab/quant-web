@@ -887,6 +887,11 @@ export const enContent: LanguageContent = {
     workspaceBacktestStartDate: 'Start Date',
     workspaceBacktestEndDate: 'End Date',
     workspaceBacktestConfigTitle: 'Backtest Configuration',
+    // ─── Three-tab navigation ───
+    workspaceTabConfig: 'Config',
+    workspaceTabDiagnose: 'Diagnose',
+    workspaceTabBacktest: 'Backtest',
+    workspaceNoConfigHint: 'Save config in the Config tab first',
   },
   runningState: 'Running',
   completedState: 'Completed',
