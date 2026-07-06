@@ -1,6 +1,6 @@
 {
   "feature": "backend-sync-realign-phase6-9",
-  "branchName": "ralph/backend-sync-realign-phase6-9",
+  "branchName": "changer",
   "description": "整合主线切片 3（14 story，Phase 2 延后项 + Phase 6-9 收尾，每个 story 单文件/单关注点）。Phase 2 延后：API param wire → camelCase → Phase 6.3 transitional 诊断算法 → Phase 7a Worker 去 fallback → Phase 7a Python 对齐 snapshotParams → Phase 7b report metadata → Phase 8a 前端类型+客户端 → Phase 8b ConfigPanel → Phase 8c WorkspacePage → Phase 8d KlineChart+Grid+Table → Phase 9a CLI listStrategies → Phase 9b API strategy-sync PythonBridge → Phase 9c Worker 死队列删除 → E2E 验收。",
   "qualityChecks": {
     "js": "pnpm lint && pnpm test && pnpm build",

@@ -1,6 +1,6 @@
 {
   "feature": "factor-lab-v1",
-  "branchName": "ralph/factor-lab-v1",
+  "branchName": "changer",
   "description": "实现因子工坊 v1：因子定义、计算接口、评估指标集成",
   "qualityChecks": {
     "js": "pnpm lint && pnpm test && pnpm build",

@@ -175,6 +175,7 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
   - 开发完成后在 `changer` 分支提交。
   - 推送时使用 `git push origin changer`，不要直接向 `main` 分支推送。
   - 推送完成后，使用 `gh pr create` 创建从 `changer` 到 `main` 的 Pull Request（若已有同名 PR 则跳过）。
+  - ralph 自动化执行同样在 `changer` 分支开发，`prd.json` 的 `branchName` 固定为 `changer`，不创建 `ralph/*` 独立分支；PR 由人工创建，ralph 不自动创建。
 
 ## 子项目规则引用
 

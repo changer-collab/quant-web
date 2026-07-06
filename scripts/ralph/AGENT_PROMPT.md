@@ -84,10 +84,13 @@ done
 
 ## 分支管理
 
-- 检查 prd.json 中的 `branchName`
-- 如果当前分支不是目标分支，切过去
-- 每个故事完成后提交到当前分支
-- 推送时用 `git push origin <branchName>`
+**统一在 `changer` 分支开发，禁止创建 `ralph/*` 等独立分支。** prd.json 的 `branchName` 固定为 `changer`。
+
+- 检查 prd.json 中的 `branchName`（应为 `changer`）
+- 如果当前不在 `changer` 分支，`git checkout changer` 切过去
+- 每个故事完成后提交到 `changer` 分支
+- 推送时用 `git push origin changer`，不要直接推 `main`
+- PR 由人工通过 `gh pr create` 创建（`changer` → `main`），ralph 不自动创建 PR
 
 ## 提交规范
 
