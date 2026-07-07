@@ -1,9 +1,14 @@
-"""AI 预测择时策略"""
+"""AI 模型策略——引用已训练 ModelArtifact + SignalGenerator 生成信号。
+
+原 AIPredictorStrategy 重构为 AIModelStrategy，注册名保持 ai_predictor。
+"""
 
 from __future__ import annotations
 
 from collections import defaultdict, deque
 from typing import Any
+
+import numpy as np
 
 from quantforge_strategy import (
     TimingStrategy, StrategyMeta, StrategyResult,
@@ -11,11 +16,13 @@ from quantforge_strategy import (
     StrategyCategory, StrategySubcategory,
 )
 
-AIPredictor = None
 
+class AIModelStrategy(TimingStrategy):
+    """基于已训练 AI 模型 artifact + SignalGenerator 输出 Buy/Sell/Hold 信号。
 
-class AIPredictorStrategy(TimingStrategy):
-    """基于已训练 AI 模型输出 Buy/Sell/Hold 信号。"""
+    不再硬编码 AIPredictor，通过 model_artifact_path 加载 ModelArtifact，
+    通过 AlgorithmRegistry 获取算法进行 predict。
+    """
 
     def __init__(
         self,
@@ -30,13 +37,13 @@ class AIPredictorStrategy(TimingStrategy):
         self._bars_by_symbol: defaultdict[str, deque[Bar]] = defaultdict(
             lambda: deque(maxlen=self._min_history)
         )
-        self._predictor: Any | None = None
+        self._artifact: Any | None = None
 
     @property
     def meta(self) -> StrategyMeta:
         return StrategyMeta(
             name="ai_predictor",
-            description="AI 模型预测择时策略",
+            description="AI 模型预测择时策略（基于 ModelArtifact + SignalGenerator）",
             modes=[ResearchMode.AI],
             params=[
                 StrategyParamDef(
@@ -62,7 +69,7 @@ class AIPredictorStrategy(TimingStrategy):
                     max=1.0,
                 ),
             ],
-            version="0.1.0",
+            version="0.2.0",
             kind=StrategyKind.Timing,
             category=StrategyCategory.NON_FACTOR,
             subcategory=StrategySubcategory.E2E_AI_TIMESERIES,
@@ -70,8 +77,7 @@ class AIPredictorStrategy(TimingStrategy):
 
     def init(self, context) -> None:
         self._bars_by_symbol.clear()
-        predictor_cls = _load_predictor_cls()
-        self._predictor = predictor_cls.load(self._model_path)
+        self._artifact = _load_artifact(self._model_path)
 
     def signal(self, bar: Bar, context) -> Signal:
         return self.on_bar(bar, context)
@@ -81,27 +87,80 @@ class AIPredictorStrategy(TimingStrategy):
         bars.append(bar)
         if len(bars) < self._min_history:
             return Signal.Hold
-        if self._predictor is None:
-            raise RuntimeError("AIPredictorStrategy not initialized")
+        if self._artifact is None:
+            raise RuntimeError("AIModelStrategy not initialized")
 
-        result = self._predictor.predict(_bars_to_frame(bars))
-        if not result.predictions:
+        raw_output = _predict_artifact(self._artifact, bars)
+        if len(raw_output) == 0:
             return Signal.Hold
 
-        prediction = result.predictions[-1]
-        probability = result.probabilities[-1] if result.probabilities else None
-        return _prediction_to_signal(prediction, probability, self._threshold)
+        ml_signal = _raw_output_to_signal(raw_output[-1], self._threshold, bar)
+        return _ml_signal_to_strategy_signal(ml_signal)
 
     def finish(self) -> StrategyResult:
         return StrategyResult(meta=self.meta)
 
 
-def _load_predictor_cls():
-    global AIPredictor
-    if AIPredictor is None:
-        from quantforge_ai import AIPredictor as _AIPredictor
-        AIPredictor = _AIPredictor
-    return AIPredictor
+# 向后兼容别名
+AIPredictorStrategy = AIModelStrategy
+
+
+def _load_artifact(model_path: str):
+    """加载 ModelArtifact——从 joblib payload 的 algorithm 字段分派到 Algorithm.load。"""
+    from pathlib import Path
+    import joblib
+    from quantforge_algorithms import AlgorithmRegistry
+
+    path = Path(model_path)
+    payload = joblib.load(path)
+    algorithm_name = payload.get("algorithm")
+    if not algorithm_name:
+        config = payload.get("config", {})
+        if isinstance(config, dict):
+            algorithm_name = config.get("algorithm", "random_forest")
+        else:
+            algorithm_name = getattr(config, "algorithm", "random_forest")
+    algorithm = AlgorithmRegistry.get(algorithm_name)
+    return algorithm.load(path)
+
+
+def _predict_artifact(artifact, bars: deque[Bar]):
+    """使用 Algorithm.predict 对 bar 序列做预测。"""
+    from quantforge_algorithms import AlgorithmRegistry
+
+    algorithm = AlgorithmRegistry.get(artifact.algorithm)
+    X = _bars_to_frame(bars)
+    return algorithm.predict(artifact, X)
+
+
+def _raw_output_to_signal(prediction: float, threshold: float, bar: Bar):
+    """把算法原始输出转换为 MLSignal（简化版，不经过 SignalGenerator 以保持时序策略轻量）。"""
+    from quantforge_algorithms.types import MLSignal
+
+    if isinstance(prediction, (int, float, np.integer, np.floating)):
+        prob = float(prediction)
+        if prob >= threshold:
+            side = "buy"
+        elif prob <= 1 - threshold:
+            side = "sell"
+        else:
+            side = "hold"
+        return MLSignal(
+            timestamp=bar.timestamp,
+            symbol=bar.symbol,
+            side=side,
+            probability=prob,
+        )
+    return MLSignal(timestamp=bar.timestamp, symbol=bar.symbol, side="hold")
+
+
+def _ml_signal_to_strategy_signal(ml_signal) -> Signal:
+    """把 MLSignal 转换为 strategy-runtime 的 Signal 枚举。"""
+    if ml_signal.side == "buy":
+        return Signal.Buy
+    if ml_signal.side == "sell":
+        return Signal.Sell
+    return Signal.Hold
 
 
 def _bars_to_frame(bars: deque[Bar]):
@@ -120,21 +179,3 @@ def _bars_to_frame(bars: deque[Bar]):
         }
         for bar in bars
     ])
-
-
-def _prediction_to_signal(prediction: Any, probability: float | None, threshold: float) -> Signal:
-    try:
-        value = float(prediction)
-    except (TypeError, ValueError):
-        return Signal.Hold
-
-    if probability is not None:
-        if value > 0:
-            return Signal.Buy if probability >= threshold else Signal.Hold
-        return Signal.Sell if probability <= 1 - threshold else Signal.Hold
-
-    if value > 0:
-        return Signal.Buy
-    if value <= 0:
-        return Signal.Sell
-    return Signal.Hold
