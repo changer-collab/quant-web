@@ -24,6 +24,7 @@
 | 2026-06-28 | 链条致命缺陷修复（市场规则接入/FormulaFactor/AI 模型持久化/存活偏差/涨跌停） | backtest-engine, factor-lab, ai-engine, strategies                                  |
 | 2026-06-28 | 策略分类体系重构 + 策略配置页 + Workspace 两步工作流                         | strategy-runtime, api（config/preview/diagnostics）, web（strategy-page/workspace） |
 | 2026-06-25 | Agent 包装层（统一 AgentExecutor 接口）                                      | worker/agents（base/python-agent/backtest-agent）                                   |
+| 2026-07-07 | 数据源增强 & Parquet 导入（mootdx fallback + 东财 8 适配器 + external_records 表 + ParquetAdapter + TimeFrame 扩展） | data-collector, data-center                                                         |
 
 ---
 
@@ -49,8 +50,9 @@
 
 ### 3. 真实数据接入批量导入验证
 
-- **目标**：AKShare 适配器已实现，批量导入与端到端闭环待最终验证
+- **目标**：AKShare 适配器已实现，批量导入与端到端闭环待最终验证；Parquet 导入已打通（`E:\quant-data\bars\*` 36434 文件可入库）
 - **涉及**：data-collector, data-center, data-client, backtest-engine
+- **进展**：ParquetAdapter + import-parquet 命令已完成，TimeFrame 扩展周/月/季/年线，端到端验证通过（14347+1249 条）
 
 ### 4. 策略分类重构遗留清理
 

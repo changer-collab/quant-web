@@ -25,7 +25,7 @@
 - LoopHandler：循环任务处理器，编排多次子任务迭代
 - main.ts 独立入口：通过 HTTP 轮询 API /api/internal/tasks/* 领取、执行、上报任务，不依赖与 API 同进程
 - queue.ts（含 TaskQueue + better-sqlite3 本地队列）已删除，被 HTTP 轮询替代
-- worker.ts（Worker 主类）已删除，为死代码
+- worker.ts（Worker 主类）已删除，曾为死代码
 ```
 
 ## 边界
@@ -75,7 +75,7 @@ Worker 默认轮询 `http://127.0.0.1:3002/api/internal/tasks/pending`。
 ## 后续扩展
 
 ```text
-- 替换内存队列为 Redis/BullMQ 持久化队列
+- 添加 Redis/BullMQ 持久化队列支持（当前为 HTTP 轮询）
 - 添加任务优先级和并发控制
 - 添加 AI 训练任务处理器（依赖 ai-engine）
 - 添加任务进度回调（当前通过 SSE /api/tasks/:id/stream 推送）

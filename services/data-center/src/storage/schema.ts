@@ -188,6 +188,12 @@ export const valuations = sqliteTable(
     // A 股扩展字段（Wind/xlsx 数据源常用）
     turnoverRate: real('turnover_rate'),
     floatShares: real('float_shares'),
+    // 腾讯财经实时行情扩展字段（P1-D 补齐）
+    limitUp: real('limit_up'),
+    limitDown: real('limit_down'),
+    volumeRatio: real('volume_ratio'),
+    orderImbalance: real('order_imbalance'),
+    avgVolume5d: real('avg_volume_5d'),
   },
   (table) => [
     primaryKey({ columns: [table.symbol, table.timestamp] }),
@@ -377,3 +383,27 @@ export const tasks = sqliteTable('tasks', {
   progress: integer('progress'),
   lines: text('lines'), // JSON array
 });
+
+// ─── 扩展数据（通用外部记录） ──────────────────────────────
+
+/**
+ * 扩展数据表 — 通用载体，承载尚未独立建表的数据类型
+ * dataType 取值：dragon_tiger / lockup / margin / block_trade / dividend /
+ *                research_report / hot_stocks / northbound_flow / f10 / factor_result 等
+ * payload 为 JSON 文本，由调用方约定结构
+ */
+export const externalRecords = sqliteTable(
+  'external_records',
+  {
+    id: text('id').primaryKey(),
+    dataType: text('data_type').notNull(),
+    symbol: text('symbol').notNull(),
+    timestamp: integer('timestamp').notNull(),
+    payload: text('payload').notNull(), // JSON
+    source: text('source').notNull(),
+  },
+  (table) => [
+    index('idx_ext_type_symbol').on(table.dataType, table.symbol),
+    index('idx_ext_ts').on(table.timestamp),
+  ]
+);

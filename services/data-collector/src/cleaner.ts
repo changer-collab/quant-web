@@ -4,6 +4,8 @@ import {
   AnnouncementEventType,
   EventImpact,
   AdjustmentType,
+  TradeSide,
+  TradeType,
 } from '@quant/data-center';
 import type {
   ExtendedBar,
@@ -15,6 +17,9 @@ import type {
   AnnouncementEvent,
   NewsArticle,
   ShareholderMetrics,
+  TradeRecord,
+  Level2Snapshot,
+  OrderBookEntry,
 } from '@quant/data-center';
 import type { RawDataRecord } from './adapters/types.js';
 
@@ -230,6 +235,40 @@ export class DataCleaner {
     return raws.map((r) => DataCleaner.cleanShareholderMetrics(r));
   }
 
+  /** 清洗单条 tradeRecord 记录（逐笔成交） */
+  static cleanTradeRecord(raw: RawDataRecord): TradeRecord {
+    return {
+      symbol: DataCleaner.requireString(raw, 'symbol'),
+      timestamp: DataCleaner.requireNumber(raw, 'timestamp'),
+      price: DataCleaner.requireNumber(raw, 'price'),
+      volume: DataCleaner.requireNumber(raw, 'volume'),
+      side: DataCleaner.parseTradeSide(raw, 'side'),
+      tradeType: DataCleaner.parseTradeType(raw, 'trade_type'),
+    };
+  }
+
+  /** 批量清洗 tradeRecord */
+  static cleanTradeRecords(raws: RawDataRecord[]): TradeRecord[] {
+    return raws.map((r) => DataCleaner.cleanTradeRecord(r));
+  }
+
+  /** 清洗单条 l2Snapshot 记录（五档盘口快照） */
+  static cleanLevel2Snapshot(raw: RawDataRecord): Level2Snapshot {
+    const bids = DataCleaner.parseOrderBookEntries(raw, 'bids');
+    const asks = DataCleaner.parseOrderBookEntries(raw, 'asks');
+    return {
+      symbol: DataCleaner.requireString(raw, 'symbol'),
+      timestamp: DataCleaner.requireNumber(raw, 'timestamp'),
+      bids,
+      asks,
+    };
+  }
+
+  /** 批量清洗 l2Snapshot */
+  static cleanLevel2Snapshots(raws: RawDataRecord[]): Level2Snapshot[] {
+    return raws.map((r) => DataCleaner.cleanLevel2Snapshot(r));
+  }
+
   private static requireString(raw: RawDataRecord, key: string): string {
     const val = raw[key];
     if (val == null || val === '') {
@@ -350,6 +389,52 @@ export class DataCleaner {
       unknown: EventImpact.Unknown,
     };
     return map[val] ?? EventImpact.Unknown;
+  }
+
+  /** 解析成交方向 */
+  private static parseTradeSide(raw: RawDataRecord, key: string): TradeSide {
+    const val = String(raw[key] ?? '').toLowerCase();
+    if (val === 'buy' || val === '0' || val === 'b') return TradeSide.Buy;
+    if (val === 'sell' || val === '1' || val === 's') return TradeSide.Sell;
+    return TradeSide.Unknown;
+  }
+
+  /** 解析成交类型 */
+  private static parseTradeType(raw: RawDataRecord, key: string): TradeType {
+    const val = String(raw[key] ?? '').toLowerCase();
+    if (val === 'block' || val === '大宗') return TradeType.Block;
+    if (val === 'auction' || val === '集合竞价') return TradeType.Auction;
+    return TradeType.Normal;
+  }
+
+  /** 解析盘口档位数组（bids/asks） */
+  private static parseOrderBookEntries(raw: RawDataRecord, key: string): OrderBookEntry[] {
+    const val = raw[key];
+    if (val == null) return [];
+    if (Array.isArray(val)) {
+      return val.map((e: unknown) => {
+        if (typeof e === 'object' && e !== null) {
+          const obj = e as Record<string, unknown>;
+          return {
+            price: Number(obj.price) || 0,
+            volume: Number(obj.volume) || 0,
+            orderCount: Number(obj.orderCount ?? obj.order_count ?? 0) || 0,
+          };
+        }
+        return { price: 0, volume: 0, orderCount: 0 };
+      });
+    }
+    if (typeof val === 'string') {
+      try {
+        const arr = JSON.parse(val);
+        if (Array.isArray(arr)) {
+          return DataCleaner.parseOrderBookEntries({ [key]: arr }, key);
+        }
+      } catch {
+        /* 不是 JSON */
+      }
+    }
+    return [];
   }
 
   /** 解析逗号分隔的时间戳列表（YYYYMMDD 或毫秒时间戳） */

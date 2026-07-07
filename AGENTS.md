@@ -14,6 +14,8 @@
 - 因子工坊 Agent：负责 `packages/factor-lab`。因子工坊只做因子定义、计算、评估和注册的类型与接口，不做回测撮合和策略执行。
 - 策略库 Agent：负责 `packages/strategies`。
 - 循环引擎 Agent：负责 `packages/loop-engine`。循环引擎只定义循环工程（Loop Engineering）的类型骨架与条件判断纯函数接口，不实现调度引擎、不持久化状态、不承载核心算法。当前阶段为预留骨架，单次闭环打通后再实现。
+- Obsidian 同步 Agent：负责 `packages/obsidian-sync`。Obsidian 同步只做策略、回测结果、因子定义与评估、数据概览到 Obsidian vault 的笔记同步，不实现业务算法。
+- 数据客户端 Agent：负责 `packages/data-client`。数据客户端是 Python 侧轻量 SQLite 读取层，直接读取 data-collector 写入、data-center 标准化的 SQLite 文件，不存储数据、不提供 HTTP 接口、不做数据清洗。
 
 角色之间边界要清晰，重叠越少越好。如果两个 Agent 的职责分不开，说明角色该合并或者该重新拆。
 
@@ -31,6 +33,8 @@
 - 因子工坊 Agent 只做因子定义、计算、评估和注册的类型与接口；因子评估指标（IC、分组收益、分层回测）的计算委托给回测引擎。
 - 策略库 Agent 只写策略实现、策略样例和策略元数据。
 - 循环引擎 Agent 只定义循环生命周期类型（状态、配置、迭代记录）、终止条件判断的纯函数接口和循环汇总结构；不实现调度引擎、不做状态持久化、不直接调用回测/AI/因子引擎、不直接读数据中心、不处理 HTTP。循环的调度编排由 Worker 负责，循环状态持久化由 Worker 通过 API 任务表实现。
+- Obsidian 同步 Agent 只做策略/回测/因子/数据概览到 Obsidian vault 的笔记同步和 Markdown 构建，通过 Obsidian Local REST API 通信，不实现业务算法、不直接读 SQLite 文件（数据概览通过 data-client 间接读取）。
+- 数据客户端 Agent 只做轻量 SQLite 数据读取（Bar/合约/活跃标的），不存储数据、不提供 HTTP 接口、不做数据清洗；是 Python 侧数据访问层，直接读 SQLite 文件，不调用 data-center 的 HTTP 服务。
 
 ## 工作范围
 
@@ -47,6 +51,8 @@ AI 引擎 Agent        -> packages/ai-engine（含 report_analysis 子模块）
 因子工坊 Agent       -> packages/factor-lab
 策略库 Agent         -> packages/strategies
 循环引擎 Agent       -> packages/loop-engine
+Obsidian 同步 Agent  -> packages/obsidian-sync
+数据客户端 Agent     -> packages/data-client
 ```
 
 `runtime/` 是运行产物目录，不分配开发 Agent。
@@ -159,6 +165,8 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 - 因子工坊 Agent：因子定义和计算接口优先稳定；因子评估指标的计算不在此实现，委托给回测引擎。
 - 策略库 Agent：策略不直接依赖网站后端；AI 预测策略可依赖 AI 引擎加载已训练模型并生成信号，但不在策略库内训练模型。
 - 循环引擎 Agent：当前阶段只定义类型骨架（LoopType/LoopStatus/IterationStatus/LoopConfig/IterationRecord/LoopRecord/LoopCondition/LoopSummary），不实现调度引擎、不实现状态持久化、不自带进程入口；循环调度始终由 Worker 负责，循环状态持久化始终由 Worker 通过 API 任务表实现；迭代结果只存引用和摘要，不内联其他引擎的完整结果类型；单次闭环（backtest → obsidian-sync、backtest → web 报告展示）打通后才进入循环引擎的实现阶段。
+- Obsidian 同步 Agent：笔记构建器只做 Markdown 内容组装，不调用业务引擎；通过 Obsidian Local REST API 与 vault 通信，不直接读写本地文件系统；依赖 OBSIDIAN_API_URL/OBSIDIAN_API_TOKEN 环境变量；作为库被 Worker 编排调用，不直接暴露 HTTP。
+- 数据客户端 Agent：行情类型（Bar/Tick/TimeFrame/Instrument/MarketEvent）的所有权在 data-center（TS 层），Python 侧由 strategy-runtime re-export，data-client 消费这些类型，不重复定义；直接读 SQLite 文件，不调用 data-center HTTP 服务；数据库路径由调用方传入，不读取环境变量。
 
 ## 全局硬性规则
 
@@ -202,5 +210,9 @@ TS ↔ Python 通信：Worker 通过 `PythonBridge`（子进程 JSON 协议）�
 <!-- @include: packages/strategies/AGENT.md -->
 
 <!-- @include: packages/loop-engine/AGENT.md -->
+
+<!-- @include: packages/obsidian-sync/AGENT.md -->
+
+<!-- @include: packages/data-client/AGENT.md -->
 
 **执行规则**：当任务涉及上述某个子项目时，Agent 必须先用 Read 工具读取对应的 `AGENT.md`，然后以该文件的规则为约束执行任务。如果子项目 AGENT.md 与根级 AGENTS.md 冲突，以根级为准。

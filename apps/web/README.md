@@ -5,7 +5,7 @@
 ## 当前阶段
 
 ```text
-前端研究原型稳定阶段，已对接真实后端（API 失败时降级到 mock）
+前端研究原型稳定阶段，已对接真实后端（不降级到 mock，API 返回空时展示空状态）
 ```
 
 已完成：
@@ -58,13 +58,15 @@ K线图双 canvas 分层渲染：baseCanvas 绘制 K线 + 副图，overlayCanvas
 真实训练流程
 ```
 
-已接入但保留 fallback：
+已接入真实后端（不降级到 mock）：
 
 ```text
-后端 API（API 失败/无数据时降级到 mock）
+后端 API（API 失败/无数据时展示空状态，不降级到 mock）
 真实任务调度（通过 /api/tasks + SSE /api/tasks/:id/stream）
 真实回测引擎（通过 Python CLI，结果经 mapBacktestResultToReport 映射）
 ```
+
+`src/data/mock/` 下的 mock 数据文件仅保留供测试参考，运行时不引用。
 
 ## 运行
 

@@ -88,9 +88,9 @@ StrategyMeta(
 
 | category                | subcategory                                                                                                                                  |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FACTOR_BASED` 因子型   | `linear_multi_factor` / `nonlinear_ml`                                                                                                       |
-| `NON_FACTOR` 非因子型   | `trend_cta` / `mean_reversion` / `arbitrage` / `high_frequency` / `macro_quant` / `event_driven` / `e2e_ai_timeseries` / `tail_risk_hedging` |
-| `TRANSITIONAL` 过渡形态 | 无子分类（前端 `CATEGORY_SUBCATEGORIES.transitional` 为空）                                                                                  |
+| `FACTOR_BASED` 因子型   | `linear_multi_factor` / `index_enhancement` / `ml_nonlinear_factor`                                                                          |
+| `NON_FACTOR` 非因子型   | `trend_cta` / `arbitrage` / `hft_microstructure` / `macro_quant` / `event_driven` / `e2e_ai_timeseries`                                      |
+| `TRANSITIONAL` 过渡形态 | `event_sentiment_factor`（唯一目标子分类）                                                                                                   |
 
 ### StrategyParamDef 扩展字段
 

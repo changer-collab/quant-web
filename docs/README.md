@@ -6,11 +6,13 @@
 
 | 场景                      | 先读文档                                                                                                                 | 说明                                                                             |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| 当前后端/前端契约整合实施 | [backend-sync-realign-integrated](./plans/2026-06-30-backend-sync-realign-integrated.md)                     | 当前策略分类主线的实施入口，已整合 06-29 backend-sync 与 06-30 backend-realign。 |
+| 当前后端/前端契约整合实施 | [backend-sync-realign-integrated](./plans/2026-06-30-backend-sync-realign-integrated.md)                     | 策略分类主线实施入口，核心已落地（canonical 分类/ConfigSnapshot/Preview/Task payload/ResultProcessor 注册表），收尾中。 |
 | 策略分类产品目标          | [strategy-classification-and-config-design](./specs/2026-06-28-strategy-classification-and-config-design.md) | 产品分类、配置、Preview、Task、Diagnostics 的目标基准。                          |
 | 项目优先级                | [roadmap](./roadmap.md)                                                                                                  | 当前待实施事项与历史完成计划。                                                   |
 | 链条完整性状态            | [pipeline audit](./audits/pipeline-audit-2026-06-28.md)                                                                         | 研究链条缺陷审计，路线图优先级的依据。                                           |
 | 开发环境与测试            | [dev workflow](./dev-workflow.md)                                                                                        | 本地安装、启动、测试命令。                                                       |
+| 变更历史                  | [CHANGELOG](../CHANGELOG.md)                                                                                              | 项目重要变更记录（临时记录在 `.trae/changelog-pending.md`，commit 时整理入库）。 |
+| 项目记忆                  | `c:\Users\37588\.trae-cn\memory\projects\-d-quant-web\project_memory.md`                                                  | 项目硬约束、架构边界、已知陷阱、断点状态（AI 会话间记忆，不入库）。              |
 
 ## 策略分类主线文档关系
 

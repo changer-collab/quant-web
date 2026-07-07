@@ -17,6 +17,11 @@ import type {
  * - 45: 流通市值(亿)
  * - 46: PB(市净率)
  * - 38: 换手率%
+ * - 43: 涨停价（P1-D 补齐）
+ * - 47: 5 日均量（手，P1-D 补齐）
+ * - 48: 量比（P1-D 补齐）
+ * - 49: 委差（手，P1-D 补齐）
+ * - 52: 跌停价（P1-D 补齐）
  */
 export class TencentAdapter implements DataSourceAdapter {
   name = 'tencent';
@@ -77,6 +82,13 @@ export class TencentAdapter implements DataSourceAdapter {
       const marketCap = parseFloat(vals[44]);
       const floatMarketCap = parseFloat(vals[45]);
 
+      // P1-D 补齐字段
+      const limitUp = parseFloat(vals[43]);
+      const limitDown = parseFloat(vals[52]);
+      const volumeRatio = parseFloat(vals[48]);
+      const orderImbalance = parseFloat(vals[49]);
+      const avgVolume5d = parseFloat(vals[47]);
+
       // 至少有一个有效估值数据才写入
       if (isNaN(peTtm) && isNaN(pb) && isNaN(marketCap)) continue;
 
@@ -93,6 +105,11 @@ export class TencentAdapter implements DataSourceAdapter {
         dividendYield: null,
         turnoverRate: parseFloat(vals[38]) || null,
         floatShares: isNaN(floatMarketCap) ? null : floatMarketCap * 1e8,
+        limitUp: isNaN(limitUp) ? null : limitUp,
+        limitDown: isNaN(limitDown) ? null : limitDown,
+        volumeRatio: isNaN(volumeRatio) ? null : volumeRatio,
+        orderImbalance: isNaN(orderImbalance) ? null : orderImbalance,
+        avgVolume5d: isNaN(avgVolume5d) ? null : avgVolume5d * 100, // 手 → 股
       });
     }
 

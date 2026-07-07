@@ -12,7 +12,7 @@
 ## 当前阶段
 
 ```text
-存储层和 Provider 实现已完成（SQLite + Drizzle ORM），43 个测试通过；新增 shareholder_metrics 表及 Repository 实现；生命周期管理（CloseError + 并发安全 close + PIT 过滤）已完成
+存储层和 Provider 实现已完成（SQLite + Drizzle ORM），47 个测试通过；新增 shareholder_metrics 表及 Repository 实现；新增 external_records 通用表 + ExternalRecordRepository；TimeFrame 枚举扩展周/月/季/年线；生命周期管理（CloseError + 并发安全 close + PIT 过滤）已完成
 ```
 
 ## 已有能力
@@ -21,13 +21,16 @@
 - 6 个数据子域的类型定义和 Provider 接口
 - Repository 抽象接口（存储层与业务层解耦）
 - Drizzle ORM Schema（SQLite / PostgreSQL 共用）
-- SQLite 存储实现（17 个 Repository：含 shareholder_metrics）
+- SQLite 存储实现（18 个 Repository：含 shareholder_metrics + externalRecords）
+- external_records 通用表（承载东财 8 类扩展数据：龙虎榜/限售解禁/融资融券/大宗交易/分红送转/研报/热门股/北向资金；通过 ExternalRecordRepository 接口访问，payload 以 JSON 存储）
 - Provider 实现（6 个 Provider）
 - 工厂函数 createDataCenter()
 - 统一导出：src/index.ts
 - CloseError 错误类型 + saveDbToFile/连接创建错误包装
 - 并发安全 close（双关保护 + 超时 + 钩子）
 - PIT 过滤（全部基本面查询支持 asOfDate 参数）
+- TimeFrame 枚举扩展（M1/M5/M15/H1/D1 + W1/Mo1/Q1/Y1，全小写避免歧义）
+- DDL 增量迁移（connection.ts runMigrations 支持 ALTER TABLE 增量列，valuations 表新增 5 列：limit_up/limit_down/volume_ratio/order_imbalance/avg_volume_5d）
 ```
 
 ## 架构
