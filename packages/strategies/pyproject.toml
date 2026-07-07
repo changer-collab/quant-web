@@ -9,7 +9,6 @@ description = "QuantForge 策略库 — 内置策略实现"
 requires-python = ">=3.11"
 dependencies = [
     "quantforge-strategy",
-    "quantforge-ai",
     "quantforge-algorithms",
 ]
 

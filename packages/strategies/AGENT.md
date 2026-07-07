@@ -4,7 +4,7 @@
 
 - 所有回复使用中文。
 - 策略库只写策略实现、策略样例和策略元数据，不直接依赖网站后端。
-- AI 预测策略可依赖 AI 引擎加载已训练模型并生成信号，但不在策略库内训练模型。
+- AI 预测策略可依赖 quantforge_algorithms（ModelArtifact / AlgorithmRegistry / MLSignal）加载已训练模型并生成信号，但不在策略库内训练模型。
 - 策略实现通过 strategy-runtime 的分层基类（SelectorStrategy / TimingStrategy / PositionStrategy / CompositeStrategy）组合，不重复实现撮合或回测逻辑。
 - 不引入 HTTP 入口或 CLI 入口；策略库通过 strategy-runtime CLI 的 `listStrategies` / `backtest` 命令延迟导入被调用。
 - 更新本目录能力或进度时，同步更新本目录 `README.md`（如存在）和 `AGENT.md`，并按需同步根级文档。
@@ -24,8 +24,8 @@
   - BollingerBandStrategy — NON_FACTOR / TREND_CTA
   - MACDStrategy — NON_FACTOR / TREND_CTA
   - KDJStrategy — NON_FACTOR / TREND_CTA
-  - AIPredictorStrategy（ai_predictor）— NON_FACTOR / E2E_AI_TIMESERIES
-    继承 TimingStrategy，通过延迟导入 quantforge_ai.AIPredictor 加载已训练模型（不在库内训练）
+  - AIModelStrategy（ai_predictor，原 AIPredictorStrategy）— NON_FACTOR / E2E_AI_TIMESERIES
+    继承 TimingStrategy，通过 quantforge_algorithms（ModelArtifact / MLSignal / AlgorithmRegistry）加载已训练模型（不在库内训练）
 - 分层策略：
   - MomentumSelector（momentum_selector）— FACTOR_BASED / LINEAR_MULTI_FACTOR（selectors/）
   - MACrossoverTiming（ma_crossover）— NON_FACTOR / TREND_CTA（timers/）
@@ -35,7 +35,7 @@
 - 策略元数据：复用 strategy-runtime 的 StrategyMeta（name / description / modes / params / version / kind / category / subcategory）
 ```
 
-注：`CompositeStrategy` 注册表类型签名接受，但当前无具体实现。`AIPredictorStrategy` 的 category 标为 `NON_FACTOR` 但 subcategory 为 `E2E_AI_TIMESERIES`（待统一口径）。
+注：`CompositeStrategy` 注册表类型签名接受，但当前无具体实现。`AIModelStrategy`（保留 `AIPredictorStrategy` 别名）的 category 标为 `NON_FACTOR` 但 subcategory 为 `E2E_AI_TIMESERIES`（待统一口径）。
 
 ## 边界
 
@@ -69,7 +69,7 @@ strategies 包不定义新业务类型，仅本地类型别名 `StrategyType`；
 
 ```text
 quantforge-strategy（strategy-runtime）— 策略基类、订单、持仓、元数据类型
-quantforge-ai（ai-engine）— AI 预测策略延迟导入 AIPredictor 加载已训练模型
+quantforge-algorithms（algorithms）— AI 预测策略延迟导入 ModelArtifact / AlgorithmRegistry / MLSignal 加载已训练模型
 ```
 
 ## 被依赖方向
@@ -83,7 +83,7 @@ apps/worker（通过 PythonBridge 间接调用）
 
 ```text
 strategies → strategy-runtime（纯标准库）
-strategies → ai-engine（仅 AI 预测策略消费已训练模型/预测器）
+strategies → algorithms（仅 AI 预测策略消费 ModelArtifact / AlgorithmRegistry）
 ```
 
 ## 调用方式
