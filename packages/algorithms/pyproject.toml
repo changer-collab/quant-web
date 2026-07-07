@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+lightgbm = ["lightgbm>=4.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["quantforge_algorithms"]
