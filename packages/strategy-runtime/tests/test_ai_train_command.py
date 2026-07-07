@@ -197,3 +197,130 @@ def test_run_ai_train_backward_compatible_without_template_id() -> None:
 
         assert result["ok"] is True
         mock_AIPredictor.assert_called_once()
+
+
+def test_run_ai_train_with_template_id_integration(tmp_path) -> None:
+    """_run_with_template 集成测试——不 mock 函数本身，mock 其依赖，走通完整路径。
+
+    覆盖 _run_with_template 内部逻辑：TemplateRegistry.get、DataClient 数据加载、
+    FeatureExtractor.extract_all、TrainConfig 构造、AlgorithmRegistry.get、
+    algorithm.train、algorithm.save、返回结构拼装。
+    """
+    from quantforge_algorithms.types import (
+        ApplicationMode,
+        ModelArtifact,
+        ModelMetrics,
+    )
+
+    events = []
+
+    def emit(event_type, data):
+        events.append((event_type, data))
+
+    class _FakeAlgorithm:
+        """记录调用的 fake algorithm——train 返回真实 ModelArtifact，save 写假文件。"""
+
+        def __init__(self) -> None:
+            self.trained_with: tuple | None = None
+            self.saved_artifact = None
+
+        def train(self, X, y, config):
+            self.trained_with = (X, y, config)
+            return ModelArtifact(
+                artifact_id="integration-artifact-id",
+                algorithm="random_forest",
+                model="fake-model",
+                config=config,
+                metrics=ModelMetrics(
+                    accuracy=0.85,
+                    precision=0.80,
+                    recall=0.75,
+                    f1=0.77,
+                    auc=0.90,
+                ),
+                feature_schema=list(X.columns),
+                application_mode=ApplicationMode.TIME_SERIES,
+                trained_at=1700000000,
+            )
+
+        def save(self, artifact, path):
+            model_file = Path(path)
+            model_file.parent.mkdir(parents=True, exist_ok=True)
+            model_file.write_text("fake model", encoding="utf-8")
+            self.saved_artifact = artifact
+
+    fake_algorithm = _FakeAlgorithm()
+    model_path = tmp_path / "integration_model.joblib"
+
+    bars_df = pd.DataFrame({"close": [100.0 + i for i in range(100)]})
+    features_df = pd.DataFrame(
+        {
+            "f1": [float(i) for i in range(100)],
+            "f2": [float(i * 2) for i in range(100)],
+        }
+    )
+
+    with patch("quantforge_data.DataClient") as mock_data_client, \
+         patch("quantforge_ai.features.FeatureExtractor.extract_all") as mock_extract, \
+         patch("quantforge_algorithms.AlgorithmRegistry.get") as mock_algo_get:
+        mock_data_client.return_value.query_bars_df.return_value = bars_df
+        mock_extract.return_value = features_df
+        mock_algo_get.return_value = fake_algorithm
+
+        params = {
+            "templateId": "random_forest_timing",
+            "dataRange": {
+                "dbPath": "fake.db",
+                "symbol": "000001.SZ",
+                "timeframe": "1d",
+            },
+            "modelPath": str(model_path),
+        }
+        result = run_ai_train(params, emit)
+
+    # --- 返回结构验证 ---
+    assert result["ok"] is True
+    assert result["data"]["templateId"] == "random_forest_timing"
+    assert result["data"]["artifactId"] == "integration-artifact-id"
+
+    # --- metrics 验证（_to_dict 转换 ModelMetrics） ---
+    assert result["data"]["metrics"]["accuracy"] == 0.85
+    assert result["data"]["accuracy"] == 0.85
+    assert result["data"]["auc"] == 0.90
+
+    # --- 模型文件已写入 ---
+    result_model_path = Path(result["data"]["modelPath"])
+    assert result_model_path.exists()
+    assert result_model_path.read_text(encoding="utf-8") == "fake model"
+
+    # --- fake algorithm 收到正确调用 ---
+    assert fake_algorithm.trained_with is not None
+    X_trained, y_trained, config_trained = fake_algorithm.trained_with
+    assert not X_trained.empty
+    assert len(y_trained) == len(X_trained)
+    assert config_trained.algorithm == "random_forest"
+    assert config_trained.application_mode == ApplicationMode.TIME_SERIES
+    # 模板默认超参（random_forest_timing: n_estimators=100, max_depth=5）
+    assert config_trained.hyper_params["n_estimators"] == 100
+    assert config_trained.hyper_params["max_depth"] == 5
+    assert fake_algorithm.saved_artifact is not None
+
+    # --- AlgorithmRegistry.get 用模板的 algorithm 字段分派 ---
+    mock_algo_get.assert_called_once_with("random_forest")
+
+    # --- DataClient 用 db_path 构造，query_bars_df 被调用 ---
+    mock_data_client.assert_called_once_with("fake.db")
+    mock_data_client.return_value.query_bars_df.assert_called_once()
+
+    # --- FeatureExtractor.extract_all 被调用 ---
+    mock_extract.assert_called_once()
+
+    # --- 事件序列包含 progress 事件 ---
+    progress_events = [e for e in events if e[0] == "progress"]
+    assert len(progress_events) >= 2
+    percents = [e[1]["percent"] for e in progress_events]
+    assert 20 in percents
+    assert 50 in percents
+    assert 100 in percents
+    # 也包含 log 事件
+    assert any(e[0] == "log" for e in events)
