@@ -12,6 +12,7 @@ dependencies = [
     "pandas",
     "scikit-learn",
     "joblib",
+    "quantforge-strategy",
 ]
 
 [project.optional-dependencies]
