@@ -7,6 +7,9 @@ from .single import (
     RandomForestStockSelectionTemplate,
     RandomForestTimingTemplate,
 )
+from .gnn_lightgbm_combo import GNNLightGBMComboTemplate
+
+TemplateRegistry.register_combo(GNNLightGBMComboTemplate)
 
 __all__ = [
     "TemplateRegistry",
@@ -14,4 +17,5 @@ __all__ = [
     "LightGBMTimingTemplate",
     "RandomForestStockSelectionTemplate",
     "RandomForestTimingTemplate",
+    "GNNLightGBMComboTemplate",
 ]
