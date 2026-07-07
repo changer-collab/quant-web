@@ -1,4 +1,7 @@
-"""模型训练器"""
+"""训练编排器——委托 AlgorithmRegistry 调用具体算法。
+
+原 ModelTrainer 已重命名为 TrainingOrchestrator，ModelTrainer 作为别名保留兼容。
+"""
 
 from __future__ import annotations
 
@@ -7,81 +10,86 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
-from .types import ModelType, TrainConfig, ModelMetrics
-
-
-_MODEL_MAP = {
-    ModelType.RandomForest: RandomForestClassifier,
-    ModelType.GradientBoosting: GradientBoostingClassifier,
-    ModelType.LogisticRegression: LogisticRegression,
-}
+from quantforge_algorithms import AlgorithmRegistry
+from quantforge_algorithms.types import (
+    ApplicationMode,
+    ModelArtifact,
+    ModelMetrics,
+    TrainConfig,
+)
 
 
-class ModelTrainer:
-    def __init__(self, config: TrainConfig | None = None) -> None:
-        self.config = config or TrainConfig()
-        self._model = None
+class TrainingOrchestrator:
+    """训练编排器——通过 AlgorithmRegistry 调度算法训练/预测/持久化。
 
-    def train(self, X: pd.DataFrame, y: pd.Series) -> ModelMetrics:
-        cls = _MODEL_MAP[self.config.model_type]
-        params = self.config.hyper_params or {}
-        if self.config.model_type == ModelType.RandomForest:
-            params.setdefault("n_estimators", 100)
-            params.setdefault("max_depth", 5)
-        self._model = cls(**params, random_state=self.config.random_state)
+    训练编排器不实现算法逻辑，只负责：
+    - 选择算法（通过 algorithm_name 从 AlgorithmRegistry 获取）
+    - 调用 Algorithm.train/predict/save/load
+    - 管理 artifact 生命周期
+    """
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=self.config.test_size, random_state=self.config.random_state,
+    def __init__(self) -> None:
+        self._artifact: ModelArtifact | None = None
+
+    def train(
+        self,
+        algorithm_name: str,
+        X: pd.DataFrame,
+        y: pd.Series,
+        application_mode: ApplicationMode = ApplicationMode.TIME_SERIES,
+        test_size: float = 0.2,
+        random_state: int = 42,
+        hyper_params: dict | None = None,
+    ) -> ModelMetrics:
+        algorithm = AlgorithmRegistry.get(algorithm_name)
+        config = TrainConfig(
+            algorithm=algorithm_name,
+            application_mode=application_mode,
+            test_size=test_size,
+            random_state=random_state,
+            hyper_params=hyper_params or {},
         )
-        self._model.fit(X_train, y_train)
-        y_pred = self._model.predict(X_test)
-
-        metrics = ModelMetrics(
-            accuracy=round(accuracy_score(y_test, y_pred), 4),
-            precision=round(precision_score(y_test, y_pred, zero_division=0), 4),
-            recall=round(recall_score(y_test, y_pred, zero_division=0), 4),
-            f1=round(f1_score(y_test, y_pred, zero_division=0), 4),
-        )
-
-        try:
-            y_prob = self._model.predict_proba(X_test)[:, 1]
-            metrics = ModelMetrics(
-                accuracy=metrics.accuracy,
-                precision=metrics.precision,
-                recall=metrics.recall,
-                f1=metrics.f1,
-                auc=round(roc_auc_score(y_test, y_prob), 4),
-            )
-        except (AttributeError, ValueError):
-            pass
-
-        return metrics
-
-    def save(self, path: str | Path) -> None:
-        if self._model is None:
-            raise RuntimeError("Model not trained yet")
-        model_path = Path(path)
-        model_path.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump({"model": self._model, "config": self.config}, model_path)
-
-    @staticmethod
-    def load(path: str | Path) -> "ModelTrainer":
-        payload = joblib.load(Path(path))
-        trainer = ModelTrainer(payload["config"])
-        trainer._model = payload["model"]
-        return trainer
+        self._artifact = algorithm.train(X, y, config)
+        return self._artifact.metrics
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        if self._model is None:
+        if self._artifact is None:
             raise RuntimeError("Model not trained yet")
-        return self._model.predict(X)
+        algorithm_name = self._artifact.algorithm
+        algorithm = AlgorithmRegistry.get(algorithm_name)
+        return algorithm.predict(self._artifact, X)
 
-    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        if self._model is None:
+    def save(self, path: str | Path) -> None:
+        if self._artifact is None:
             raise RuntimeError("Model not trained yet")
-        return self._model.predict_proba(X)
+        algorithm_name = self._artifact.algorithm
+        algorithm = AlgorithmRegistry.get(algorithm_name)
+        algorithm.save(self._artifact, Path(path))
+
+    @staticmethod
+    def load(path: str | Path) -> "TrainingOrchestrator":
+        """加载 artifact——从 joblib payload 的 config.algorithm 字段分派。
+
+        payload 由 Algorithm.save 写入，形如 {"model", "config", "feature_schema",
+        "application_mode", "metrics"}，其中 config 是 TrainConfig dataclass，
+        algorithm 名存在 config.algorithm。兼容旧式 dict config。
+        """
+        payload = joblib.load(Path(path))
+        algorithm_name = payload.get("algorithm")
+        if not algorithm_name:
+            config = payload.get("config")
+            if isinstance(config, dict):
+                algorithm_name = config.get("algorithm")
+            else:
+                algorithm_name = getattr(config, "algorithm", None)
+        algorithm_name = algorithm_name or "random_forest"
+        algorithm = AlgorithmRegistry.get(algorithm_name)
+        artifact = algorithm.load(Path(path))
+        orchestrator = TrainingOrchestrator()
+        orchestrator._artifact = artifact
+        return orchestrator
+
+
+# 向后兼容别名
+ModelTrainer = TrainingOrchestrator

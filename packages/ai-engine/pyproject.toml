@@ -13,6 +13,7 @@ dependencies = [
     "scikit-learn",
     "joblib",
     "httpx>=0.27",
+    "quantforge-algorithms",
 ]
 
 [project.optional-dependencies]
