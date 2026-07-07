@@ -144,10 +144,7 @@ def _run_legacy(params: dict[str, Any], emit) -> dict[str, Any]:
 
 
 def _map_model_type_to_algorithm(model_type_str: str) -> str:
-    """旧 ModelType 字符串映射到 AlgorithmRegistry 注册名。
-
-    旧 AIPredictor 内部硬编码 random_forest，这里保留映射以使 TrainConfig.algorithm 语义正确。
-    """
+    """旧 ModelType 字符串映射到 AlgorithmRegistry 注册名。"""
     mapping = {
         "randomForest": "random_forest",
         "gradientBoosting": "gradient_boosting",
