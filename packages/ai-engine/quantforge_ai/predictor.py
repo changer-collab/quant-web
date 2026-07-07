@@ -38,10 +38,13 @@ class AIPredictor:
         y = (forward_returns.reindex(X.index).dropna() > 0).astype(int)
         X, y = X.align(y, join="inner", axis=0)
         return self._orchestrator.train(
-            "random_forest",
+            self.config.algorithm,
             X,
             y,
             application_mode=self.config.application_mode,
+            test_size=self.config.test_size,
+            random_state=self.config.random_state,
+            hyper_params=self.config.hyper_params,
         )
 
     def save(self, path):
