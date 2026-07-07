@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantforge-algorithms"
+version = "0.1.0"
+description = "QuantForge 算法资产层 — Algorithm ABC + SignalGenerator + 预定义模板"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "joblib",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["quantforge_algorithms"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
