@@ -25,6 +25,25 @@
 | 2026-06-28 | 策略分类体系重构 + 策略配置页 + Workspace 两步工作流                         | strategy-runtime, api（config/preview/diagnostics）, web（strategy-page/workspace） |
 | 2026-06-25 | Agent 包装层（统一 AgentExecutor 接口）                                      | worker/agents（base/python-agent/backtest-agent）                                   |
 | 2026-07-07 | 数据源增强 & Parquet 导入（mootdx fallback + 东财 8 适配器 + external_records 表 + ParquetAdapter + TimeFrame 扩展） | data-collector, data-center                                                         |
+| 2026-07-07 | 算法层架构（packages/algorithms 新建） | algorithms, ai-engine, strategies, strategy-runtime |
+
+### 算法层架构（已完成）
+
+- 新建 `packages/algorithms`，实现 Algorithm ABC + SignalGenerator + 预定义模板
+- 从 ai-engine 迁移 TrainConfig/ModelMetrics/LabelType，扩展 application_mode 字段
+- 实现 5 个算法（RandomForest/GradientBoosting/LogisticRegression/LightGBM/GNN 骨架）
+- 实现 3 个信号生成器（截面排序/时序分类/图嵌入）
+- 实现 5 个预定义模板（4 单算法 + 1 GNN+LightGBM 组合）
+- ai-engine 瘦身为 TrainingOrchestrator + FeatureExtractor + 模型注册表
+- strategies AI 预测策略重构为 artifact_id 驱动
+
+### 后续计划（暂不实现）
+
+- 训练流程产品化：前端表单基于 HyperParamDef 自动生成，TrainConfig 可视化编辑
+- DAG 编排引擎：替代 ComboAlgorithmTemplate 的线性 artifact 传递，支持分支/合并
+- 特征工程扩展：特征库管理 + 特征选择自动化 + 特征重要性分析
+- 因子工坊非线性因子：factor-lab 依赖 algorithms 产出非线性因子，扩展 FactorDefinition
+- 循环引擎接入：loop-engine 编排算法层迭代（训练→评估→再训练）
 
 ---
 
