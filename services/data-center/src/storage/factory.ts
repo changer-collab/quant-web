@@ -33,6 +33,7 @@ import {
   SqliteWatermarkRepository,
   SqliteFactorRepository,
   SqliteTaskRepository,
+  SqliteExternalRecordRepository,
 } from './sqlite/index.js';
 import {
   ReferenceDataProviderImpl,
@@ -151,6 +152,7 @@ export function createSqliteRepositorySet(db: DrizzleDb): RepositorySet {
     watermarks: new SqliteWatermarkRepository(db),
     factors: new SqliteFactorRepository(db),
     tasks: new SqliteTaskRepository(db),
+    externalRecords: new SqliteExternalRecordRepository(db),
   };
 }
 

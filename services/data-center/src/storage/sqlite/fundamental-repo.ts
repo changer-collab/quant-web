@@ -316,6 +316,11 @@ export class SqliteValuationRepository implements ValuationRepository {
             dividendYield: v.dividendYield,
             turnoverRate: v.turnoverRate,
             floatShares: v.floatShares,
+            limitUp: v.limitUp,
+            limitDown: v.limitDown,
+            volumeRatio: v.volumeRatio,
+            orderImbalance: v.orderImbalance,
+            avgVolume5d: v.avgVolume5d,
           };
           tx.insert(valuations)
             .values(row)
@@ -357,6 +362,11 @@ export class SqliteValuationRepository implements ValuationRepository {
         dividendYield: r.dividendYield ?? undefined,
         turnoverRate: r.turnoverRate ?? undefined,
         floatShares: r.floatShares ?? undefined,
+        limitUp: r.limitUp ?? undefined,
+        limitDown: r.limitDown ?? undefined,
+        volumeRatio: r.volumeRatio ?? undefined,
+        orderImbalance: r.orderImbalance ?? undefined,
+        avgVolume5d: r.avgVolume5d ?? undefined,
       }));
     } catch (err) {
       throw new QueryError(`查询估值失败: ${symbol}`, err);

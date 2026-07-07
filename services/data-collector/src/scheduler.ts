@@ -209,6 +209,29 @@ export class CollectorScheduler {
         await this.repos.valuations.save(rawRecords as any);
         return rawRecords.length;
       }
+      case 'trade_record': {
+        const trades = DataCleaner.cleanTradeRecords(rawRecords);
+        await this.repos.tradeRecords.save(trades);
+        return trades.length;
+      }
+      case 'l2_snapshot': {
+        const snapshots = DataCleaner.cleanLevel2Snapshots(rawRecords);
+        await this.repos.l2Snapshots.save(snapshots);
+        return snapshots.length;
+      }
+      case 'external': {
+        // 扩展数据：转换为 ExternalRecord 并写入 external_records 表
+        const records = rawRecords.map((r) => ({
+          id: String(r.id ?? `${r.data_type}:${r.symbol}:${r.timestamp}`),
+          dataType: String(r.data_type ?? ''),
+          symbol: String(r.symbol ?? ''),
+          timestamp: Number(r.timestamp) || Date.now(),
+          payload: (r.payload as Record<string, unknown>) ?? {},
+          source: String(r.source ?? 'unknown'),
+        }));
+        await this.repos.externalRecords.save(records);
+        return records.length;
+      }
       default:
         return 0;
     }

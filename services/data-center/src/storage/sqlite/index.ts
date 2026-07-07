@@ -29,6 +29,7 @@ export {
 export { SqliteWatermarkRepository } from './watermark-repo.js';
 export { SqliteFactorRepository } from './factor-repo.js';
 export { SqliteTaskRepository } from './task-repo.js';
+export { SqliteExternalRecordRepository } from './external-repo.js';
 export {
   createSqliteConnection,
   createSqliteContext,

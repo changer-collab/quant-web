@@ -5,6 +5,10 @@ export enum TimeFrame {
   M15 = '15m',
   H1 = '1h',
   D1 = '1d',
+  W1 = '1w',
+  Mo1 = '1mo',
+  Q1 = '1q',
+  Y1 = '1y',
 }
 
 /** 合约/标的元数据 */

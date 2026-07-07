@@ -109,6 +109,16 @@ export interface ValuationPoint {
   turnoverRate?: number;
   /** 流通股本（股） */
   floatShares?: number;
+  /** 涨停价（P1-D 腾讯财经扩展） */
+  limitUp?: number;
+  /** 跌停价（P1-D 腾讯财经扩展） */
+  limitDown?: number;
+  /** 量比（P1-D 腾讯财经扩展） */
+  volumeRatio?: number;
+  /** 委差（P1-D 腾讯财经扩展） */
+  orderImbalance?: number;
+  /** 5 日均量（股，P1-D 腾讯财经扩展） */
+  avgVolume5d?: number;
 }
 
 /** 基本面查询参数 */

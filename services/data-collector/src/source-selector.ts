@@ -8,13 +8,25 @@
 export const SOURCE_PRIORITY: Record<string, string[]> = {
   bar: ['mootdx', 'akshare', 'baostock', 'efinance', 'yfinance', 'tushare'],
   tick: ['tushare'],
+  trade_record: ['mootdx'],
+  l2_snapshot: ['mootdx'],
+  f10: ['mootdx'],
   instrument: ['akshare', 'baostock', 'efinance', 'tushare'],
   calendar: ['tushare'],
   adjustment_factor: ['baostock', 'akshare', 'tushare'],
   financial_report: ['baostock', 'akshare', 'tushare'],
   shareholder_metrics: ['baostock', 'efinance', 'tushare'],
-  valuation: ['baostock', 'tushare'],
+  valuation: ['baostock', 'tushare', 'tencent'],
   news: ['akshare'],
+  // 东财扩展数据类型
+  dragon_tiger: ['eastmoney_dragon_tiger'],
+  lockup: ['eastmoney_lockup'],
+  margin: ['eastmoney_margin'],
+  block_trade: ['eastmoney_block_trade'],
+  dividend: ['eastmoney_dividend'],
+  research_report: ['eastmoney_research'],
+  hot_stocks: ['eastmoney_hot_stocks'],
+  northbound_flow: ['eastmoney_northbound'],
 };
 
 /** 获取某数据类型的优先级列表 */

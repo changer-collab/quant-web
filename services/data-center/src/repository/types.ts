@@ -256,6 +256,41 @@ export interface TaskRepository {
   list(filter?: { type?: string; status?: string }): Promise<TaskDefinition[]>;
 }
 
+// ─── 扩展数据（通用外部记录） ──────────────────────────────
+
+/** 扩展数据记录 — 通用载体 */
+export interface ExternalRecord {
+  /** 唯一 ID（建议 `${dataType}:${symbol}:${timestamp}` 或 UUID） */
+  id: string;
+  /** 数据类型：dragon_tiger / lockup / margin / block_trade / dividend / research_report / hot_stocks / northbound_flow / f10 / factor_result 等 */
+  dataType: string;
+  /** 标的代码（无对应标的时用 'INDEX' / 'MARKET' 等占位） */
+  symbol: string;
+  /** 时间戳（毫秒） */
+  timestamp: number;
+  /** JSON 负载，由调用方约定结构 */
+  payload: Record<string, unknown>;
+  /** 数据源名称 */
+  source: string;
+}
+
+/** 扩展数据查询参数 */
+export interface ExternalRecordQuery {
+  dataType: string;
+  symbol?: string;
+  start?: number;
+  end?: number;
+  limit?: number;
+}
+
+/** 扩展数据存储接口 */
+export interface ExternalRecordRepository {
+  save(records: ExternalRecord[]): Promise<void>;
+  query(params: ExternalRecordQuery): Promise<ExternalRecord[]>;
+  /** 按数据类型删除（谨慎使用） */
+  deleteByType(dataType: string, symbol?: string): Promise<void>;
+}
+
 // ─── 聚合：Repository 集合 ──────────────────────────────
 
 /** 所有 Repository 的集合 — 由工厂函数创建 */
@@ -280,6 +315,7 @@ export interface RepositorySet {
   watermarks: WatermarkRepository;
   factors: FactorRepository;
   tasks: TaskRepository;
+  externalRecords: ExternalRecordRepository;
 }
 
 /** 数据导出格式 */

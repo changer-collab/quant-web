@@ -161,6 +161,8 @@ CREATE TABLE IF NOT EXISTS valuations (
   market_cap REAL, pe_ttm REAL, pb REAL,
   ps_ttm REAL, dividend_yield REAL,
   turnover_rate REAL, float_shares REAL,
+  limit_up REAL, limit_down REAL,
+  volume_ratio REAL, order_imbalance REAL, avg_volume_5d REAL,
   PRIMARY KEY (symbol, timestamp)
 );
 CREATE INDEX IF NOT EXISTS idx_val_symbol ON valuations(symbol);
@@ -259,6 +261,17 @@ CREATE TABLE IF NOT EXISTS tasks (
   progress INTEGER,
   lines TEXT
 );
+
+CREATE TABLE IF NOT EXISTS external_records (
+  id TEXT PRIMARY KEY,
+  data_type TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  timestamp INTEGER NOT NULL,
+  payload TEXT NOT NULL,
+  source TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ext_type_symbol ON external_records(data_type, symbol);
+CREATE INDEX IF NOT EXISTS idx_ext_ts ON external_records(timestamp);
 `;
 
 /** 执行建表迁移 + 增量 ALTER TABLE（兼容已有库） */
@@ -269,6 +282,12 @@ function runMigrations(db: SqliteDatabase): void {
   const alterStatements = [
     'ALTER TABLE instruments ADD COLUMN attributes TEXT',
     'ALTER TABLE trading_calendars ADD COLUMN session_type TEXT',
+    // P1-D: valuations 表新增 5 个腾讯财经扩展字段
+    'ALTER TABLE valuations ADD COLUMN limit_up REAL',
+    'ALTER TABLE valuations ADD COLUMN limit_down REAL',
+    'ALTER TABLE valuations ADD COLUMN volume_ratio REAL',
+    'ALTER TABLE valuations ADD COLUMN order_imbalance REAL',
+    'ALTER TABLE valuations ADD COLUMN avg_volume_5d REAL',
   ];
   for (const sql of alterStatements) {
     try {

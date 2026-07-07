@@ -86,27 +86,29 @@ apps/api /api/strategies（catalog/config/preview）/api/diagnostics /api/tasks 
 
 | 断点 | 从              | 到            | 现状                                                                                                               | 修复方式                                                                                                                     |
 | ---- | --------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| 1    | backtest 结果   | obsidian-sync | CLI 的 `run_backtest` 返回后直接结束，不调用 `SyncService.sync_backtest_result()`                                  | 在 worker `BacktestHandler` 拿到 `backtestResult` 后调用 sync（保持 CLI 纯计算，sync 作为编排动作放 worker，失败可独立重试） |
-| 2    | factor 评估结果 | obsidian-sync | `run_factor_eval` 不同步                                                                                           | 在 worker `FactorEvalHandler` 后置调用 `sync_factor`                                                                         |
-| 3    | AI 训练结果     | obsidian-sync | `run_ai_train` 不同步                                                                                              | 在 worker AI handler 后置调用 sync                                                                                           |
-| 4    | backtest 结果   | apps/web      | 已打通：`WorkspacePage` Step 2 消费 SSE `backtestResult`，展示指标、权益曲线和交易明细；后续可继续增强为完整报告页 | 完善报告级可视化、导出和长期任务恢复体验                                                                                     |
-| 5    | web 前端        | obsidian-sync | 前端不触发同步                                                                                                     | 前端加同步触发按钮，调 API 端点                                                                                              |
-| 6    | obsidian 看板   | web 反馈      | Obsidian 看板不回流到前端                                                                                          | 前端读 Obsidian Local REST API 展示看板                                                                                      |
-| 7    | orchestrator    | —             | 不存在，无编排层把整条链串起来                                                                                     | 新建 orchestrator 服务（或扩展 worker 编排能力）                                                                             |
+| 1    | backtest 结果   | obsidian-sync | ✅ 已修复：worker `BacktestHandler` 拿到 `backtestResult` 后调用 `syncBacktest`（通过 PythonBridge），sync 失败不影响回测结果 | —                                                                                                                            |
+| 2    | factor 评估结果 | obsidian-sync | ❌ 未修复：`FactorEvalHandler` 只调用 `evalScheduler.evaluateFactor`，不调用 `sync_factor`                        | 在 worker `FactorEvalHandler` 后置调用 `sync_factor`                                                                         |
+| 3    | AI 训练结果     | obsidian-sync | ❌ 未修复：AI 训练 handler 未实现（无 `ai-handler.ts`）                                                            | 实现 AI handler 后后置调用 sync                                                                                              |
+| 4    | backtest 结果   | apps/web      | ✅ 已打通：`WorkspacePage` Step 2 消费 SSE `backtestResult`，展示指标、权益曲线和交易明细；后续可继续增强为完整报告页 | 完善报告级可视化、导出和长期任务恢复体验                                                                                     |
+| 5    | web 前端        | obsidian-sync | ❌ 未修复：前端不触发同步                                                                                          | 前端加同步触发按钮，调 API 端点                                                                                              |
+| 6    | obsidian 看板   | web 反馈      | ❌ 未修复：Obsidian 看板不回流到前端                                                                               | 前端读 Obsidian Local REST API 展示看板                                                                                      |
+| 7    | orchestrator    | —             | ❌ 不存在，无编排层把整条链串起来                                                                                  | 新建 orchestrator 服务（或扩展 worker 编排能力）                                                                             |
 
 ### 核心问题
 
-`strategy-runtime` CLI 是"一次性 stdin→stdout"设计：接收命令 → 执行 → 返回结果 → 结束。它不会把结果传给下一步，也不持久化。`obsidian-sync` 的 `SyncService` 代码完整（`sync_backtest_result`、`sync_factor`、`sync_all` 都写好了），但执行层（CLI 命令、worker handler）无任何调用方。
+`strategy-runtime` CLI 是"一次性 stdin→stdout"设计：接收命令 → 执行 → 返回结果 → 结束。它不会把结果传给下一步，也不持久化。`obsidian-sync` 的 `SyncService` 代码完整（`sync_backtest_result`、`sync_factor`、`sync_all` 都写好了），执行层调用方已部分接入：worker `BacktestHandler` 已在回测完成后调用 `syncBacktest`（断点 1 已修复），但 `FactorEvalHandler` 和 AI handler 尚未接入对应 sync 调用（断点 2/3 待修复）。
 
 ### 最小闭环路径
 
-优先打通：`backtest-engine → obsidian-sync`
+`backtest-engine → obsidian-sync` 已打通（断点 1 ✅）。
 
 调用点决策：放在 worker `BacktestHandler` 内（拿到 `backtestResult` 后调用 sync），而非 CLI 命令内。理由：
 
 - 符合 AGENTS.md 边界规则——"Worker 只编排异步任务"，sync 属于编排动作；
 - CLI 保持纯计算，不引入 obsidian-sync 依赖；
 - sync 失败可独立重试，不影响 CLI 返回结果。
+
+后续待打通：`factor-lab → obsidian-sync`（断点 2）、`ai-engine → obsidian-sync`（断点 3，需先实现 AI handler）。
 
 ## 项目结构
 
@@ -115,7 +117,7 @@ apps/web                前端研究原型（React + Vite）
 apps/api                HTTP API（Fastify + SSE）
 apps/worker             异步任务 Worker（HTTP 轮询 + PythonBridge）
 services/data-center    数据中心（SQLite + Drizzle，6 数据子域）
-services/data-collector 数据采集器（6 数据源适配器，水位增量采集）
+services/data-collector 数据采集器（17 数据源适配器：9 独立源 + 8 东财子源，水位增量采集）
 packages/backtest-engine  回测引擎
 packages/factor-lab     因子工坊（计算 + 评估调度）
 packages/strategy-runtime 策略运行时（CLI NDJSON 流式输出）

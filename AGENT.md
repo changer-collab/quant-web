@@ -17,7 +17,7 @@
 - API：Fastify（`apps/api`），SSE 流式推送
 - Worker：HTTP 轮询 API 领取任务，PythonBridge 子进程调用 Python CLI
 - 数据中心：SQLite + Drizzle ORM（`services/data-center`）
-- 数据采集器：6 数据源适配器 + 水位增量采集（`services/data-collector`）
+- 数据采集器：8 数据源适配器 + 水位增量采集（`services/data-collector`）
 - Python 包：backtest-engine / factor-lab / strategy-runtime / ai-engine / strategies / data-client / obsidian-sync
 
 ## 编码规范

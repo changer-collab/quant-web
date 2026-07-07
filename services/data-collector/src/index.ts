@@ -12,6 +12,20 @@ export {
   BaostockAdapter,
   EfinanceAdapter,
   YfinanceAdapter,
+  MootdxAdapter,
+  TencentAdapter,
+  ParquetAdapter,
+  emClient,
+  EMClient,
+  EastMoneyBaseAdapter,
+  DragonTigerAdapter,
+  LockupAdapter,
+  MarginAdapter,
+  BlockTradeAdapter,
+  DividendAdapter,
+  ResearchReportAdapter,
+  HotStocksAdapter,
+  NorthboundFlowAdapter,
 } from './adapters/index.js';
 export type {
   DataSourceAdapter,
@@ -23,6 +37,9 @@ export type {
   BaostockExtra,
   EfinanceExtra,
   YfinanceExtra,
+  MootdxExtra,
+  TencentExtra,
+  ParquetExtra,
   AdapterExtra,
 } from './adapters/types.js';
 

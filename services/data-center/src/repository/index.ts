@@ -25,6 +25,9 @@ export type {
   RepositorySet,
   TaskDefinition,
   TaskRepository,
+  ExternalRecord,
+  ExternalRecordQuery,
+  ExternalRecordRepository,
 } from './types.js';
 
 export type { ReferenceQuery } from '../reference/types.js';

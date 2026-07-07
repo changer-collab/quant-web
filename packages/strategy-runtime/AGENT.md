@@ -72,7 +72,8 @@ OrderSide, OrderType, OrderStatus, Order,
 Trade, Position, Account,
 StrategyParamDef, ParamType,
 TaskStatus, TaskType,
-QuantError
+QuantError,
+StrategyCategory, StrategySubcategory（canonical 三类十值，TS 层镜像）
 ```
 
 其他模块通过合法依赖链获取这些类型，不重复定义。

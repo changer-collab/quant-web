@@ -52,8 +52,5 @@ scripts/ralph/.last-raw-output.txt
 scripts/ralph/.last-output.txt
 scripts/ralph/.prd.state.json
 
-# Trae skills (IDE-local)
-.trae/
-
 # CLAUDE.md (Claude Code local, not project-shared)
 CLAUDE.md

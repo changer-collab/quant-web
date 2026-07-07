@@ -56,6 +56,20 @@ export interface TencentExtra {
   timeout?: number;
 }
 
+/** Parquet 适配器额外参数 */
+export interface ParquetExtra {
+  /** 单个 parquet 文件路径（与 fileDir 二选一） */
+  filePath?: string;
+  /** 目录路径，批量读取该目录下所有 .parquet 文件 */
+  fileDir?: string;
+  /** Python 可执行文件路径，默认 python */
+  pythonPath?: string;
+  /** 流式读取批次大小，默认 1000 */
+  batchSize?: number;
+  /** parquet timeframe 字面量 → TimeFrame 枚举值映射 */
+  timeframeMap?: Record<string, string>;
+}
+
 /** 所有适配器 extra 类型的联合 */
 export type AdapterExtra =
   | TushareExtra
@@ -66,6 +80,7 @@ export type AdapterExtra =
   | YfinanceExtra
   | MootdxExtra
   | TencentExtra
+  | ParquetExtra
   | Record<string, unknown>;
 
 /** 适配器拉取选项 */

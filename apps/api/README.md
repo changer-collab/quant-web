@@ -47,7 +47,7 @@
 ### 设计要点
 
 - 保持 API 层薄：不做数据清洗、回测计算、模型训练。
-- 通过 `TaskService` 接口解耦 Worker 实现；当前使用 `InMemoryTaskService` 内存实现。
+- 通过 `TaskService` 接口解耦 Worker 实现；默认使用 `SqliteTaskService`（持久化到 quant.db），`InMemoryTaskService` 作为内存实现备选保留供测试使用。
 - 因子评估和批量计算触发后返回异步任务 ID，任务状态可通过任务路由查询。
 - 数据查询委托给 DataCenter 的 Provider 层。
 
@@ -56,7 +56,6 @@
 ```text
 - 前端所需查询入口增强
 - 批量导出和报告下载
-- TaskService 持久化实现（替换 InMemoryTaskService）
 ```
 
 ## 不负责
