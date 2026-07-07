@@ -11,12 +11,10 @@ AlgorithmRegistry.register(RandomForestAlgorithm)
 AlgorithmRegistry.register(GradientBoostingAlgorithm)
 AlgorithmRegistry.register(LogisticRegressionAlgorithm)
 
-# LightGBM 延迟导入——注册时不强制安装 lightgbm，仅在实例化 train 时 import
-try:
-    from .lightgbm_impl import LightGBMAlgorithm
-    AlgorithmRegistry.register(LightGBMAlgorithm)
-except ImportError:
-    pass
+# LightGBM 模块层不 import lightgbm 库（lightgbm 在 _import_lgbm 方法内延迟导入），
+# 因此此处直接导入不会因未安装 lightgbm 而失败，无需 try/except。
+from .lightgbm_impl import LightGBMAlgorithm
+AlgorithmRegistry.register(LightGBMAlgorithm)
 
 from .gnn_impl import GNNAlgorithm
 AlgorithmRegistry.register(GNNAlgorithm)
@@ -26,5 +24,6 @@ __all__ = [
     "RandomForestAlgorithm",
     "GradientBoostingAlgorithm",
     "LogisticRegressionAlgorithm",
+    "LightGBMAlgorithm",
     "GNNAlgorithm",
 ]
