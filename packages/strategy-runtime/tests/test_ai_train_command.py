@@ -6,6 +6,12 @@ import importlib.util
 import sqlite3
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pandas as pd
+
+from quantforge_strategy.commands.ai_train import run_ai_train
 
 
 class _FakePredictor:
@@ -124,3 +130,70 @@ def test_resolve_model_path_keeps_model_name_inside_data_models(monkeypatch, tmp
     model_path = _resolve_model_path({"modelName": "../escape"}, "randomForest", "TEST", "1d")
 
     assert model_path == tmp_path / "data" / "models" / "escape.joblib"
+
+
+def test_run_ai_train_with_template_id() -> None:
+    """支持 template_id 字段，走模板分派路径。"""
+    events = []
+
+    def emit(event_type, data):
+        events.append((event_type, data))
+
+    mock_client = MagicMock()
+    mock_client.query_bars_df.return_value = pd.DataFrame({
+        "close": np.random.RandomState(0).randn(100).cumsum() + 100,
+    })
+
+    with patch("quantforge_strategy.commands.ai_train._load_dependencies") as mock_load:
+        mock_load.return_value = (
+            MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(return_value=mock_client)
+        )
+        with patch("quantforge_strategy.commands.ai_train._run_with_template") as mock_template:
+            mock_template.return_value = {"ok": True, "data": {"metrics": {"accuracy": 0.85}}}
+            params = {
+                "templateId": "random_forest_timing",
+                "dataRange": {"dbPath": "test.db", "symbol": "000001.SZ", "timeframe": "1d"},
+            }
+            result = run_ai_train(params, emit)
+
+            assert result["ok"] is True
+            mock_template.assert_called_once()
+
+
+def test_run_ai_train_backward_compatible_without_template_id() -> None:
+    """无 template_id 时走旧路径（向后兼容）。"""
+    from quantforge_ai import ModelMetrics
+
+    events = []
+
+    def emit(event_type, data):
+        events.append((event_type, data))
+
+    mock_client = MagicMock()
+    mock_client.query_bars_df.return_value = pd.DataFrame({
+        "close": np.random.RandomState(0).randn(100).cumsum() + 100,
+    })
+
+    with patch("quantforge_strategy.commands.ai_train._load_dependencies") as mock_load:
+        mock_AIPredictor = MagicMock()
+        mock_TrainConfig = MagicMock()
+        mock_ModelType = MagicMock()
+        mock_LabelType = MagicMock()
+        mock_DataClient = MagicMock(return_value=mock_client)
+        mock_load.return_value = (
+            mock_AIPredictor, mock_TrainConfig, mock_ModelType, mock_LabelType, mock_DataClient
+        )
+        mock_predictor = MagicMock()
+        mock_predictor.train.return_value = ModelMetrics(
+            accuracy=0.8, precision=0.7, recall=0.6, f1=0.65, auc=0.9
+        )
+        mock_AIPredictor.return_value = mock_predictor
+
+        params = {
+            "modelType": "randomForest",
+            "dataRange": {"dbPath": "test.db", "symbol": "000001.SZ", "timeframe": "1d"},
+        }
+        result = run_ai_train(params, emit)
+
+        assert result["ok"] is True
+        mock_AIPredictor.assert_called_once()
