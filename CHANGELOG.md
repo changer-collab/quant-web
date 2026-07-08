@@ -2,6 +2,28 @@
 
 > 本文件记录项目重要变更。临时修改记录在 `.trae/changelog-pending.md`，commit 时整理写入本文件。
 
+## [changer] 2026-07-08 — 文档维护：命名标准改革 + 过时计划归档 + 跨引用修复
+
+**开发者**: Kimi-K2.7-Code (Trae)
+
+### 文档
+- `docs/README.md`：新增文件命名标准（`YYYY-MM-DD-<2-3 词短 slug>.md`）；修正 contract-sync 归档路径；更新所有文件名引用
+- `docs/dev-workflow.md`：重新定位为"本地开发环境与故障排除指南"，与 `.trae/rules/quant-web-workflow.md`（AI Agent 工作流）划清边界；精简与 README.md 重叠内容；新增 algorithms 包到 Python 包列表和 CI 说明
+- `docs/roadmap.md`：新增"策略分类后端契约整合"已完成条目；待实施计划重新编号
+- `README.md`：项目结构表新增 packages/algorithms 和 packages/loop-engine；ai-engine 描述更新为"委托算法层"；mermaid 图新增 ALG 节点和 AI→ALG 边
+- `AGENT.md`：当前阶段 plan 引用更新为归档路径 `docs/plans/archive/2026-06-30-contract-realign.md`
+
+### 重构
+- 8 个 plan 文件重命名为短 slug：7 个已完成计划移入 `docs/plans/archive/`，1 个当前计划就地重命名
+- 7 个 spec 文件重命名为短 slug
+- 删除重复文件 `docs/specs/2026-07-02-root-md-realign-design.md`
+- 全量更新 docs/ 下 14 个文件的跨引用，消除所有旧文件名残留
+
+### 基础设施
+- `.github/workflows/ci.yml`：补充 `packages/algorithms` 到 Python Job 和 smoke test
+
+---
+
 ## [changer] 2026-07-07 — 数据源增强 & Parquet 导入（Phase 1 + P1 全部完成）
 
 **开发者**: Kimi-K2.7-Code (Trae)

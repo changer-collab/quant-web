@@ -2,7 +2,7 @@
 
 > **状态：产品目标 spec** | **日期：2026-07-07** | **范围：packages/algorithms 新建 + ai-engine 瘦身 + strategies 迁移**
 >
-> **前置背景**：[2026-06-28 策略分类体系重构](./2026-06-28-strategy-classification-and-config-design.md) 已建立 StrategyCategory 三类十值，但只描述"策略怎么用"，未抽象"算法本身"。本 spec 补齐算法层抽象。
+> **前置背景**：[2026-06-28 策略分类体系重构](./2026-06-28-strategy-class-design.md) 已建立 StrategyCategory 三类十值，但只描述"策略怎么用"，未抽象"算法本身"。本 spec 补齐算法层抽象。
 >
 > **后续计划入口**：spec 用户审查通过后，调用 writing-plans skill 生成实施计划。
 

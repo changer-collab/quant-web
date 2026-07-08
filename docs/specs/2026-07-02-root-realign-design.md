@@ -1,6 +1,6 @@
 # 根目录文档对齐 backend-sync-realign plan 设计
 
-> 对齐基准：`docs/plans/2026-06-30-backend-sync-realign-integrated.md` 的 Phase 0-5（已落地）。Phase 6-9 未完成，不在本次文档描述范围内。
+> 对齐基准：`docs/plans/archive/2026-06-30-contract-realign.md` 的 Phase 0-5（已落地）。Phase 6-9 未完成，不在本次文档描述范围内。
 
 ## 目标
 

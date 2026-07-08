@@ -6,26 +6,25 @@
 
 | 场景                      | 先读文档                                                                                                                 | 说明                                                                             |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| 当前后端/前端契约整合实施 | [backend-sync-realign-integrated](./plans/2026-06-30-backend-sync-realign-integrated.md)                     | 策略分类主线实施入口，核心已落地（canonical 分类/ConfigSnapshot/Preview/Task payload/ResultProcessor 注册表），收尾中。 |
-| 策略分类产品目标          | [strategy-classification-and-config-design](./specs/2026-06-28-strategy-classification-and-config-design.md) | 产品分类、配置、Preview、Task、Diagnostics 的目标基准。                          |
+| 策略分类产品目标          | [strategy-class-design](./specs/2026-06-28-strategy-class-design.md) | 产品分类、配置、Preview、Task、Diagnostics 的目标基准（核心已落地）。                          |
 | 项目优先级                | [roadmap](./roadmap.md)                                                                                                  | 当前待实施事项与历史完成计划。                                                   |
 | 链条完整性状态            | [pipeline audit](./audits/pipeline-audit-2026-06-28.md)                                                                         | 研究链条缺陷审计，路线图优先级的依据。                                           |
-| 开发环境与测试            | [dev workflow](./dev-workflow.md)                                                                                        | 本地安装、启动、测试命令。                                                       |
+| 本地环境与故障排除        | [dev workflow](./dev-workflow.md)                                                                                        | 环境要求、Python 包安装、Windows 故障排除、CI 流水线。                           |
 | 变更历史                  | [CHANGELOG](../CHANGELOG.md)                                                                                              | 项目重要变更记录（临时记录在 `.trae/changelog-pending.md`，commit 时整理入库）。 |
 | 项目记忆                  | `c:\Users\37588\.trae-cn\memory\projects\-d-quant-web\project_memory.md`                                                  | 项目硬约束、架构边界、已知陷阱、断点状态（AI 会话间记忆，不入库）。              |
 
 ## 策略分类主线文档关系
 
-当前实施以 [2026-06-30-backend-sync-realign-integrated.md](./plans/2026-06-30-backend-sync-realign-integrated.md) 为准。
+策略分类后端契约整合核心已落地（canonical 分类 / ConfigSnapshot / Preview / Task payload / ResultProcessor 注册表），剩余前端残留见 [roadmap](./roadmap.md) 待实施 #3。
 
 | 文档                                                                                                                                             | 当前角色                                                          |
 | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [2026-06-30-backend-sync-realign-integrated.md](./plans/2026-06-30-backend-sync-realign-integrated.md)                               | 当前执行计划，解决契约迁移和后端结构整理。                        |
-| [2026-06-28-strategy-classification-and-config-design.md](./specs/2026-06-28-strategy-classification-and-config-design.md)           | 产品目标基准，定义分类、配置、Preview、Task、Diagnostics 目标态。 |
-| [2026-06-29-backend-sync-to-strategy-classification-target.md](./plans/2026-06-29-backend-sync-to-strategy-classification-target.md) | 历史计划，已并入 06-30 整合计划。                                 |
-| [2026-06-30-backend-realign-design.md](./plans/archive/2026-06-30-backend-realign-design.md)                                                             | 历史结构整理设计，已并入 06-30 整合计划。                         |
-| [2026-06-29-strategy-classification-architecture.md](./specs/2026-06-29-strategy-classification-architecture.md)                     | 历史架构记录，作为代码扫描和背景参考。                            |
-| [2026-06-29-frontend-workflow-reconciliation.md](./plans/archive/2026-06-29-frontend-workflow-reconciliation.md)                                         | 历史前端工作流草案，作为迁移背景参考。                            |
+| [2026-06-28-strategy-class-design.md](./specs/2026-06-28-strategy-class-design.md)           | 产品目标基准，定义分类、配置、Preview、Task、Diagnostics 目标态。 |
+| [2026-06-30-contract-realign.md](./plans/archive/2026-06-30-contract-realign.md)                     | 历史整合计划，已归档（核心已落地）。                              |
+| [2026-06-29-contract-sync.md](./plans/archive/2026-06-29-contract-sync.md) | 历史计划，已并入 06-30 整合计划。                                 |
+| [2026-06-30-backend-realign.md](./plans/archive/2026-06-30-backend-realign.md)                                       | 历史结构整理设计，已并入 06-30 整合计划。                         |
+| [2026-06-29-strategy-class-arch.md](./specs/2026-06-29-strategy-class-arch.md)                     | 历史架构记录，作为代码扫描和背景参考。                            |
+| [2026-06-29-frontend-workflow.md](./plans/archive/2026-06-29-frontend-workflow.md)                    | 历史前端工作流草案，作为迁移背景参考。                            |
 
 ## 开发规范
 
@@ -42,7 +41,7 @@
 | 文档                                                                                         | 当前角色                                                             |
 | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [ralph-harness-design](./specs/2026-06-25-ralph-harness-design.md)               | Ralph harness 工程改进设计记录。                                     |
-| [report-keyword-tiles-design](./specs/2026-06-27-report-keyword-tiles-design.md) | 回测报告关键词瓦片设计记录。                                         |
+| [report-tiles](./specs/2026-06-27-report-tiles.md) | 回测报告关键词瓦片设计记录。                                         |
 | [agent-and-loop](./plans/archive/2026-06-25-agent-and-loop.md)                                       | Agent 包装层与 LoopHandler 闭环计划，其中 LoopHandler 仍有残留工作。 |
 
 ## 文档维护规则
@@ -54,3 +53,19 @@
 - 审计类报告放在 `docs/audits/`。
 - 历史方案不删除；如果被新方案取代，在文件顶部注明"已并入/已取代"。
 - 修改策略分类主线时，优先同步本入口和 [roadmap](./roadmap.md)。
+
+### 文件命名标准
+
+`docs/plans/` 和 `docs/specs/` 下的文件统一使用：
+
+```
+YYYY-MM-DD-<2-3 词短 slug>.md
+```
+
+- 日期前缀用于时序排序。
+- slug 控制在 2-3 个词、约 20 字符以内，保证在文件列表中能完整看到。
+- 完整描述性标题写在文件内 H1，不依赖文件名承载全部语义。
+- 已有长名文件在归档或下次触及重命名时收敛到短 slug。
+- 不要在 slug 中堆砌 `design` / `plan` / `implementation` 等冗余词，目录已经表达这层语义。
+
+示例：`2026-07-07-algo-arch.md` 而非 `2026-07-07-algorithm-layer-architecture-design-and-implementation-plan.md`。

@@ -1,6 +1,6 @@
 # 策略分类体系全栈架构设计
 
-> **状态：历史架构记录。** 当前策略分类实施入口为 [2026-06-30-backend-sync-realign-integrated.md](../plans/2026-06-30-backend-sync-realign-integrated.md)，产品目标基准为 [2026-06-28-strategy-classification-and-config-design.md](./2026-06-28-strategy-classification-and-config-design.md)。本文保留为 2026-06-29 的全栈结构扫描和背景参考。
+> **状态：历史架构记录。** 历史实施计划（已归档）：[2026-06-30-contract-realign.md](../plans/archive/2026-06-30-contract-realign.md)，产品目标基准为 [2026-06-28-strategy-class-design.md](./2026-06-28-strategy-class-design.md)。本文保留为 2026-06-29 的全栈结构扫描和背景参考。
 
 > **版本**：v2（策略分类重构后）
 > **范围**：前端 → API → Worker → Python 引擎 → 存储的全链路架构

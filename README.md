@@ -37,7 +37,8 @@ graph LR
     SR[strategy-runtime<br/>PY · CLI入口]
     BT[backtest-engine<br/>PY · 回测]
     FL[factor-lab<br/>PY · 因子评估]
-    AI[ai-engine<br/>PY · AI训练]
+    AI[ai-engine<br/>PY · 特征/编排]
+    ALG[algorithms<br/>PY · 算法/信号/模板]
   end
 
   subgraph 输出层
@@ -56,6 +57,7 @@ graph LR
   SR -->|backtest| BT
   SR -->|factorEval| FL
   SR -->|aiTrain| AI
+  AI -->|训练/预测| ALG
 
   BT -.->|断点1| OB
   FL -.->|断点2| OB
@@ -73,7 +75,7 @@ graph LR
 data-collector → data-center (SQLite) → data-client → strategy-runtime CLI
   ├→ backtest-engine
   ├→ factor-lab
-  └→ ai-engine
+  └→ ai-engine → algorithms（训练/预测委托）
 
 apps/web → apps/api → apps/worker → PythonBridge → strategy-runtime CLI
 apps/worker → apps/api → SSE → apps/web
@@ -118,13 +120,15 @@ apps/api                HTTP API（Fastify + SSE）
 apps/worker             异步任务 Worker（HTTP 轮询 + PythonBridge）
 services/data-center    数据中心（SQLite + Drizzle，6 数据子域）
 services/data-collector 数据采集器（17 数据源适配器：9 独立源 + 8 东财子源，水位增量采集）
+packages/algorithms     算法层（Algorithm/SignalGenerator/Template 抽象与实现）
 packages/backtest-engine  回测引擎
 packages/factor-lab     因子工坊（计算 + 评估调度）
 packages/strategy-runtime 策略运行时（CLI NDJSON 流式输出）
-packages/ai-engine      AI 引擎（特征/训练/预测）
+packages/ai-engine      AI 引擎（特征提取 + 训练/预测编排，委托算法层）
 packages/strategies     策略库
 packages/data-client    Python 数据客户端
 packages/obsidian-sync  Obsidian 同步
+packages/loop-engine    循环引擎（类型骨架，暂不实现调度）
 runtime/                运行产物（不分配开发 Agent）
 ```
 

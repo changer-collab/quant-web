@@ -3,7 +3,7 @@
 ## 项目概述
 
 - 项目名：QuantForge，面向个人量化研究者的策略研究平台。
-- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/plans/2026-06-30-backend-sync-realign-integrated.md)。
+- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。历史整合计划见 [contract-realign plan](docs/plans/archive/2026-06-30-contract-realign.md)（已归档）。
 - 核心闭环：选择策略 → 配置参数 → 运行回测/训练 → 查看任务和报告 → 迭代策略。
 - 后续规划：稳定前端 → AI 引擎 → 高频增强 → 实盘执行层。
 

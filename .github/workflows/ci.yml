@@ -43,6 +43,7 @@ jobs:
       - name: Install smoke Python packages
         run: |
           pip install -e packages/strategy-runtime \
+            -e packages/algorithms \
             -e packages/ai-engine \
             -e packages/strategies
 
@@ -68,11 +69,12 @@ jobs:
             -e packages/strategies \
             -e packages/factor-lab \
             -e packages/ai-engine \
+            -e packages/algorithms \
             -e packages/obsidian-sync
 
       - name: Python tests
         run: |
-          for pkg in strategy-runtime backtest-engine strategies data-client factor-lab ai-engine obsidian-sync; do
+          for pkg in algorithms strategy-runtime backtest-engine strategies data-client factor-lab ai-engine obsidian-sync; do
             echo "::group::pytest: $pkg"
             (cd packages/$pkg && python -m pytest -v)
             echo "::endgroup::"

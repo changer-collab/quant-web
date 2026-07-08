@@ -1,8 +1,10 @@
 # 根目录文档对齐 backend-sync-realign 实现计划
 
+> **状态（2026-07-08）：已归档。** 根目录文档已对齐 canonical 契约。对应 spec：`docs/specs/2026-07-02-root-realign-design.md`。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 将根目录 README.md / AGENT.md / AGENTS.md / CLAUDE.md 对齐到 backend-sync-realign-integrated plan Phase 0-5 已落地状态。
+**Goal:** 将根目录 README.md / AGENT.md / AGENTS.md / CLAUDE.md 对齐到 contract-realign plan Phase 0-5 已落地状态。
 
 **Architecture:** 纯文档更新，无代码/测试/配置改动。按文件分 4 个独立任务，每个任务单独提交。编辑使用精确字符串替换，保证只改目标段落。
 
@@ -191,7 +193,7 @@ old_string:
 new_string:
 
 ```
-- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/plans/2026-06-30-backend-sync-realign-integrated.md)。
+- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。历史整合计划见 [contract-realign plan](docs/plans/archive/2026-06-30-contract-realign.md)（已归档）。
 ```
 
 - [ ] **Step 2: 在"已知陷阱"末尾追加两条**

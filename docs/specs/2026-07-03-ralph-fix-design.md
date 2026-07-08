@@ -195,7 +195,7 @@ Python list_strategies → API mapMeta(双字段) → 前端 useStrategies.mapPa
 
 #### F12. plan 文档勾选(Important #12)
 
-**文件**:`docs/plans/2026-06-30-backend-sync-realign-integrated.md:1007-1008`
+**文件**:`docs/plans/archive/2026-06-30-contract-realign.md:1007-1008`
 
 **当前**:已实现但 `[ ]` 未勾选。
 

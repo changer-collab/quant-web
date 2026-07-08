@@ -1,8 +1,10 @@
 # Backend Sync and Realign Integrated Implementation Plan
 
+> **状态（2026-07-08）：核心已落地，已归档。** canonical 分类 / ConfigSnapshot / Preview / Task payload / ResultProcessor 注册表均已实现并接入主链路（见根 `README.md` 核心契约与 `docs/roadmap.md` 已完成表）。剩余残留：前端 `useResearchWorkflow.ts` 的 ResearchModeId 清理（roadmap 待实施 #3）、Worker 死队列清理。本文件保留作为历史计划参考，不再作为当前执行入口。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 将 `2026-06-29-backend-sync-to-strategy-classification-target.md` 的产品契约迁移方案与 `2026-06-30-backend-realign-design.md` 的后端结构整理方案合并为一条主线：前后端契约对齐 06-28 目标态，同时清理 API 内部路由碎片、完成回调上帝函数、Repo 注入不一致和 Python 通道漂移。
+**Goal:** 将 `2026-06-29-contract-sync.md` 的产品契约迁移方案与 `2026-06-30-backend-realign-design.md` 的后端结构整理方案合并为一条主线：前后端契约对齐 06-28 目标态，同时清理 API 内部路由碎片、完成回调上帝函数、Repo 注入不一致和 Python 通道漂移。
 
 **Architecture:** 产品契约以 06-29 方案为唯一目标：`StrategyCategory` / `StrategySubcategory`、`ConfigSnapshot`、Preview、Task/SSE、Diagnostics、Worker/Python NDJSON 都按 06-28 目标态收敛。内部结构吸收 06-30 方案：统一 `/api/strategies` 路由所有权，抽出 `ResultProcessor` 注册表，`ReportRepository` 走 Fastify DI，不做 `domains/` / `contracts/` 物理搬迁。落地顺序先止血契约漂移，再整理 API 结构，最后推进完整分类、配置、诊断、回测和前端消费迁移。
 

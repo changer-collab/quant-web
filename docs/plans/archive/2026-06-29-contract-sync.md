@@ -1,10 +1,10 @@
 # Backend Sync to Strategy Classification Target Implementation Plan
 
-> **状态：历史计划，已并入当前整合计划。** 后续执行请以 [2026-06-30-backend-sync-realign-integrated.md](./2026-06-30-backend-sync-realign-integrated.md) 为准。本文保留为 06-29 后端契约迁移方案的原始记录。
+> **状态：历史计划，已归档。** 已并入 `docs/plans/archive/2026-06-30-contract-realign.md`。本文保留为 06-29 后端契约迁移方案的原始记录。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让 API / Worker / Python / DB 契约从当前 2026-06-29 现状迁移到 `docs/specs/2026-06-28-strategy-classification-and-config-design.md` 所定义的策略分类、配置、Preview、Task、Diagnostics 目标态。
+**Goal:** 让 API / Worker / Python / DB 契约从当前 2026-06-29 现状迁移到 `docs/specs/2026-06-28-strategy-class-design.md` 所定义的策略分类、配置、Preview、Task、Diagnostics 目标态。
 
 **Architecture:** 以 06-28 的 `StrategyCategory` / `StrategySubcategory` 为唯一产品分类基准；API 是前端 wire contract 的唯一出口，Worker 只消费 `configSnapshot`，Python CLI 通过 NDJSON 提供真实 backtest/diagnostics 计算。配置和诊断结果采用 Route → Service → Repository → SQLite 分层，`configSnapshot` 是任务执行的唯一配置真相源。
 
@@ -12,9 +12,9 @@
 
 ## Global Constraints
 
-- 目标基准：`docs/specs/2026-06-28-strategy-classification-and-config-design.md`。
-- 参考但非目标：`docs/specs/2026-06-29-strategy-classification-architecture.md` 仅表示当前代码扫描/架构记录。
-- 参考但非完整后端设计：`docs/plans/2026-06-29-frontend-workflow-reconciliation.md` 仅表示前端工作流对齐与诊断链路打通草案。
+- 目标基准：`docs/specs/2026-06-28-strategy-class-design.md`。
+- 参考但非目标：`docs/specs/2026-06-29-strategy-class-arch.md` 仅表示当前代码扫描/架构记录。
+- 参考但非完整后端设计：`docs/plans/2026-06-29-frontend-workflow.md` 仅表示前端工作流对齐与诊断链路打通草案。
 - 当前三层已对齐的 10 个 subcategory 值如果与 06-28 不一致，视为现状差距，不作为目标正确性依据。
 - 不把前端 mock 图表当成后端已完成；后端必须返回结构化真实结果或显式失败。
 - Task payload 不允许顶层 `params` 与 `configSnapshot` 并存；`configSnapshot` 是唯一真相源。
@@ -578,8 +578,8 @@ interface TransitionalDiagnosticsResult {
 
 **Files:**
 
-- Create: `docs/specs/2026-06-29-diagnostics-algorithm-contract.md`
-- Read for context: `docs/specs/2026-06-28-strategy-classification-and-config-design.md`
+- Create: `docs/specs/2026-06-29-diag-contract.md`
+- Read for context: `docs/specs/2026-06-28-strategy-class-design.md`
 - Read for context: `packages/strategy-runtime/quantforge_strategy/commands/factor_eval.py`
 - Read for context: `packages/strategy-runtime/quantforge_strategy/commands/backtest.py`
 
