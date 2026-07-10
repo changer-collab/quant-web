@@ -391,14 +391,17 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
 }
 .perfCard {
-  padding: 14px;
+  padding: 16px;
   background: var(--gradient-panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .perfCardValue {
   font-size: 20px;

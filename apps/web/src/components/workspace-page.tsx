@@ -912,84 +912,98 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
         {/* Performance metrics */}
         {(backtestSubmitted || backtestResult) && (
           <>
-            <div className={s.chartCardTitle}>{ui.workspacePerformanceTitle}</div>
-            <div className={s.perfGrid}>
-              <div className={s.perfCard}>
-                <div
-                  className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}
-                >
-                  {formatPercent(metrics?.totalReturn)}
-                </div>
-                <div className={s.perfCardLabel}>
-                  {language === 'zh' ? '总收益' : 'Total Return'}
-                </div>
+            <div className={s.card}>
+              <div className={s.cardHeader}>
+                <span className={s.cardTitle}>{ui.workspacePerformanceTitle}</span>
               </div>
-              <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
-                  {formatPercent(metrics?.maxDrawdown)}
-                </div>
-                <div className={s.perfCardLabel}>
-                  {language === 'zh' ? '最大回撤' : 'Max Drawdown'}
-                </div>
-              </div>
-              <div className={s.perfCard}>
-                <div
-                  className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}
-                >
-                  {formatNumber(metrics?.sharpeRatio)}
-                </div>
-                <div className={s.perfCardLabel}>
-                  {language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}
+              <div className={s.cardBody}>
+                <div className={s.perfGrid}>
+                  <div className={s.perfCard}>
+                    <div className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}>
+                      {formatPercent(metrics?.totalReturn)}
+                    </div>
+                    <div className={s.perfCardLabel}>
+                      {language === 'zh' ? '总收益' : 'Total Return'}
+                    </div>
+                  </div>
+                  <div className={s.perfCard}>
+                    <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
+                      {formatPercent(metrics?.maxDrawdown)}
+                    </div>
+                    <div className={s.perfCardLabel}>
+                      {language === 'zh' ? '最大回撤' : 'Max Drawdown'}
+                    </div>
+                  </div>
+                  <div className={s.perfCard}>
+                    <div className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
+                      {formatNumber(metrics?.sharpeRatio)}
+                    </div>
+                    <div className={s.perfCardLabel}>
+                      {language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Equity Curve */}
-            <div className={s.chartCardTitle}>{ui.workspaceEquityCurve}</div>
-            <div className={s.equityCurve}>
-              <LineChart points={equityPoints} />
+            <div className={s.card}>
+              <div className={s.cardHeader}>
+                <span className={s.cardTitle}>{ui.workspaceEquityCurve}</span>
+              </div>
+              <div className={s.cardBody}>
+                <div className={s.equityCurve}>
+                  <LineChart points={equityPoints} />
+                </div>
+              </div>
             </div>
 
             {/* Trade Details */}
-            <div className={s.chartCardTitle}>{ui.workspaceTradeDetails}</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table className={s.tradeTable}>
-                <thead>
-                  <tr>
-                    <th>{language === 'zh' ? '日期' : 'Date'}</th>
-                    <th>{language === 'zh' ? '方向' : 'Side'}</th>
-                    <th>{language === 'zh' ? '价格' : 'Price'}</th>
-                    <th>{language === 'zh' ? '数量' : 'Shares'}</th>
-                    <th>{language === 'zh' ? '盈亏' : 'P&L'}</th>
-                    <th>{language === 'zh' ? '原因' : 'Reason'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trades.map((t, i) => {
-                    const quantity = t.quantity ?? t.shares;
-                    return (
-                      <tr key={i}>
-                        <td>{formatTradeDate(t)}</td>
-                        <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
-                          {formatTradeSide(t.side, language)}
-                        </td>
-                        <td>{formatNumber(t.price)}</td>
-                        <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
-                        <td
-                          style={{
-                            color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)',
-                          }}
-                        >
-                          {(t.pnl ?? 0) >= 0 ? '+' : ''}
-                          {formatNumber(t.pnl)}
-                        </td>
-                        <td>{t.reason ?? '--'}</td>
+            <div className={s.card}>
+              <div className={s.cardHeader}>
+                <span className={s.cardTitle}>{ui.workspaceTradeDetails}</span>
+              </div>
+              <div className={s.cardBody}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className={s.tradeTable}>
+                    <thead>
+                      <tr>
+                        <th>{language === 'zh' ? '日期' : 'Date'}</th>
+                        <th>{language === 'zh' ? '方向' : 'Side'}</th>
+                        <th>{language === 'zh' ? '价格' : 'Price'}</th>
+                        <th>{language === 'zh' ? '数量' : 'Shares'}</th>
+                        <th>{language === 'zh' ? '盈亏' : 'P&L'}</th>
+                        <th>{language === 'zh' ? '原因' : 'Reason'}</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {trades.length === 0 && <div className={s.emptyState}>No trades</div>}
+                    </thead>
+                    <tbody>
+                      {trades.map((t, i) => {
+                        const quantity = t.quantity ?? t.shares;
+                        return (
+                          <tr key={i}>
+                            <td>{formatTradeDate(t)}</td>
+                            <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
+                              {formatTradeSide(t.side, language)}
+                            </td>
+                            <td>{formatNumber(t.price)}</td>
+                            <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
+                            <td
+                              style={{
+                                color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)',
+                              }}
+                            >
+                              {(t.pnl ?? 0) >= 0 ? '+' : ''}
+                              {formatNumber(t.pnl)}
+                            </td>
+                            <td>{t.reason ?? '--'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {trades.length === 0 && <div className={s.emptyState}>No trades</div>}
+                </div>
+              </div>
             </div>
           </>
         )}
