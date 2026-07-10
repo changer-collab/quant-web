@@ -711,26 +711,34 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
         <div className={s.diagnosticGrid}>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceICSeries}</div>
-            {hasData ? <BarChart data={icData} /> : <div className={s.emptyState}>No IC data</div>}
+            <div className={s.cardBody}>
+              {hasData ? <BarChart data={icData} /> : <div className={s.emptyState}>No IC data</div>}
+            </div>
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceLayeredReturns}</div>
-            {layerData.length > 0 ? (
-              <HBarChart data={layerData} />
-            ) : (
-              <div className={s.emptyState}>No layer data</div>
-            )}
+            <div className={s.cardBody}>
+              {layerData.length > 0 ? (
+                <HBarChart data={layerData} />
+              ) : (
+                <div className={s.emptyState}>No layer data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceCorrelationHeatmap}</div>
-            {corrMatrix.length > 0 && factorLabels.length > 0 ? (
-              <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
-            ) : (
-              <div className={s.emptyState}>No correlation data</div>
-            )}
+            <div className={s.cardBody}>
+              {corrMatrix.length > 0 && factorLabels.length > 0 ? (
+                <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
+              ) : (
+                <div className={s.emptyState}>No correlation data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCardFull}>
-            <MiniGrid items={summaryItems} />
+            <div className={s.cardBody}>
+              <MiniGrid items={summaryItems} />
+            </div>
           </div>
         </div>
       );
@@ -745,28 +753,34 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
         <div className={s.diagnosticGrid}>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceParamSensitivity}</div>
-            {hasSens ? (
-              <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
-            ) : (
-              <div className={s.emptyState}>No param sensitivity data</div>
-            )}
+            <div className={s.cardBody}>
+              {hasSens ? (
+                <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
+              ) : (
+                <div className={s.emptyState}>No param sensitivity data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSignalDist}</div>
-            <MiniGrid items={signalItems} />
+            <div className={s.cardBody}>
+              <MiniGrid items={signalItems} />
+            </div>
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSlippageStress}</div>
-            {slippageReturns.length > 0 ? (
-              <LineChart points={slippageReturns} color="#ffa94d" />
-            ) : (
-              <div className={s.emptyState}>No slippage data</div>
-            )}
-            {costItems.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <MiniGrid items={costItems} />
-              </div>
-            )}
+            <div className={s.cardBody}>
+              {slippageReturns.length > 0 ? (
+                <LineChart points={slippageReturns} color="#ffa94d" />
+              ) : (
+                <div className={s.emptyState}>No slippage data</div>
+              )}
+              {costItems.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <MiniGrid items={costItems} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -776,7 +790,9 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
     return (
       <div className={s.chartCardFull}>
         <div className={s.chartCardTitle}>{ui.workspaceSignalMetrics}</div>
-        <div className={s.emptyState}>Diagnostics data available</div>
+        <div className={s.cardBody}>
+          <div className={s.emptyState}>Diagnostics data available</div>
+        </div>
       </div>
     );
   }

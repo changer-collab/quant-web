@@ -188,19 +188,17 @@
 
 /* ── Chart Card ── */
 .chartCard {
-  padding: 16px;
   background: var(--gradient-panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   min-height: 200px;
 }
 .chartCardTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--green);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  composes: cardHeader;
 }
 .chartCardFull {
   composes: chartCard;
@@ -333,24 +331,30 @@
 /* ── Grid chart (styled divs) ── */
 .miniGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
 }
 .miniGridCell {
-  padding: 6px;
-  background: rgba(77, 240, 160, 0.06);
+  padding: 12px;
+  background: var(--gradient-panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .miniGridLabel {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--muted);
   display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 .miniGridValue {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text);
 }
 
