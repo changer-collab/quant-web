@@ -386,6 +386,13 @@
   font-weight: 600;
 }
 
+/* ── Backtest Card Stack ── */
+.backtestStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* ── Performance Cards ── */
 .perfGrid {
   display: grid;

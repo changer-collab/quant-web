@@ -911,7 +911,7 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
 
         {/* Performance metrics */}
         {(backtestSubmitted || backtestResult) && (
-          <>
+          <div className={s.backtestStack}>
             <div className={s.card}>
               <div className={s.cardHeader}>
                 <span className={s.cardTitle}>{ui.workspacePerformanceTitle}</span>
@@ -1005,7 +1005,7 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {!backtestSubmitted && !backtestLoading && !backtestResult && (
