@@ -1027,26 +1027,35 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
         {activeTab === 'config' && (
           <div className={s.configTabLayout}>
             <div className={s.configPanelWrapper}>
-              <ConfigPanel
-                strategy={strategy}
-                ui={ui}
-                language={language}
-                onPreviewUpdate={handlePreviewUpdate}
-                onConfigSaved={handleConfigSaved}
-                klineSymbol={klineSymbol}
-              />
+              <div className={s.card}>
+                <div className={s.cardHeader}>
+                  <span className={s.cardTitle}>{ui.workspaceTabConfig}</span>
+                </div>
+                <div className={s.cardBody}>
+                  <ConfigPanel
+                    strategy={strategy}
+                    ui={ui}
+                    language={language}
+                    onPreviewUpdate={handlePreviewUpdate}
+                    onConfigSaved={handleConfigSaved}
+                    klineSymbol={klineSymbol}
+                  />
+                </div>
+              </div>
             </div>
             <div className={s.klinePanelWrapper}>
-              <KlineChart
-                previewData={previewData}
-                subcategory={strategy.subcategory}
-                ui={ui}
-                language={language}
-                onSymbolChange={handleSymbolChange}
-                onLoadMore={handleLoadMore}
-                loading={klineLoading}
-                error={klineError}
-              />
+              <div className={s.card}>
+                <KlineChart
+                  previewData={previewData}
+                  subcategory={strategy.subcategory}
+                  ui={ui}
+                  language={language}
+                  onSymbolChange={handleSymbolChange}
+                  onLoadMore={handleLoadMore}
+                  loading={klineLoading}
+                  error={klineError}
+                />
+              </div>
             </div>
           </div>
         )}

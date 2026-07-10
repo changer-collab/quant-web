@@ -153,6 +153,39 @@
   margin-bottom: 20px;
 }
 
+/* ── Unified Card ── */
+.card {
+  background: var(--gradient-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.cardHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.cardTitle {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cardBody {
+  padding: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
 /* ── Chart Card ── */
 .chartCard {
   padding: 16px;
