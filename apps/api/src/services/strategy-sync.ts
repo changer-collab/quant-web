@@ -36,6 +36,14 @@ export interface PythonStrategyMeta {
   subcategory?: string | null;
 }
 
+export interface PythonModelMeta {
+  id: string;
+  algorithm: string;
+  trainedAt: number;
+  metrics: Record<string, unknown>;
+  path: string;
+}
+
 interface CLIResult {
   ok: boolean;
   data?: unknown;
@@ -157,7 +165,7 @@ class StrategySyncService {
    */
   private async _callCLI(request: Record<string, unknown>): Promise<CLIResult> {
     return new Promise<CLIResult>((resolve, reject) => {
-      const proc = spawn('python', ['-m', 'quantforge_strategy'], {
+      const proc = spawn(process.env.PYTHON_PATH ?? 'python', ['-m', 'quantforge_strategy'], {
         stdio: ['pipe', 'pipe', 'pipe'],
         cwd: resolveProjectRoot(),
         env: {
@@ -205,6 +213,23 @@ class StrategySyncService {
       proc.stdin.write(JSON.stringify(request));
       proc.stdin.end();
     });
+  }
+
+  /**
+   * 列出已注册的模型（无缓存，每次调用都查最新状态）
+   */
+  async listModels(): Promise<PythonModelMeta[]> {
+    try {
+      const result = await this._callCLI({ command: 'listModels' });
+      if (result.ok && Array.isArray(result.data)) {
+        return result.data as PythonModelMeta[];
+      }
+      console.warn('List models: CLI returned error:', result.error?.message ?? 'unknown error');
+      return [];
+    } catch (err) {
+      console.warn('List models: CLI unavailable:', (err as Error)?.message ?? String(err));
+      return [];
+    }
   }
 
   clearCache(): void {

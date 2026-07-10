@@ -102,7 +102,6 @@ export enum L2OrderType {
 
 export type PageId =
   | 'dashboard'
-  | 'strategies'
   | 'strategy'
   | 'factor-lab'
   | 'workspace'
@@ -232,14 +231,14 @@ export interface BarData {
 
 /** 图表叠加层（MA 均线） */
 export interface ChartOverlay {
-  type: 'sma' | 'ema';
-  period: number;
-  values: (number | null)[];
+  name: string;
+  type: 'line' | 'bar' | 'zone';
+  data: Array<{ timestamp: number; value: number }>;
 }
 
 /** 预览信号 */
 export interface PreviewSignal {
-  bar_index: number;
+  timestamp: number;
   side: 'buy' | 'sell';
   type: string;
   reason: string;

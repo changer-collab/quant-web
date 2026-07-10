@@ -4,8 +4,7 @@ import { FactorStatus, FactorEvalTab } from './types';
 export const zhContent: LanguageContent = {
   navItems: [
     { id: 'dashboard', label: '研究总览', eyebrow: '' },
-    { id: 'strategies', label: '策略中心', eyebrow: '' },
-    { id: 'strategy', label: '策略总览', eyebrow: '' },
+    { id: 'strategy', label: '策略中心', eyebrow: '' },
     { id: 'factor-lab', label: '因子工坊', eyebrow: '' },
     { id: 'workspace', label: '策略研究台', eyebrow: '' },
     { id: 'backtest', label: '回测报告', eyebrow: '' },
@@ -30,26 +29,8 @@ export const zhContent: LanguageContent = {
         { title: '重点监控', items: ['收益曲线概览', '风险指标', '任务状态', '最近回测'] },
       ],
     },
-    strategies: {
-      title: '策略中心',
-      subtitle: '策略中心只负责管理：列表、分类、状态、收益摘要；研究行为进入策略研究台完成。',
-      status: '12 个活跃策略',
-      heroMetrics: [
-        { label: '传统量化', value: '5', tone: 'info' },
-        { label: '高频策略', value: '4', tone: 'good' },
-        { label: 'AI 量化', value: '3', tone: 'warn' },
-        { label: '最佳夏普', value: '2.41', tone: 'good' },
-      ],
-      sections: [
-        { title: '策略分类', items: ['传统量化策略', '高频策略', 'AI 量化策略'] },
-        {
-          title: '管理动作',
-          items: ['标签与状态', '收益 / 回撤 / 夏普', '复制策略', '进入策略研究台'],
-        },
-      ],
-    },
     strategy: {
-      title: '策略总览',
+      title: '策略中心',
       subtitle: '按分类和子分类浏览所有策略。',
       status: '所有策略已就绪',
       heroMetrics: [

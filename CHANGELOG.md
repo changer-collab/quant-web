@@ -2,6 +2,36 @@
 
 > 本文件记录项目重要变更。临时修改记录在 `.trae/changelog-pending.md`，commit 时整理写入本文件。
 
+## [changer] 2026-07-10 — Workspace 卡片化改造 + K 线修复 + 模型选择功能
+
+**开发者**: GLM-5.2 (Trae)
+
+### 新增
+- Workspace 页面卡片化与视觉分隔：统一卡片样式系统（.card/.cardHeader/.cardBody/.cardTitle），config tab 两栏卡片包装，诊断 tab chartCard 升级（阴影+圆角+头部分隔），ConfigPanel section 嵌套子卡片
+- 模型选择功能：apps/api 新增 models 路由，apps/web 新增 models API client，strategy-runtime 新增 list_models CLI 命令
+- apps/web/tests/workspace-card.test.tsx：卡片 className 断言测试
+- scripts/check-env.ps1：环境检查脚本
+- docs/startup-troubleshooting.md：启动故障排除指南
+- docs/superpowers/：SDD 流程文档（spec + plan）
+
+### 修复
+- K 线图 404 修复：preview 数据加载与 overlay 类型不匹配修复
+- kline-chart 容器去背景（由父卡片提供背景）
+
+### 改进
+- useResearchWorkflow hook 重构（428 行精简）
+- config-panel 模型选择 UI
+- apps/worker collect-handler 与 python-bridge 调整
+- packages/strategies ai_predictor 算法配置化
+- services/data-collector bootstrap 调整
+- AGENT.md 文档更新
+
+### 重构
+- 删除旧组件 strategy-table.tsx、workspace.tsx（被 workspace-page.tsx 替代）
+- 删除对应测试 strategy-table.test.tsx
+
+---
+
 ## [changer] 2026-07-08 — 文档维护：命名标准改革 + 过时计划归档 + 跨引用修复
 
 **开发者**: Kimi-K2.7-Code (Trae)

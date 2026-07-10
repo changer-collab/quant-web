@@ -4,8 +4,7 @@ import { FactorStatus, FactorEvalTab } from './types';
 export const enContent: LanguageContent = {
   navItems: [
     { id: 'dashboard', label: 'Dashboard', eyebrow: '' },
-    { id: 'strategies', label: 'Strategy Center', eyebrow: '' },
-    { id: 'strategy', label: 'Strategy', eyebrow: '' },
+    { id: 'strategy', label: 'Strategy Center', eyebrow: '' },
     { id: 'factor-lab', label: 'Factor Lab', eyebrow: '' },
     { id: 'workspace', label: 'Research Workspace', eyebrow: '' },
     { id: 'backtest', label: 'Backtest Report', eyebrow: '' },
@@ -37,35 +36,8 @@ export const enContent: LanguageContent = {
         },
       ],
     },
-    strategies: {
-      title: 'Strategy Center',
-      subtitle:
-        'Manage strategy lists, categories, state, and return summaries; research happens in the workspace.',
-      status: '12 active strategies',
-      heroMetrics: [
-        { label: 'Traditional Quant', value: '5', tone: 'info' },
-        { label: 'HFT Strategies', value: '4', tone: 'good' },
-        { label: 'AI Quant', value: '3', tone: 'warn' },
-        { label: 'Best Sharpe', value: '2.41', tone: 'good' },
-      ],
-      sections: [
-        {
-          title: 'Strategy Classes',
-          items: ['Traditional Quant Strategy', 'High-Frequency Strategy', 'AI Quant Strategy'],
-        },
-        {
-          title: 'Management Actions',
-          items: [
-            'Tags and Status',
-            'Return / Drawdown / Sharpe',
-            'Duplicate Strategy',
-            'Open Research Workspace',
-          ],
-        },
-      ],
-    },
     strategy: {
-      title: 'Strategy Overview',
+      title: 'Strategy Center',
       subtitle: 'Browse all strategies grouped by category and subcategory.',
       status: 'All strategies loaded',
       heroMetrics: [

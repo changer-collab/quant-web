@@ -26,12 +26,18 @@ class AIModelStrategy(TimingStrategy):
 
     def __init__(
         self,
-        model_path: str = "data/models/randomForest.joblib",
+        model_id: str = "randomForest",
         min_history: int = 21,
         threshold: float = 0.5,
         **kwargs: Any,
     ) -> None:
-        self._model_path = kwargs.pop("modelPath", model_path)
+        # 向后兼容：旧配置仍传 model_path / modelPath
+        legacy_path = kwargs.pop("model_path", None) or kwargs.pop("modelPath", None)
+        if legacy_path:
+            from pathlib import Path
+            self._model_id = Path(legacy_path).stem
+        else:
+            self._model_id = model_id
         self._min_history = max(min_history, 21)
         self._threshold = threshold
         self._bars_by_symbol: defaultdict[str, deque[Bar]] = defaultdict(
@@ -47,10 +53,11 @@ class AIModelStrategy(TimingStrategy):
             modes=[ResearchMode.AI],
             params=[
                 StrategyParamDef(
-                    key="model_path",
-                    label="模型路径",
-                    type=ParamType.String,
-                    default=self._model_path,
+                    key="model_id",
+                    label="模型选择",
+                    type=ParamType.Select,
+                    default=self._model_id,
+                    options=list_available_model_ids(),
                 ),
                 StrategyParamDef(
                     key="min_history",
@@ -77,7 +84,7 @@ class AIModelStrategy(TimingStrategy):
 
     def init(self, context) -> None:
         self._bars_by_symbol.clear()
-        self._artifact = _load_artifact(self._model_path)
+        self._artifact = _load_artifact_by_id(self._model_id)
 
     def signal(self, bar: Bar, context) -> Signal:
         return self.on_bar(bar, context)
@@ -105,13 +112,15 @@ class AIModelStrategy(TimingStrategy):
 AIPredictorStrategy = AIModelStrategy
 
 
-def _load_artifact(model_path: str):
-    """加载 ModelArtifact——从 joblib payload 的 algorithm 字段分派到 Algorithm.load。"""
+def _load_artifact_by_id(model_id: str):
+    """按 model_id 加载 ModelArtifact——从 data/models/<id>.joblib 读取。"""
     from pathlib import Path
     import joblib
     from quantforge_algorithms import AlgorithmRegistry
 
-    path = Path(model_path)
+    path = Path("data/models") / f"{model_id}.joblib"
+    if not path.exists():
+        raise FileNotFoundError(f"Model artifact not found: {path}")
     payload = joblib.load(path)
     algorithm_name = payload.get("algorithm")
     if not algorithm_name:
@@ -122,6 +131,16 @@ def _load_artifact(model_path: str):
             algorithm_name = getattr(config, "algorithm", "random_forest")
     algorithm = AlgorithmRegistry.get(algorithm_name)
     return algorithm.load(path)
+
+
+def list_available_model_ids() -> list[str]:
+    """扫描 data/models/ 目录，返回可用 model_id 列表（文件名不含扩展名）。"""
+    from pathlib import Path
+
+    models_dir = Path("data/models")
+    if not models_dir.exists():
+        return []
+    return sorted(p.stem for p in models_dir.glob("*.joblib"))
 
 
 def _predict_artifact(artifact, bars: deque[Bar]):

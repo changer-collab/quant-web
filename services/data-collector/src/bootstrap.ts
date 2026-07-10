@@ -9,6 +9,7 @@ import {
   YfinanceAdapter,
   MootdxAdapter,
   TencentAdapter,
+  ParquetAdapter,
 } from './adapters/index.js';
 
 /**
@@ -25,6 +26,7 @@ export interface CollectorBootstrapConfig {
     | 'yfinance'
     | 'mootdx'
     | 'tencent'
+    | 'parquet'
   )[];
   /** 数据目录路径（SQLite 文件等），默认 ./data */
   dataDir?: string;
@@ -82,6 +84,9 @@ export function createCollector(config?: CollectorBootstrapConfig): CollectorBoo
         break;
       case 'tencent':
         registry.register(new TencentAdapter());
+        break;
+      case 'parquet':
+        registry.register(new ParquetAdapter());
         break;
       default:
         console.warn(`未知数据源: ${source}，已跳过`);

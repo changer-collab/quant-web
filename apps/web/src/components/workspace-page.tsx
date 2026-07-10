@@ -17,6 +17,17 @@ interface WorkspacePageProps {
   onBack: () => void;
   language: LanguageCode;
   ui: UiCopy;
+  onBacktestComplete?: (result: {
+    taskId: string;
+    taskResult: Record<string, unknown> | undefined;
+    config: {
+      symbol: string;
+      timeframe: string;
+      initialCash: number;
+      startTs: number;
+      endTs: number;
+    };
+  }) => void;
 }
 
 type WorkspaceTab = 'config' | 'diagnose' | 'backtest';
@@ -286,13 +297,14 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void 
 
 // ── Main WorkspacePage ───────────────────────────────────────
 
-export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageProps) {
+export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComplete }: WorkspacePageProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('config');
   const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
   const [configVersion, setConfigVersion] = useState(0);
   const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
   const [klineLoading, setKlineLoading] = useState(false);
   const [klineSymbol, setKlineSymbol] = useState('600519');
+  const [klineError, setKlineError] = useState<string | null>(null);
 
   // 诊断状态（原 step 1）
   const [diagnosticData, setDiagnosticData] = useState<Record<string, unknown> | null>(null);
@@ -343,14 +355,14 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   // 读取 configSnapshot，依赖 configVersion（ConfigPanel 保存后递增触发刷新）
   useEffect(() => {
     configDefaultsApplied.current = false;
-    fetchStrategyConfig(strategy.name)
+    fetchStrategyConfig(strategy.id)
       .then((res) => {
         setConfigSnapshot(res?.configSnapshot ?? null);
       })
       .catch((err) => {
         console.warn('Failed to fetch strategy config:', err);
       });
-  }, [strategy.name, configVersion]);
+  }, [strategy.id, configVersion]);
 
   // ── Set backtest form defaults from configSnapshot when it loads ──
   useEffect(() => {
@@ -383,29 +395,35 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     async (newSymbol: string) => {
       setKlineSymbol(newSymbol);
       setKlineLoading(true);
+      setKlineError(null);
       try {
-        const data = await fetchPreview(strategy.name, {
+        const data = await fetchPreview(strategy.id, {
           symbol: newSymbol,
           timeframe: '1d',
           limit: 120,
           preview_params: {},
         });
         setPreviewData(data);
-      } catch {
-        // 静默失败
+      } catch (err) {
+        setKlineError(
+          language === 'zh'
+            ? `加载 ${newSymbol} K 线失败：${err instanceof Error ? err.message : String(err)}`
+            : `Failed to load ${newSymbol}: ${err instanceof Error ? err.message : String(err)}`
+        );
       } finally {
         setKlineLoading(false);
       }
     },
-    [strategy.name]
+    [strategy.id, language]
   );
 
   const handleLoadMore = useCallback(
     async (cursor: number) => {
       if (!previewData) return;
       setKlineLoading(true);
+      setKlineError(null);
       try {
-        const data = await fetchPreview(strategy.name, {
+        const data = await fetchPreview(strategy.id, {
           symbol: klineSymbol,
           timeframe: '1d',
           cursor,
@@ -415,14 +433,25 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         if (data.bars.length > 0) {
           setPreviewData({ ...data, bars: [...data.bars, ...previewData.bars] });
         }
-      } catch {
-        // 静默失败
+      } catch (err) {
+        setKlineError(
+          language === 'zh'
+            ? `加载更多数据失败：${err instanceof Error ? err.message : String(err)}`
+            : `Failed to load more: ${err instanceof Error ? err.message : String(err)}`
+        );
       } finally {
         setKlineLoading(false);
       }
     },
-    [strategy.name, klineSymbol, previewData]
+    [strategy.id, klineSymbol, previewData, language]
   );
+
+  // ── 初始自动加载 K 线（仅挂载时执行一次，避免进入页面看到空状态） ──
+  useEffect(() => {
+    if (previewData) return; // 已有数据不重复加载
+    handleSymbolChange(klineSymbol);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 仅挂载时执行一次
 
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {
@@ -437,8 +466,8 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       const { id: taskId } = await apiPost<{ id: string; status: string }>('/tasks', {
         type: 'diagnostics',
         payload: {
-          strategy: strategy.name,
-          configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
+          strategy: strategy.id,
+          configSnapshot: configSnapshot ?? { strategy: strategy.id, params: {} },
           category,
         },
       });
@@ -490,7 +519,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setDiagnosticLoading(false);
     }
-  }, [strategy.name, category, configSnapshot, language, ui.workspaceDiagnosticsFailed]);
+  }, [strategy.id, category, configSnapshot, language, ui.workspaceDiagnosticsFailed]);
 
   // ── Run Backtest ──
   const handleRunBacktest = useCallback(async () => {
@@ -503,11 +532,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
     try {
       const { id: taskId } = await submitBacktest({
-        strategy: strategy.name,
+        strategy: strategy.id,
         symbol: backtestSymbol,
         timeframe: backtestTimeframe,
         initialCash: backtestInitialCapital,
-        configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
+        configSnapshot: configSnapshot ?? { strategy: strategy.id, params: {} },
         startTs: new Date(backtestStartDate).getTime(),
         endTs: new Date(backtestEndDate).getTime(),
       });
@@ -523,6 +552,17 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
               setBacktestResult(data);
             }
             setBacktestSubmitted(true);
+            onBacktestComplete?.({
+              taskId,
+              taskResult: data,
+              config: {
+                symbol: backtestSymbol,
+                timeframe: backtestTimeframe,
+                initialCash: backtestInitialCapital,
+                startTs: new Date(backtestStartDate).getTime(),
+                endTs: new Date(backtestEndDate).getTime(),
+              },
+            });
             setBacktestProgress({
               percent: 100,
               message: language === 'zh' ? '回测完成' : 'Backtest complete',
@@ -543,7 +583,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       setBacktestLoading(false);
     }
   }, [
-    strategy.name,
+    strategy.id,
     configSnapshot,
     language,
     ui.workspaceBacktestFailed,
@@ -552,6 +592,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     backtestInitialCapital,
     backtestStartDate,
     backtestEndDate,
+    onBacktestComplete,
   ]);
 
   // ── Helpers: parse real diagnostic data for chart rendering ──
@@ -992,6 +1033,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                 language={language}
                 onPreviewUpdate={handlePreviewUpdate}
                 onConfigSaved={handleConfigSaved}
+                klineSymbol={klineSymbol}
               />
             </div>
             <div className={s.klinePanelWrapper}>
@@ -1003,6 +1045,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                 onSymbolChange={handleSymbolChange}
                 onLoadMore={handleLoadMore}
                 loading={klineLoading}
+                error={klineError}
               />
             </div>
           </div>

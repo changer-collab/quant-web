@@ -76,6 +76,11 @@ def _run_list_strategies(params: dict) -> dict:
     return run_list_strategies(params, emit=emit)
 
 
+def _run_list_models(params: dict) -> dict:
+    from .commands.list_models import run_list_models
+    return run_list_models(params, emit=emit)
+
+
 _COMMANDS = {
     "backtest": _run_backtest,
     "factorEval": _run_factor_eval,
@@ -84,6 +89,7 @@ _COMMANDS = {
     "syncBacktest": _run_sync_backtest,
     "diagnostics": _run_diagnostics,
     "listStrategies": _run_list_strategies,
+    "listModels": _run_list_models,
 }
 
 

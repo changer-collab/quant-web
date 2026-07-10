@@ -46,7 +46,7 @@ export class PythonBridge {
   private readonly cwd: string;
 
   constructor(config?: PythonBridgeConfig) {
-    this.pythonPath = config?.pythonPath ?? 'python';
+    this.pythonPath = config?.pythonPath ?? process.env.PYTHON_PATH ?? 'python';
     this.timeout = config?.timeout ?? 60_000;
     this.cwd = config?.cwd ?? resolveProjectRoot();
   }

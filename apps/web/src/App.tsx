@@ -21,7 +21,6 @@ import type { ResearchJob, JobTemplate, StrategyRow } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
 import hero from './styles/hero.module.css';
-import buttons from './styles/buttons.module.css';
 import infoPanelStyles from './styles/info-panel.module.css';
 import './styles/tokens.css';
 
@@ -45,7 +44,7 @@ export default function App() {
     backtestReports,
     reportJobIds,
     handleNavClick,
-    handleRunResearch,
+    registerBacktestResult,
     handleViewReport,
     handleSwitchBacktestReport,
   } = useResearchWorkflow(language);
@@ -151,14 +150,6 @@ export default function App() {
               <span className={`${layout.statusLight} statusPulse`} />
               <span>{pageStatus}</span>
             </div>
-            <button
-              className={buttons.primaryAction}
-              data-testid="run-research"
-              onClick={handleRunResearch}
-              type="button"
-            >
-              {ui.runResearch}
-            </button>
           </header>
           <section className={hero.hero}>
             <div>
@@ -213,6 +204,10 @@ export default function App() {
                   }}
                   language={language}
                   ui={ui}
+                  onBacktestComplete={(result) => {
+                    if (!workspaceEntryStrategy) return;
+                    registerBacktestResult({ ...result, strategy: workspaceEntryStrategy });
+                  }}
                 />
               ) : (
                 <>

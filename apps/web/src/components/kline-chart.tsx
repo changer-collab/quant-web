@@ -187,24 +187,34 @@ function drawOverlays(
   overlays: ChartOverlay[],
   layout: ChartLayout,
   priceMin: number,
-  priceMax: number
+  priceMax: number,
+  bars: NormalizedBar[]
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
+
+  const tsToIndex = new Map<number, number>();
+  for (let i = 0; i < bars.length; i++) {
+    tsToIndex.set(bars[i].ts, i);
+  }
+
   for (let oi = 0; oi < overlays.length; oi++) {
     const overlay = overlays[oi];
+    if (overlay.type === 'bar') continue;
     const color = MA_COLORS[oi % MA_COLORS.length];
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     let started = false;
-    for (let i = 0; i < overlay.values.length; i++) {
-      const v = overlay.values[i];
-      if (v == null || Number.isNaN(v)) {
+    for (const point of overlay.data) {
+      const idx = tsToIndex.get(point.timestamp);
+      if (idx === undefined) continue;
+      const v = point.value;
+      if (!Number.isFinite(v)) {
         started = false;
         continue;
       }
-      const x = main.x + i * barWidth + barWidth / 2;
+      const x = main.x + idx * barWidth + barWidth / 2;
       const y = main.y + main.h - ((v - priceMin) / range) * main.h;
       if (!started) {
         ctx.moveTo(x, y);
@@ -343,10 +353,16 @@ function drawSignals(
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
+
+  const tsToIndex = new Map<number, number>();
+  for (let i = 0; i < bars.length; i++) {
+    tsToIndex.set(bars[i].ts, i);
+  }
+
   for (let si = 0; si < signals.length; si++) {
     const sig = signals[si];
-    const idx = sig.bar_index;
-    if (idx < 0 || idx >= bars.length) continue;
+    const idx = tsToIndex.get(sig.timestamp);
+    if (idx === undefined || idx < 0 || idx >= bars.length) continue;
     const bar = bars[idx];
     const x = main.x + idx * barWidth + barWidth / 2;
     const isBuy = sig.side === 'buy';
@@ -386,6 +402,7 @@ export interface KlineChartProps {
   onSymbolChange?: (symbol: string) => void;
   onLoadMore?: (cursor: number) => void;
   loading?: boolean;
+  error?: string | null;
 }
 
 export function KlineChart({
@@ -396,6 +413,7 @@ export function KlineChart({
   onSymbolChange,
   onLoadMore,
   loading = false,
+  error = null,
 }: KlineChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -484,8 +502,10 @@ export function KlineChart({
       if (b.h > priceMax) priceMax = b.h;
     }
     for (const ov of previewData.overlays) {
-      for (const v of ov.values) {
-        if (v != null && !Number.isNaN(v)) {
+      if (ov.type === 'bar' || ov.type === 'zone') continue;
+      for (const point of ov.data) {
+        const v = point.value;
+        if (Number.isFinite(v)) {
           if (v < priceMin) priceMin = v;
           if (v > priceMax) priceMax = v;
         }
@@ -499,7 +519,7 @@ export function KlineChart({
     drawGrid(ctx, layout, priceMin, priceMax, bars.length);
     drawVolume(ctx, bars, layout);
     drawCandlesticks(ctx, bars, layout, priceMin, priceMax);
-    drawOverlays(ctx, previewData.overlays, layout, priceMin, priceMax);
+    drawOverlays(ctx, previewData.overlays, layout, priceMin, priceMax, bars);
 
     let subLabel = ui.klineChartRSI;
     if (subcategory && ['arbitrage', 'hft_microstructure'].includes(subcategory)) {
@@ -606,7 +626,10 @@ export function KlineChart({
           }
           return;
         }
-        const sigIdx = previewData.signals.findIndex((sig) => sig.bar_index === idx);
+        const hoverTs = normalizedBarsRef.current[idx]?.ts;
+        const sigIdx = hoverTs !== undefined
+          ? previewData.signals.findIndex((sig) => sig.timestamp === hoverTs)
+          : -1;
         const next = sigIdx >= 0 ? sigIdx : null;
         if (hoveredSignalRef.current !== next) {
           hoveredSignalRef.current = next;
@@ -620,7 +643,9 @@ export function KlineChart({
               x: clientX - containerRect.left,
               y: clientY - containerRect.top,
               data: bar,
-              signals: previewData.signals.filter((s) => s.bar_index === idx),
+              signals: hoverTs !== undefined
+                ? previewData.signals.filter((s) => s.timestamp === hoverTs)
+                : [],
             });
           }
         }
@@ -695,14 +720,19 @@ export function KlineChart({
 
         {loading && <div className={s.loadingOverlay}>{ui.klineChartLoading}</div>}
 
-        {!loading && (!previewData || previewData.bars.length === 0) && (
+        {!loading && error ? (
+          <div className={s.emptyState}>
+            <span style={{ color: 'var(--danger, #ff6b6b)' }}>{error}</span>
+            <span>{language === 'zh' ? '请检查标的代码或重试' : 'Check symbol or retry'}</span>
+          </div>
+        ) : !loading && (!previewData || previewData.bars.length === 0) ? (
           <div className={s.emptyState}>
             <span>{language === 'zh' ? '暂无 K 线数据' : 'No bar data'}</span>
             <span>
               {language === 'zh' ? '请选择一个标的并点击"预览"' : 'Select a symbol and click Preview'}
             </span>
           </div>
-        )}
+        ) : null}
 
         {loading && previewData && previewData.bars.length > 0 && (
           <div className={s.loadingBeacon}>{ui.klineChartLoading}</div>
