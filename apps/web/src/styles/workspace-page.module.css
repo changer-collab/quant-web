@@ -199,6 +199,11 @@
 }
 .chartCardTitle {
   composes: cardHeader;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .chartCardFull {
   composes: chartCard;
@@ -459,10 +464,6 @@
 .equityCurve {
   height: 180px;
   padding: 16px;
-  background: var(--gradient-panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  margin-bottom: 16px;
 }
 
 /* ── Loading Placeholder ── */
