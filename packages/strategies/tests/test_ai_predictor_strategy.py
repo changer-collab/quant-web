@@ -30,11 +30,12 @@ def test_ai_model_strategy_init_loads_artifact(tmp_path):
     from quantforge_strategies.combined.ai_predictor import AIModelStrategy
 
     strategy = AIModelStrategy(model_path=str(tmp_path / "model.joblib"))
-    with patch("quantforge_strategies.combined.ai_predictor._load_artifact") as mock_load:
+    with patch("quantforge_strategies.combined.ai_predictor._load_artifact_by_id") as mock_load:
         mock_artifact = MagicMock()
         mock_load.return_value = mock_artifact
         strategy.init(context=None)
-        mock_load.assert_called_once()
+        mock_load.assert_called_once_with("model")
+        assert strategy._artifact is mock_artifact
 
 
 def test_ai_model_strategy_on_bar_returns_hold_below_min_history():

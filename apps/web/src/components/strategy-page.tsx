@@ -1,6 +1,5 @@
 import type { StrategyRow, UiCopy, LanguageCode } from '../appData';
 import { StrategyGridNew } from './strategy-grid-new';
-import s from '../styles/strategy-page.module.css';
 
 interface StrategyPageProps {
   strategies: StrategyRow[];

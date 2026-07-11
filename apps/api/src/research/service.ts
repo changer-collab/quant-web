@@ -14,8 +14,14 @@ export class ResearchStateError extends Error {}
 export class ResearchService {
   constructor(private readonly repository: ResearchRepository) {}
 
-  async addManualInspiration(input: CreateManualInspirationInput): Promise<{ session: ResearchSession; event: ResearchEvent }> {
-    const session = await this.getOrCreateCollectingSession(input.strategy, input.title, input.content);
+  async addManualInspiration(
+    input: CreateManualInspirationInput
+  ): Promise<{ session: ResearchSession; event: ResearchEvent }> {
+    const session = await this.getOrCreateCollectingSession(
+      input.strategy,
+      input.title,
+      input.content
+    );
     const now = Date.now();
     const event: ResearchEvent = {
       id: createResearchId('re'),
@@ -29,7 +35,9 @@ export class ResearchService {
     return { session, event };
   }
 
-  async ingestEvent(input: CreateResearchEventInput): Promise<{ created: boolean; event: ResearchEvent }> {
+  async ingestEvent(
+    input: CreateResearchEventInput
+  ): Promise<{ created: boolean; event: ResearchEvent }> {
     const existing = await this.repository.findEventByDedupeKey(input.dedupeKey);
     if (existing) return { created: false, event: existing };
 
@@ -56,13 +64,18 @@ export class ResearchService {
     return this.repository.listSessions();
   }
 
-  async getSessionDetail(id: string): Promise<{ session: ResearchSession; events: ResearchEvent[] } | null> {
+  async getSessionDetail(
+    id: string
+  ): Promise<{ session: ResearchSession; events: ResearchEvent[] } | null> {
     const session = await this.repository.getSession(id);
     if (!session) return null;
     return { session, events: await this.repository.listEvents(id) };
   }
 
-  async updateSession(id: string, update: { title?: string; candidate?: ResearchCandidate }): Promise<ResearchSession> {
+  async updateSession(
+    id: string,
+    update: { title?: string; candidate?: ResearchCandidate }
+  ): Promise<ResearchSession> {
     const session = await this.requireSession(id);
     if (
       session.status !== ResearchSessionStatus.Collecting &&

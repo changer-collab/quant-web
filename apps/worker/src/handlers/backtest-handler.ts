@@ -140,7 +140,9 @@ export class BacktestHandler implements TaskHandler {
         metrics: backtestData.metrics ?? {},
         resultSummary: {
           tradeCount: Array.isArray(backtestData.trades) ? backtestData.trades.length : 0,
-          equityPoints: Array.isArray(backtestData.equityCurve) ? backtestData.equityCurve.length : 0,
+          equityPoints: Array.isArray(backtestData.equityCurve)
+            ? backtestData.equityCurve.length
+            : 0,
         },
         analysis: analysis ?? null,
       },

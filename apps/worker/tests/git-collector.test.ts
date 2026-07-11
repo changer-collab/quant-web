@@ -48,7 +48,10 @@ describe('GitCollector', () => {
     );
     expect(ingestEvent).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ dedupeKey: 'git:commit-b', payload: expect.not.objectContaining({ strategy: expect.anything() }) })
+      expect.objectContaining({
+        dedupeKey: 'git:commit-b',
+        payload: expect.not.objectContaining({ strategy: expect.anything() }),
+      })
     );
     expect(saveCursor).toHaveBeenLastCalledWith('git', 'commit-b');
   });
@@ -56,9 +59,9 @@ describe('GitCollector', () => {
 
 describe('inferStrategyFromFiles', () => {
   it('仅在唯一 combined 策略实现文件时自动归类', () => {
-    expect(inferStrategyFromFiles(['packages/strategies/quantforge_strategies/combined/dual_ma.py'])).toBe(
-      'dual_ma'
-    );
+    expect(
+      inferStrategyFromFiles(['packages/strategies/quantforge_strategies/combined/dual_ma.py'])
+    ).toBe('dual_ma');
     expect(
       inferStrategyFromFiles([
         'packages/strategies/quantforge_strategies/combined/dual_ma.py',

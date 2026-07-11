@@ -37,7 +37,10 @@ export function useResearchSessions() {
   }, []);
 
   const save = useCallback(
-    async (id: string, update: { title?: string; candidate?: ResearchCandidate }): Promise<ResearchSession> => {
+    async (
+      id: string,
+      update: { title?: string; candidate?: ResearchCandidate }
+    ): Promise<ResearchSession> => {
       const session = await updateResearchSession(id, update);
       await reload();
       return session;
@@ -55,7 +58,11 @@ export function useResearchSessions() {
   );
 
   const addIdea = useCallback(
-    async (input: { strategy: string; title?: string; content: string }): Promise<ResearchSession> => {
+    async (input: {
+      strategy: string;
+      title?: string;
+      content: string;
+    }): Promise<ResearchSession> => {
       const result = await addManualInspiration(input);
       await reload();
       return result.session;
@@ -79,5 +86,16 @@ export function useResearchSessions() {
     [reload]
   );
 
-  return { sessions, unassignedEvents, loading, reload, getDetail, save, finish, addIdea, exclude, assign };
+  return {
+    sessions,
+    unassignedEvents,
+    loading,
+    reload,
+    getDetail,
+    save,
+    finish,
+    addIdea,
+    exclude,
+    assign,
+  };
 }

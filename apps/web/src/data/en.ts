@@ -302,7 +302,15 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', name: 'period', label: 'RSI Period', type: 'number', default: 14, min: 2, max: 50 },
+        {
+          key: 'period',
+          name: 'period',
+          label: 'RSI Period',
+          type: 'number',
+          default: 14,
+          min: 2,
+          max: 50,
+        },
         {
           key: 'oversold',
           name: 'oversold',
@@ -339,7 +347,15 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', name: 'period', label: 'Period', type: 'number', default: 20, min: 5, max: 100 },
+        {
+          key: 'period',
+          name: 'period',
+          label: 'Period',
+          type: 'number',
+          default: 20,
+          min: 5,
+          max: 100,
+        },
         {
           key: 'num_std',
           name: 'num_std',
@@ -367,8 +383,24 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'fast_period', name: 'fast_period', label: 'Fast Period', type: 'number', default: 12, min: 2, max: 100 },
-        { key: 'slow_period', name: 'slow_period', label: 'Slow Period', type: 'number', default: 26, min: 5, max: 200 },
+        {
+          key: 'fast_period',
+          name: 'fast_period',
+          label: 'Fast Period',
+          type: 'number',
+          default: 12,
+          min: 2,
+          max: 100,
+        },
+        {
+          key: 'slow_period',
+          name: 'slow_period',
+          label: 'Slow Period',
+          type: 'number',
+          default: 26,
+          min: 5,
+          max: 200,
+        },
         {
           key: 'signal_period',
           name: 'signal_period',
@@ -397,7 +429,15 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', name: 'period', label: 'KDJ Period', type: 'number', default: 9, min: 2, max: 100 },
+        {
+          key: 'period',
+          name: 'period',
+          label: 'KDJ Period',
+          type: 'number',
+          default: 9,
+          min: 2,
+          max: 100,
+        },
         {
           key: 'oversold',
           name: 'oversold',

@@ -30,8 +30,15 @@ const FullReport = lazy(() =>
 );
 
 export default function App() {
-  const { language, handleLanguageChange, navItems, ui, researchCopy, factorEvalResults, reportUiCopy } =
-    useLanguage();
+  const {
+    language,
+    handleLanguageChange,
+    navItems,
+    ui,
+    researchCopy,
+    factorEvalResults,
+    reportUiCopy,
+  } = useLanguage();
   const { strategies: apiStrategies } = useStrategies();
   const { tasks: apiTasks } = useTasks();
   const { factors: apiFactors } = useFactors();

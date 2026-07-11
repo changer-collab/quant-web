@@ -67,7 +67,9 @@ export class GitCollector {
 
     let hashes: string[];
     try {
-      hashes = (await this.runGit(['rev-list', '--reverse', `${cursor}..${head}`], this.options.cwd))
+      hashes = (
+        await this.runGit(['rev-list', '--reverse', `${cursor}..${head}`], this.options.cwd)
+      )
         .split(/\r?\n/u)
         .map((hash) => hash.trim())
         .filter(Boolean);
@@ -78,9 +80,17 @@ export class GitCollector {
     }
 
     for (const hash of hashes) {
-      const metadata = await this.runGit(['show', '-s', '--format=%s%x1f%ct', hash], this.options.cwd);
+      const metadata = await this.runGit(
+        ['show', '-s', '--format=%s%x1f%ct', hash],
+        this.options.cwd
+      );
       const [message = '', seconds = '0'] = metadata.trim().split('\x1f');
-      const files = (await this.runGit(['diff-tree', '--no-commit-id', '--name-only', '-r', hash], this.options.cwd))
+      const files = (
+        await this.runGit(
+          ['diff-tree', '--no-commit-id', '--name-only', '-r', hash],
+          this.options.cwd
+        )
+      )
         .split(/\r?\n/u)
         .map((file) => file.trim())
         .filter(Boolean);

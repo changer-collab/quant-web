@@ -19,14 +19,28 @@ vi.mock('../src/hooks/useResearchSessions', () => ({
         title: '双均线研究',
         status: 'collecting',
         candidate: {
-          goal: '', initialHypothesis: '', implementationChanges: '', experiments: '',
-          currentConclusion: '', failedAttempts: '', learnings: '', openQuestions: '',
+          goal: '',
+          initialHypothesis: '',
+          implementationChanges: '',
+          experiments: '',
+          currentConclusion: '',
+          failedAttempts: '',
+          learnings: '',
+          openQuestions: '',
         },
         createdAt: 1,
         updatedAt: 1,
       },
     ],
-    unassignedEvents: [{ id: 're-unassigned', eventType: 'git_commit', dedupeKey: 'git:a', payload: { message: '调整研究导航' }, occurredAt: 1 }],
+    unassignedEvents: [
+      {
+        id: 're-unassigned',
+        eventType: 'git_commit',
+        dedupeKey: 'git:a',
+        payload: { message: '调整研究导航' },
+        occurredAt: 1,
+      },
+    ],
     loading: false,
     getDetail,
     save,
@@ -41,14 +55,33 @@ describe('ResearchPage', () => {
   it('编辑候选并结束当前研究过程', async () => {
     const detail = {
       session: {
-        id: 'rs-1', strategy: 'dual_ma', title: '双均线研究', status: 'collecting' as const,
+        id: 'rs-1',
+        strategy: 'dual_ma',
+        title: '双均线研究',
+        status: 'collecting' as const,
         candidate: {
-          goal: '', initialHypothesis: '', implementationChanges: '', experiments: '',
-          currentConclusion: '', failedAttempts: '', learnings: '', openQuestions: '',
+          goal: '',
+          initialHypothesis: '',
+          implementationChanges: '',
+          experiments: '',
+          currentConclusion: '',
+          failedAttempts: '',
+          learnings: '',
+          openQuestions: '',
         },
-        createdAt: 1, updatedAt: 1,
+        createdAt: 1,
+        updatedAt: 1,
       },
-      events: [{ id: 're-1', sessionId: 'rs-1', eventType: 'manual_inspiration', dedupeKey: 'manual:1', payload: {}, occurredAt: 1 }],
+      events: [
+        {
+          id: 're-1',
+          sessionId: 'rs-1',
+          eventType: 'manual_inspiration',
+          dedupeKey: 'manual:1',
+          payload: {},
+          occurredAt: 1,
+        },
+      ],
     };
     getDetail.mockResolvedValue(detail);
     save.mockResolvedValue(detail.session);
@@ -60,7 +93,12 @@ describe('ResearchPage', () => {
     await screen.findByDisplayValue('双均线研究');
     fireEvent.change(screen.getByLabelText('研究目标'), { target: { value: '验证趋势过滤' } });
     fireEvent.click(screen.getByRole('button', { name: '保存候选' }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith('rs-1', expect.objectContaining({ candidate: expect.objectContaining({ goal: '验证趋势过滤' }) })));
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        'rs-1',
+        expect.objectContaining({ candidate: expect.objectContaining({ goal: '验证趋势过滤' }) })
+      )
+    );
 
     fireEvent.click(screen.getByRole('button', { name: '结束本轮研究' }));
     await waitFor(() => expect(finish).toHaveBeenCalledWith('rs-1'));

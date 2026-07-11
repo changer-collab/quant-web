@@ -127,7 +127,13 @@ export function ResearchPage({ copy }: ResearchPageProps) {
   function updateCandidate(field: keyof ResearchCandidate, value: string): void {
     setSelected((current) =>
       current
-        ? { ...current, session: { ...current.session, candidate: { ...current.session.candidate, [field]: value } } }
+        ? {
+            ...current,
+            session: {
+              ...current.session,
+              candidate: { ...current.session.candidate, [field]: value },
+            },
+          }
         : current
     );
   }
@@ -186,7 +192,9 @@ export function ResearchPage({ copy }: ResearchPageProps) {
                 disabled={!candidateEditable}
                 onChange={(event) =>
                   setSelected((current) =>
-                    current ? { ...current, session: { ...current.session, title: event.target.value } } : current
+                    current
+                      ? { ...current, session: { ...current.session, title: event.target.value } }
+                      : current
                   )
                 }
                 value={selected.session.title}

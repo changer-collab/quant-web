@@ -131,7 +131,12 @@ describe('BacktestHandler', () => {
           strategy: 'mock',
           symbol: 'TEST',
           timeframe: TimeFrame.D1,
-          configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor', subcategory: null },
+          configSnapshot: {
+            strategy: 'mock',
+            params: {},
+            category: 'non_factor',
+            subcategory: null,
+          },
         }),
         undefined
       )
@@ -168,7 +173,14 @@ describe('BacktestHandler', () => {
         ok: true,
         data: {
           config: {},
-          metrics: { totalReturn: 0.1, annualizedReturn: 0.15, sharpeRatio: 1.5, maxDrawdown: 0.08, winRate: 0.55, totalTrades: 10 },
+          metrics: {
+            totalReturn: 0.1,
+            annualizedReturn: 0.15,
+            sharpeRatio: 1.5,
+            maxDrawdown: 0.08,
+            winRate: 0.55,
+            totalTrades: 10,
+          },
           equityCurve: [],
           trades: [],
         },

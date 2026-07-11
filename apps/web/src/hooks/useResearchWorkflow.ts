@@ -28,7 +28,7 @@ function formatDate(ts: number): string {
 
 export function useResearchWorkflow(language: LanguageCode) {
   const [state, setState] = useState<AppState>(() => ({ activePage: 'dashboard' }));
-  const [jobs, setJobs] = useState<ResearchJob[]>([]);
+  const [jobs, _setJobs] = useState<ResearchJob[]>([]);
   const [reports, setReports] = useState<ResearchReport[]>([]);
   const [backtestReports, setBacktestReports] = useState<BacktestReportFull[]>([]);
   const [activeReportId, setActiveReportId] = useState<string | undefined>();

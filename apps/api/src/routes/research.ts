@@ -2,7 +2,10 @@ import type { FastifyInstance } from 'fastify';
 import { ResearchStateError } from '../research/service.js';
 import type { CreateResearchEventInput, ResearchCandidate } from '../research/types.js';
 
-function errorResponse(reply: { code: (statusCode: number) => { send: (body: object) => unknown } }, error: unknown) {
+function errorResponse(
+  reply: { code: (statusCode: number) => { send: (body: object) => unknown } },
+  error: unknown
+) {
   const message = error instanceof Error ? error.message : String(error);
   return reply.code(error instanceof ResearchStateError ? 409 : 404).send({ error: message });
 }
@@ -45,23 +48,29 @@ export async function researchRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.post<{ Params: { id: string; eventId: string } }>('/sessions/:id/events/:eventId/exclude', async (req, reply) => {
-    try {
-      await app.researchService.excludeEvent(req.params.id, req.params.eventId);
-      return { ok: true };
-    } catch (error) {
-      return errorResponse(reply, error);
+  app.post<{ Params: { id: string; eventId: string } }>(
+    '/sessions/:id/events/:eventId/exclude',
+    async (req, reply) => {
+      try {
+        await app.researchService.excludeEvent(req.params.id, req.params.eventId);
+        return { ok: true };
+      } catch (error) {
+        return errorResponse(reply, error);
+      }
     }
-  });
+  );
 
-  app.post<{ Params: { id: string; eventId: string } }>('/sessions/:id/events/:eventId/assign', async (req, reply) => {
-    try {
-      await app.researchService.assignEvent(req.params.id, req.params.eventId);
-      return { ok: true };
-    } catch (error) {
-      return errorResponse(reply, error);
+  app.post<{ Params: { id: string; eventId: string } }>(
+    '/sessions/:id/events/:eventId/assign',
+    async (req, reply) => {
+      try {
+        await app.researchService.assignEvent(req.params.id, req.params.eventId);
+        return { ok: true };
+      } catch (error) {
+        return errorResponse(reply, error);
+      }
     }
-  });
+  );
 
   app.get('/events/unassigned', async () => app.researchService.listUnassignedEvents());
 }

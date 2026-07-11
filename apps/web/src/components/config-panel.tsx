@@ -100,7 +100,14 @@ const MOCK_DATA_SOURCES = [
 
 // ─── 组件 ──────────────────────────────────────────────
 
-export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigSaved, klineSymbol }: ConfigPanelProps) {
+export function ConfigPanel({
+  strategy,
+  ui,
+  language,
+  onPreviewUpdate,
+  onConfigSaved,
+  klineSymbol,
+}: ConfigPanelProps) {
   // ── 分类 Tab 状态 ──
   const [activeCategory, setActiveCategory] = useState<StrategyCategory>(
     (strategy.category as StrategyCategory) ?? 'non_factor'

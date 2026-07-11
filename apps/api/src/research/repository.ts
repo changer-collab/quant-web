@@ -3,11 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { ApiDb } from '../storage/connection.js';
 import { flushApiDb } from '../storage/connection.js';
 import { researchCollectorStates, researchEvents, researchSessions } from '../storage/schema.js';
-import type {
-  ResearchCollectorState,
-  ResearchEvent,
-  ResearchSession,
-} from './types.js';
+import type { ResearchCollectorState, ResearchEvent, ResearchSession } from './types.js';
 
 export interface ResearchRepository {
   createSession(session: ResearchSession): Promise<void>;
@@ -80,7 +76,9 @@ export class InMemoryResearchRepository implements ResearchRepository {
 
   async listEvents(sessionId?: string): Promise<ResearchEvent[]> {
     return [...this.events.values()]
-      .filter((event) => (sessionId === undefined ? event.sessionId === undefined : event.sessionId === sessionId))
+      .filter((event) =>
+        sessionId === undefined ? event.sessionId === undefined : event.sessionId === sessionId
+      )
       .sort((a, b) => a.occurredAt - b.occurredAt)
       .map((event) => structuredClone(event));
   }
@@ -113,12 +111,19 @@ export class SqliteResearchRepository implements ResearchRepository {
   }
 
   async getSession(id: string): Promise<ResearchSession | null> {
-    const rows = await this.db.select().from(researchSessions).where(eq(researchSessions.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(researchSessions)
+      .where(eq(researchSessions.id, id))
+      .limit(1);
     return rows[0] ? fromSessionRow(rows[0]) : null;
   }
 
   async listSessions(): Promise<ResearchSession[]> {
-    const rows = await this.db.select().from(researchSessions).orderBy(desc(researchSessions.updatedAt));
+    const rows = await this.db
+      .select()
+      .from(researchSessions)
+      .orderBy(desc(researchSessions.updatedAt));
     return rows.map(fromSessionRow);
   }
 
@@ -155,7 +160,11 @@ export class SqliteResearchRepository implements ResearchRepository {
   }
 
   async getEvent(id: string): Promise<ResearchEvent | null> {
-    const rows = await this.db.select().from(researchEvents).where(eq(researchEvents.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(researchEvents)
+      .where(eq(researchEvents.id, id))
+      .limit(1);
     return rows[0] ? fromEventRow(rows[0]) : null;
   }
 
@@ -169,13 +178,14 @@ export class SqliteResearchRepository implements ResearchRepository {
   }
 
   async listEvents(sessionId?: string): Promise<ResearchEvent[]> {
-    const rows = sessionId === undefined
-      ? await this.db.select().from(researchEvents).orderBy(asc(researchEvents.occurredAt))
-      : await this.db
-          .select()
-          .from(researchEvents)
-          .where(eq(researchEvents.sessionId, sessionId))
-          .orderBy(asc(researchEvents.occurredAt));
+    const rows =
+      sessionId === undefined
+        ? await this.db.select().from(researchEvents).orderBy(asc(researchEvents.occurredAt))
+        : await this.db
+            .select()
+            .from(researchEvents)
+            .where(eq(researchEvents.sessionId, sessionId))
+            .orderBy(asc(researchEvents.occurredAt));
     return rows
       .filter((row) => (sessionId === undefined ? row.sessionId === null : true))
       .map(fromEventRow);

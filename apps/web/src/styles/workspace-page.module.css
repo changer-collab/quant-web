@@ -592,7 +592,9 @@
   cursor: pointer;
   font-size: 14px;
   font-family: inherit;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .tabButton:hover {

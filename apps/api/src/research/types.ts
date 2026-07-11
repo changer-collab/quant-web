@@ -6,7 +6,8 @@ export const ResearchSessionStatus = {
   Completed: 'completed',
 } as const;
 
-export type ResearchSessionStatus = (typeof ResearchSessionStatus)[keyof typeof ResearchSessionStatus];
+export type ResearchSessionStatus =
+  (typeof ResearchSessionStatus)[keyof typeof ResearchSessionStatus];
 
 export type ResearchEventType =
   | 'git_commit'

@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot, PreviewResponse } from '../appData';
+import type {
+  StrategyRow,
+  UiCopy,
+  LanguageCode,
+  ConfigSnapshot,
+  PreviewResponse,
+} from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
 import { fetchDiagnostic } from '../api/diagnostics';
@@ -297,12 +303,18 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void 
 
 // ── Main WorkspacePage ───────────────────────────────────────
 
-export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComplete }: WorkspacePageProps) {
+export function WorkspacePage({
+  strategy,
+  onBack,
+  language,
+  ui,
+  onBacktestComplete,
+}: WorkspacePageProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('config');
   const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
   const [configVersion, setConfigVersion] = useState(0);
   const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
-  const [klineLoading, setKlineLoading] = useState(false);
+  const [klineLoading, setKlineLoading] = useState(true);
   const [klineSymbol, setKlineSymbol] = useState('600519');
   const [klineError, setKlineError] = useState<string | null>(null);
 
@@ -327,7 +339,9 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
     d.setFullYear(d.getFullYear() - 1);
     return d.toISOString().slice(0, 10);
   });
-  const [backtestEndDate, setBacktestEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [backtestEndDate, setBacktestEndDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
   const configDefaultsApplied = useRef(false);
 
   const category = strategy.category ?? 'non_factor';
@@ -449,7 +463,21 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
   // ── 初始自动加载 K 线（仅挂载时执行一次，避免进入页面看到空状态） ──
   useEffect(() => {
     if (previewData) return; // 已有数据不重复加载
-    handleSymbolChange(klineSymbol);
+    void fetchPreview(strategy.id, {
+      symbol: klineSymbol,
+      timeframe: '1d',
+      limit: 120,
+      preview_params: {},
+    })
+      .then((data) => setPreviewData(data))
+      .catch((err) => {
+        setKlineError(
+          language === 'zh'
+            ? `加载 ${klineSymbol} K 线失败：${err instanceof Error ? err.message : String(err)}`
+            : `Failed to load ${klineSymbol}: ${err instanceof Error ? err.message : String(err)}`
+        );
+      })
+      .finally(() => setKlineLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 仅挂载时执行一次
 
@@ -712,7 +740,11 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceICSeries}</div>
             <div className={s.cardBody}>
-              {hasData ? <BarChart data={icData} /> : <div className={s.emptyState}>No IC data</div>}
+              {hasData ? (
+                <BarChart data={icData} />
+              ) : (
+                <div className={s.emptyState}>No IC data</div>
+              )}
             </div>
           </div>
           <div className={s.chartCard}>
@@ -919,7 +951,9 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
               <div className={s.cardBody}>
                 <div className={s.perfGrid}>
                   <div className={s.perfCard}>
-                    <div className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}>
+                    <div
+                      className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}
+                    >
                       {formatPercent(metrics?.totalReturn)}
                     </div>
                     <div className={s.perfCardLabel}>
@@ -935,7 +969,9 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
                     </div>
                   </div>
                   <div className={s.perfCard}>
-                    <div className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}>
+                    <div
+                      className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}
+                    >
                       {formatNumber(metrics?.sharpeRatio)}
                     </div>
                     <div className={s.perfCardLabel}>
@@ -1036,11 +1072,11 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
 
       {/* Tab 导航（替代原 Stepper） */}
       <div className={s.tabNav}>
-        {([
+        {[
           { key: 'config' as const, label: ui.workspaceTabConfig },
           { key: 'diagnose' as const, label: ui.workspaceTabDiagnose },
           { key: 'backtest' as const, label: ui.workspaceTabBacktest },
-        ]).map((tab) => (
+        ].map((tab) => (
           <button
             key={tab.key}
             className={`${s.tabButton} ${activeTab === tab.key ? s.tabButtonActive : ''}`}
@@ -1104,12 +1140,16 @@ export function WorkspacePage({ strategy, onBack, language, ui, onBacktestComple
                     disabled={diagnosticLoading}
                     type="button"
                   >
-                    {diagnosticLoading ? ui.workspaceDiagnosticsRunning : ui.workspaceRunDiagnostics}
+                    {diagnosticLoading
+                      ? ui.workspaceDiagnosticsRunning
+                      : ui.workspaceRunDiagnostics}
                   </button>
                 </div>
 
                 <ProgressBar progress={diagnosticProgress} />
-                {diagnosticError && <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />}
+                {diagnosticError && (
+                  <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />
+                )}
 
                 {renderDiagnosticContent()}
 

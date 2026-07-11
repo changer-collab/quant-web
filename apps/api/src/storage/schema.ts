@@ -116,5 +116,9 @@ export const diagnosticCreatedIdx = index('idx_diag_created').on(diagnosticResul
 export const researchSessionStrategyIdx = index('idx_research_sessions_strategy').on(
   researchSessions.strategy
 );
-export const researchEventSessionIdx = index('idx_research_events_session').on(researchEvents.sessionId);
-export const researchEventOccurredIdx = index('idx_research_events_occurred').on(researchEvents.occurredAt);
+export const researchEventSessionIdx = index('idx_research_events_session').on(
+  researchEvents.sessionId
+);
+export const researchEventOccurredIdx = index('idx_research_events_occurred').on(
+  researchEvents.occurredAt
+);

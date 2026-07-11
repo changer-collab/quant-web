@@ -72,13 +72,18 @@ async function getGitHead(): Promise<string | undefined> {
     const head = stdout.trim();
     return head || undefined;
   } catch (error) {
-    console.warn('[worker] Failed to read Git HEAD:', error instanceof Error ? error.message : error);
+    console.warn(
+      '[worker] Failed to read Git HEAD:',
+      error instanceof Error ? error.message : error
+    );
     return undefined;
   }
 }
 
 async function getResearchCursor(source: string): Promise<string | undefined> {
-  const response = await fetch(`${API_BASE}/api/internal/research/collectors/${encodeURIComponent(source)}`);
+  const response = await fetch(
+    `${API_BASE}/api/internal/research/collectors/${encodeURIComponent(source)}`
+  );
   if (response.status === 404) return undefined;
   if (!response.ok) throw new Error(`读取研究采集游标失败: ${response.status}`);
   const state = (await response.json()) as { lastValue?: string };
@@ -91,7 +96,9 @@ async function scanGit(): Promise<void> {
     api: {
       getCursor: getResearchCursor,
       saveCursor: async (source, lastValue) => {
-        await apiPost(`/api/internal/research/collectors/${encodeURIComponent(source)}`, { lastValue });
+        await apiPost(`/api/internal/research/collectors/${encodeURIComponent(source)}`, {
+          lastValue,
+        });
       },
       ingestEvent: async (event) => {
         await apiPost('/api/internal/research/events', event);

@@ -56,7 +56,10 @@ describe('研究沉淀路由', () => {
     });
     const sessionId = created.json().session.id as string;
 
-    const ended = await app.inject({ method: 'POST', url: `/api/research/sessions/${sessionId}/finish` });
+    const ended = await app.inject({
+      method: 'POST',
+      url: `/api/research/sessions/${sessionId}/finish`,
+    });
     expect(ended.statusCode).toBe(200);
     expect(ended.json().status).toBe('pending_review');
 
@@ -83,8 +86,16 @@ describe('研究沉淀路由', () => {
       payload: { taskId: 'task-7', strategy: 'dual_ma' },
       occurredAt: 1_720_000_000_000,
     };
-    const first = await app.inject({ method: 'POST', url: '/api/internal/research/events', payload: event });
-    const second = await app.inject({ method: 'POST', url: '/api/internal/research/events', payload: event });
+    const first = await app.inject({
+      method: 'POST',
+      url: '/api/internal/research/events',
+      payload: event,
+    });
+    const second = await app.inject({
+      method: 'POST',
+      url: '/api/internal/research/events',
+      payload: event,
+    });
 
     expect(first.statusCode).toBe(201);
     expect(second.statusCode).toBe(200);
@@ -111,7 +122,11 @@ describe('研究沉淀路由', () => {
       payload: {
         eventType: 'git_commit',
         dedupeKey: 'git:abc123',
-        payload: { strategy: 'dual_ma', commitHash: 'abc123', files: ['packages/strategies/dual_ma.py'] },
+        payload: {
+          strategy: 'dual_ma',
+          commitHash: 'abc123',
+          files: ['packages/strategies/dual_ma.py'],
+        },
         occurredAt: 1_720_000_000_000,
       },
     });
@@ -150,7 +165,9 @@ describe('研究沉淀路由', () => {
     });
     expect(assigned.statusCode).toBe(200);
     const detail = await app.inject({ method: 'GET', url: `/api/research/sessions/${sessionId}` });
-    expect(detail.json().events).toEqual(expect.arrayContaining([expect.objectContaining({ id: eventId })]));
+    expect(detail.json().events).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: eventId })])
+    );
     await app.close();
   });
 });

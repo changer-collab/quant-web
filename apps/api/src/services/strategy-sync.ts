@@ -75,14 +75,20 @@ function parseCLIOutput(stdout: string): CLIResult {
       const event = JSON.parse(lines[i].trim());
       if (event.event === 'result') return { ok: true, data: event.data };
       if (event.event === 'error')
-        return { ok: false, error: event.error ?? { code: 'CLI_ERROR', message: 'Unknown CLI error' } };
+        return {
+          ok: false,
+          error: event.error ?? { code: 'CLI_ERROR', message: 'Unknown CLI error' },
+        };
     } catch {
       continue;
     }
   }
   return {
     ok: false,
-    error: { code: 'PARSE_ERROR', message: `Failed to parse Python CLI output: ${stdout.substring(0, 200)}` },
+    error: {
+      code: 'PARSE_ERROR',
+      message: `Failed to parse Python CLI output: ${stdout.substring(0, 200)}`,
+    },
   };
 }
 

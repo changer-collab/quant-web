@@ -5,12 +5,17 @@ import { getUiCopy } from '../src/appData';
 import type { StrategyRow } from '../src/appData';
 import { fetchDiagnostic } from '../src/api/diagnostics';
 
-vi.mock('../src/api/client', () => ({ apiPost: vi.fn().mockResolvedValue({ id: 't', status: 'pending' }) }));
+vi.mock('../src/api/client', () => ({
+  apiPost: vi.fn().mockResolvedValue({ id: 't', status: 'pending' }),
+}));
 vi.mock('../src/api/diagnostics', () => ({ fetchDiagnostic: vi.fn().mockResolvedValue(null) }));
 vi.mock('../src/api/strategies-config', () => ({
   fetchStrategyConfig: vi.fn().mockResolvedValue({
     persisted: true,
-    configSnapshot: { strategy: 'dual_ma', params: { symbol: '000001', timeframe: '1h', initialCash: 2000000 } },
+    configSnapshot: {
+      strategy: 'dual_ma',
+      params: { symbol: '000001', timeframe: '1h', initialCash: 2000000 },
+    },
     config_json: { symbol: '000001', timeframe: '1h', initialCash: 2000000 },
     hash: 'h',
     updated_at: 1,
@@ -89,7 +94,9 @@ describe('WorkspacePage 卡片化', () => {
     );
     // 切到 diagnose tab
     const diagTab = screen.getByRole('button', { name: ui.workspaceTabDiagnose });
-    await act(async () => { fireEvent.click(diagTab); });
+    await act(async () => {
+      fireEvent.click(diagTab);
+    });
     await waitFor(() => {
       const titles = container.querySelectorAll('[class*="chartCardTitle"]');
       expect(titles.length).toBeGreaterThanOrEqual(1);
