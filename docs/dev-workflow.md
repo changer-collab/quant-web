@@ -1,4 +1,8 @@
-# 开发与测试工作流指南
+# 本地开发环境与故障排除指南
+
+> **定位**：本文件面向人类开发者，覆盖环境要求、Python 包安装、各模块开发命令、Windows 故障排除和 CI 流水线。
+> AI Agent 的开发工作流规则见 `.trae/rules/quant-web-workflow.md`（上下文加载→需求确认→编码→验证→文档维护），两者不重叠。
+> JS 依赖安装与基础运行命令见根 `README.md` 的"本地运行"和"验证"章节，本文件不重复。
 
 ## 环境要求
 
@@ -242,7 +246,7 @@ CI 配置位于 `.github/workflows/ci.yml`，包含两个并行 Job：
 ### python Job
 
 1. `setup-python 3.11` — 安装 Python
-2. `pip install -e packages/...` — 安装 7 个 Python 包
+2. `pip install -e packages/...` — 安装 8 个 Python 包（含 algorithms）
 3. 逐包运行 `pytest -v`
 
 ### 冒烟测试脚本

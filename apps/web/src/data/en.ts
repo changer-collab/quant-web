@@ -4,14 +4,14 @@ import { FactorStatus, FactorEvalTab } from './types';
 export const enContent: LanguageContent = {
   navItems: [
     { id: 'dashboard', label: 'Dashboard', eyebrow: '' },
-    { id: 'strategies', label: 'Strategy Center', eyebrow: '' },
-    { id: 'strategy', label: 'Strategy', eyebrow: '' },
+    { id: 'strategy', label: 'Strategy Center', eyebrow: '' },
     { id: 'factor-lab', label: 'Factor Lab', eyebrow: '' },
     { id: 'workspace', label: 'Research Workspace', eyebrow: '' },
     { id: 'backtest', label: 'Backtest Report', eyebrow: '' },
     { id: 'experiments', label: 'Experiments', eyebrow: '' },
     { id: 'data', label: 'Data Center', eyebrow: '' },
     { id: 'jobs', label: 'Jobs', eyebrow: '' },
+    { id: 'research', label: 'Research Distillation', eyebrow: '' },
     { id: 'settings', label: 'Settings', eyebrow: '' },
   ],
   pages: {
@@ -37,35 +37,8 @@ export const enContent: LanguageContent = {
         },
       ],
     },
-    strategies: {
-      title: 'Strategy Center',
-      subtitle:
-        'Manage strategy lists, categories, state, and return summaries; research happens in the workspace.',
-      status: '12 active strategies',
-      heroMetrics: [
-        { label: 'Traditional Quant', value: '5', tone: 'info' },
-        { label: 'HFT Strategies', value: '4', tone: 'good' },
-        { label: 'AI Quant', value: '3', tone: 'warn' },
-        { label: 'Best Sharpe', value: '2.41', tone: 'good' },
-      ],
-      sections: [
-        {
-          title: 'Strategy Classes',
-          items: ['Traditional Quant Strategy', 'High-Frequency Strategy', 'AI Quant Strategy'],
-        },
-        {
-          title: 'Management Actions',
-          items: [
-            'Tags and Status',
-            'Return / Drawdown / Sharpe',
-            'Duplicate Strategy',
-            'Open Research Workspace',
-          ],
-        },
-      ],
-    },
     strategy: {
-      title: 'Strategy Overview',
+      title: 'Strategy Center',
       subtitle: 'Browse all strategies grouped by category and subcategory.',
       status: 'All strategies loaded',
       heroMetrics: [
@@ -244,6 +217,37 @@ export const enContent: LanguageContent = {
         { title: 'Workspace Preferences', items: ['Editor Preference', 'Theme', 'Chart Density'] },
       ],
     },
+    research: {
+      title: 'Strategy Research Distillation',
+      subtitle: 'Collect code, backtests, and ideas before human review.',
+      status: 'Candidate collection in progress',
+      heroMetrics: [],
+      sections: [],
+    },
+  },
+  research: {
+    empty: 'No research session yet. Add an idea or run a backtest to begin.',
+    sessions: 'Research Sessions',
+    unassigned: 'Unassigned Events',
+    timeline: 'Event Timeline',
+    addInspiration: 'Add Idea',
+    strategy: 'Strategy',
+    inspiration: 'Idea',
+    save: 'Save Candidate',
+    finish: 'Finish This Round',
+    exclude: 'Exclude',
+    assign: 'Assign to Current Session',
+    title: 'Title',
+    candidate: 'Candidate Content',
+    goal: 'Research Goal',
+    initialHypothesis: 'Initial Hypothesis',
+    implementationChanges: 'Implementation Changes',
+    experiments: 'Experiments',
+    currentConclusion: 'Current Conclusion',
+    failedAttempts: 'Failed Attempts',
+    learnings: 'Learnings',
+    openQuestions: 'Open Questions',
+    saveFailed: 'Save failed. Please try again.',
   },
   strategies: [
     {
@@ -298,7 +302,15 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', name: 'period', label: 'RSI Period', type: 'number', default: 14, min: 2, max: 50 },
+        {
+          key: 'period',
+          name: 'period',
+          label: 'RSI Period',
+          type: 'number',
+          default: 14,
+          min: 2,
+          max: 50,
+        },
         {
           key: 'oversold',
           name: 'oversold',
@@ -335,7 +347,15 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', name: 'period', label: 'Period', type: 'number', default: 20, min: 5, max: 100 },
+        {
+          key: 'period',
+          name: 'period',
+          label: 'Period',
+          type: 'number',
+          default: 20,
+          min: 5,
+          max: 100,
+        },
         {
           key: 'num_std',
           name: 'num_std',
@@ -363,8 +383,24 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'fast_period', name: 'fast_period', label: 'Fast Period', type: 'number', default: 12, min: 2, max: 100 },
-        { key: 'slow_period', name: 'slow_period', label: 'Slow Period', type: 'number', default: 26, min: 5, max: 200 },
+        {
+          key: 'fast_period',
+          name: 'fast_period',
+          label: 'Fast Period',
+          type: 'number',
+          default: 12,
+          min: 2,
+          max: 100,
+        },
+        {
+          key: 'slow_period',
+          name: 'slow_period',
+          label: 'Slow Period',
+          type: 'number',
+          default: 26,
+          min: 5,
+          max: 200,
+        },
         {
           key: 'signal_period',
           name: 'signal_period',
@@ -393,7 +429,15 @@ export const enContent: LanguageContent = {
       subcategory: 'trend_cta',
       workflowReady: true,
       params: [
-        { key: 'period', name: 'period', label: 'KDJ Period', type: 'number', default: 9, min: 2, max: 100 },
+        {
+          key: 'period',
+          name: 'period',
+          label: 'KDJ Period',
+          type: 'number',
+          default: 9,
+          min: 2,
+          max: 100,
+        },
         {
           key: 'oversold',
           name: 'oversold',

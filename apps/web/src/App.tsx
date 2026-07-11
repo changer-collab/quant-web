@@ -17,11 +17,11 @@ import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
 import { JobList } from './components/jobs';
+import { ResearchPage } from './components/research-page';
 import type { ResearchJob, JobTemplate, StrategyRow } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
 import hero from './styles/hero.module.css';
-import buttons from './styles/buttons.module.css';
 import infoPanelStyles from './styles/info-panel.module.css';
 import './styles/tokens.css';
 
@@ -30,8 +30,15 @@ const FullReport = lazy(() =>
 );
 
 export default function App() {
-  const { language, handleLanguageChange, navItems, ui, factorEvalResults, reportUiCopy } =
-    useLanguage();
+  const {
+    language,
+    handleLanguageChange,
+    navItems,
+    ui,
+    researchCopy,
+    factorEvalResults,
+    reportUiCopy,
+  } = useLanguage();
   const { strategies: apiStrategies } = useStrategies();
   const { tasks: apiTasks } = useTasks();
   const { factors: apiFactors } = useFactors();
@@ -45,7 +52,7 @@ export default function App() {
     backtestReports,
     reportJobIds,
     handleNavClick,
-    handleRunResearch,
+    registerBacktestResult,
     handleViewReport,
     handleSwitchBacktestReport,
   } = useResearchWorkflow(language);
@@ -151,14 +158,6 @@ export default function App() {
               <span className={`${layout.statusLight} statusPulse`} />
               <span>{pageStatus}</span>
             </div>
-            <button
-              className={buttons.primaryAction}
-              data-testid="run-research"
-              onClick={handleRunResearch}
-              type="button"
-            >
-              {ui.runResearch}
-            </button>
           </header>
           <section className={hero.hero}>
             <div>
@@ -213,6 +212,10 @@ export default function App() {
                   }}
                   language={language}
                   ui={ui}
+                  onBacktestComplete={(result) => {
+                    if (!workspaceEntryStrategy) return;
+                    registerBacktestResult({ ...result, strategy: workspaceEntryStrategy });
+                  }}
                 />
               ) : (
                 <>
@@ -251,6 +254,7 @@ export default function App() {
                       ui={ui}
                     />
                   )}
+                  {state.activePage === 'research' && <ResearchPage copy={researchCopy} />}
                 </>
               )}
             </div>

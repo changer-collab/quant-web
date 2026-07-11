@@ -33,7 +33,13 @@ def run_list_strategies(*args, **kwargs):
     return _run_list_strategies(*args, **kwargs)
 
 
+def run_list_models(*args, **kwargs):
+    from .list_models import run_list_models as _run_list_models
+
+    return _run_list_models(*args, **kwargs)
+
+
 __all__ = [
     "run_backtest", "run_factor_eval", "run_ai_train",
-    "run_diagnostics", "run_list_strategies",
+    "run_diagnostics", "run_list_strategies", "run_list_models",
 ]

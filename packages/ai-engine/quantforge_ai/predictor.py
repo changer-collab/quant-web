@@ -1,53 +1,67 @@
-"""AI 预测器 — 统一入口"""
+"""AIPredictor 已废弃——训练能力迁移到 TrainingOrchestrator，信号生成迁移到 algorithms.signal_generators。
+
+保留 re-export 兼容旧代码，导入时发 DeprecationWarning。
+"""
 
 from __future__ import annotations
 
-from pathlib import Path
+import warnings
 
-import numpy as np
-import pandas as pd
+from quantforge_algorithms.types import ApplicationMode
 
-from .types import TrainConfig, ModelMetrics, PredictionResult, LabelType
-from .features import FeatureExtractor
-from .model import ModelTrainer
+from .model import TrainingOrchestrator
+
+warnings.warn(
+    "AIPredictor is deprecated. Use TrainingOrchestrator for training and "
+    "quantforge_algorithms.signal_generators for signal generation.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class AIPredictor:
-    def __init__(self, config: TrainConfig | None = None) -> None:
-        self.config = config or TrainConfig()
-        self._trainer = ModelTrainer(self.config)
+    """已废弃——保留兼容性，内部委托 TrainingOrchestrator。"""
 
-    def train(self, df: pd.DataFrame, forward_returns: pd.Series) -> ModelMetrics:
-        X = FeatureExtractor.extract_all(df)
-        X = X.dropna()
-        y = self._make_labels(forward_returns, X.index)
+    def __init__(self, config=None) -> None:
+        from .types import TrainConfig
+
+        self.config = config or TrainConfig(
+            algorithm="random_forest",
+            application_mode=ApplicationMode.TIME_SERIES,
+        )
+        self._orchestrator = TrainingOrchestrator()
+
+    def train(self, df, forward_returns):
+        from .features import FeatureExtractor
+
+        X = FeatureExtractor.extract_all(df).dropna()
+        y = (forward_returns.reindex(X.index).dropna() > 0).astype(int)
         X, y = X.align(y, join="inner", axis=0)
-        return self._trainer.train(X, y)
+        return self._orchestrator.train(
+            self.config.algorithm,
+            X,
+            y,
+            application_mode=self.config.application_mode,
+            test_size=self.config.test_size,
+            random_state=self.config.random_state,
+            hyper_params=self.config.hyper_params,
+        )
 
-    def save(self, path: str | Path) -> None:
-        self._trainer.save(path)
+    def save(self, path):
+        self._orchestrator.save(path)
 
     @staticmethod
-    def load(path: str | Path) -> "AIPredictor":
+    def load(path):
         predictor = AIPredictor()
-        predictor._trainer = ModelTrainer.load(path)
-        predictor.config = predictor._trainer.config
+        predictor._orchestrator = TrainingOrchestrator.load(path)
         return predictor
 
-    def predict(self, df: pd.DataFrame) -> PredictionResult:
+    def predict(self, df):
+        from .features import FeatureExtractor
+        from .types import PredictionResult
+
         X = FeatureExtractor.extract_all(df).dropna()
         if X.empty:
             return PredictionResult()
-
-        predictions = self._trainer.predict(X).tolist()
-        try:
-            probabilities = self._trainer.predict_proba(X)[:, 1].tolist()
-        except (AttributeError, RuntimeError, IndexError, ValueError):
-            probabilities = []
-        return PredictionResult(predictions=predictions, probabilities=probabilities)
-
-    def _make_labels(self, forward_returns: pd.Series, index: pd.Index) -> pd.Series:
-        labels = forward_returns.reindex(index).dropna()
-        if self.config.label_type == LabelType.ReturnBinary:
-            return (labels > 0).astype(int)
-        return labels
+        preds = self._orchestrator.predict(X).tolist()
+        return PredictionResult(predictions=preds, probabilities=[])

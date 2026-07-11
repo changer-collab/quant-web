@@ -24,6 +24,8 @@
 - CollectHandler：数据采集任务处理器，调用 data-collector
 - LoopHandler：循环任务处理器，编排多次子任务迭代
 - main.ts 独立入口：通过 HTTP 轮询 API /api/internal/tasks/* 领取、执行、上报任务，不依赖与 API 同进程
+- GitCollector：首次基线为当前 HEAD，后续增量上报提交摘要和文件清单；无唯一策略归属时不擅自关联
+- BacktestHandler：在实际回测提交/完成时上报研究事件，包含任务 ID 去重键、实际参数、核心指标和 AI 分析
 - queue.ts（含 TaskQueue + better-sqlite3 本地队列）已删除，被 HTTP 轮询替代
 - worker.ts（Worker 主类）已删除，曾为死代码
 ```

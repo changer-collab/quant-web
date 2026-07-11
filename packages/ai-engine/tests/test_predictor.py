@@ -1,57 +1,77 @@
-"""AI 预测器测试"""
+"""测试 AIPredictor 废弃兼容性。"""
+
+from __future__ import annotations
+
+import warnings
 
 import numpy as np
 import pandas as pd
-
-from quantforge_ai.predictor import AIPredictor
-from quantforge_ai.types import LabelType, TrainConfig
+import pytest
 
 
-def _make_df(n: int = 30) -> pd.DataFrame:
-    return pd.DataFrame({
-        "close": [100.0 + i for i in range(n)],
-        "volume": [1000.0 + i for i in range(n)],
+def test_ai_predictor_import_emits_deprecation_warning():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        from quantforge_ai.predictor import AIPredictor
+        assert len(w) >= 1
+        assert any(issubclass(wi.category, DeprecationWarning) for wi in w)
+
+
+def test_ai_predictor_replaced_by_training_orchestrator():
+    """AIPredictor 的训练能力迁移到 TrainingOrchestrator。"""
+    from quantforge_ai.model import TrainingOrchestrator
+    rng = np.random.RandomState(0)
+    df = pd.DataFrame({
+        "close": rng.randn(100).cumsum() + 100,
     })
+    orchestrator = TrainingOrchestrator()
+    X = df[["close"]]
+    y = (df["close"].pct_change().shift(-1) > 0).astype(int).dropna()
+    X = X.loc[y.index]
+    metrics = orchestrator.train("random_forest", X, y)
+    assert metrics is not None
 
 
-def test_make_labels_drops_unknown_future_return_before_binary_conversion():
-    predictor = AIPredictor(TrainConfig(label_type=LabelType.ReturnBinary))
-    forward_returns = pd.Series([0.1, -0.1, np.nan], index=[10, 11, 12])
+def test_ai_predictor_train_uses_config_algorithm_not_hardcoded():
+    """AIPredictor.train() 应使用 self.config.algorithm，不应硬编码 random_forest。
 
-    labels = predictor._make_labels(forward_returns, pd.Index([10, 11, 12]))
+    回归保护：旧实现硬编码 "random_forest"，导致 legacy payload 传入
+    modelType=gradientBoosting/logisticRegression 时静默训练错误算法。
+    """
+    from unittest.mock import MagicMock
 
-    assert labels.index.tolist() == [10, 11]
-    assert labels.tolist() == [1, 0]
+    from quantforge_algorithms.types import ApplicationMode, TrainConfig
 
+    config = TrainConfig(
+        algorithm="logistic_regression",
+        application_mode=ApplicationMode.TIME_SERIES,
+        test_size=0.3,
+        random_state=7,
+        hyper_params={"C": 1.0},
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        from quantforge_ai.predictor import AIPredictor
+    predictor = AIPredictor(config=config)
+    mock_orchestrator = MagicMock()
+    predictor._orchestrator = mock_orchestrator
 
-def test_predict_returns_empty_result_when_feature_window_has_no_rows():
-    predictor = AIPredictor()
+    rng = np.random.RandomState(0)
+    n = 200
+    df = pd.DataFrame({
+        "close": rng.randn(n).cumsum() + 100,
+        "volume": rng.randint(1000, 10000, size=n).astype(float),
+    })
+    forward_returns = df["close"].pct_change().shift(-1)
 
-    class RejectTrainer:
-        def predict(self, X):
-            raise AssertionError("empty feature frame should not reach trainer")
+    predictor.train(df, forward_returns)
 
-    predictor._trainer = RejectTrainer()  # type: ignore[assignment]
-
-    result = predictor.predict(_make_df(1))
-
-    assert result.predictions == []
-    assert result.probabilities == []
-
-
-def test_predict_ignores_single_column_predict_proba():
-    predictor = AIPredictor()
-
-    class SingleClassTrainer:
-        def predict(self, X):
-            return np.ones(len(X), dtype=int)
-
-        def predict_proba(self, X):
-            return np.ones((len(X), 1))
-
-    predictor._trainer = SingleClassTrainer()  # type: ignore[assignment]
-
-    result = predictor.predict(_make_df())
-
-    assert len(result.predictions) > 0
-    assert result.probabilities == []
+    mock_orchestrator.train.assert_called_once()
+    call_args = mock_orchestrator.train.call_args
+    # 第一个位置参数应为 config.algorithm，而非硬编码 random_forest
+    assert call_args.args[0] == "logistic_regression"
+    # 完整尊重 config：application_mode / test_size / random_state / hyper_params
+    assert call_args.kwargs["application_mode"] == ApplicationMode.TIME_SERIES
+    assert call_args.kwargs["test_size"] == 0.3
+    assert call_args.kwargs["random_state"] == 7
+    assert call_args.kwargs["hyper_params"] == {"C": 1.0}

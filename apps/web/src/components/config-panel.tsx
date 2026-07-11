@@ -9,6 +9,7 @@ import type {
 } from '../appData';
 import { saveStrategyConfig } from '../api/strategies-config';
 import { fetchPreview } from '../api/preview';
+import { fetchModels, type ApiModelInfo } from '../api/models';
 import s from '../styles/config-panel.module.css';
 
 // ─── 子分类隶属关系 ─────────────────────────────────────
@@ -34,6 +35,7 @@ interface ConfigPanelProps {
   language: LanguageCode;
   onPreviewUpdate?: (data: PreviewResponse | null) => void;
   onConfigSaved?: () => void;
+  klineSymbol?: string;
 }
 
 // ─── 工具函数 ───────────────────────────────────────────
@@ -98,7 +100,14 @@ const MOCK_DATA_SOURCES = [
 
 // ─── 组件 ──────────────────────────────────────────────
 
-export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigSaved }: ConfigPanelProps) {
+export function ConfigPanel({
+  strategy,
+  ui,
+  language,
+  onPreviewUpdate,
+  onConfigSaved,
+  klineSymbol,
+}: ConfigPanelProps) {
   // ── 分类 Tab 状态 ──
   const [activeCategory, setActiveCategory] = useState<StrategyCategory>(
     (strategy.category as StrategyCategory) ?? 'non_factor'
@@ -143,6 +152,9 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
   const [error, setError] = useState<string | null>(null);
   const [configHash, setConfigHash] = useState<string>('');
 
+  // ── 可选模型列表（仅当策略含 model_id 参数时拉取） ──
+  const [models, setModels] = useState<ApiModelInfo[]>([]);
+
   // 当 strategy 切换时重置所有表单状态
   const prevStrategyRef = useRef(strategy.id);
   useEffect(() => {
@@ -177,6 +189,15 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
     }
   }, [strategy.id, strategy.category, strategy.subcategory, strategy.params]);
 
+  // ── 当策略含 model_id 参数时，拉取可用模型列表 ──
+  useEffect(() => {
+    const hasModelParam = (strategy.params ?? []).some((p) => p.name === 'model_id');
+    if (!hasModelParam) return;
+    fetchModels()
+      .then(setModels)
+      .catch((err) => console.warn('Failed to load models:', err));
+  }, [strategy.params]);
+
   // ── Preview debounce ──
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -193,10 +214,10 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
 
   // 触发 preview 的方法
   const triggerPreview = useCallback(() => {
-    if (!strategy.name || Object.keys(chartRelevantParams).length === 0) return;
+    if (!strategy.id || Object.keys(chartRelevantParams).length === 0) return;
 
-    fetchPreview(strategy.name, {
-      symbol: '600519',
+    fetchPreview(strategy.id, {
+      symbol: klineSymbol ?? '600519',
       timeframe: '1d',
       limit: 120,
       preview_params: chartRelevantParams,
@@ -207,7 +228,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
       .catch(() => {
         // preview 失败不阻塞使用
       });
-  }, [strategy.name, chartRelevantParams, onPreviewUpdate]);
+  }, [strategy.id, chartRelevantParams, onPreviewUpdate, klineSymbol]);
 
   // Debounced preview hook
   useEffect(() => {
@@ -232,7 +253,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
 
   // ── 保存配置 ──
   async function handleSave() {
-    if (!strategy.name) return;
+    if (!strategy.id) return;
     setSaving(true);
     setError(null);
     try {
@@ -263,7 +284,7 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
         }),
       };
       const result = await saveStrategyConfig(
-        strategy.name,
+        strategy.id,
         activeCategory,
         activeSubcategory,
         fullParams,
@@ -384,6 +405,25 @@ export function ConfigPanel({ strategy, ui, language, onPreviewUpdate, onConfigS
                           {paramValues[param.name] ? 'On' : 'Off'}
                         </span>
                       </div>
+                    ) : param.name === 'model_id' ? (
+                      <select
+                        className={s.select}
+                        value={String(paramValues[param.name] ?? '')}
+                        onChange={(e) => handleParamChange(param.name, e.target.value)}
+                        disabled={models.length === 0}
+                      >
+                        {models.length === 0 ? (
+                          <option value="">
+                            {language === 'zh' ? '暂无可用模型' : 'No models available'}
+                          </option>
+                        ) : (
+                          models.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.id} ({m.algorithm})
+                            </option>
+                          ))
+                        )}
+                      </select>
                     ) : param.type === 'select' ? (
                       <select
                         className={s.select}

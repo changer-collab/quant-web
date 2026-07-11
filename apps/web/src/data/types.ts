@@ -102,7 +102,6 @@ export enum L2OrderType {
 
 export type PageId =
   | 'dashboard'
-  | 'strategies'
   | 'strategy'
   | 'factor-lab'
   | 'workspace'
@@ -110,6 +109,7 @@ export type PageId =
   | 'experiments'
   | 'data'
   | 'jobs'
+  | 'research'
   | 'settings';
 
 export type MetricTone = 'good' | 'info' | 'warn';
@@ -232,14 +232,14 @@ export interface BarData {
 
 /** 图表叠加层（MA 均线） */
 export interface ChartOverlay {
-  type: 'sma' | 'ema';
-  period: number;
-  values: (number | null)[];
+  name: string;
+  type: 'line' | 'bar' | 'zone';
+  data: Array<{ timestamp: number; value: number }>;
 }
 
 /** 预览信号 */
 export interface PreviewSignal {
-  bar_index: number;
+  timestamp: number;
   side: 'buy' | 'sell';
   type: string;
   reason: string;
@@ -671,6 +671,7 @@ export interface LanguageContent {
     mode: string;
   };
   ui: UiCopy;
+  research: ResearchCopy;
   runningState: string;
   completedState: string;
   failedState: string;
@@ -686,6 +687,31 @@ export interface LanguageContent {
   factorReportUiCopy: FactorReportUiCopy;
   /** 报告 UI 文案 */
   reportUiCopy: ReportUiCopy;
+}
+
+export interface ResearchCopy {
+  empty: string;
+  sessions: string;
+  unassigned: string;
+  timeline: string;
+  addInspiration: string;
+  strategy: string;
+  inspiration: string;
+  save: string;
+  finish: string;
+  exclude: string;
+  assign: string;
+  title: string;
+  candidate: string;
+  goal: string;
+  initialHypothesis: string;
+  implementationChanges: string;
+  experiments: string;
+  currentConclusion: string;
+  failedAttempts: string;
+  learnings: string;
+  openQuestions: string;
+  saveFailed: string;
 }
 
 // ─── 回测报告类型（10 大模块） ──────────────────────────────

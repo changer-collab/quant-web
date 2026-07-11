@@ -2,6 +2,66 @@
 
 > 本文件记录项目重要变更。临时修改记录在 `.trae/changelog-pending.md`，commit 时整理写入本文件。
 
+## [changer] 2026-07-11 — 策略研究沉淀阶段一：候选采集
+
+### 新增
+- API：研究过程、研究事件和 Git 游标 SQLite 持久化；手动灵感、候选编辑、结束研究、待归类查询及 Worker 内部事件接口。
+- Worker：Git 增量采集器（首次 HEAD 基线、提交去重、文件清单、保守策略归属）与回测提交/完成事件上报。
+- Web：研究沉淀页面，消费真实 API 并支持候选编辑、事件排除、手动灵感和结束本轮研究。
+- 测试：API 研究路由、Worker GitCollector、Worker 回测研究事件和前端导航覆盖。
+
+## [changer] 2026-07-10 — Workspace 卡片化改造 + K 线修复 + 模型选择功能
+
+**开发者**: GLM-5.2 (Trae)
+
+### 新增
+- Workspace 页面卡片化与视觉分隔：统一卡片样式系统（.card/.cardHeader/.cardBody/.cardTitle），config tab 两栏卡片包装，诊断 tab chartCard 升级（阴影+圆角+头部分隔），ConfigPanel section 嵌套子卡片
+- 模型选择功能：apps/api 新增 models 路由，apps/web 新增 models API client，strategy-runtime 新增 list_models CLI 命令
+- apps/web/tests/workspace-card.test.tsx：卡片 className 断言测试
+- scripts/check-env.ps1：环境检查脚本
+- docs/startup-troubleshooting.md：启动故障排除指南
+- docs/superpowers/：SDD 流程文档（spec + plan）
+
+### 修复
+- K 线图 404 修复：preview 数据加载与 overlay 类型不匹配修复
+- kline-chart 容器去背景（由父卡片提供背景）
+
+### 改进
+- useResearchWorkflow hook 重构（428 行精简）
+- config-panel 模型选择 UI
+- apps/worker collect-handler 与 python-bridge 调整
+- packages/strategies ai_predictor 算法配置化
+- services/data-collector bootstrap 调整
+- AGENT.md 文档更新
+
+### 重构
+- 删除旧组件 strategy-table.tsx、workspace.tsx（被 workspace-page.tsx 替代）
+- 删除对应测试 strategy-table.test.tsx
+
+---
+
+## [changer] 2026-07-08 — 文档维护：命名标准改革 + 过时计划归档 + 跨引用修复
+
+**开发者**: Kimi-K2.7-Code (Trae)
+
+### 文档
+- `docs/README.md`：新增文件命名标准（`YYYY-MM-DD-<2-3 词短 slug>.md`）；修正 contract-sync 归档路径；更新所有文件名引用
+- `docs/dev-workflow.md`：重新定位为"本地开发环境与故障排除指南"，与 `.trae/rules/quant-web-workflow.md`（AI Agent 工作流）划清边界；精简与 README.md 重叠内容；新增 algorithms 包到 Python 包列表和 CI 说明
+- `docs/roadmap.md`：新增"策略分类后端契约整合"已完成条目；待实施计划重新编号
+- `README.md`：项目结构表新增 packages/algorithms 和 packages/loop-engine；ai-engine 描述更新为"委托算法层"；mermaid 图新增 ALG 节点和 AI→ALG 边
+- `AGENT.md`：当前阶段 plan 引用更新为归档路径 `docs/plans/archive/2026-06-30-contract-realign.md`
+
+### 重构
+- 8 个 plan 文件重命名为短 slug：7 个已完成计划移入 `docs/plans/archive/`，1 个当前计划就地重命名
+- 7 个 spec 文件重命名为短 slug
+- 删除重复文件 `docs/specs/2026-07-02-root-md-realign-design.md`
+- 全量更新 docs/ 下 14 个文件的跨引用，消除所有旧文件名残留
+
+### 基础设施
+- `.github/workflows/ci.yml`：补充 `packages/algorithms` 到 Python Job 和 smoke test
+
+---
+
 ## [changer] 2026-07-07 — 数据源增强 & Parquet 导入（Phase 1 + P1 全部完成）
 
 **开发者**: Kimi-K2.7-Code (Trae)

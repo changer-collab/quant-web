@@ -1,7 +1,7 @@
 import { TaskType } from '../types.js';
 import { TimeFrame } from '../types.js';
 import type { BacktestResult } from '../types.js';
-import type { TaskHandler, TaskRecord, TaskEventHandler } from '../types.js';
+import type { ResearchEventInput, TaskHandler, TaskRecord, TaskEventHandler } from '../types.js';
 import { PythonBridge } from '../python-bridge.js';
 import { resolveDbPath } from '../db-path.js';
 
@@ -67,6 +67,23 @@ export class BacktestHandler implements TaskHandler {
       },
     };
 
+    await this.emitResearchEvent(onEvent, {
+      eventType: 'backtest_submitted',
+      dedupeKey: `backtest_submitted:${task.id}`,
+      payload: {
+        taskId: task.id,
+        strategy: payload.strategy,
+        symbol: payload.symbol,
+        timeframe: payload.timeframe,
+        initialCash: payload.initialCash,
+        slippage: payload.slippage,
+        startTs: payload.startTs,
+        endTs: payload.endTs,
+        configSnapshot,
+      },
+      occurredAt: Date.now(),
+    });
+
     // 优先使用流式调用
     let backtestData: Record<string, unknown>;
     if (onEvent) {
@@ -114,6 +131,31 @@ export class BacktestHandler implements TaskHandler {
       // sync 失败不影响回测结果
     }
 
+    await this.emitResearchEvent(onEvent, {
+      eventType: 'backtest_completed',
+      dedupeKey: `backtest_completed:${task.id}`,
+      payload: {
+        taskId: task.id,
+        strategy: payload.strategy,
+        metrics: backtestData.metrics ?? {},
+        resultSummary: {
+          tradeCount: Array.isArray(backtestData.trades) ? backtestData.trades.length : 0,
+          equityPoints: Array.isArray(backtestData.equityCurve)
+            ? backtestData.equityCurve.length
+            : 0,
+        },
+        analysis: analysis ?? null,
+      },
+      occurredAt: Date.now(),
+    });
+
     return { taskId: task.id, backtestResult: backtestData, analysis } as Record<string, unknown>;
+  }
+
+  private async emitResearchEvent(
+    onEvent: TaskEventHandler | undefined,
+    data: ResearchEventInput
+  ): Promise<void> {
+    await onEvent?.({ event: 'research', data });
   }
 }

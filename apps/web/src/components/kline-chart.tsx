@@ -12,12 +12,9 @@ import {
   downsample,
   maxByReduce,
   CHART_TOP,
-  CHART_BOTTOM,
   CHART_LEFT,
-  CHART_RIGHT,
   GAP_BETWEEN_CHARTS,
   CANDLE_WIDTH_RATIO,
-  MIN_BAR_WIDTH,
   type NormalizedBar,
   type ChartLayout,
 } from './kline-chart-utils';
@@ -187,24 +184,34 @@ function drawOverlays(
   overlays: ChartOverlay[],
   layout: ChartLayout,
   priceMin: number,
-  priceMax: number
+  priceMax: number,
+  bars: NormalizedBar[]
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
+
+  const tsToIndex = new Map<number, number>();
+  for (let i = 0; i < bars.length; i++) {
+    tsToIndex.set(bars[i].ts, i);
+  }
+
   for (let oi = 0; oi < overlays.length; oi++) {
     const overlay = overlays[oi];
+    if (overlay.type === 'bar') continue;
     const color = MA_COLORS[oi % MA_COLORS.length];
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     let started = false;
-    for (let i = 0; i < overlay.values.length; i++) {
-      const v = overlay.values[i];
-      if (v == null || Number.isNaN(v)) {
+    for (const point of overlay.data) {
+      const idx = tsToIndex.get(point.timestamp);
+      if (idx === undefined) continue;
+      const v = point.value;
+      if (!Number.isFinite(v)) {
         started = false;
         continue;
       }
-      const x = main.x + i * barWidth + barWidth / 2;
+      const x = main.x + idx * barWidth + barWidth / 2;
       const y = main.y + main.h - ((v - priceMin) / range) * main.h;
       if (!started) {
         ctx.moveTo(x, y);
@@ -261,7 +268,10 @@ function drawSubChart(
     yMax = vals.length > 0 ? maxByReduce(vals) * 1.2 : 10;
   } else if (subcat === 'macro_quant') {
     const returns = closes.map((c, i) => (i === 0 ? 0 : (c - closes[i - 1]) / closes[i - 1]));
-    data = computeSMA(returns.map((r) => Math.abs(r) * 100), 10);
+    data = computeSMA(
+      returns.map((r) => Math.abs(r) * 100),
+      10
+    );
     const vals = data.filter((d): d is number => d != null);
     yMin = 0;
     yMax = vals.length > 0 ? maxByReduce(vals) * 1.2 : 5;
@@ -303,8 +313,16 @@ function drawSubChart(
     ctx.fillStyle = COLOR_TEXT;
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(String(OVERBOUGHT), sub.x - 2, sub.y + sub.h - ((OVERBOUGHT - yMin) / range) * sub.h + 3);
-    ctx.fillText(String(OVERSOLD), sub.x - 2, sub.y + sub.h - ((OVERSOLD - yMin) / range) * sub.h + 3);
+    ctx.fillText(
+      String(OVERBOUGHT),
+      sub.x - 2,
+      sub.y + sub.h - ((OVERBOUGHT - yMin) / range) * sub.h + 3
+    );
+    ctx.fillText(
+      String(OVERSOLD),
+      sub.x - 2,
+      sub.y + sub.h - ((OVERSOLD - yMin) / range) * sub.h + 3
+    );
   }
   ctx.strokeStyle = '#62d8ff';
   ctx.lineWidth = 1;
@@ -343,10 +361,16 @@ function drawSignals(
 ) {
   const { main, barWidth } = layout;
   const range = priceMax - priceMin || 1;
+
+  const tsToIndex = new Map<number, number>();
+  for (let i = 0; i < bars.length; i++) {
+    tsToIndex.set(bars[i].ts, i);
+  }
+
   for (let si = 0; si < signals.length; si++) {
     const sig = signals[si];
-    const idx = sig.bar_index;
-    if (idx < 0 || idx >= bars.length) continue;
+    const idx = tsToIndex.get(sig.timestamp);
+    if (idx === undefined || idx < 0 || idx >= bars.length) continue;
     const bar = bars[idx];
     const x = main.x + idx * barWidth + barWidth / 2;
     const isBuy = sig.side === 'buy';
@@ -386,6 +410,7 @@ export interface KlineChartProps {
   onSymbolChange?: (symbol: string) => void;
   onLoadMore?: (cursor: number) => void;
   loading?: boolean;
+  error?: string | null;
 }
 
 export function KlineChart({
@@ -396,6 +421,7 @@ export function KlineChart({
   onSymbolChange,
   onLoadMore,
   loading = false,
+  error = null,
 }: KlineChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -411,13 +437,15 @@ export function KlineChart({
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
+    width: number;
+    height: number;
     data: NormalizedBar;
     signals: PreviewSignal[];
   } | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastHiding, setToastHiding] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [downsampled, setDownsampled] = useState(false);
+  const downsampled = (previewData?.bars.length ?? 0) > MAX_BARS;
 
   // fingerprint 变更检测
   useEffect(() => {
@@ -439,16 +467,13 @@ export function KlineChart({
   useEffect(() => {
     if (!previewData || previewData.bars.length === 0) {
       normalizedBarsRef.current = [];
-      setDownsampled(false);
       return;
     }
     const bars = normalizeBars(previewData.bars);
     if (bars.length > MAX_BARS) {
       normalizedBarsRef.current = downsample(bars, MAX_BARS);
-      setDownsampled(true);
     } else {
       normalizedBarsRef.current = bars;
-      setDownsampled(false);
     }
   }, [previewData]);
 
@@ -484,8 +509,10 @@ export function KlineChart({
       if (b.h > priceMax) priceMax = b.h;
     }
     for (const ov of previewData.overlays) {
-      for (const v of ov.values) {
-        if (v != null && !Number.isNaN(v)) {
+      if (ov.type === 'bar' || ov.type === 'zone') continue;
+      for (const point of ov.data) {
+        const v = point.value;
+        if (Number.isFinite(v)) {
           if (v < priceMin) priceMin = v;
           if (v > priceMax) priceMax = v;
         }
@@ -499,14 +526,16 @@ export function KlineChart({
     drawGrid(ctx, layout, priceMin, priceMax, bars.length);
     drawVolume(ctx, bars, layout);
     drawCandlesticks(ctx, bars, layout, priceMin, priceMax);
-    drawOverlays(ctx, previewData.overlays, layout, priceMin, priceMax);
+    drawOverlays(ctx, previewData.overlays, layout, priceMin, priceMax, bars);
 
     let subLabel = ui.klineChartRSI;
     if (subcategory && ['arbitrage', 'hft_microstructure'].includes(subcategory)) {
       subLabel = ui.klineChartSpread;
     } else if (
       subcategory &&
-      ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(subcategory)
+      ['factor_based', 'linear_multi_factor', 'ml_nonlinear_factor', 'e2e_ai_timeseries'].includes(
+        subcategory
+      )
     ) {
       subLabel = ui.klineChartIC;
     } else if (subcategory && ['transitional', 'event_driven'].includes(subcategory)) {
@@ -557,8 +586,8 @@ export function KlineChart({
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
+      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = window.requestAnimationFrame(() => {
         drawBase();
         drawOverlay();
       });
@@ -566,7 +595,7 @@ export function KlineChart({
     ro.observe(el);
     return () => {
       ro.disconnect();
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
     };
   }, [drawBase, drawOverlay]);
 
@@ -593,10 +622,10 @@ export function KlineChart({
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (mouseRafRef.current) cancelAnimationFrame(mouseRafRef.current);
+      if (mouseRafRef.current) window.cancelAnimationFrame(mouseRafRef.current);
       const clientX = e.clientX;
       const clientY = e.clientY;
-      mouseRafRef.current = requestAnimationFrame(() => {
+      mouseRafRef.current = window.requestAnimationFrame(() => {
         const idx = getBarIndexFromX(clientX);
         if (idx == null || !previewData) {
           setTooltip(null);
@@ -606,7 +635,11 @@ export function KlineChart({
           }
           return;
         }
-        const sigIdx = previewData.signals.findIndex((sig) => sig.bar_index === idx);
+        const hoverTs = normalizedBarsRef.current[idx]?.ts;
+        const sigIdx =
+          hoverTs !== undefined
+            ? previewData.signals.findIndex((sig) => sig.timestamp === hoverTs)
+            : -1;
         const next = sigIdx >= 0 ? sigIdx : null;
         if (hoveredSignalRef.current !== next) {
           hoveredSignalRef.current = next;
@@ -619,8 +652,13 @@ export function KlineChart({
             setTooltip({
               x: clientX - containerRect.left,
               y: clientY - containerRect.top,
+              width: containerRect.width,
+              height: containerRect.height,
               data: bar,
-              signals: previewData.signals.filter((s) => s.bar_index === idx),
+              signals:
+                hoverTs !== undefined
+                  ? previewData.signals.filter((s) => s.timestamp === hoverTs)
+                  : [],
             });
           }
         }
@@ -695,14 +733,21 @@ export function KlineChart({
 
         {loading && <div className={s.loadingOverlay}>{ui.klineChartLoading}</div>}
 
-        {!loading && (!previewData || previewData.bars.length === 0) && (
+        {!loading && error ? (
+          <div className={s.emptyState}>
+            <span style={{ color: 'var(--danger, #ff6b6b)' }}>{error}</span>
+            <span>{language === 'zh' ? '请检查标的代码或重试' : 'Check symbol or retry'}</span>
+          </div>
+        ) : !loading && (!previewData || previewData.bars.length === 0) ? (
           <div className={s.emptyState}>
             <span>{language === 'zh' ? '暂无 K 线数据' : 'No bar data'}</span>
             <span>
-              {language === 'zh' ? '请选择一个标的并点击"预览"' : 'Select a symbol and click Preview'}
+              {language === 'zh'
+                ? '请选择一个标的并点击"预览"'
+                : 'Select a symbol and click Preview'}
             </span>
           </div>
-        )}
+        ) : null}
 
         {loading && previewData && previewData.bars.length > 0 && (
           <div className={s.loadingBeacon}>{ui.klineChartLoading}</div>
@@ -712,16 +757,31 @@ export function KlineChart({
           <div
             className={s.tooltipOverlay}
             style={{
-              left: clamp(tooltip.x, 80, (containerRef.current?.getBoundingClientRect().width ?? 600) - 80),
-              top: clamp(tooltip.y, 60, (containerRef.current?.getBoundingClientRect().height ?? 400) - 60),
+              left: clamp(tooltip.x, 80, tooltip.width - 80),
+              top: clamp(tooltip.y, 60, tooltip.height - 60),
             }}
           >
             <div className={s.tooltipTitle}>{ui.klineChartOHLC}</div>
-            <div className={s.tooltipRow}><span>O</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.o)}</span></div>
-            <div className={s.tooltipRow}><span>H</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.h)}</span></div>
-            <div className={s.tooltipRow}><span>L</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.l)}</span></div>
-            <div className={s.tooltipRow}><span>C</span><span className={s.tooltipRowValue}>{formatPrice(tooltip.data.c)}</span></div>
-            <div className={s.tooltipRow}><span>Vol</span><span className={s.tooltipRowValue}>{tooltip.data.v.toLocaleString()}</span></div>
+            <div className={s.tooltipRow}>
+              <span>O</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.o)}</span>
+            </div>
+            <div className={s.tooltipRow}>
+              <span>H</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.h)}</span>
+            </div>
+            <div className={s.tooltipRow}>
+              <span>L</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.l)}</span>
+            </div>
+            <div className={s.tooltipRow}>
+              <span>C</span>
+              <span className={s.tooltipRowValue}>{formatPrice(tooltip.data.c)}</span>
+            </div>
+            <div className={s.tooltipRow}>
+              <span>Vol</span>
+              <span className={s.tooltipRowValue}>{tooltip.data.v.toLocaleString()}</span>
+            </div>
             {tooltip.signals.map((sig, i) => (
               <div key={i} className={s.tooltipSignal}>
                 <div className={sig.side === 'buy' ? s.tooltipBuy : s.tooltipSell}>
@@ -730,7 +790,9 @@ export function KlineChart({
                   {sig.type}
                 </div>
                 {sig.reason && (
-                  <div className={s.tooltipReason}>{ui.klineChartReason}: {sig.reason}</div>
+                  <div className={s.tooltipReason}>
+                    {ui.klineChartReason}: {sig.reason}
+                  </div>
                 )}
                 {sig.factor_snapshot && Object.keys(sig.factor_snapshot).length > 0 && (
                   <div className={s.tooltipReason}>
@@ -752,9 +814,15 @@ export function KlineChart({
       {previewData && previewData.bars.length > 0 && (
         <div className={s.signalBar}>
           <span>{language === 'zh' ? '信号' : 'Signals'}:</span>
-          <span className={s.signalCountBuy}>▲ {ui.klineChartBuy} {buyCount}</span>
-          <span className={s.signalCountSell}>▼ {ui.klineChartSell} {sellCount}</span>
-          <span>{language === 'zh' ? 'K线' : 'Bars'}: {previewData.bars.length}</span>
+          <span className={s.signalCountBuy}>
+            ▲ {ui.klineChartBuy} {buyCount}
+          </span>
+          <span className={s.signalCountSell}>
+            ▼ {ui.klineChartSell} {sellCount}
+          </span>
+          <span>
+            {language === 'zh' ? 'K线' : 'Bars'}: {previewData.bars.length}
+          </span>
           <span>ID: {previewData.fingerprint?.slice(0, 12) ?? '-'}</span>
         </div>
       )}

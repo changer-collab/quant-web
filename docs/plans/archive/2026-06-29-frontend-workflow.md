@@ -1,6 +1,6 @@
-﻿# 策略分类体系下前端工作流对齐与诊断链路打通草案
+# 策略分类体系下前端工作流对齐与诊断链路打通草案
 
-> **状态：历史草案。** 当前策略分类实施入口为 [../2026-06-30-backend-sync-realign-integrated.md](../2026-06-30-backend-sync-realign-integrated.md)。本文保留为前端双流程、配置链路和 diagnostics 补洞的迁移背景参考。
+> **状态：历史草案。** 当前策略分类实施入口为 [../2026-06-30-contract-realign.md](../2026-06-30-contract-realign.md)。本文保留为前端双流程、配置链路和 diagnostics 补洞的迁移背景参考。
 
 > **背景**：前端已完成大型重构，按策略分类（FACTOR_BASED / NON_FACTOR / TRANSITIONAL）构建了因子型/非因子型双流程。本文档用于记录前端迁移后的工作流对齐、配置链路打通和 diagnostics 后端补洞草案；**不作为完整后端匹配设计**。
 >
@@ -14,11 +14,11 @@
 
 ### 0.1 原始权威入口（已失效）
 
-> 本节为 2026-06-29 当时的文档治理关系。当前执行入口已改为 `docs/plans/2026-06-30-backend-sync-realign-integrated.md`。
+> 本节为 2026-06-29 当时的文档治理关系。当前执行入口已改为 `docs/plans/2026-06-30-contract-realign.md`。
 
 | 用途                       | 权威文件                                                                    | 更新频率                                     |
 | -------------------------- | --------------------------------------------------------------------------- | -------------------------------------------- |
-| 策略分类全栈目标契约       | `docs/specs/2026-06-29-strategy-classification-architecture.md` | 历史关系；现在仅作背景参考                   |
+| 策略分类全栈目标契约       | `docs/specs/2026-06-29-strategy-class-arch.md` | 历史关系；现在仅作背景参考                   |
 | 策略分类当前施工路线       | `docs/plans/2026-06-29-frontend-workflow-reconciliation.md`                 | 历史关系；现在仅作背景参考                   |
 | Ralph / Agent 执行收敛规则 | `.skills/ralph-harness/` 与 `scripts/ralph/AGENT_PROMPT.md`                 | 中频：当执行闭环发现可复用规则或反模式时更新 |
 
@@ -34,7 +34,7 @@
 
 | 日期       | 决策                                                                                                                 | 原因                                                                                                                             | 影响                                                             |
 | ---------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| 2026-06-29 | `frontend-workflow-reconciliation.md` 作为动态施工路线图，`strategy-classification-architecture.md` 作为稳定目标契约 | 避免 plan/spec 都被当作进度日志，导致后续 agent 判断混乱                                                                         | plan 高频更新，architecture 低频更新                             |
+| 2026-06-29 | `frontend-workflow-reconciliation.md` 作为动态施工路线图，`strategy-class-arch.md` 作为稳定目标契约 | 避免 plan/spec 都被当作进度日志，导致后续 agent 判断混乱                                                                         | plan 高频更新，architecture 低频更新                             |
 | 2026-06-29 | Phase 1 配置链路优先于 Phase 2 死代码清理                                                                            | 配置链路未通时，清理旧入口容易扩大不确定性                                                                                       | 先验证 `configSnapshot` 闭环，再清理旧体系                       |
 | 2026-06-29 | Phase 3 diagnostics 后端先按 MVP 推进，不一次性铺完整算法                                                            | IC、参数敏感性、滑点压力需要算法口径评审                                                                                         | 先跑通 factor/non-factor 主路径，`transitional` 可轻量占位或暂缓 |
 | 2026-06-29 | hooks 只做提醒/拦截，不自动改 docs                                                                                   | docs 更新需要语义判断，脚本自动写容易制造错误权威                                                                                | Ralph/agent 显式执行 Doc Sync，hook 只防忘记                     |

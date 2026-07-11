@@ -10,6 +10,7 @@
 
 前后端端到端闭环已打通：前端提交回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE 推送 → 前端报告显示。
 配置读写、策略预览、因子/非因子诊断均已接入主链路。
+策略研究沉淀的阶段一已接入：Git 增量提交、实际回测参数/结果/AI 分析和手动灵感先保存为可编辑研究候选；Raw 与 Wiki 发布仍待后续阶段的两次人工审核实现。
 
 ## 核心契约
 
@@ -18,6 +19,7 @@
 - **TaskResultEnvelope**：SSE result 事件顶层含 `resultId` / `resultType`（diagnostics | backtest），完成后可恢复。
 - **ResultProcessor 注册表**：API complete handler 通过注册表分派给 BacktestResultProcessor / DiagnosticsResultProcessor，Repo 走 Fastify DI。
 - **Preview 契约**：`POST /api/strategies/:name/preview` 仅接受 chart_relevant 字段（非图表字段 422），合并 saved config 后计算。
+- **研究候选契约**：研究过程和事件保存于 API SQLite；`dedupe_key` 阻止重复 Git/回测事件，无法唯一归属的 Git 提交保持待归类，首次 Worker 启动只记录当前 Git HEAD 基线。
 
 ## 模块连接图
 
@@ -37,7 +39,8 @@ graph LR
     SR[strategy-runtime<br/>PY · CLI入口]
     BT[backtest-engine<br/>PY · 回测]
     FL[factor-lab<br/>PY · 因子评估]
-    AI[ai-engine<br/>PY · AI训练]
+    AI[ai-engine<br/>PY · 特征/编排]
+    ALG[algorithms<br/>PY · 算法/信号/模板]
   end
 
   subgraph 输出层
@@ -56,6 +59,7 @@ graph LR
   SR -->|backtest| BT
   SR -->|factorEval| FL
   SR -->|aiTrain| AI
+  AI -->|训练/预测| ALG
 
   BT -.->|断点1| OB
   FL -.->|断点2| OB
@@ -73,7 +77,7 @@ graph LR
 data-collector → data-center (SQLite) → data-client → strategy-runtime CLI
   ├→ backtest-engine
   ├→ factor-lab
-  └→ ai-engine
+  └→ ai-engine → algorithms（训练/预测委托）
 
 apps/web → apps/api → apps/worker → PythonBridge → strategy-runtime CLI
 apps/worker → apps/api → SSE → apps/web
@@ -118,13 +122,15 @@ apps/api                HTTP API（Fastify + SSE）
 apps/worker             异步任务 Worker（HTTP 轮询 + PythonBridge）
 services/data-center    数据中心（SQLite + Drizzle，6 数据子域）
 services/data-collector 数据采集器（17 数据源适配器：9 独立源 + 8 东财子源，水位增量采集）
+packages/algorithms     算法层（Algorithm/SignalGenerator/Template 抽象与实现）
 packages/backtest-engine  回测引擎
 packages/factor-lab     因子工坊（计算 + 评估调度）
 packages/strategy-runtime 策略运行时（CLI NDJSON 流式输出）
-packages/ai-engine      AI 引擎（特征/训练/预测）
+packages/ai-engine      AI 引擎（特征提取 + 训练/预测编排，委托算法层）
 packages/strategies     策略库
 packages/data-client    Python 数据客户端
 packages/obsidian-sync  Obsidian 同步
+packages/loop-engine    循环引擎（类型骨架，暂不实现调度）
 runtime/                运行产物（不分配开发 Agent）
 ```
 

@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         # pnpm version is read from packageManager in package.json.
@@ -31,6 +33,16 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Install Python packages for JS tests and smoke
+        run: |
+          pip install -e packages/strategy-runtime \
+            -e packages/data-client \
+            -e packages/backtest-engine \
+            -e packages/factor-lab \
+            -e packages/algorithms \
+            -e packages/ai-engine \
+            -e packages/strategies
+
       - name: Test
         run: pnpm test
 
@@ -40,12 +52,6 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      - name: Install smoke Python packages
-        run: |
-          pip install -e packages/strategy-runtime \
-            -e packages/ai-engine \
-            -e packages/strategies
-
       - name: API smoke test
         run: bash scripts/smoke-test.sh
 
@@ -54,6 +60,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -68,11 +76,12 @@ jobs:
             -e packages/strategies \
             -e packages/factor-lab \
             -e packages/ai-engine \
+            -e packages/algorithms \
             -e packages/obsidian-sync
 
       - name: Python tests
         run: |
-          for pkg in strategy-runtime backtest-engine strategies data-client factor-lab ai-engine obsidian-sync; do
+          for pkg in algorithms strategy-runtime backtest-engine strategies data-client factor-lab ai-engine obsidian-sync; do
             echo "::group::pytest: $pkg"
             (cd packages/$pkg && python -m pytest -v)
             echo "::endgroup::"

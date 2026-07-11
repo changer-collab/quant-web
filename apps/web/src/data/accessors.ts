@@ -42,6 +42,10 @@ export function getUiCopy(language?: LanguageCode) {
   return getContent(language).ui;
 }
 
+export function getResearchCopy(language?: LanguageCode) {
+  return getContent(language).research;
+}
+
 export function getFactors(language?: LanguageCode) {
   return getContent(language).factors;
 }

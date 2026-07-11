@@ -34,6 +34,7 @@ export type {
   PreviewResponse,
   DiagnosticResult,
   UiCopy,
+  ResearchCopy,
   // 回测报告类型
   BacktestReportFull,
   ReportOverview,
@@ -104,6 +105,7 @@ export {
   getPages,
   getStrategies,
   getUiCopy,
+  getResearchCopy,
   getReportUiCopy,
   getFactorReports,
   getFactorReportUiCopy,

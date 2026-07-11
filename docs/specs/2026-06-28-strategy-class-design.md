@@ -2,7 +2,7 @@
 
 > 状态：产品目标基准 | 日期：2026-06-28 | 审计基础：pipeline-audit-2026-06-28
 >
-> 当前执行入口：[2026-06-30-backend-sync-realign-integrated.md](../plans/2026-06-30-backend-sync-realign-integrated.md)。本文定义分类、配置、Preview、Task、Diagnostics 的目标形态，不记录施工进度。
+> 历史实施计划（已归档）：[2026-06-30-contract-realign.md](../plans/archive/2026-06-30-contract-realign.md)。本文定义分类、配置、Preview、Task、Diagnostics 的目标形态，核心已落地。
 
 ## 一、问题陈述
 

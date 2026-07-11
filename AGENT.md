@@ -3,7 +3,7 @@
 ## 项目概述
 
 - 项目名：QuantForge，面向个人量化研究者的策略研究平台。
-- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。后续阶段见 [backend-sync-realign-integrated plan](docs/plans/2026-06-30-backend-sync-realign-integrated.md)。
+- 当前阶段：前后端端到端闭环已打通（回测/诊断 → API → Worker → Python CLI → 真实指标 → SSE → 前端展示）。策略研究沉淀阶段一已落地：候选事件采集、人工编辑和待归类 Git 提交；Raw/Wiki 两次审核发布尚未实施。canonical 策略分类、ConfigSnapshot、Preview、Task payload 校验、ResultProcessor 注册表均已落地。历史整合计划见 [contract-realign plan](docs/plans/archive/2026-06-30-contract-realign.md)（已归档）。
 - 核心闭环：选择策略 → 配置参数 → 运行回测/训练 → 查看任务和报告 → 迭代策略。
 - 后续规划：稳定前端 → AI 引擎 → 高频增强 → 实盘执行层。
 
@@ -56,3 +56,7 @@
 - `apps/web` 构建时 Vite 会 externalize `node:path` 和 `node:fs`（浏览器兼容性预期行为，不影响运行）。
 - ConfigSnapshot 唯一真相源：任务 payload 必须带 configSnapshot，顶层 params 被拒绝（400）。Worker backtest-handler 保留 payload.params fallback 但标记 deprecated。
 - ResultProcessor 注册表：API complete handler 通过 registry 分派，BacktestResultProcessor 保存失败会标记任务 failed（不再静默 console.error）。新加任务类型需注册对应 processor。
+- **better-sqlite3 ABI 不匹配（反复出现）**：换 Node 主版本（如 22 → 24）后 `better_sqlite3.node` 失效，API 启动抛 `创建 SQLite 连接失败 / NODE_MODULE_VERSION 127 vs 137`。`pnpm rebuild better-sqlite3` 失败时直接走 `node-gyp rebuild --target=<node-ver> --modules=<abi>`。详见 [docs/startup-troubleshooting.md](docs/startup-troubleshooting.md#1-better-sqlite3-原生模块-abi-不匹配)。
+- **quantforge-* Python 包未装（反复出现）**：`packages/strategies` 等子包没 `pip install -e` 装入当前 Python 环境时，`/api/strategies` 静默返回 `[]`（`strategy-sync` 把子进程失败吞成空数组，不抛错）。需补装 6 个 `quantforge-*` 包。详见 [docs/startup-troubleshooting.md](docs/startup-troubleshooting.md#2-quantforge--python-包未安装)。
+- **策略中心不渲染策略**：`zh.ts` 中 `strategies`（策略中心）和 `strategy`（策略总览）是两个不同 navItem id，App.tsx 渲染 `StrategyPage` 的条件必须同时覆盖两者：`(activePage === 'strategy' || activePage === 'strategies')`。
+- 启动前先跑 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-env.ps1` 自检（加 `-Fix` 自动重建 better-sqlite3 和补装 Python 包），可避免 90% 启动卡顿。详见 [docs/startup-troubleshooting.md](docs/startup-troubleshooting.md)。

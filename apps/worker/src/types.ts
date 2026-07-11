@@ -41,12 +41,19 @@ export interface BacktestResult {
 }
 
 /** Python CLI 流式事件 */
+export interface ResearchEventInput {
+  eventType: 'backtest_submitted' | 'backtest_completed';
+  dedupeKey: string;
+  payload: Record<string, unknown>;
+  occurredAt: number;
+}
+
 export interface StreamEvent {
-  event: 'progress' | 'log' | 'result' | 'error';
+  event: 'progress' | 'log' | 'result' | 'error' | 'research';
   percent?: number;
   message?: string;
   level?: string;
-  data?: unknown;
+  data?: unknown | ResearchEventInput;
   error?: { code: string; message: string };
 }
 
@@ -66,7 +73,7 @@ export interface TaskRecord {
 }
 
 /** 任务事件回调 */
-export type TaskEventHandler = (event: StreamEvent) => void;
+export type TaskEventHandler = (event: StreamEvent) => void | Promise<void>;
 
 /** 任务处理器接口 */
 export interface TaskHandler {

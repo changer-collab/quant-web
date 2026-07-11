@@ -31,7 +31,6 @@ describe('appData', () => {
 
     assert.deepEqual(navIds, [
       'dashboard',
-      'strategies',
       'strategy',
       'factor-lab',
       'workspace',
@@ -39,6 +38,7 @@ describe('appData', () => {
       'experiments',
       'data',
       'jobs',
+      'research',
       'settings',
     ]);
 
@@ -52,13 +52,13 @@ describe('appData', () => {
       [
         'Dashboard',
         'Strategy Center',
-        'Strategy',
         'Factor Lab',
         'Research Workspace',
         'Backtest Report',
         'Experiments',
         'Data Center',
         'Jobs',
+        'Research Distillation',
         'Settings',
       ]
     );
@@ -68,13 +68,13 @@ describe('appData', () => {
       [
         '研究总览',
         '策略中心',
-        '策略总览',
         '因子工坊',
         '策略研究台',
         '回测报告',
         '实验对比',
         '数据中心',
         '任务中心',
+        '研究沉淀',
         '系统设置',
       ]
     );
@@ -82,7 +82,7 @@ describe('appData', () => {
     assert.deepEqual(
       [
         'dashboard',
-        'strategies',
+        'strategy',
         'workspace',
         'backtest',
         'experiments',
@@ -105,7 +105,7 @@ describe('appData', () => {
     assert.deepEqual(
       [
         'dashboard',
-        'strategies',
+        'strategy',
         'workspace',
         'backtest',
         'experiments',
@@ -129,7 +129,7 @@ describe('appData', () => {
   it('Chinese copy is readable and does not contain mojibake markers', () => {
     const chineseContent = JSON.stringify({
       nav: getNavItems('zh'),
-      pages: ['dashboard', 'strategies', 'workspace', 'jobs', 'settings'].map((id) =>
+      pages: ['dashboard', 'strategy', 'workspace', 'jobs', 'settings'].map((id) =>
         getPage(id, 'zh')
       ),
       strategies: getStrategies('zh'),

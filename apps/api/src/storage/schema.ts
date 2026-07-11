@@ -78,8 +78,47 @@ export const diagnosticResults = sqliteTable('diagnostic_results', {
   expiresAt: integer('expires_at').notNull().default(0),
 });
 
+/** 策略研究过程 */
+export const researchSessions = sqliteTable('research_sessions', {
+  id: text('id').primaryKey(),
+  strategy: text('strategy').notNull(),
+  title: text('title').notNull(),
+  status: text('status').notNull(),
+  candidateJson: text('candidate_json').notNull(),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+  rawPath: text('raw_path'),
+  rawPublishedAt: integer('raw_published_at'),
+});
+
+/** 策略研究事件；session_id 为空即待归类 */
+export const researchEvents = sqliteTable('research_events', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id'),
+  eventType: text('event_type').notNull(),
+  dedupeKey: text('dedupe_key').notNull().unique(),
+  payloadJson: text('payload_json').notNull(),
+  occurredAt: integer('occurred_at').notNull(),
+});
+
+/** Worker 增量采集游标 */
+export const researchCollectorStates = sqliteTable('research_collector_state', {
+  source: text('source').primaryKey(),
+  lastValue: text('last_value').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
 // ─── 索引 ─────────────────────────────────────────────────────────────
 
 export const configHistoryIdx = index('idx_cfg_hist_strategy').on(configHistory.strategy);
 export const diagnosticStrategyIdx = index('idx_diag_strategy').on(diagnosticResults.strategy);
 export const diagnosticCreatedIdx = index('idx_diag_created').on(diagnosticResults.createdAt);
+export const researchSessionStrategyIdx = index('idx_research_sessions_strategy').on(
+  researchSessions.strategy
+);
+export const researchEventSessionIdx = index('idx_research_events_session').on(
+  researchEvents.sessionId
+);
+export const researchEventOccurredIdx = index('idx_research_events_occurred').on(
+  researchEvents.occurredAt
+);

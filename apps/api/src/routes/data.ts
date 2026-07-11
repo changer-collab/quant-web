@@ -5,12 +5,13 @@ import { TaskType } from '../types.js';
 export async function dataRoutes(app: FastifyInstance) {
   /** 触发数据采集任务（异步，由 Worker 执行） */
   app.post('/collect', async (req, reply) => {
-    const { source, dataType, symbols, start, end } = req.body as {
+    const { source, dataType, symbols, start, end, extra } = req.body as {
       source: string;
       dataType: string;
       symbols?: string[];
       start?: number;
       end?: number;
+      extra?: Record<string, unknown>;
     };
     const task = await app.taskService.submit(TaskType.Collect, {
       source,
@@ -18,6 +19,7 @@ export async function dataRoutes(app: FastifyInstance) {
       symbols: symbols ?? [],
       start,
       end,
+      extra,
     });
     return reply.code(202).send({ id: task.id, status: task.status });
   });

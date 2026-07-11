@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { StrategyRow, UiCopy, LanguageCode, ConfigSnapshot, PreviewResponse } from '../appData';
+import type {
+  StrategyRow,
+  UiCopy,
+  LanguageCode,
+  ConfigSnapshot,
+  PreviewResponse,
+} from '../appData';
 import { apiPost } from '../api/client';
 import { streamTask } from '../api/tasks';
 import { fetchDiagnostic } from '../api/diagnostics';
@@ -17,6 +23,17 @@ interface WorkspacePageProps {
   onBack: () => void;
   language: LanguageCode;
   ui: UiCopy;
+  onBacktestComplete?: (result: {
+    taskId: string;
+    taskResult: Record<string, unknown> | undefined;
+    config: {
+      symbol: string;
+      timeframe: string;
+      initialCash: number;
+      startTs: number;
+      endTs: number;
+    };
+  }) => void;
 }
 
 type WorkspaceTab = 'config' | 'diagnose' | 'backtest';
@@ -286,13 +303,20 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void 
 
 // ── Main WorkspacePage ───────────────────────────────────────
 
-export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageProps) {
+export function WorkspacePage({
+  strategy,
+  onBack,
+  language,
+  ui,
+  onBacktestComplete,
+}: WorkspacePageProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('config');
   const [configSnapshot, setConfigSnapshot] = useState<ConfigSnapshot | null>(null);
   const [configVersion, setConfigVersion] = useState(0);
   const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
-  const [klineLoading, setKlineLoading] = useState(false);
+  const [klineLoading, setKlineLoading] = useState(true);
   const [klineSymbol, setKlineSymbol] = useState('600519');
+  const [klineError, setKlineError] = useState<string | null>(null);
 
   // 诊断状态（原 step 1）
   const [diagnosticData, setDiagnosticData] = useState<Record<string, unknown> | null>(null);
@@ -315,7 +339,9 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     d.setFullYear(d.getFullYear() - 1);
     return d.toISOString().slice(0, 10);
   });
-  const [backtestEndDate, setBacktestEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [backtestEndDate, setBacktestEndDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
   const configDefaultsApplied = useRef(false);
 
   const category = strategy.category ?? 'non_factor';
@@ -343,14 +369,14 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
   // 读取 configSnapshot，依赖 configVersion（ConfigPanel 保存后递增触发刷新）
   useEffect(() => {
     configDefaultsApplied.current = false;
-    fetchStrategyConfig(strategy.name)
+    fetchStrategyConfig(strategy.id)
       .then((res) => {
         setConfigSnapshot(res?.configSnapshot ?? null);
       })
       .catch((err) => {
         console.warn('Failed to fetch strategy config:', err);
       });
-  }, [strategy.name, configVersion]);
+  }, [strategy.id, configVersion]);
 
   // ── Set backtest form defaults from configSnapshot when it loads ──
   useEffect(() => {
@@ -383,29 +409,35 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     async (newSymbol: string) => {
       setKlineSymbol(newSymbol);
       setKlineLoading(true);
+      setKlineError(null);
       try {
-        const data = await fetchPreview(strategy.name, {
+        const data = await fetchPreview(strategy.id, {
           symbol: newSymbol,
           timeframe: '1d',
           limit: 120,
           preview_params: {},
         });
         setPreviewData(data);
-      } catch {
-        // 静默失败
+      } catch (err) {
+        setKlineError(
+          language === 'zh'
+            ? `加载 ${newSymbol} K 线失败：${err instanceof Error ? err.message : String(err)}`
+            : `Failed to load ${newSymbol}: ${err instanceof Error ? err.message : String(err)}`
+        );
       } finally {
         setKlineLoading(false);
       }
     },
-    [strategy.name]
+    [strategy.id, language]
   );
 
   const handleLoadMore = useCallback(
     async (cursor: number) => {
       if (!previewData) return;
       setKlineLoading(true);
+      setKlineError(null);
       try {
-        const data = await fetchPreview(strategy.name, {
+        const data = await fetchPreview(strategy.id, {
           symbol: klineSymbol,
           timeframe: '1d',
           cursor,
@@ -415,14 +447,39 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         if (data.bars.length > 0) {
           setPreviewData({ ...data, bars: [...data.bars, ...previewData.bars] });
         }
-      } catch {
-        // 静默失败
+      } catch (err) {
+        setKlineError(
+          language === 'zh'
+            ? `加载更多数据失败：${err instanceof Error ? err.message : String(err)}`
+            : `Failed to load more: ${err instanceof Error ? err.message : String(err)}`
+        );
       } finally {
         setKlineLoading(false);
       }
     },
-    [strategy.name, klineSymbol, previewData]
+    [strategy.id, klineSymbol, previewData, language]
   );
+
+  // ── 初始自动加载 K 线（仅挂载时执行一次，避免进入页面看到空状态） ──
+  useEffect(() => {
+    if (previewData) return; // 已有数据不重复加载
+    void fetchPreview(strategy.id, {
+      symbol: klineSymbol,
+      timeframe: '1d',
+      limit: 120,
+      preview_params: {},
+    })
+      .then((data) => setPreviewData(data))
+      .catch((err) => {
+        setKlineError(
+          language === 'zh'
+            ? `加载 ${klineSymbol} K 线失败：${err instanceof Error ? err.message : String(err)}`
+            : `Failed to load ${klineSymbol}: ${err instanceof Error ? err.message : String(err)}`
+        );
+      })
+      .finally(() => setKlineLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 仅挂载时执行一次
 
   // ── Run Diagnostics ──
   const handleRunDiagnostics = useCallback(async () => {
@@ -437,8 +494,8 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       const { id: taskId } = await apiPost<{ id: string; status: string }>('/tasks', {
         type: 'diagnostics',
         payload: {
-          strategy: strategy.name,
-          configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
+          strategy: strategy.id,
+          configSnapshot: configSnapshot ?? { strategy: strategy.id, params: {} },
           category,
         },
       });
@@ -490,7 +547,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     } finally {
       setDiagnosticLoading(false);
     }
-  }, [strategy.name, category, configSnapshot, language, ui.workspaceDiagnosticsFailed]);
+  }, [strategy.id, category, configSnapshot, language, ui.workspaceDiagnosticsFailed]);
 
   // ── Run Backtest ──
   const handleRunBacktest = useCallback(async () => {
@@ -503,11 +560,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
     try {
       const { id: taskId } = await submitBacktest({
-        strategy: strategy.name,
+        strategy: strategy.id,
         symbol: backtestSymbol,
         timeframe: backtestTimeframe,
         initialCash: backtestInitialCapital,
-        configSnapshot: configSnapshot ?? { strategy: strategy.name, params: {} },
+        configSnapshot: configSnapshot ?? { strategy: strategy.id, params: {} },
         startTs: new Date(backtestStartDate).getTime(),
         endTs: new Date(backtestEndDate).getTime(),
       });
@@ -523,6 +580,17 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
               setBacktestResult(data);
             }
             setBacktestSubmitted(true);
+            onBacktestComplete?.({
+              taskId,
+              taskResult: data,
+              config: {
+                symbol: backtestSymbol,
+                timeframe: backtestTimeframe,
+                initialCash: backtestInitialCapital,
+                startTs: new Date(backtestStartDate).getTime(),
+                endTs: new Date(backtestEndDate).getTime(),
+              },
+            });
             setBacktestProgress({
               percent: 100,
               message: language === 'zh' ? '回测完成' : 'Backtest complete',
@@ -543,7 +611,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
       setBacktestLoading(false);
     }
   }, [
-    strategy.name,
+    strategy.id,
     configSnapshot,
     language,
     ui.workspaceBacktestFailed,
@@ -552,6 +620,7 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     backtestInitialCapital,
     backtestStartDate,
     backtestEndDate,
+    onBacktestComplete,
   ]);
 
   // ── Helpers: parse real diagnostic data for chart rendering ──
@@ -670,26 +739,38 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         <div className={s.diagnosticGrid}>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceICSeries}</div>
-            {hasData ? <BarChart data={icData} /> : <div className={s.emptyState}>No IC data</div>}
+            <div className={s.cardBody}>
+              {hasData ? (
+                <BarChart data={icData} />
+              ) : (
+                <div className={s.emptyState}>No IC data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceLayeredReturns}</div>
-            {layerData.length > 0 ? (
-              <HBarChart data={layerData} />
-            ) : (
-              <div className={s.emptyState}>No layer data</div>
-            )}
+            <div className={s.cardBody}>
+              {layerData.length > 0 ? (
+                <HBarChart data={layerData} />
+              ) : (
+                <div className={s.emptyState}>No layer data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceCorrelationHeatmap}</div>
-            {corrMatrix.length > 0 && factorLabels.length > 0 ? (
-              <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
-            ) : (
-              <div className={s.emptyState}>No correlation data</div>
-            )}
+            <div className={s.cardBody}>
+              {corrMatrix.length > 0 && factorLabels.length > 0 ? (
+                <HeatmapChart grid={corrMatrix} rowLabels={factorLabels} colLabels={factorLabels} />
+              ) : (
+                <div className={s.emptyState}>No correlation data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCardFull}>
-            <MiniGrid items={summaryItems} />
+            <div className={s.cardBody}>
+              <MiniGrid items={summaryItems} />
+            </div>
           </div>
         </div>
       );
@@ -704,28 +785,34 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         <div className={s.diagnosticGrid}>
           <div className={s.chartCardFull}>
             <div className={s.chartCardTitle}>{ui.workspaceParamSensitivity}</div>
-            {hasSens ? (
-              <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
-            ) : (
-              <div className={s.emptyState}>No param sensitivity data</div>
-            )}
+            <div className={s.cardBody}>
+              {hasSens ? (
+                <HeatmapChart grid={sensSharpeGrid} rowLabels={sensLabels} colLabels={sensLabels} />
+              ) : (
+                <div className={s.emptyState}>No param sensitivity data</div>
+              )}
+            </div>
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSignalDist}</div>
-            <MiniGrid items={signalItems} />
+            <div className={s.cardBody}>
+              <MiniGrid items={signalItems} />
+            </div>
           </div>
           <div className={s.chartCard}>
             <div className={s.chartCardTitle}>{ui.workspaceSlippageStress}</div>
-            {slippageReturns.length > 0 ? (
-              <LineChart points={slippageReturns} color="#ffa94d" />
-            ) : (
-              <div className={s.emptyState}>No slippage data</div>
-            )}
-            {costItems.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <MiniGrid items={costItems} />
-              </div>
-            )}
+            <div className={s.cardBody}>
+              {slippageReturns.length > 0 ? (
+                <LineChart points={slippageReturns} color="#ffa94d" />
+              ) : (
+                <div className={s.emptyState}>No slippage data</div>
+              )}
+              {costItems.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <MiniGrid items={costItems} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -735,7 +822,9 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
     return (
       <div className={s.chartCardFull}>
         <div className={s.chartCardTitle}>{ui.workspaceSignalMetrics}</div>
-        <div className={s.emptyState}>Diagnostics data available</div>
+        <div className={s.cardBody}>
+          <div className={s.emptyState}>Diagnostics data available</div>
+        </div>
       </div>
     );
   }
@@ -854,87 +943,105 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
         {/* Performance metrics */}
         {(backtestSubmitted || backtestResult) && (
-          <>
-            <div className={s.chartCardTitle}>{ui.workspacePerformanceTitle}</div>
-            <div className={s.perfGrid}>
-              <div className={s.perfCard}>
-                <div
-                  className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}
-                >
-                  {formatPercent(metrics?.totalReturn)}
-                </div>
-                <div className={s.perfCardLabel}>
-                  {language === 'zh' ? '总收益' : 'Total Return'}
-                </div>
+          <div className={s.backtestStack}>
+            <div className={s.card}>
+              <div className={s.cardHeader}>
+                <span className={s.cardTitle}>{ui.workspacePerformanceTitle}</span>
               </div>
-              <div className={s.perfCard}>
-                <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
-                  {formatPercent(metrics?.maxDrawdown)}
-                </div>
-                <div className={s.perfCardLabel}>
-                  {language === 'zh' ? '最大回撤' : 'Max Drawdown'}
-                </div>
-              </div>
-              <div className={s.perfCard}>
-                <div
-                  className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}
-                >
-                  {formatNumber(metrics?.sharpeRatio)}
-                </div>
-                <div className={s.perfCardLabel}>
-                  {language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}
+              <div className={s.cardBody}>
+                <div className={s.perfGrid}>
+                  <div className={s.perfCard}>
+                    <div
+                      className={`${s.perfCardValue} ${(metrics?.totalReturn ?? 0) > 0 ? s.perfCardGood : s.perfCardWarn}`}
+                    >
+                      {formatPercent(metrics?.totalReturn)}
+                    </div>
+                    <div className={s.perfCardLabel}>
+                      {language === 'zh' ? '总收益' : 'Total Return'}
+                    </div>
+                  </div>
+                  <div className={s.perfCard}>
+                    <div className={`${s.perfCardValue} ${s.perfCardWarn}`}>
+                      {formatPercent(metrics?.maxDrawdown)}
+                    </div>
+                    <div className={s.perfCardLabel}>
+                      {language === 'zh' ? '最大回撤' : 'Max Drawdown'}
+                    </div>
+                  </div>
+                  <div className={s.perfCard}>
+                    <div
+                      className={`${s.perfCardValue} ${(metrics?.sharpeRatio ?? 0) > 1 ? s.perfCardGood : s.perfCardWarn}`}
+                    >
+                      {formatNumber(metrics?.sharpeRatio)}
+                    </div>
+                    <div className={s.perfCardLabel}>
+                      {language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Equity Curve */}
-            <div className={s.chartCardTitle}>{ui.workspaceEquityCurve}</div>
-            <div className={s.equityCurve}>
-              <LineChart points={equityPoints} />
+            <div className={s.card}>
+              <div className={s.cardHeader}>
+                <span className={s.cardTitle}>{ui.workspaceEquityCurve}</span>
+              </div>
+              <div className={s.cardBody}>
+                <div className={s.equityCurve}>
+                  <LineChart points={equityPoints} />
+                </div>
+              </div>
             </div>
 
             {/* Trade Details */}
-            <div className={s.chartCardTitle}>{ui.workspaceTradeDetails}</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table className={s.tradeTable}>
-                <thead>
-                  <tr>
-                    <th>{language === 'zh' ? '日期' : 'Date'}</th>
-                    <th>{language === 'zh' ? '方向' : 'Side'}</th>
-                    <th>{language === 'zh' ? '价格' : 'Price'}</th>
-                    <th>{language === 'zh' ? '数量' : 'Shares'}</th>
-                    <th>{language === 'zh' ? '盈亏' : 'P&L'}</th>
-                    <th>{language === 'zh' ? '原因' : 'Reason'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trades.map((t, i) => {
-                    const quantity = t.quantity ?? t.shares;
-                    return (
-                      <tr key={i}>
-                        <td>{formatTradeDate(t)}</td>
-                        <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
-                          {formatTradeSide(t.side, language)}
-                        </td>
-                        <td>{formatNumber(t.price)}</td>
-                        <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
-                        <td
-                          style={{
-                            color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)',
-                          }}
-                        >
-                          {(t.pnl ?? 0) >= 0 ? '+' : ''}
-                          {formatNumber(t.pnl)}
-                        </td>
-                        <td>{t.reason ?? '--'}</td>
+            <div className={s.card}>
+              <div className={s.cardHeader}>
+                <span className={s.cardTitle}>{ui.workspaceTradeDetails}</span>
+              </div>
+              <div className={s.cardBody}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className={s.tradeTable}>
+                    <thead>
+                      <tr>
+                        <th>{language === 'zh' ? '日期' : 'Date'}</th>
+                        <th>{language === 'zh' ? '方向' : 'Side'}</th>
+                        <th>{language === 'zh' ? '价格' : 'Price'}</th>
+                        <th>{language === 'zh' ? '数量' : 'Shares'}</th>
+                        <th>{language === 'zh' ? '盈亏' : 'P&L'}</th>
+                        <th>{language === 'zh' ? '原因' : 'Reason'}</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {trades.length === 0 && <div className={s.emptyState}>No trades</div>}
+                    </thead>
+                    <tbody>
+                      {trades.map((t, i) => {
+                        const quantity = t.quantity ?? t.shares;
+                        return (
+                          <tr key={i}>
+                            <td>{formatTradeDate(t)}</td>
+                            <td className={t.side === 'buy' ? s.tradeBuy : s.tradeSell}>
+                              {formatTradeSide(t.side, language)}
+                            </td>
+                            <td>{formatNumber(t.price)}</td>
+                            <td>{quantity !== undefined ? quantity.toLocaleString() : '--'}</td>
+                            <td
+                              style={{
+                                color: (t.pnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red, #ff6b6b)',
+                              }}
+                            >
+                              {(t.pnl ?? 0) >= 0 ? '+' : ''}
+                              {formatNumber(t.pnl)}
+                            </td>
+                            <td>{t.reason ?? '--'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {trades.length === 0 && <div className={s.emptyState}>No trades</div>}
+                </div>
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         {!backtestSubmitted && !backtestLoading && !backtestResult && (
@@ -965,11 +1072,11 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
 
       {/* Tab 导航（替代原 Stepper） */}
       <div className={s.tabNav}>
-        {([
+        {[
           { key: 'config' as const, label: ui.workspaceTabConfig },
           { key: 'diagnose' as const, label: ui.workspaceTabDiagnose },
           { key: 'backtest' as const, label: ui.workspaceTabBacktest },
-        ]).map((tab) => (
+        ].map((tab) => (
           <button
             key={tab.key}
             className={`${s.tabButton} ${activeTab === tab.key ? s.tabButtonActive : ''}`}
@@ -986,24 +1093,35 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
         {activeTab === 'config' && (
           <div className={s.configTabLayout}>
             <div className={s.configPanelWrapper}>
-              <ConfigPanel
-                strategy={strategy}
-                ui={ui}
-                language={language}
-                onPreviewUpdate={handlePreviewUpdate}
-                onConfigSaved={handleConfigSaved}
-              />
+              <div className={s.card}>
+                <div className={s.cardHeader}>
+                  <span className={s.cardTitle}>{ui.workspaceTabConfig}</span>
+                </div>
+                <div className={s.cardBody}>
+                  <ConfigPanel
+                    strategy={strategy}
+                    ui={ui}
+                    language={language}
+                    onPreviewUpdate={handlePreviewUpdate}
+                    onConfigSaved={handleConfigSaved}
+                    klineSymbol={klineSymbol}
+                  />
+                </div>
+              </div>
             </div>
             <div className={s.klinePanelWrapper}>
-              <KlineChart
-                previewData={previewData}
-                subcategory={strategy.subcategory}
-                ui={ui}
-                language={language}
-                onSymbolChange={handleSymbolChange}
-                onLoadMore={handleLoadMore}
-                loading={klineLoading}
-              />
+              <div className={s.card}>
+                <KlineChart
+                  previewData={previewData}
+                  subcategory={strategy.subcategory}
+                  ui={ui}
+                  language={language}
+                  onSymbolChange={handleSymbolChange}
+                  onLoadMore={handleLoadMore}
+                  loading={klineLoading}
+                  error={klineError}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -1022,12 +1140,16 @@ export function WorkspacePage({ strategy, onBack, language, ui }: WorkspacePageP
                     disabled={diagnosticLoading}
                     type="button"
                   >
-                    {diagnosticLoading ? ui.workspaceDiagnosticsRunning : ui.workspaceRunDiagnostics}
+                    {diagnosticLoading
+                      ? ui.workspaceDiagnosticsRunning
+                      : ui.workspaceRunDiagnostics}
                   </button>
                 </div>
 
                 <ProgressBar progress={diagnosticProgress} />
-                {diagnosticError && <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />}
+                {diagnosticError && (
+                  <ErrorBox message={diagnosticError} onRetry={handleRunDiagnostics} />
+                )}
 
                 {renderDiagnosticContent()}
 
