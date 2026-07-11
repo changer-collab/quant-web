@@ -168,6 +168,36 @@ export async function initApiDb(dbPath?: string): Promise<ApiDb> {
     );
     CREATE INDEX IF NOT EXISTS idx_diag_strategy ON diagnostic_results(strategy);
     CREATE INDEX IF NOT EXISTS idx_diag_created ON diagnostic_results(created_at);
+
+    CREATE TABLE IF NOT EXISTS research_sessions (
+      id TEXT PRIMARY KEY,
+      strategy TEXT NOT NULL,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL,
+      candidate_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      raw_path TEXT,
+      raw_published_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_research_sessions_strategy ON research_sessions(strategy);
+
+    CREATE TABLE IF NOT EXISTS research_events (
+      id TEXT PRIMARY KEY,
+      session_id TEXT,
+      event_type TEXT NOT NULL,
+      dedupe_key TEXT NOT NULL UNIQUE,
+      payload_json TEXT NOT NULL,
+      occurred_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_research_events_session ON research_events(session_id);
+    CREATE INDEX IF NOT EXISTS idx_research_events_occurred ON research_events(occurred_at);
+
+    CREATE TABLE IF NOT EXISTS research_collector_state (
+      source TEXT PRIMARY KEY,
+      last_value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 
   // 迁移：为已有表安全添加新列（兼容旧 DB 文件，仅当列不存在时执行）
@@ -243,5 +273,12 @@ export function closeApiDb(persist = true): void {
     sqlite = null;
     db = null;
     currentDbPath = null;
+  }
+}
+
+/** 立即刷新 sql.js 内存数据库，供研究事件等不可丢失记录使用。 */
+export function flushApiDb(): void {
+  if (sqlite && currentDbPath) {
+    writeFileSync(currentDbPath, Buffer.from(sqlite.export()));
   }
 }

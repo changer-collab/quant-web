@@ -8,6 +8,7 @@ import { SqliteDiagnosticRepo } from './repositories/sqlite-diag-repo.js';
 import { StrategyConfigService } from './services/config-service.js';
 import { DiagnosticService } from './services/diagnostic-service.js';
 import { createResultProcessorRegistry } from './services/result-processors/index.js';
+import { SqliteResearchRepository } from './research/repository.js';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
@@ -56,6 +57,7 @@ const app = await buildApp({
   diagnosticService,
   reportRepository: reportRepo,
   resultProcessorRegistry,
+  researchRepository: new SqliteResearchRepository(apiDb),
 });
 
 // 优雅关闭

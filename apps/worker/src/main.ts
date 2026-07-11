@@ -11,6 +11,9 @@ import { BacktestHandler } from './handlers/backtest-handler.js';
 import { CollectHandler } from './handlers/collect-handler.js';
 import { DiagnosticsHandler } from './handlers/diagnostics-handler.js';
 import { PythonBridge } from './python-bridge.js';
+import { GitCollector } from './git-collector.js';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { TaskStatus, type StreamEvent } from './types.js';
 import type { TaskRecord, TaskHandler } from './types.js';
 
@@ -35,6 +38,8 @@ function createHandler(taskType: string): TaskHandler | null {
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://127.0.0.1:3002';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS ?? '1000', 10);
+const GIT_SCAN_INTERVAL = parseInt(process.env.GIT_SCAN_INTERVAL_MS ?? '30000', 10);
+const execFileAsync = promisify(execFile);
 
 /** API 返回的任务视图 */
 interface ApiTaskView {
@@ -59,6 +64,44 @@ async function apiPost(path: string, body?: unknown): Promise<unknown> {
   });
   if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
   return res.json();
+}
+
+async function getGitHead(): Promise<string | undefined> {
+  try {
+    const { stdout } = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: process.cwd() });
+    const head = stdout.trim();
+    return head || undefined;
+  } catch (error) {
+    console.warn('[worker] Failed to read Git HEAD:', error instanceof Error ? error.message : error);
+    return undefined;
+  }
+}
+
+async function getResearchCursor(source: string): Promise<string | undefined> {
+  const response = await fetch(`${API_BASE}/api/internal/research/collectors/${encodeURIComponent(source)}`);
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`读取研究采集游标失败: ${response.status}`);
+  const state = (await response.json()) as { lastValue?: string };
+  return state.lastValue;
+}
+
+async function scanGit(): Promise<void> {
+  const collector = new GitCollector({
+    cwd: process.cwd(),
+    api: {
+      getCursor: getResearchCursor,
+      saveCursor: async (source, lastValue) => {
+        await apiPost(`/api/internal/research/collectors/${encodeURIComponent(source)}`, { lastValue });
+      },
+      ingestEvent: async (event) => {
+        await apiPost('/api/internal/research/events', event);
+      },
+    },
+  });
+  const result = await collector.scan();
+  if (result.collected > 0) {
+    console.log(`[worker] Collected ${result.collected} Git commits`);
+  }
 }
 
 /** 处理单个任务 */
@@ -108,9 +151,25 @@ async function processTask(task: ApiTaskView): Promise<void> {
           level: event.level,
           message: event.message,
         });
+      } else if (event.event === 'research' && event.data && typeof event.data === 'object') {
+        const researchEvent = event.data as {
+          eventType?: string;
+          dedupeKey?: string;
+          payload?: Record<string, unknown>;
+          occurredAt?: number;
+        };
+        if (!researchEvent.eventType || !researchEvent.dedupeKey || !researchEvent.payload) {
+          throw new Error('Invalid research event emitted by task handler');
+        }
+        const gitHead = await getGitHead();
+        await apiPost('/api/internal/research/events', {
+          ...researchEvent,
+          payload: { ...researchEvent.payload, gitHead },
+        });
       }
     } catch (err) {
       console.error(`[worker] Failed to forward event for ${taskId}:`, err);
+      if (event.event === 'research') throw err;
     }
   };
 
@@ -145,11 +204,19 @@ async function main(): Promise<void> {
 
   // 立即执行一次
   await pollOnce();
+  await scanGit().catch((error) => {
+    console.error('[worker] Git scan failed:', error instanceof Error ? error.message : error);
+  });
 
   // 定时轮询
   setInterval(() => {
     void pollOnce();
   }, POLL_INTERVAL);
+  setInterval(() => {
+    void scanGit().catch((error) => {
+      console.error('[worker] Git scan failed:', error instanceof Error ? error.message : error);
+    });
+  }, GIT_SCAN_INTERVAL);
 }
 
 main().catch((err) => {

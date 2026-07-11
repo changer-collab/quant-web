@@ -4,22 +4,27 @@ import { TaskType, TaskStatus, TimeFrame } from '../src/types.js';
 import type { PythonBridge, PythonResult } from '../src/python-bridge.js';
 
 function createMockBridge(override?: Partial<PythonBridge>): PythonBridge {
+  const defaultData = {
+    config: { strategyName: 'mock', initialCash: 1000000, slippage: 0 },
+    trades: [],
+    equityCurve: [],
+    metrics: {
+      totalReturn: 0.05,
+      annualizedReturn: 0.12,
+      sharpeRatio: 1.5,
+      maxDrawdown: 0.08,
+      winRate: 0.55,
+      totalTrades: 10,
+    },
+  };
   return {
     call: vi.fn<() => Promise<PythonResult>>().mockResolvedValue({
       ok: true,
-      data: {
-        config: { strategyName: 'mock', initialCash: 1000000, slippage: 0 },
-        trades: [],
-        equityCurve: [],
-        metrics: {
-          totalReturn: 0.05,
-          annualizedReturn: 0.12,
-          sharpeRatio: 1.5,
-          maxDrawdown: 0.08,
-          winRate: 0.55,
-          totalTrades: 10,
-        },
-      },
+      data: defaultData,
+    }),
+    streamCall: vi.fn(async (_request, onEvent) => {
+      onEvent({ event: 'result', data: defaultData });
+      return { ok: true, data: defaultData };
     }),
     ...override,
   } as unknown as PythonBridge;
@@ -52,6 +57,64 @@ describe('BacktestHandler', () => {
       undefined
     );
     expect(result.backtestResult).toBeDefined();
+  });
+
+  it('在实际执行前后发出可去重的研究事件', async () => {
+    const bridge = createMockBridge();
+    const handler = new BacktestHandler(bridge);
+    const events: unknown[] = [];
+
+    await handler.handle(
+      makeTask({
+        strategy: 'mock',
+        symbol: 'TEST',
+        timeframe: TimeFrame.D1,
+        initialCash: 1000000,
+        startTs: 100,
+        endTs: 200,
+        configSnapshot: { strategy: 'mock', params: { shortWindow: 5 }, category: 'non_factor' },
+      }),
+      (event) => events.push(event)
+    );
+
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        event: 'research',
+        data: expect.objectContaining({
+          eventType: 'backtest_submitted',
+          dedupeKey: 'backtest_submitted:test-task',
+        }),
+      })
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        event: 'research',
+        data: expect.objectContaining({
+          eventType: 'backtest_completed',
+          dedupeKey: 'backtest_completed:test-task',
+        }),
+      })
+    );
+  });
+
+  it('研究事件落库失败时不启动实际回测', async () => {
+    const bridge = createMockBridge();
+    const handler = new BacktestHandler(bridge);
+
+    await expect(
+      handler.handle(
+        makeTask({
+          strategy: 'mock',
+          symbol: 'TEST',
+          timeframe: TimeFrame.D1,
+          configSnapshot: { strategy: 'mock', params: {}, category: 'non_factor' },
+        }),
+        async (event) => {
+          if (event.event === 'research') throw new Error('research API unavailable');
+        }
+      )
+    ).rejects.toThrow('research API unavailable');
+    expect(bridge.streamCall).not.toHaveBeenCalled();
   });
 
   it('Python 返回错误时抛异常', async () => {

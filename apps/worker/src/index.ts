@@ -7,6 +7,8 @@ export type { PythonBridgeConfig, PythonResult } from './python-bridge.js';
 
 // handlers
 export { BacktestHandler } from './handlers/backtest-handler.js';
+export { GitCollector, inferStrategyFromFiles } from './git-collector.js';
+export type { GitCollectorApi, GitCollectorOptions, GitCommandRunner, GitScanResult } from './git-collector.js';
 export type { BacktestPayload, BacktestTaskResult } from './handlers/backtest-handler.js';
 export { CollectHandler } from './handlers/collect-handler.js';
 export type { CollectPayload } from './handlers/collect-handler.js';

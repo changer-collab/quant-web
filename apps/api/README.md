@@ -28,6 +28,15 @@
   POST   /api/internal/tasks/:id/complete Worker 上报任务完成结果
   POST   /api/internal/tasks/:id/fail Worker 上报任务失败
 
+研究候选：
+  GET    /api/research/sessions                 研究过程列表
+  GET    /api/research/sessions/:id             候选与事件时间线
+  POST   /api/research/sessions/manual-inspiration 手动灵感
+  PUT    /api/research/sessions/:id             编辑 collecting 候选
+  POST   /api/research/sessions/:id/finish      结束本轮研究
+  GET    /api/research/events/unassigned        待归类事件
+  POST/GET/PUT /api/internal/research/*         Worker 事件与 Git 游标接口
+
 因子：
   GET    /api/factors                因子注册列表
   POST   /api/factors                注册因子定义
@@ -50,6 +59,7 @@
 - 通过 `TaskService` 接口解耦 Worker 实现；默认使用 `SqliteTaskService`（持久化到 quant.db），`InMemoryTaskService` 作为内存实现备选保留供测试使用。
 - 因子评估和批量计算触发后返回异步任务 ID，任务状态可通过任务路由查询。
 - 数据查询委托给 DataCenter 的 Provider 层。
+- 研究过程、事件和 Git 游标保存在 API SQLite；API 只管理状态，不读取或写入知识库文件。
 
 ## 后续职责
 

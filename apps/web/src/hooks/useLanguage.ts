@@ -9,6 +9,7 @@ import {
   getFactors,
   getFactorEvalResults,
   getUiCopy,
+  getResearchCopy,
   getReportUiCopy,
   resolveLanguageCode,
   type LanguageCode,
@@ -19,6 +20,7 @@ import {
   type FactorDisplayRow,
   type FactorEvalDisplayResult,
   type UiCopy,
+  type ResearchCopy,
 } from '../appData';
 
 export function useLanguage() {
@@ -40,6 +42,7 @@ export function useLanguage() {
 
   const navItems = useMemo(() => getNavItems(language), [language]);
   const ui = useMemo(() => getUiCopy(language), [language]);
+  const researchCopy = useMemo(() => getResearchCopy(language), [language]);
   const strategies = useMemo(() => getStrategies(language), [language]);
   const ticks = useMemo(() => getMarketTicks(language), [language]);
   const factors = useMemo(() => getFactors(language), [language]);
@@ -51,6 +54,7 @@ export function useLanguage() {
     handleLanguageChange,
     navItems,
     ui,
+    researchCopy,
     strategies,
     ticks,
     factors,
@@ -72,4 +76,5 @@ export {
   type FactorDisplayRow,
   type FactorEvalDisplayResult,
   type UiCopy,
+  type ResearchCopy,
 };

@@ -38,6 +38,7 @@ describe('appData', () => {
       'experiments',
       'data',
       'jobs',
+      'research',
       'settings',
     ]);
 
@@ -57,6 +58,7 @@ describe('appData', () => {
         'Experiments',
         'Data Center',
         'Jobs',
+        'Research Distillation',
         'Settings',
       ]
     );
@@ -72,6 +74,7 @@ describe('appData', () => {
         '实验对比',
         '数据中心',
         '任务中心',
+        '研究沉淀',
         '系统设置',
       ]
     );

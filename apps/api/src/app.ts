@@ -7,6 +7,9 @@ import type { StrategyConfigService } from './services/config-service.js';
 import type { DiagnosticService } from './services/diagnostic-service.js';
 import type { TaskType } from './types.js';
 import type { ResultProcessor } from './services/result-processors/types.js';
+import { InMemoryResearchRepository } from './research/repository.js';
+import { ResearchService } from './research/service.js';
+import type { ResearchRepository } from './research/repository.js';
 import { strategyRoutes } from './routes/strategy.js';
 import { taskRoutes, internalTaskRoutes } from './routes/task.js';
 import { factorRoutes } from './routes/factor.js';
@@ -15,6 +18,7 @@ import { reportRoutes } from './routes/report.js';
 import { factorEvalRoutes } from './routes/factor-eval.js';
 import { diagnosticRoutes } from './routes/diagnostics.js';
 import { modelRoutes } from './routes/models.js';
+import { internalResearchRoutes, researchRoutes } from './routes/research.js';
 
 export interface AppOptions {
   dataCenter: DataCenter;
@@ -23,6 +27,7 @@ export interface AppOptions {
   diagnosticService: DiagnosticService;
   reportRepository?: ReportRepository;
   resultProcessorRegistry?: Map<TaskType, ResultProcessor>;
+  researchRepository?: ResearchRepository;
 }
 
 export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
@@ -35,6 +40,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   app.decorate('diagnosticService', options.diagnosticService);
   app.decorate('reportRepository', options.reportRepository ?? null);
   app.decorate('resultProcessorRegistry', options.resultProcessorRegistry ?? new Map());
+  app.decorate(
+    'researchService',
+    new ResearchService(options.researchRepository ?? new InMemoryResearchRepository())
+  );
 
   // 注册路由
   await app.register(strategyRoutes, { prefix: '/api/strategies' });
@@ -46,6 +55,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   await app.register(factorEvalRoutes, { prefix: '/api/evaluations' });
   await app.register(diagnosticRoutes, { prefix: '/api/diagnostics' });
   await app.register(modelRoutes, { prefix: '/api/models' });
+  await app.register(researchRoutes, { prefix: '/api/research' });
+  await app.register(internalResearchRoutes, { prefix: '/api/internal/research' });
 
   return app;
 }
@@ -54,5 +65,6 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 declare module 'fastify' {
   interface FastifyInstance {
     reportRepository: ReportRepository | null;
+    researchService: ResearchService;
   }
 }

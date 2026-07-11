@@ -120,4 +120,12 @@ describe('Research workflow integration', () => {
     expect(result.current.reportJobIds).toContain('task-int-ai');
     expect(result.current.activeReport?.mode).toBe(strategy.mode);
   });
+
+  it('can navigate to the research distillation page', async () => {
+    const { result } = renderHook(() => useResearchWorkflow('zh'));
+
+    act(() => result.current.handleNavClick('research'));
+
+    expect(result.current.state.activePage).toBe('research');
+  });
 });

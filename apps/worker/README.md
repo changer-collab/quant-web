@@ -20,6 +20,8 @@
 - LoopHandler：循环任务处理器，编排多次子任务迭代
 - main.ts 独立入口：通过 HTTP 轮询 /api/internal/tasks/* 领取、执行、上报任务，不依赖与 API 同进程
 - PythonBridge：Python 子进程桥接器（stdin JSON → stdout NDJSON 事件流）
+- GitCollector：首次只保存当前 HEAD，后续增量采集提交哈希、信息和涉及文件；无法唯一归属策略时交给 API 保持待归类
+- BacktestHandler：在实际执行前后上报参数、Git HEAD、核心指标和 AI 分析，使用任务 ID 去重
 ```
 
 ## 文件结构
@@ -80,3 +82,4 @@ pnpm --filter @quant/worker build
 ```
 
 Worker 默认轮询 `http://127.0.0.1:3002/api/internal/tasks/pending`（可通过 `API_BASE_URL` 环境变量覆盖，轮询间隔由 `POLL_INTERVAL_MS` 控制，默认 1000ms），需先启动 `apps/api`。任务进度通过 SSE `/api/tasks/:id/stream` 推送给前端。
+Git 扫描间隔由 `GIT_SCAN_INTERVAL_MS` 控制，默认 30000ms。

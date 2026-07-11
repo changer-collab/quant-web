@@ -17,6 +17,7 @@ import { BacktestHistory } from './components/backtest-history';
 import { ExperimentTable } from './components/experiment-table';
 import { DataCoveragePanel } from './components/data-coverage';
 import { JobList } from './components/jobs';
+import { ResearchPage } from './components/research-page';
 import type { ResearchJob, JobTemplate, StrategyRow } from './appData';
 import layout from './styles/layout.module.css';
 import nav from './styles/nav.module.css';
@@ -29,7 +30,7 @@ const FullReport = lazy(() =>
 );
 
 export default function App() {
-  const { language, handleLanguageChange, navItems, ui, factorEvalResults, reportUiCopy } =
+  const { language, handleLanguageChange, navItems, ui, researchCopy, factorEvalResults, reportUiCopy } =
     useLanguage();
   const { strategies: apiStrategies } = useStrategies();
   const { tasks: apiTasks } = useTasks();
@@ -246,6 +247,7 @@ export default function App() {
                       ui={ui}
                     />
                   )}
+                  {state.activePage === 'research' && <ResearchPage copy={researchCopy} />}
                 </>
               )}
             </div>
