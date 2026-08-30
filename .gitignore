@@ -54,3 +54,6 @@ scripts/ralph/.prd.state.json
 
 # CLAUDE.md (Claude Code local, not project-shared)
 CLAUDE.md
+
+# untrack local SQLite db before making repo public
+*.db
